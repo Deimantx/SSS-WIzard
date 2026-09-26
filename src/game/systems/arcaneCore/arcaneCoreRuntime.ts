@@ -1,7 +1,6 @@
 import type { ArcaneCoreState, GameState } from '../../types'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
-import { selectFreeFocus, selectUsedFocus } from '../focus/focusReservations'
-import { commitArcaneCoreV6SpellCast, getArcaneCoreV6DynamicManaRegen, getArcaneCoreV6DynamicSpellPower, getArcaneCoreV6ManaRegenMultiplier, getArcaneCoreV7HealingReceivedBonusPct, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV7Runtime'
+import { commitArcaneCoreV6SpellCast, getArcaneCoreManaRegenMultiplier as getCoreManaRegenMultiplier, getArcaneCoreV7HealingReceivedBonusPct, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV7Runtime'
 
 const special = (state: Pick<ArcaneCoreState, 'nodes'>, type: import('../../types').ArcaneCoreSpecialEffect['type']) => getArcaneCoreSpecialEffects(state).filter((effect) => effect.type === type)
 
@@ -10,17 +9,7 @@ export const isArcaneCoreSpellFree = (state: Pick<GameState, 'arcaneCore' | 'com
   return special(state.arcaneCore, 'nth-spell-free').some((effect) => effect.type === 'nth-spell-free' && nextCast % effect.every === 0)
 }
 
-export const getArcaneCoreDynamicSpellPower = (state: Pick<GameState, 'arcaneCore' | 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'player'>) => {
-  const perReservedFocus = special(state.arcaneCore, 'reserved-focus-spell-power').reduce((sum, effect) => effect.type === 'reserved-focus-spell-power' ? sum + effect.spellPowerPerReservedFocus : sum, 0)
-  return selectUsedFocus(state) * perReservedFocus + getArcaneCoreV6DynamicSpellPower(state as never)
-}
-
-export const getArcaneCoreDynamicManaRegen = (state: Pick<GameState, 'arcaneCore' | 'activities' | 'progress' | 'equipment' | 'artifactProgress' | 'player'>) => {
-  const perFreeFocus = special(state.arcaneCore, 'free-focus-mana-regen').reduce((sum, effect) => effect.type === 'free-focus-mana-regen' ? sum + effect.manaRegenPerFreeFocus : sum, 0)
-  return selectFreeFocus(state) * perFreeFocus + getArcaneCoreV6DynamicManaRegen(state as never)
-}
-
-export const getArcaneCoreDynamicManaRegenMultiplier = (state: Pick<GameState, 'arcaneCore' | 'player'>) => getArcaneCoreV6ManaRegenMultiplier(state as never)
+export const getArcaneCoreManaRegenMultiplier = (state: Pick<GameState, 'arcaneCore' | 'player'>) => getCoreManaRegenMultiplier(state)
 
 export const getArcaneCoreHealingReceivedBonusPct = (state: Pick<GameState, 'combat'>) => getArcaneCoreV7HealingReceivedBonusPct(state as never)
 
@@ -107,6 +96,12 @@ const createArcaneCoreRuntime = () => ({
   cataclysmUsed: false,
   limitBreakUsed: false,
   recentManaSpend: [],
+  reservoirCycleReady: false,
+  manaCollapseReady: false,
+  manaCollapseLastAtMs: undefined,
+  emergencyConversionReady: false,
+  dualMindPreparedOrigin: undefined,
+  dualMindPreparedUntilMs: undefined,
   nextManaRestoreFlat: 0,
   v7EventLastAtMs: {},
   refuseDeathUsed: false,
@@ -179,6 +174,12 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.cataclysmUsed = false
   runtime.limitBreakUsed = false
   runtime.recentManaSpend = []
+  runtime.reservoirCycleReady = false
+  runtime.manaCollapseReady = false
+  runtime.manaCollapseLastAtMs = undefined
+  runtime.emergencyConversionReady = false
+  runtime.dualMindPreparedOrigin = undefined
+  runtime.dualMindPreparedUntilMs = undefined
   runtime.nextManaRestoreFlat = 0
   runtime.v7EventLastAtMs = {}
   runtime.refuseDeathUsed = false

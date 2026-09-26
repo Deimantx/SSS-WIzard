@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { TooltipProvider } from "../../components/ui/tooltip/Tooltip";
 import { ARCANE_CORE_BRANCHES } from "../../game/content/arcaneCore/arcaneCoreBranches";
-import { getArcaneCoreResonanceSummary } from "../../game/presentation/arcaneCore/arcaneCorePresentation";
+import { getArcaneCoreEffectSummary } from "../../game/presentation/arcaneCore/arcaneCorePresentation";
 import { useArcaneCorePresetStore } from "../../store/arcaneCorePresetStore";
 import { useGameStore } from "../../store/gameStore";
 import { ArcaneCoreScreen } from "./ArcaneCoreScreen";
@@ -21,7 +21,7 @@ describe("Arcane Core screen", () => {
     useArcaneCorePresetStore.getState().reset();
   });
 
-  it("mounts the V6 wallet and four independent Cores", () => {
+  it("mounts the V8 wallet and four independent Cores", () => {
     render(
       <TooltipProvider>
         <ArcaneCoreScreen />
@@ -32,7 +32,7 @@ describe("Arcane Core screen", () => {
     for (const name of [
       "Power Core",
       "Vitality Core",
-      "Focus Core",
+      "Mana Core",
       "Control Core",
     ])
       expect(screen.getByText(name)).toBeTruthy();
@@ -66,7 +66,7 @@ describe("Arcane Core screen", () => {
     ).find((node) => node.name === "Suppression")!;
     useGameStore.getState().setArcaneCoreNodeRank(suppression.id, 1);
     const state = useGameStore.getState();
-    const summary = getArcaneCoreResonanceSummary(state.arcaneCore);
+    const summary = getArcaneCoreEffectSummary(state.arcaneCore);
     expect(
       summary.alwaysOn.some((entry) => entry.label === "Enemy Damage Dealt"),
     ).toBe(false);
@@ -198,15 +198,15 @@ describe("Arcane Core screen", () => {
       within(coreDialog).getByRole("button", { name: "CORE SUMMARY" }),
     );
     const summary = screen.getByRole("dialog", {
-      name: "Power Core Summary",
+      name: "Power Core Effects",
     });
     expect(within(summary).getByText("INVESTED")).toBeTruthy();
-    expect(within(summary).getByText("NO ACTIVE BONUSES YET")).toBeTruthy();
+    expect(within(summary).getByText("NO ACTIVE CORE EFFECTS YET")).toBeTruthy();
     expect(screen.getByRole("dialog", { name: "Power Core" })).toBeTruthy();
 
     await user.keyboard("{Escape}");
     expect(
-      screen.queryByRole("dialog", { name: "Power Core Summary" }),
+      screen.queryByRole("dialog", { name: "Power Core Effects" }),
     ).toBeNull();
     expect(screen.getByRole("dialog", { name: "Power Core" })).toBeTruthy();
   });
@@ -232,7 +232,7 @@ describe("Arcane Core screen", () => {
       within(coreDialog).getByRole("button", { name: "CORE SUMMARY" }),
     );
     const summary = screen.getByRole("dialog", {
-      name: "Power Core Summary",
+      name: "Power Core Effects",
     });
     expect(within(summary).getByText("Spell Power")).toBeTruthy();
     expect(within(summary).queryByText("Maximum Health")).toBeNull();
@@ -240,13 +240,13 @@ describe("Arcane Core screen", () => {
     useGameStore.getState().resetSave();
     useGameStore.getState().maxArcanePointsAndPurchaseAll();
     await user.click(
-      within(summary).getByRole("button", { name: "Close Core Summary" }),
+      within(summary).getByRole("button", { name: "Close Core Effects" }),
     );
     await user.click(
       within(coreDialog).getByRole("button", { name: "CORE SUMMARY" }),
     );
     const fullSummary = screen.getByRole("dialog", {
-      name: "Power Core Summary",
+      name: "Power Core Effects",
     });
     expect(
       fullSummary.querySelectorAll(".arcane-core-summary-mechanic").length,

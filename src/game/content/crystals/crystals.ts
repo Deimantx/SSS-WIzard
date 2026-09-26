@@ -38,12 +38,12 @@ export const CRYSTAL_FAMILIES: Record<CrystalFamilyId, CrystalFamilyDefinition> 
   ward: { id: 'ward', group: 'bastion', name: 'Ward', icon: '⟐', color: '#9d9bff', description: 'Strengthens barriers.', tierOneStats: { barrierPowerPct: 0.05 } },
   reservoir: { id: 'reservoir', group: 'flow', name: 'Reservoir', icon: '◉', color: '#6ed6ff', description: 'Expands maximum Mana.', tierOneStats: { maxMana: 45 } },
   current: { id: 'current', group: 'flow', name: 'Current', icon: '≈', color: '#72b9ff', description: 'Improves Mana regeneration.', tierOneStats: { manaRegen: 1 } },
-  concentration: { id: 'concentration', group: 'flow', name: 'Concentration', icon: '⊙', color: '#b0a3ff', description: 'Expands maximum Focus.', tierOneStats: { maxFocus: 5 } },
+  concentration: { id: 'concentration', group: 'flow', name: 'Concentration', icon: '⊙', color: '#b0a3ff', description: 'Deepens maximum Mana.', tierOneStats: { maxManaPct: 0.03 } },
   frugality: { id: 'frugality', group: 'flow', name: 'Frugality', icon: '◇', color: '#8ee7e0', description: 'Reduces spell Mana costs.', tierOneStats: { manaCostReductionPct: 0.03 } },
   'keen-sight': { id: 'keen-sight', group: 'precision', name: 'Keen Sight', icon: '◌', color: '#f1d37a', description: 'Finds critical openings more often.', tierOneStats: { critChance: 0.015 } },
   tempo: { id: 'tempo', group: 'precision', name: 'Tempo', icon: '»', color: '#ffae75', description: 'Accelerates cooldown recovery.', tierOneStats: { cooldownRecoveryPct: 0.025 } },
   control: { id: 'control', group: 'precision', name: 'Control', icon: '⊕', color: '#c4a0ff', description: 'Extends status duration.', tierOneStats: { statusDurationPct: 0.05 } },
-  discipline: { id: 'discipline', group: 'precision', name: 'Discipline', icon: '⌁', color: '#b8d6ff', description: 'Makes Focus go further.', tierOneStats: { focusEfficiencyPct: 0.03 } },
+  discipline: { id: 'discipline', group: 'precision', name: 'Discipline', icon: '⌁', color: '#b8d6ff', description: 'Strengthens Critical Damage.', tierOneStats: { critDamage: 0.05 } },
 }
 
 export const CRYSTAL_GROUP_LABELS: Record<CrystalGroupId, string> = {
@@ -78,4 +78,3 @@ export const getNextCrystalVariant = (variantId: CrystalVariantId): CrystalVaria
   const tier = getCrystalTier(variantId)
   return tier >= 5 ? null : `${getCrystalFamilyId(variantId)}-t${tier + 1}` as CrystalVariantId
 }
-

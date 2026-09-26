@@ -118,11 +118,6 @@ h1 { font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -.045
 .quick-card strong { font-size: 12px; }
 .quick-card small { color: var(--muted); font-size: 10px; line-height: 1.4; margin-top: 4px; }
 .quick-icon { width: 32px; height: 32px; border: 1px solid rgba(168,148,255,.2); border-radius: 8px; color: var(--violet); display: grid; place-items: center; }
-.focus-summary { display: grid; gap: 3px; text-align: right; }
-.focus-summary span { color: #77758d; font: 9px 'DM Mono'; letter-spacing: .11em; }
-.focus-summary strong { color: #eeeafa; font: 19px 'DM Mono'; }
-.focus-summary small { color: #78758d; font-size: 10px; }
-.focus-summary em { color: var(--green); font: 10px 'DM Mono'; font-style: normal; }
 .channel-visual { display: flex; gap: 17px; align-items: center; margin: 6px 0 21px; }
 .mana-core { position: relative; width: 77px; height: 77px; display: grid; place-items: center; border-radius: 50%; color: var(--violet); font-size: 27px; background: radial-gradient(circle, rgba(168,148,255,.23), rgba(90,75,170,.1) 52%, transparent 54%); box-shadow: 0 0 30px rgba(168,148,255,.12); }
 .mana-core:before, .mana-core:after { content: ''; position: absolute; inset: 7px; border: 1px solid rgba(168,148,255,.25); border-radius: 50%; transform: rotate(32deg); }
@@ -133,12 +128,6 @@ h1 { font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -.045
 .info-strip { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--line); margin-top: 17px; padding-top: 13px; color: #7b798f; font-size: 10px; }
 .info-strip strong { color: #ded9f4; font: 10px 'DM Mono'; }
 .info-strip strong.positive { color: var(--green); margin-left: auto; }
-.focus-card { overflow: hidden; }
-.focus-ring { display: flex; align-items: baseline; gap: 2px; color: var(--violet); font-family: 'DM Mono'; }
-.focus-ring strong { font-size: 17px; }
-.focus-ring small { color: #77748e; font-size: 10px; }
-.focus-total { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin: 19px 0 14px; color: #8c89a2; font: 10px 'DM Mono'; }
-.focus-total > strong { color: var(--green); font-size: 10px; }
 .progress { height: 5px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: hidden; }
 .progress i { display: block; height: 100%; border-radius: 99px; background: var(--violet); box-shadow: 0 0 9px currentColor; transition: width .2s ease; }
 .progress i.violet, .progress i.fire { background: var(--violet); }
@@ -152,8 +141,6 @@ h1 { font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -.045
 .reservation { display: flex; align-items: center; gap: 8px; color: #aaa7bd; font-size: 10px; }
 .reservation strong { margin-left: auto; color: #dcd8ef; font: 10px 'DM Mono'; }
 .reservation-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 8px var(--violet); }
-.focus-rule { display: flex; gap: 8px; color: #89869f; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 9px; font-size: 10px; line-height: 1.45; }
-.focus-rule svg { color: var(--gold); flex: 0 0 auto; }
 .element-pills { display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; margin: 17px 0; }
 .element-pill { display: flex; align-items: center; gap: 6px; color: #aaa7bc; border: 1px solid var(--line); background: rgba(255,255,255,.025); border-radius: 6px; padding: 8px 8px; cursor: pointer; font-size: 10px; text-align: left; }
 .element-pill:hover, .element-pill.selected { border-color: var(--element-color); color: var(--element-color); background: color-mix(in srgb, var(--element-color) 9%, transparent); }

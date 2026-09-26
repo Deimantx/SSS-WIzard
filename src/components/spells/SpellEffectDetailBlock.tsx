@@ -18,4 +18,4 @@ export function SpellTooltipDetailHint() {
 }
 
 function EffectDetailRow({ row }: { row: SpellEffectTooltipRow }) { return <div className="spell-effect-detail-row"><span>{row.label}</span><b className={row.semantic ? semanticClass(row.semantic) : undefined}>{row.value}</b></div> }
-function semanticClass(semantic: SpellEffectTooltipSemantic) { if (semantic === 'mana') return 'ui-mana'; if (semantic === 'time') return 'ui-time'; if (semantic === 'focus') return 'ui-focus'; if (semantic === 'school') return 'effect-school-value'; if (semantic === 'positive') return 'effect-positive'; if (semantic === 'negative') return 'effect-negative'; return '' }
+function semanticClass(semantic: SpellEffectTooltipSemantic) { if (semantic === 'mana') return 'ui-mana'; if (semantic === 'time') return 'ui-time'; if (semantic === 'school') return 'effect-school-value'; if (semantic === 'positive') return 'effect-positive'; if (semantic === 'negative') return 'effect-negative'; return '' }

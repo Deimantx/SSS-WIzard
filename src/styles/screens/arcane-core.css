@@ -1,7 +1,7 @@
 :root {
   --arcane-core-power: #f08a74;
   --arcane-core-vitality: #6fd0a7;
-  --arcane-core-focus: #8e9dff;
+  --arcane-core-mana: #8e9dff;
   --arcane-core-control: #b89cff;
 }
 
@@ -12,7 +12,7 @@
 .arcane-core-total-rank { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
 .arcane-core-wallet { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .arcane-core-wallet > div { display: grid; gap: 5px; min-width: 0; padding: 16px; border: 1px solid color-mix(in srgb, var(--ui-accent) 25%, var(--ui-border)); border-radius: 9px; background: linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 9%, var(--ui-panel)), var(--ui-panel)); }
-.arcane-core-wallet > div:nth-child(2) { border-color: color-mix(in srgb, var(--arcane-core-focus) 28%, var(--ui-border)); background: linear-gradient(135deg, color-mix(in srgb, var(--arcane-core-focus) 8%, var(--ui-panel)), var(--ui-panel)); }
+.arcane-core-wallet > div:nth-child(2) { border-color: color-mix(in srgb, var(--arcane-core-mana) 28%, var(--ui-border)); background: linear-gradient(135deg, color-mix(in srgb, var(--arcane-core-mana) 8%, var(--ui-panel)), var(--ui-panel)); }
 .arcane-core-wallet span, .arcane-core-preset > div > span, .arcane-core-inspector-effect > span, .arcane-core-rank-costs > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
 .arcane-core-wallet strong { color: var(--ui-text); font: 700 27px var(--font-mono); letter-spacing: -.04em; }
 .arcane-core-wallet small { color: var(--ui-text-muted); font-size: var(--text-xs); }

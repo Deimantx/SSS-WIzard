@@ -14,10 +14,10 @@ describe('effective Equipment stats', () => {
     expect(getEquipmentStats(state)).toMatchObject({ spellPower: 15 })
   })
 
-  it('includes Arcane Core modifiers in the shared equipment stat model', () => {
+  it('includes Mana Core modifiers in the shared equipment stat model', () => {
     const state = createInitialState()
-state.arcaneCore.nodes['focus-r1-focus-capacity'] = { rank: 1 }
+    state.arcaneCore.nodes['mana-r1-mana-reservoir'] = { rank: 1 }
 
-    expect(getEquipmentStats(state)).toMatchObject({ maxFocus: 0.4 })
+    expect(getEquipmentStats(state)).toMatchObject({ maxManaPct: 0.005 })
   })
 })

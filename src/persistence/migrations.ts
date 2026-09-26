@@ -21,7 +21,7 @@ import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
 import { STATUS_DEFINITIONS } from '../game/content/statuses'
 import type { ActiveStatus, CombatSource, StatusId } from '../game/types'
-import { buildActiveCombatSpellLoadout, DEFAULT_COMBAT_LOADOUT_NAME, getSpellAutoCastFocusCost, MAX_COMBAT_SPELLS, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetName, normalizeSpellPresetSlots, normalizeSpellPresetState, getSpellPresetSignature, syncAllSpellUnlocks, syncAutoCastRuntimeForLoadout, type SpellRank } from '../game/systems/spells'
+import { buildActiveCombatSpellLoadout, DEFAULT_COMBAT_LOADOUT_NAME, MAX_COMBAT_SPELLS, MAX_SPELL_RANK, MIN_SPELL_RANK, normalizeSpellPresetName, normalizeSpellPresetSlots, normalizeSpellPresetState, getSpellPresetSignature, syncAllSpellUnlocks, syncAutoCastRuntimeForLoadout, type SpellRank } from '../game/systems/spells'
 import { getStatusApplicationSourceKey } from '../game/systems/combat/statusRuntime'
 import { createCombatValidationContext, normalizePersistedPeriodicEffects, hasValidStatusModifierOverrides } from '../game/systems/combat/combatEffectValidation'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../game/core/balance/combatTiming'
@@ -32,7 +32,6 @@ import { GUARDIAN_IDS, GUARDIANS, SUMMONING_UNLOCK_BOSS_ID } from '../game/conte
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
-import { getTransmutationArrayBonuses } from '../game/systems/transmutation/transmutationArrays'
 import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
@@ -109,7 +108,7 @@ const normalizeSpellId = (value: unknown): CanonicalSpellId | undefined => {
   return spellIds.includes(value as CanonicalSpellId) ? value as CanonicalSpellId : undefined
 }
 const recipeIds = Object.keys(RECIPES)
-const permanentFocusIds = ['forest-heart', 'guild-apprentice']
+const permanentManaIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
 /** V38 is the first save topology that contains the Phase 1 Resonance runtime. */
@@ -258,9 +257,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   })
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
   migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
-  migrated.progress.permanentFocusBonuses = normalizeDynamicRecord(fresh.progress.permanentFocusBonuses, rawProgress.permanentFocusBonuses, permanentFocusIds, nonNegativeNumber)
-  const rawFocusImprovement = isRecord(rawProgress.focusImprovement) ? rawProgress.focusImprovement : {}
-  migrated.progress.focusImprovement = { rank: 1, level: safeLevel(rawFocusImprovement.level) }
+  migrated.progress.permanentManaBonuses = normalizeDynamicRecord(fresh.progress.permanentManaBonuses, rawProgress.permanentManaBonuses ?? rawProgress.permanentFocusBonuses, permanentManaIds, nonNegativeNumber)
   migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
   // Keep historical boss counters for monsters that were later demoted to a
   // normal encounter (notably Grove Sentinel). They remain useful migration
@@ -770,7 +767,7 @@ const normalizeResearch = (migrated: GameState, raw: Record<string, any>, source
       ? 0
       : Math.min(BALANCE.research.durationPerItemMs, rawProgress)
     const legacyEchoesAssigned = oldQueue || Object.prototype.hasOwnProperty.call(source, 'echoesAssigned')
-      ? Math.min(BALANCE.research.maxEchoes, Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? (oldQueue && source.running === true && !blocked ? 1 : 0))))
+      ? Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? (oldQueue && source.running === true && !blocked ? 1 : 0)))
       : undefined
     return {
       itemId: itemId as ItemId,
@@ -892,41 +889,17 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
     jobs[recipeId] = { acolyteAssigned: true, echoesAssigned: Math.max(1, jobs[recipeId]?.echoesAssigned ?? 0), progressMs: progress >= RECIPES[recipeId].baseDurationMs ? 0 : progress }
   }
 
-  // Preserve work while ensuring the migration cannot create Focus overflow.
-  const researchEchoFocus = RESEARCH_SLOT_ORDER.reduce((sum, slotId) => sum + Math.max(0, Math.floor(migrated.activities.research.slots[slotId]?.echoesAssigned ?? 0)) * BALANCE.research.echoFocusCost, 0)
-  const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned ?? 0)) * BALANCE.channeling.echoFocusCost
-    + researchEchoFocus
-  const effectiveTransmutationCapacity = BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(migrated).acolyteCapacityBonus
-  const focusCapacity = Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)
-  let remaining = Math.max(0, Math.min(effectiveTransmutationCapacity, focusCapacity))
   const normalized: Partial<Record<TransmutationRecipeId, TransmutationJobState>> = {}
   RECIPE_ORDER.forEach((recipeId) => {
     const job = jobs[recipeId]
     if (!job) return
-    const echoes = Math.min(job.echoesAssigned ?? 0, remaining)
     normalized[recipeId] = {
-      acolyteAssigned: job.acolyteAssigned ?? echoes > 0,
-      ...(Object.prototype.hasOwnProperty.call(job, 'echoesAssigned') ? { echoesAssigned: echoes } : {}),
+      acolyteAssigned: job.acolyteAssigned ?? (job.echoesAssigned ?? 0) > 0,
+      ...(Object.prototype.hasOwnProperty.call(job, 'echoesAssigned') ? { echoesAssigned: Math.max(0, job.echoesAssigned ?? 0) } : {}),
       progressMs: job.progressMs,
     }
-    remaining -= echoes
   })
   migrated.activities.transmutation = { jobs: normalized }
-}
-
-const normalizeResearchFocus = (migrated: GameState) => {
-  const nonResearchFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned ?? 0)) * BALANCE.channeling.echoFocusCost
-    + Object.entries(migrated.activities.transmutation.jobs).reduce((sum, [, job]) => sum + Math.max(0, Math.floor(job?.echoesAssigned ?? 0)) * BALANCE.transmutation.echoFocusCost, 0)
-  let remaining = Math.max(0, Math.floor((migrated.player.maxFocus - nonResearchFocus) / BALANCE.research.echoFocusCost))
-  RESEARCH_SLOT_ORDER.forEach((slotId) => {
-    const job = migrated.activities.research.slots[slotId]
-    if (!job) return
-    if (job.acolyteAssigned) return
-    const echoes = Math.min(Math.max(0, Math.floor(job.echoesAssigned ?? 0)), remaining)
-    job.echoesAssigned = echoes
-    if (echoes === 0 && job.status === 'running') job.status = 'prepared'
-    remaining -= echoes
-  })
 }
 
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
@@ -993,7 +966,6 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeResearch(migrated, raw, sourceVersion)
   recalculateDerivedStats(migrated)
   normalizeTransmutationJobs(migrated, raw)
-  normalizeResearchFocus(migrated)
   recalculateDerivedStats(migrated)
   return migrated
 }
@@ -1010,12 +982,11 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
   const oldFocus = typeof oldEquipment.focus === 'string' ? oldEquipment.focus as ItemId : null
   const oldMaxHealth = typeof oldPlayer.maxHealth === 'number' ? oldPlayer.maxHealth : fresh.player.baseMaxHealth
   const oldMaxMana = typeof oldPlayer.maxMana === 'number' ? oldPlayer.maxMana : fresh.player.baseMaxMana
-  const oldMaxFocus = typeof oldPlayer.maxFocus === 'number' ? oldPlayer.maxFocus : fresh.player.baseMaxFocus
   const target = oldItem?.split('-')[0] as SchoolId | undefined
   const research: ResearchActivity = { ...fresh.activities.research, running: Boolean(oldResearch.running), itemId: oldItem, targetSchoolId: target && Object.keys(SCHOOLS).includes(target) ? target : null, requestedQuantity: oldItem ? 1 : 0, remainingQuantity: oldItem ? 1 : 0, progressMs: typeof oldResearch.progressMs === 'number' ? oldResearch.progressMs : 0, status: oldResearch.running ? 'running' : 'idle' }
   const migrated: GameState = {
     ...fresh,
-    player: { ...fresh.player, ...oldPlayer, baseMaxHealth: typeof oldPlayer.baseMaxHealth === 'number' ? oldPlayer.baseMaxHealth : oldMaxHealth, baseMaxMana: typeof oldPlayer.baseMaxMana === 'number' ? oldPlayer.baseMaxMana : oldMaxMana, baseMaxFocus: typeof oldPlayer.baseMaxFocus === 'number' ? oldPlayer.baseMaxFocus : oldMaxFocus },
+    player: { ...fresh.player, ...oldPlayer, baseMaxHealth: typeof oldPlayer.baseMaxHealth === 'number' ? oldPlayer.baseMaxHealth : oldMaxHealth, baseMaxMana: typeof oldPlayer.baseMaxMana === 'number' ? oldPlayer.baseMaxMana : oldMaxMana },
     inventory: { ...fresh.inventory, ...(isRecord(raw.inventory) ? raw.inventory : {}) },
     protectedItems: { ...fresh.protectedItems, ...(oldWeapon ? { [oldWeapon]: true } : {}) },
     equipment: { ...fresh.equipment, weapon: oldWeapon ?? oldFocus ?? fresh.equipment.weapon },

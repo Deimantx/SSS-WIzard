@@ -15,7 +15,7 @@ import {
 } from './effectiveSpellPresentation'
 import { scaleMagnitude } from '../../systems/combat/combatTypes'
 
-export type SpellEffectTooltipSemantic = 'mana' | 'time' | 'focus' | 'positive' | 'negative' | 'school' | 'neutral'
+export type SpellEffectTooltipSemantic = 'mana' | 'time' | 'positive' | 'negative' | 'school' | 'neutral'
 export type SpellEffectTooltipCategoryKey = 'damage' | 'heal' | 'barrier' | 'buff' | 'debuff' | 'control' | 'dot' | 'effect'
 export type SpellTooltipDetailLevel = 'core' | 'advanced'
 

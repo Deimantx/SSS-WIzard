@@ -3,7 +3,6 @@ import { EQUIPMENT_BUILD_TAG_LABELS } from '../../content/items/equipmentBalance
 import { getEquipmentCombatModifierTotal } from '../../core/equipment/equipmentStats'
 import { evaluateEquipmentChange, type EquipmentChangeFailureReason } from '../../core/equipment/equipmentChange'
 import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
-import type { FocusLoadoutValidation } from '../../systems/focus/focusLoadoutValidation'
 import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
 import { formatEquipmentStat, getEquipmentStatLabel, isMeaningfulEquipmentStatValue } from './equipmentStatPresentation'
@@ -16,7 +15,6 @@ export interface EquipmentStatSnapshot {
   maxHealth: number
   healthRegen: number
   maxMana: number
-  maxFocus: number
   manaRegen: number
   spellPower: number
   critChance: number
@@ -29,7 +27,6 @@ export interface EquipmentStatSnapshot {
   healingDoneBonus: number
   barrierPowerBonus: number
   manaCostReduction: number
-  focusEfficiency: number
   fireSpellDamage: number
   airSpellDamage: number
   barrierReceivedFlat: number
@@ -48,13 +45,12 @@ export interface EquipmentImpactStats extends EquipmentStats {
 export interface EquipmentPreview {
   compatible: boolean
   reason: string | null
-  failureReason: EquipmentChangeFailureReason | 'insufficient-focus-capacity' | null
+  failureReason: EquipmentChangeFailureReason | null
   position: EquipmentPosition | null
   equipment: GameState['equipment'] | null
   current: EquipmentStatSnapshot
   preview: EquipmentStatSnapshot | null
   impact: EquipmentImpactStats
-  focusValidation: FocusLoadoutValidation | null
 }
 
 export interface EquipmentKeyChange {
@@ -65,8 +61,8 @@ export interface EquipmentKeyChange {
   formatted: string
 }
 
-const KEY_CHANGE_PRIORITY = ['maxHealth', 'spellPower', 'maxMana', 'maxFocus', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'manaRegen', 'focusEfficiencyPct']
-const LOADOUT_IDENTITY_PRIORITY: readonly EquipmentBuildTag[] = ['fire', 'water', 'earth', 'air', 'dot', 'crit', 'barrier', 'defense', 'healing', 'sustain', 'status', 'mana', 'focus', 'hybrid', 'spell']
+const KEY_CHANGE_PRIORITY = ['maxHealth', 'spellPower', 'maxMana', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'manaRegen', 'manaCostReductionPct']
+const LOADOUT_IDENTITY_PRIORITY: readonly EquipmentBuildTag[] = ['fire', 'water', 'earth', 'air', 'dot', 'crit', 'barrier', 'defense', 'healing', 'sustain', 'status', 'mana', 'hybrid', 'spell']
 
 const getImpactEntries = (impact: EquipmentImpactStats): Array<[string, number]> => Object.entries(impact).flatMap(([key, value]) => key === 'resistances' && value && typeof value === 'object'
   ? Object.entries(value).map(([damageType, resistance]) => [`resistance-${damageType}`, Number(resistance)] as [string, number])
@@ -153,7 +149,6 @@ export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: 
     maxHealth: sheet.maxHealth,
     healthRegen: sheet.healthRegen,
     maxMana: sheet.maxMana,
-    maxFocus: sheet.maxFocus,
     manaRegen: sheet.manaRegen,
     spellPower: sheet.spellPower,
     critChance: sheet.critChance,
@@ -166,7 +161,6 @@ export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: 
     healingDoneBonus: sheet.healingDoneBonus,
     barrierPowerBonus: sheet.barrierPowerBonus,
     manaCostReduction: sheet.manaCostReduction,
-    focusEfficiency: sheet.focusEfficiency,
     ...equipmentModifiers,
     resistances: { ...sheet.resistances },
   }
@@ -176,7 +170,6 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   maxHealth: preview.maxHealth - current.maxHealth,
   healthRegen: preview.healthRegen - current.healthRegen,
   maxMana: preview.maxMana - current.maxMana,
-  maxFocus: preview.maxFocus - current.maxFocus,
   manaRegen: preview.manaRegen - current.manaRegen,
   spellPower: preview.spellPower - current.spellPower,
   critChance: preview.critChance - current.critChance,
@@ -189,7 +182,6 @@ const subtractSnapshots = (current: EquipmentStatSnapshot, preview: EquipmentSta
   healingDonePct: preview.healingDoneBonus - current.healingDoneBonus,
   barrierPowerPct: preview.barrierPowerBonus - current.barrierPowerBonus,
   manaCostReductionPct: preview.manaCostReduction - current.manaCostReduction,
-  focusEfficiencyPct: preview.focusEfficiency - current.focusEfficiency,
   fireSpellDamage: preview.fireSpellDamage - current.fireSpellDamage,
   airSpellDamage: preview.airSpellDamage - current.airSpellDamage,
   barrierReceivedFlat: preview.barrierReceivedFlat - current.barrierReceivedFlat,
@@ -210,10 +202,10 @@ const getFailureMessage = (_state: EquipmentSheetState, _itemId: ItemId, reason:
 export function getEquipmentPreview(state: EquipmentSheetState, itemId: ItemId, targetPosition?: EquipmentPosition): EquipmentPreview {
   const current = getEquipmentStatSnapshot(state, state.equipment)
   const result = evaluateEquipmentChange(state, itemId, targetPosition)
-  if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {}, focusValidation: null }
+  if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {} }
   const preview = getEquipmentStatSnapshot(state, result.nextEquipment)
   const impact = subtractSnapshots(current, preview)
-  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact, focusValidation: null }
+  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact }
 }
 
 export const getEquipmentCopyAvailability = (state: Pick<GameState, 'equipment' | 'inventory'>, itemId: ItemId) => {

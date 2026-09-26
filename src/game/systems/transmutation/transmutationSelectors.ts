@@ -52,7 +52,6 @@ export const getTransmutationJob = (state: Pick<GameState, 'activities'>, recipe
 export const getTransmutationAcolytesAssigned = (state: Pick<GameState, 'activities'>) => RECIPE_ORDER.reduce((total, recipeId) => { const job = state.activities.transmutation.jobs[recipeId]; return total + (job?.acolyteAssigned ? 1 : 0) }, 0)
 export const getTransmutationAcolyteCapacity = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => state.debug?.ignoreAcolyteLimit ? Number.MAX_SAFE_INTEGER : state.tower ? selectTotalAcolytes(state as GameState) : 0
 export const getTransmutationFreeAcolyteCapacity = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'debug'>>) => Math.max(0, getTransmutationAcolyteCapacity(state) - getTransmutationAcolytesAssigned(state))
-export const getTransmutationAcolyteFocusReserved = (_acolytesAssigned: number) => 0
 export const getTransmutationSpeedMultiplier = (acolytesAssigned: number) => Math.max(1, Math.floor(acolytesAssigned))
 export const getRecipeCurrentSpeedMultiplier = (acolytesAssigned: number) => Math.max(0, Math.floor(Number.isFinite(acolytesAssigned) ? acolytesAssigned : 0))
 export const canAssignTransmutationAcolyte = (state: Pick<GameState, 'activities' | 'progress' | 'player' | 'equipment' | 'artifactProgress' | 'arcaneCore'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => Boolean(state.tower ? selectFreeAcolytes(state as GameState) > 0 : getTransmutationFreeAcolyteCapacity(state) > 0)

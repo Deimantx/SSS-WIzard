@@ -5,13 +5,10 @@ import { getPlayerManaCapacityBreakdown, playerManaRegenPerSecond } from './syst
 import type { GameState, ItemId, SchoolId } from './types'
 import { clamp, uid } from './utils'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
-import { getFocusCapacityBreakdown } from './systems/focus/focusCapacity'
 import { syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
 import { syncSelectedSpellPresetRuntime } from './systems/spells/spellPresets'
 import { getEquipmentStats } from './core/equipment/equipmentStats'
-import { deriveFocusReservations } from './systems/focus/focusReservations'
 import { stabilizeResourceValue } from './presentation/resources/resourcePresentation'
-export { canReserveFocus, deriveFocusReservations, selectFreeFocus, selectRawFreeFocus, selectUsedFocus, usedFocus, freeFocus } from './systems/focus/focusReservations'
 export { getSpellPower, getSpellPowerBreakdown } from './systems/spells/spellPower'
 
 export const getSchoolLevel = getCentralSchoolLevel
@@ -23,7 +20,6 @@ export const recalculateDerivedStats = (state: GameState) => {
   const rawMaxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
   state.player.maxHealth = rawMaxHealth * (1 + (stats.maxHealthPct ?? 0))
   state.player.maxMana = getPlayerManaCapacityBreakdown(state).total
-  state.player.maxFocus = getFocusCapacityBreakdown(state).total
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
   state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana))
 }
@@ -67,4 +63,3 @@ export const pushNotification = (state: GameState, text: string, tone: 'info' | 
   state.notifications = [...state.notifications, { id: uid(), text, tone, key: options.key, createdAt: now }].slice(-3)
 }
 export const appendLog = (state: GameState, message: string) => { state.combat.log = [message, ...state.combat.log].slice(0, 50) }
-export const focusReservations = deriveFocusReservations

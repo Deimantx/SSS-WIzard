@@ -4,9 +4,9 @@ import { createInitialState } from '../../../store/initialState'
 import { getArcaneCoreCombatModifierProviders, getArcaneCoreCombatModifiers, getArcaneCoreSpecialEffects, getArcaneCoreStaticStats } from './arcaneCoreProgression'
 import { ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
 
-const node = (branch: 'power' | 'vitality' | 'focus' | 'control', name: string) => ARCANE_CORE_BRANCHES.find((entry) => entry.id === branch)!.nodes.find((candidate) => candidate.name === name)!
+const node = (branch: 'power' | 'vitality' | 'mana' | 'control', name: string) => ARCANE_CORE_BRANCHES.find((entry) => entry.id === branch)!.nodes.find((candidate) => candidate.name === name)!
 
-describe('Arcane Core V7 integration', () => {
+describe('Arcane Core V8 integration', () => {
   it('resolves percentage stat providers at the current rank', () => {
     const state = createInitialState()
     state.arcaneCore.nodes[node('power', 'Arcane Scaling').id] = { rank: 3 }
@@ -17,19 +17,19 @@ describe('Arcane Core V7 integration', () => {
     expect(getArcaneCoreCombatModifierProviders(state.arcaneCore).length).toBeGreaterThanOrEqual(0)
   })
 
-  it('keeps authored V7 mechanics addressable by stable mechanic metadata', () => {
+  it('keeps authored Mana mechanics addressable by stable mechanic metadata', () => {
     const state = createInitialState()
     state.arcaneCore.nodes[node('power', 'Opportunist').id] = { rank: 5 }
-    state.arcaneCore.nodes[node('focus', 'Resonance').id] = { rank: 1 }
+    state.arcaneCore.nodes[node('mana', 'Arcane Recirculation').id] = { rank: 1 }
     const effects = getArcaneCoreSpecialEffects(state.arcaneCore)
     expect(effects).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'power:r1:S5', displayName: 'Opportunist', rank: 5 }),
-      expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'focus:r3:M', displayName: 'Resonance', rank: 1 }),
+      expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'mana:r3:M', displayName: 'Arcane Recirculation', rank: 1 }),
     ]))
   })
 
-  it('matches the exact fully-maxed V7 static budgets', () => {
-    const maxed = (branch: 'power' | 'vitality' | 'focus' | 'control') => ({ nodes: Object.fromEntries(ARCANE_CORE_NODES.filter((entry) => entry.branchId === branch).map((entry) => [entry.id, { rank: entry.maxRank }])) })
+  it('matches the exact fully-maxed V8 static budgets', () => {
+    const maxed = (branch: 'power' | 'vitality' | 'mana' | 'control') => ({ nodes: Object.fromEntries(ARCANE_CORE_NODES.filter((entry) => entry.branchId === branch).map((entry) => [entry.id, { rank: entry.maxRank }])) })
     const sum = (modifiers: ReturnType<typeof getArcaneCoreCombatModifiers>, key: string, actor?: 'player' | 'enemy') => modifiers
       .filter((modifier) => modifier.key === key && (actor === undefined || (modifier.actor ?? 'player') === actor))
       .reduce((total, modifier) => total + modifier.value, 0)
@@ -41,8 +41,8 @@ describe('Arcane Core V7 integration', () => {
     const powerModifiers = getArcaneCoreCombatModifiers(maxed('power'))
     const vitalityStats = getArcaneCoreStaticStats(maxed('vitality'))
     const vitalityModifiers = getArcaneCoreCombatModifierProviders(maxed('vitality')).filter(({ node }) => node.nodeType !== 'major').map(({ modifier }) => modifier)
-    const focusStats = getArcaneCoreStaticStats(maxed('focus'))
-    const focusModifiers = getArcaneCoreCombatModifiers(maxed('focus'))
+    const manaStats = getArcaneCoreStaticStats(maxed('mana'))
+    const manaModifiers = getArcaneCoreCombatModifiers(maxed('mana'))
     const controlStats = getArcaneCoreStaticStats(maxed('control'))
     const controlModifiers = getArcaneCoreCombatModifierProviders(maxed('control')).filter(({ node }) => node.nodeType !== 'major').map(({ modifier }) => modifier)
 
@@ -66,13 +66,13 @@ describe('Arcane Core V7 integration', () => {
     expect(sum(vitalityModifiers, 'healing-received-percent')).toBeCloseTo(0.10)
     expect(unconditionalSum(vitalityModifiers, 'damage-taken-percent')).toBeCloseTo(-0.05)
 
-    expect(focusStats).toMatchObject({
-      maxManaPct: 0.25,
-      manaCostReductionPct: 0.10,
-      maxFocus: 20,
-      focusEfficiencyPct: 0.15,
+    expect(manaStats.maxManaPct).toBeCloseTo(0.34, 10)
+    expect(manaStats.manaCostReductionPct).toBeCloseTo(0.1175, 10)
+    expect(manaStats).toMatchObject({
+      maxMana: 35,
+      manaRegen: 2.5,
     })
-    expect(sum(focusModifiers, 'mana-regen-percent')).toBeCloseTo(0.30)
+    expect(sum(manaModifiers, 'mana-regen-percent')).toBeCloseTo(0.34)
 
     expect(controlStats.statusDurationPct).toBeCloseTo(0.20)
     expect(controlStats.cooldownRecoveryPct).toBeCloseTo(0.10)

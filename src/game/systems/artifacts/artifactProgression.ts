@@ -73,10 +73,13 @@ export const getArtifactPreCastDamageMultiplier = (state: GameState, school: str
   })
   return multiplier
 }
-export const getArtifactPreCastManaMultiplier = (state: GameState, currentFreeFocus: number) => {
-  const runtime = state.combat.arcaneCoreRuntime; const changed = runtime.artifactFreeFocusSnapshot !== undefined && runtime.artifactFreeFocusSnapshot !== currentFreeFocus; runtime.artifactFreeFocusSnapshot = currentFreeFocus
+export const getArtifactPreCastManaMultiplier = (state: GameState) => {
+  const runtime = state.combat.arcaneCoreRuntime
+  const currentBand = Math.floor((state.player.mana / Math.max(1, state.player.maxMana)) * 4)
+  const changed = runtime.artifactManaBandSnapshot !== undefined && runtime.artifactManaBandSnapshot !== currentBand
+  runtime.artifactManaBandSnapshot = currentBand
   if (!changed) return 1
-  return getActiveArtifactSpecialEffects(state).reduce((multiplier, { special }) => special.type === 'first-spell-after-focus-change' ? multiplier * (1 - special.manaReduction) : multiplier, 1)
+  return getActiveArtifactSpecialEffects(state).reduce((multiplier, { special }) => special.type === 'mana-band-shift' ? multiplier * (1 - special.manaReduction) : multiplier, 1)
 }
 
 const artifactRuntime = (state: GameState) => state.combat.arcaneCoreRuntime
@@ -96,7 +99,7 @@ export const processArtifactSpecialCombatEvent = (state: GameState, actor: 'play
     runtime.artifactSpellCount = (runtime.artifactSpellCount ?? 0) + 1
     if (context.source.school === 'air') runtime.artifactAirSpellCount = (runtime.artifactAirSpellCount ?? 0) + 1
     active.forEach(({ name, special }) => {
-      if (special.type === 'nth-spell-refund' && (runtime.artifactSpellCount ?? 0) % special.every === 0) executeArtifactEffects(state, [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'source-max-mana-percent', value: special.manaPercent } }], artifactEffectSource(name), executeEffects, depth, uiEvents, resolution)
+      if (special.type === 'nth-spell-mana-refund' && (runtime.artifactSpellCount ?? 0) % special.every === 0) executeArtifactEffects(state, [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'source-max-mana-percent', value: special.manaPercent } }], artifactEffectSource(name), executeEffects, depth, uiEvents, resolution)
       if (special.type === 'air-spell-repeat' && context.source?.school === 'air' && (runtime.artifactAirSpellCount ?? 0) % special.every === 0) {
         const spell = SPELLS[context.source.sourceId as import('../../types').SpellId]
         if (spell) executeArtifactEffects(state, spell.effects.map((effect) => scaleArtifactEffect(effect, special.effectiveness)), context.source, executeEffects, depth, uiEvents, resolution)

@@ -50,11 +50,11 @@ describe('Developer Crystals tab', () => {
     store.debugSetCrystalUnlockedSlots(6)
     store.debugGrantCrystal('concentration-t1', 1)
     expect(useGameStore.getState().equipCrystal('concentration-t1', 5)).toBe(true)
-    const boostedFocus = useGameStore.getState().player.maxFocus
+    const boostedMana = useGameStore.getState().player.maxMana
 
     store.debugSetCrystalUnlockedSlots(5)
 
     expect(useGameStore.getState().crystals.equippedSlots[5]).toBeNull()
-    expect(useGameStore.getState().player.maxFocus).toBeLessThan(boostedFocus)
+    expect(useGameStore.getState().player.maxMana).toBeLessThan(boostedMana)
   })
 })

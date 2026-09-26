@@ -37,16 +37,12 @@ export const getPreparedResearchJobs = (state: Pick<GameState, 'activities'>): P
 export const getPreparedResearchCount = (state: Pick<GameState, 'activities'>) => getPreparedResearchJobs(state).length
 export const getResearchAcolytesAssigned = (state: Pick<GameState, 'activities'>) => getPreparedResearchJobs(state).reduce((total, job) => total + (job.acolyteAssigned ? 1 : 0), 0)
 export const getResearchAcolyteCapacity = (state: Pick<GameState, 'activities'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => state.debug?.ignoreAcolyteLimit ? Number.MAX_SAFE_INTEGER : state.tower ? selectTotalAcolytes(state as GameState) : 0
-export const getResearchAcolyteFocusReserved = (_acolytesAssigned: number) => 0
-
 export interface ResearchAssignOneEachState {
   targetSlotIds: ResearchSlotId[]
   targetCount: number
-  requiredFocus: number
-  freeFocus: number
   freeAcolyteSlots: number
   canAssign: boolean
-  blockedReason: 'no-targets' | 'acolyte-capacity' | 'focus' | null
+  blockedReason: 'no-targets' | 'acolyte-capacity' | null
 }
 
 export const getResearchAssignOneEachState = (state: GameState): ResearchAssignOneEachState => {
@@ -57,11 +53,9 @@ export const getResearchAssignOneEachState = (state: GameState): ResearchAssignO
     return status !== 'level-cap' && status !== 'protected' && status !== 'missing-item'
   })
   const targetCount = targetSlotIds.length
-  const requiredFocus = 0
   const freeEchoSlots = selectFreeAcolytes(state)
-  const freeFocus = 0
   const blockedReason = targetCount === 0 ? 'no-targets' : freeEchoSlots < targetCount ? 'acolyte-capacity' : null
-  return { targetSlotIds, targetCount, requiredFocus, freeFocus, freeAcolyteSlots: freeEchoSlots, canAssign: blockedReason === null, blockedReason }
+  return { targetSlotIds, targetCount, freeAcolyteSlots: freeEchoSlots, canAssign: blockedReason === null, blockedReason }
 }
 
 export function getResearchAvailableQuantity(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) {

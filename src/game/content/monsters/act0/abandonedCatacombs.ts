@@ -154,7 +154,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
         id: "grave-bolt",
         name: "Grave Bolt",
         actionTimeMs: 1500,
-        description: "A focused Arcane bolt tears through the target.",
+        description: "A concentrated Arcane bolt tears through the target.",
         effects: [scaledDirectDamage("arcane", 1.45)],
         tags: ["special", "arcane", "magic", "direct"],
       },

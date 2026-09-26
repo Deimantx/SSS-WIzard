@@ -1,5 +1,5 @@
 import { SPELLS } from '../../content/spells/spells'
-import { getSpellAutoCastFocusCost, formatSpellRank, type SpellRank } from '../../systems/spells'
+import { formatSpellRank, type SpellRank } from '../../systems/spells'
 import type { CanonicalSpellId } from '../../types'
 import { formatTime } from '../../utils'
 import { getEffectiveSpellCooldown, getEffectiveSpellManaCost, type SpellPresentationState } from './effectiveSpellPresentation'
@@ -12,7 +12,6 @@ export interface CombatSpellTilePresentation {
   castTimeLabel: string
   cooldownMs: number
   cooldownLabel: string
-  autoCastFocus: number
 }
 
 /** Cheap, build-only read model for the visible Combat Spell tile. */
@@ -28,7 +27,6 @@ export const buildCombatSpellTilePresentation = (state: SpellPresentationState, 
     castTimeLabel: formatTime(spell.castTimeMs),
     cooldownMs: cooldown.effective,
     cooldownLabel: formatTime(cooldown.effective),
-    autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0,
   }
 }
 

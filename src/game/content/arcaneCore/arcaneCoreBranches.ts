@@ -1,7 +1,7 @@
 import type { ArcaneCoreBranchDefinition, ArcaneCoreBranchId, ArcaneCoreNodeDefinition } from '../../types'
 import { powerNodes } from './powerNodes'
 import { vitalityNodes } from './vitalityNodes'
-import { focusNodes } from './focusNodes'
+import { manaNodes } from './manaNodes'
 import { controlNodes } from './controlNodes'
 
 const createBranch = (id: ArcaneCoreBranchId, name: string, description: string, accent: string, nodes: ArcaneCoreNodeDefinition[][]): ArcaneCoreBranchDefinition => {
@@ -11,7 +11,7 @@ const createBranch = (id: ArcaneCoreBranchId, name: string, description: string,
 export const ARCANE_CORE_BRANCHES: ArcaneCoreBranchDefinition[] = [
   createBranch('power', 'Power', 'Sharpen spellcraft, critical force, and direct offense.', 'var(--arcane-core-power)', powerNodes),
   createBranch('vitality', 'Vitality', 'Build a stronger frame, ward, and recovery cycle.', 'var(--arcane-core-vitality)', vitalityNodes),
-  createBranch('focus', 'Focus', 'Expand the reserves that let the tower sustain its work.', 'var(--arcane-core-focus)', focusNodes),
+  createBranch('mana', 'Mana', 'Expand combat Mana reserves, recovery, efficiency, and resource-driven casting.', 'var(--arcane-core-mana)', manaNodes),
   createBranch('control', 'Control', 'Tighten timing, recovery, and spell control.', 'var(--arcane-core-control)', controlNodes),
 ]
 

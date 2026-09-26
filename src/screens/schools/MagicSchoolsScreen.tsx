@@ -39,7 +39,6 @@ export function MagicSchoolsScreenV2() {
     playerMaxHealth: state.player.maxHealth,
     playerMana: state.player.mana,
     playerMaxMana: state.player.maxMana,
-    playerMaxFocus: state.player.maxFocus,
     combatEnemyId: state.combat.enemyId,
     combatEnemyHp: state.combat.enemyHp,
     combatEnemyMaxHp: state.combat.enemyMaxHp,
@@ -50,9 +49,8 @@ export function MagicSchoolsScreenV2() {
     combatEnemyStatuses: state.combat.enemyStatuses,
     combatActive: state.combat.active,
     activeSpellLoadout: state.combat.activeSpellLoadout,
-    allowFocusOverCap: state.debug.allowFocusOverCap,
   })))
-  const { schools, equipment, artifactProgress, arcaneCore, combatActive, activeSpellLoadout, allowFocusOverCap } = selectedState
+  const { schools, equipment, artifactProgress, arcaneCore, combatActive, activeSpellLoadout } = selectedState
   const progress = useMemo(() => ({ spellRanks: selectedState.spellRanks, magicLevelCap: selectedState.magicLevelCap }), [selectedState.spellRanks, selectedState.magicLevelCap])
   const research = useMemo(() => {
     const slots = { 'research-1': null, 'research-2': null, 'research-3': null, 'research-4': null } as GameState['activities']['research']['slots']
@@ -68,7 +66,7 @@ export function MagicSchoolsScreenV2() {
     return [recipeId as TransmutationRecipeId, { acolyteAssigned: Number(acolyteAssigned) > 0, progressMs: 0 }]
   })) }) as GameState['activities']['transmutation'], [selectedState.transmutationReservations])
   const activities = useMemo(() => ({ channeling: { acolytesAssigned: selectedState.channelingAcolytes }, research, transmutation, autoCast: selectedState.autoCast }), [selectedState.channelingAcolytes, research, transmutation, selectedState.autoCast])
-  const player = useMemo(() => ({ health: selectedState.playerHealth, maxHealth: selectedState.playerMaxHealth, mana: selectedState.playerMana, maxMana: selectedState.playerMaxMana, maxFocus: selectedState.playerMaxFocus }), [selectedState.playerHealth, selectedState.playerMaxHealth, selectedState.playerMana, selectedState.playerMaxMana, selectedState.playerMaxFocus])
+  const player = useMemo(() => ({ health: selectedState.playerHealth, maxHealth: selectedState.playerMaxHealth, mana: selectedState.playerMana, maxMana: selectedState.playerMaxMana }), [selectedState.playerHealth, selectedState.playerMaxHealth, selectedState.playerMana, selectedState.playerMaxMana])
   const combat = useMemo(() => ({ active: selectedState.combatActive, activeSpellLoadout: selectedState.activeSpellLoadout, enemyId: selectedState.combatEnemyId, enemyHp: selectedState.combatEnemyHp, enemyMaxHp: selectedState.combatEnemyMaxHp, enemyBarrier: selectedState.combatEnemyBarrier, playerBarrier: selectedState.combatPlayerBarrier, enemyInstanceKey: selectedState.combatEnemyInstanceKey, playerStatuses: selectedState.combatPlayerStatuses, enemyStatuses: selectedState.combatEnemyStatuses }), [selectedState.combatActive, selectedState.activeSpellLoadout, selectedState.combatEnemyId, selectedState.combatEnemyHp, selectedState.combatEnemyMaxHp, selectedState.combatEnemyBarrier, selectedState.combatPlayerBarrier, selectedState.combatEnemyInstanceKey, selectedState.combatPlayerStatuses, selectedState.combatEnemyStatuses])
   const addSpell = useGameStore((state) => state.addSpellToSelectedPreset)
   const addSpellAt = useGameStore((state) => state.addSpellToSelectedPresetAt)
@@ -80,7 +78,7 @@ export function MagicSchoolsScreenV2() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(() => navigationIntent.schoolSpellId)
   const [rankPathOpen, setRankPathOpen] = useState(false)
   const [automationRequest, setAutomationRequest] = useState<SpellId | null>(null)
-  const browserState = useMemo(() => ({ schools, progress: { spellRanks: selectedState.spellRanks }, equipment, artifactProgress, arcaneCore, activities, player, combat, debug: { allowFocusOverCap } }), [schools, selectedState.spellRanks, equipment, artifactProgress, arcaneCore, activities, player, combat, allowFocusOverCap])
+  const browserState = useMemo(() => ({ schools, progress: { spellRanks: selectedState.spellRanks }, equipment, artifactProgress, arcaneCore, activities, player, combat, debug: { allowManaOverCap: false } }), [schools, selectedState.spellRanks, equipment, artifactProgress, arcaneCore, activities, player, combat])
   const selectedSchool = filters.school === 'all' ? 'fire' : filters.school
   const schoolEntries = useMemo(() => getSpellBrowserEntries({ progress: { spellRanks: selectedState.spellRanks } }, { ...filters, school: selectedSchool, showUnlockedOnly: false, type: 'All Types' }), [selectedState.spellRanks, filters, selectedSchool])
   const selectedEntry = schoolEntries.find((entry) => entry.id === selectedEntryId) ?? null

@@ -1,5 +1,3 @@
-import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
-import { selectUsedFocus } from '../focus/focusReservations'
 import { grantItem } from '../inventory/itemAcquisition'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
@@ -73,11 +71,6 @@ export const hasUnsavedCrystalChanges = (state: Pick<GameState, 'crystals'>) => 
   return Boolean(selected && selected.slots.some((value, index) => value !== state.crystals.equippedSlots[index]))
 }
 
-const candidateFocusIsLegal = (state: GameState, slots: Array<CrystalVariantId | null>) => {
-  const candidate = { ...state, crystals: { ...state.crystals, equippedSlots: slots } }
-  return selectUsedFocus(candidate) <= getFocusCapacityBreakdown(candidate).total
-}
-
 const candidateSlotsAreValid = (state: GameState, slots: Array<CrystalVariantId | null>) => {
   const usedByVariant: Partial<Record<CrystalVariantId, number>> = {}
   const usedByGroup: Partial<Record<ReturnType<typeof getCrystalFamily>['group'], number>> = {}
@@ -95,7 +88,6 @@ const candidateSlotsAreValid = (state: GameState, slots: Array<CrystalVariantId 
 
 const applySlots = (state: GameState, slots: Array<CrystalVariantId | null>): { ok: boolean; reason?: string } => {
   if (!candidateSlotsAreValid(state, slots)) return { ok: false, reason: 'Crystal ownership or group limit would be exceeded.' }
-  if (!candidateFocusIsLegal(state, slots)) return { ok: false, reason: 'Not enough Focus capacity for the current reservations.' }
   state.crystals.equippedSlots = slots
   return { ok: true }
 }
@@ -141,7 +133,6 @@ export const loadCrystalPreset = (state: GameState, presetId: CrystalPresetId) =
   if (!preset) return { ok: false, reason: 'Crystal preset not found.' }
   const slots = [...preset.slots]
   if (!candidateSlotsAreValid(state, slots)) return { ok: false, reason: 'Preset cannot load: missing Crystal copies or a group cap is exceeded.' }
-  if (!candidateFocusIsLegal(state, slots)) return { ok: false, reason: 'Preset cannot load: not enough Focus capacity for current reservations.' }
   state.crystals.equippedSlots = slots
   state.crystals.selectedPresetId = presetId
   return { ok: true }

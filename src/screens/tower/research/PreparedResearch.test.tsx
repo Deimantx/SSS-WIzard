@@ -37,8 +37,6 @@ describe('PreparedResearch', () => {
   it('renders compact live metrics and keeps exact values behind expansion', () => {
     const state = createInitialState()
     state.inventory['fire-fragment'] = 10
-    state.player.baseMaxFocus = 10
-    state.player.maxFocus = 10
     prepareResearchAction(state, 'fire-fragment', 'fire', 5)
     state.activities.research.slots['research-1']!.acolyteAssigned = true
     useGameStore.getState().hydrateState(state)

@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { Button, GameTooltip } from "../../components/ui";
 import { TooltipContent } from "../../components/ui/tooltip/Tooltip";
 import { ARCANE_CORE_TOTAL_COST_PER_CORE } from "../../game/content/arcaneCore/arcaneCoreBalance";
-import { getArcaneCoreBranchResonanceSummary } from "../../game/presentation/arcaneCore/arcaneCorePresentation";
+import { getArcaneCoreBranchEffectSummary } from "../../game/presentation/arcaneCore/arcaneCorePresentation";
 import {
   getArcaneCoreHighestUnlockedRing,
   getArcaneCoreNodeRank,
@@ -34,7 +34,7 @@ const branchState = (
 const sourceDescription = (
   sources: NonNullable<
     ReturnType<
-      typeof getArcaneCoreBranchResonanceSummary
+      typeof getArcaneCoreBranchEffectSummary
     >["alwaysOn"][number]["sources"]
   >,
 ) =>
@@ -49,9 +49,9 @@ function BonusRow({
   conditional = false,
 }: {
   entry:
-    | ReturnType<typeof getArcaneCoreBranchResonanceSummary>["alwaysOn"][number]
+    | ReturnType<typeof getArcaneCoreBranchEffectSummary>["alwaysOn"][number]
     | ReturnType<
-        typeof getArcaneCoreBranchResonanceSummary
+        typeof getArcaneCoreBranchEffectSummary
       >["conditional"][number];
   conditional?: boolean;
 }) {
@@ -88,7 +88,7 @@ export function ArcaneCoreSummaryModal({
 }: ArcaneCoreSummaryModalProps) {
   const surfaceRef = useRef<HTMLElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-  const summary = getArcaneCoreBranchResonanceSummary(core, branch.id);
+  const summary = getArcaneCoreBranchEffectSummary(core, branch.id);
   const scopedState = branchState(branch, core);
   const spent = getArcaneCorePointsSpent(scopedState);
   const purchasedNodes = branch.nodes.filter(
@@ -161,20 +161,20 @@ export function ArcaneCoreSummaryModal({
         className="arcane-core-summary-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`${branch.name} Core Summary`}
+        aria-label={`${branch.name} Core Effects`}
       >
         <header className="arcane-core-summary-head">
           <div>
             <span className="eyebrow" style={{ color: branch.accent }}>
               {branch.name.toUpperCase()} CORE
             </span>
-            <h2>{branch.name} Core Summary</h2>
+            <h2>{branch.name} Core Effects</h2>
             <p>All currently active bonuses purchased in this Core.</p>
           </div>
           <Button
             variant="ghost"
             onClick={onClose}
-            ariaLabel="Close Core Summary"
+            ariaLabel="Close Core Effects"
             data-autofocus="true"
           >
             <X size={17} />
@@ -211,7 +211,7 @@ export function ArcaneCoreSummaryModal({
         <div className="arcane-core-summary-scroll">
           {!hasActiveBonuses && (
             <div className="arcane-core-summary-empty">
-              <strong>NO ACTIVE BONUSES YET</strong>
+              <strong>NO ACTIVE CORE EFFECTS YET</strong>
               <span>
                 Purchase Arcane Core ranks to build this Core's summary.
               </span>

@@ -28,7 +28,7 @@ describe('CombatSpellLoadout', () => {
       equipment: useGameStore.getState().equipment,
       artifactProgress: useGameStore.getState().artifactProgress,
       arcaneCore: useGameStore.getState().arcaneCore,
-      player: { maxFocus: useGameStore.getState().player.maxFocus },
+      player: { health: useGameStore.getState().player.health, maxHealth: useGameStore.getState().player.maxHealth, mana: useGameStore.getState().player.mana, maxMana: useGameStore.getState().player.maxMana },
     }
     render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout projectionState={focusState} /></SpellLoadoutDndProvider>)
 
@@ -51,7 +51,7 @@ describe('CombatSpellLoadout', () => {
 
   it('exposes direct preset controls instead of a separate manager modal', () => {
     const current = useGameStore.getState()
-    const focusState = { activities: current.activities, progress: current.progress, equipment: current.equipment, artifactProgress: current.artifactProgress, arcaneCore: current.arcaneCore, player: { maxFocus: current.player.maxFocus } }
+    const focusState = { activities: current.activities, progress: current.progress, equipment: current.equipment, artifactProgress: current.artifactProgress, arcaneCore: current.arcaneCore, player: { health: current.player.health, maxHealth: current.player.maxHealth, mana: current.player.mana, maxMana: current.player.maxMana } }
     render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout projectionState={focusState} /></SpellLoadoutDndProvider>)
     expect(screen.getByLabelText('Active combat loadout preset')).toBeTruthy()
     expect(screen.getByText('Changes save automatically.')).toBeTruthy()

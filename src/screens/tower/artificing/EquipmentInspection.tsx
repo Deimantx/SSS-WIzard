@@ -48,7 +48,7 @@ function getImpactEntries(impact: ReturnType<typeof getArtificingEquipmentPrevie
 }
 
 function getSnapshotValue(key: string, snapshot: NonNullable<ReturnType<typeof getArtificingEquipmentPreview>['preview']>) {
-  const mapping: Record<string, keyof typeof snapshot> = { healthRegen: 'healthRegen', critDamage: 'critDamageMultiplier', damageOverTimePct: 'damageOverTimeBonus', statusDurationPct: 'statusDurationBonus', cooldownRecoveryPct: 'cooldownRecovery', healingDonePct: 'healingDoneBonus', barrierPowerPct: 'barrierPowerBonus', manaCostReductionPct: 'manaCostReduction', focusEfficiencyPct: 'focusEfficiency', fireSpellDamage: 'fireSpellDamage', airSpellDamage: 'airSpellDamage', barrierReceivedFlat: 'barrierReceivedFlat', negativeStatusDurationReceived: 'negativeStatusDurationReceived' }
+  const mapping: Record<string, keyof typeof snapshot> = { healthRegen: 'healthRegen', critDamage: 'critDamageMultiplier', damageOverTimePct: 'damageOverTimeBonus', statusDurationPct: 'statusDurationBonus', cooldownRecoveryPct: 'cooldownRecovery', healingDonePct: 'healingDoneBonus', barrierPowerPct: 'barrierPowerBonus', manaCostReductionPct: 'manaCostReduction', fireSpellDamage: 'fireSpellDamage', airSpellDamage: 'airSpellDamage', barrierReceivedFlat: 'barrierReceivedFlat', negativeStatusDurationReceived: 'negativeStatusDurationReceived' }
   if (key.startsWith('resistance-')) return snapshot.resistances[key.replace('resistance-', '') as keyof typeof snapshot.resistances] ?? 0
   return snapshot[mapping[key] ?? key as keyof typeof snapshot] as number
 }

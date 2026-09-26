@@ -12,11 +12,11 @@ const bossState = (bossId: 'forest-heart' | 'archmage-edrin-shade', dungeonId: '
 }
 
 describe('School cap milestone rewards', () => {
-  it('keeps the starting cap at 20 after Forest Heart while preserving its Focus reward', () => {
+  it('keeps the starting cap at 20 after Forest Heart while preserving its Mana reward', () => {
     const state = bossState('forest-heart', 'whispering-woods')
     finishEnemy(state)
     expect(state.progress.magicLevelCap).toBe(20)
-    expect(state.progress.permanentFocusBonuses['forest-heart']).toBe(10)
+    expect(state.progress.permanentManaBonuses['forest-heart']).toBe(10)
     expect(state.progress.guildUnlocked).toBe(true)
     expect(state.notifications.some((note) => note.text.includes('cap increased to 20'))).toBe(false)
   })

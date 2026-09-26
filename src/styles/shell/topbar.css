@@ -18,9 +18,9 @@
 .topbar-resource strong, .mana-hero strong { display: block; color: var(--ui-text); font: var(--text-xs) var(--font-mono); white-space: nowrap; }
 .topbar-resource.low-resource { border-color: color-mix(in srgb, var(--resource-health) 55%, var(--ui-border)); }
 .mana-hero { padding: 9px 12px 7px; border-color: color-mix(in srgb, var(--resource-mana) 42%, var(--ui-border)); box-shadow: inset 0 0 22px color-mix(in srgb, var(--resource-mana) 6%, transparent); }
-.mana-hero-head, .focus-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.mana-hero-head > span, .focus-head > span { display: inline-flex; align-items: center; gap: 5px; color: var(--resource-mana); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
-.focus-head > span { color: var(--resource-focus); }
+.mana-hero-head, .acolyte-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mana-hero-head > span, .acolyte-head > span { display: inline-flex; align-items: center; gap: 5px; color: var(--resource-mana); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.acolyte-head > span { color: var(--resource-focus); }
 .mana-hero-head strong { font-size: var(--text-sm); }
 .shell-meter { width: 100%; height: 4px; overflow: hidden; margin-top: 7px; border-radius: 99px; background: color-mix(in srgb, var(--ui-text) 11%, transparent); }
 .shell-meter i { display: block; height: 100%; border-radius: inherit; transition: width .2s ease; }
@@ -28,7 +28,7 @@
 .shell-meter.hp i { background: var(--resource-health); }
 .shell-meter.mana { height: 7px; margin-top: 8px; }
 .shell-meter.mana i { background: var(--resource-mana); box-shadow: 0 0 12px color-mix(in srgb, var(--resource-mana) 65%, transparent); }
-.shell-meter.focus i { background: var(--resource-focus); }
+.shell-meter.acolyte i { background: var(--resource-focus); }
 .flow-surplus .mana-flow-details summary { color: var(--ui-success); }
 .flow-deficit .mana-flow-details summary { color: var(--ui-danger); }
 .flow-balanced .mana-flow-details summary { color: var(--ui-text-muted); }
@@ -46,10 +46,10 @@
 .flow-empty { padding: 5px 0; color: var(--ui-text-muted); font: var(--text-micro) var(--font-sans); }
 .flow-net { margin-top: 5px; padding-top: 7px; border-top: 1px solid var(--ui-border); }
 .flow-net b { color: var(--resource-mana); }
-.focus-resource { display: block; padding: 9px 11px 7px; }
-.focus-resource > small { margin-top: 3px; letter-spacing: 0; }
-.focus-resource.tight-resource { border-color: color-mix(in srgb, var(--ui-warning) 48%, var(--ui-border)); }
-.focus-resource.tight-resource .focus-head strong { color: var(--ui-warning); }
+.acolyte-resource { display: block; padding: 9px 11px 7px; }
+.acolyte-resource > small { margin-top: 3px; letter-spacing: 0; }
+.acolyte-resource.tight-resource { border-color: color-mix(in srgb, var(--ui-warning) 48%, var(--ui-border)); }
+.acolyte-resource.tight-resource .acolyte-head strong { color: var(--ui-warning); }
 .topbar-utility-cluster { display: flex; align-items: center; gap: 6px; min-width: max-content; height: 100%; padding-left: 12px; border-left: 1px solid var(--ui-border); }
 .topbar-utility-cluster > .game-tooltip-trigger { display: inline-flex; min-width: 0; }
 .topbar-tool-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-xs) var(--font-sans); white-space: nowrap; }
@@ -155,7 +155,7 @@
   }
 
   .mana-hero,
-  .focus-resource {
+  .acolyte-resource {
     padding-top: 4px;
     padding-bottom: 3px;
   }
@@ -164,11 +164,11 @@
     margin-top: 3px;
   }
 
-  .focus-resource > small {
+  .acolyte-resource > small {
     margin-top: 1px;
   }
 
-  .shell-meter.focus {
+  .shell-meter.acolyte {
     margin-top: 9px;
   }
 

@@ -25,9 +25,7 @@ export interface ProgressionEvidence {
   permanentFlags: Record<string, boolean>
   discoveredItems: Record<ItemId, boolean>
   discoveredMonsters: Record<MonsterId, boolean>
-  permanentFocusBonuses: Record<string, number>
-  focusImprovementRank: number
-  focusImprovementLevel: number
+  permanentManaBonuses: Record<string, number>
   channelingManaGenerated: number
   recoveredPortalShards: Record<string, boolean>
 }
@@ -68,9 +66,7 @@ export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progr
     permanentFlags,
     discoveredItems: Object.fromEntries(itemIds.map((id) => [id, discoveredItems.includes(id)])) as Record<ItemId, boolean>,
     discoveredMonsters: Object.fromEntries(monsterIds.map((id) => [id, discoveredMonsters.includes(id)])) as Record<MonsterId, boolean>,
-    permanentFocusBonuses: Object.fromEntries(Object.entries(state.progress.permanentFocusBonuses ?? {}).map(([id, value]) => [id, finite(value)])),
-    focusImprovementRank: finite(state.progress.focusImprovement?.rank),
-    focusImprovementLevel: finite(state.progress.focusImprovement?.level),
+    permanentManaBonuses: Object.fromEntries(Object.entries(state.progress.permanentManaBonuses ?? {}).map(([id, value]) => [id, finite(value)])),
     channelingManaGenerated: finite(state.progress.channeling?.totalManaGenerated),
     recoveredPortalShards,
   }
@@ -130,9 +126,7 @@ export const detectCatastrophicProgressRegression = (previous: GameState, candid
   compareBooleanRecord('discoveredItems', before.discoveredItems, after.discoveredItems, details, reasons)
   compareBooleanRecord('discoveredMonsters', before.discoveredMonsters, after.discoveredMonsters, details, reasons)
   compareBooleanRecord('recoveredPortalShards', before.recoveredPortalShards, after.recoveredPortalShards, details, reasons)
-  compareNumberRecord('permanentFocusBonuses', before.permanentFocusBonuses, after.permanentFocusBonuses, details, reasons)
-  compareNumbers('focusImprovementRank', before.focusImprovementRank, after.focusImprovementRank, details, reasons)
-  compareNumbers('focusImprovementLevel', before.focusImprovementLevel, after.focusImprovementLevel, details, reasons)
+  compareNumberRecord('permanentManaBonuses', before.permanentManaBonuses, after.permanentManaBonuses, details, reasons)
   compareNumbers('channelingManaGenerated', before.channelingManaGenerated, after.channelingManaGenerated, details, reasons)
   return { catastrophic: details.length > 0, details, reasons }
 }

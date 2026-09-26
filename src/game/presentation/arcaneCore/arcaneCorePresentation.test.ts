@@ -16,7 +16,7 @@ import {
   getArcaneCoreNodeEffectTexts,
   getArcaneCoreNodePosition,
   getArcaneCoreRingRadius,
-  getArcaneCoreBranchResonanceSummary,
+  getArcaneCoreBranchEffectSummary,
 } from "./arcaneCorePresentation";
 import { createInitialState } from "../../../store/initialState";
 
@@ -139,7 +139,7 @@ describe("Arcane Core V6 presentation", () => {
     );
   });
 
-  it("scopes resonance sources to the opened Core while retaining all mechanics", () => {
+  it("scopes effect sources to the opened Core while retaining all mechanics", () => {
     const state = createInitialState();
     const powerNode = ARCANE_CORE_BRANCHES.find(
       (branch) => branch.id === "power",
@@ -150,7 +150,7 @@ describe("Arcane Core V6 presentation", () => {
     state.arcaneCore.nodes[powerNode.id] = { rank: 1 };
     state.arcaneCore.nodes[vitalityNode.id] = { rank: 1 };
 
-    const powerSummary = getArcaneCoreBranchResonanceSummary(
+    const powerSummary = getArcaneCoreBranchEffectSummary(
       state.arcaneCore,
       "power",
     );

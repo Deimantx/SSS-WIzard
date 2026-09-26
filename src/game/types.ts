@@ -7,7 +7,7 @@ export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
 export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
-export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
+export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'completed' | 'locked' | 'recovering'
 
 /**
  * Canonical item IDs grouped by authored ownership. Keep this list aligned
@@ -125,7 +125,7 @@ export type ArtifactId =
   | 'rootheart-scepter'
   | 'convergence-robe'
   | 'waystone-circlet'
-export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'focus' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
+export type EquipmentBuildTag = 'spell' | 'basic-attack' | 'hybrid' | 'crit' | 'status' | 'dot' | 'barrier' | 'defense' | 'sustain' | 'mana' | 'healing' | 'fire' | 'water' | 'earth' | 'air'
 export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** @deprecated Use EquipmentItemSlot for item metadata or EquipmentPosition for loadout state. */
 /** Legacy authored category kept for save/content compatibility. */
@@ -176,7 +176,6 @@ export interface EquipmentStats {
   healthRegen?: number
   maxMana?: number
   manaRegen?: number
-  maxFocus?: number
   defense?: number
   critChance?: number
   critDamage?: number
@@ -187,11 +186,10 @@ export interface EquipmentStats {
   damageReductionPct?: number
   statusDurationPct?: number
   manaCostReductionPct?: number
-  focusEfficiencyPct?: number
   resistances?: Partial<Record<import('./systems/combat/combatTypes').DamageType, number>>
 }
 
-export type ArcaneCoreBranchId = 'power' | 'vitality' | 'focus' | 'control'
+export type ArcaneCoreBranchId = 'power' | 'vitality' | 'mana' | 'control'
 export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
 export type ArcaneCoreRingIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 export type ArcaneCoreNodeType = 'minor' | 'perk' | 'major'
@@ -201,8 +199,6 @@ export type ArcaneCoreSpecialEffect =
   | { type: 'lethal-survival'; leaveAtHealth: number; oncePerDungeonRun: boolean }
   | { type: 'mana-overflow-to-barrier'; conversion: number; maxHealthPercentPerSecondCap: number }
   | { type: 'nth-spell-free'; every: number }
-  | { type: 'reserved-focus-spell-power'; spellPowerPerReservedFocus: number }
-  | { type: 'free-focus-mana-regen'; manaRegenPerFreeFocus: number }
   | { type: 'nth-spell-cooldown-pulse'; every: number; cooldownReductionMs: number }
   | { type: 'v6-mechanic'; mechanicId: string; displayName: string; rank: number; category: ArcaneCoreV6ImplementationCategory }
 export interface ArcaneCoreResolvedEffects {
@@ -301,10 +297,8 @@ export interface PlayerState {
   maxHealth: number
   mana: number
   maxMana: number
-  maxFocus: number
   baseMaxHealth: number
   baseMaxMana: number
-  baseMaxFocus: number
   healthRegenTimerMs: number
 }
 export interface ChannelingActivity {
@@ -352,9 +346,8 @@ export interface ResearchActivity {
   /** @deprecated V8 compatibility only. */
   manaPerItem?: number
   /** @deprecated V8 compatibility only. */
-  focusCost?: number
   /** @deprecated V8 compatibility only. */
-  status?: ResearchStatus | 'idle' | 'paused' | 'waiting-focus' | 'completed'
+  status?: ResearchStatus | 'idle' | 'paused' | 'completed'
 }
 export interface TransmutationJobState {
   acolyteAssigned?: boolean
@@ -469,6 +462,8 @@ export interface CombatState {
     /** Runtime metadata used by V6 AUTO/MANUAL and sequence primitives. */
     autoCastCount?: number
     lastCastOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
+    dualMindPreparedOrigin?: 'auto' | 'manual'
+    dualMindPreparedUntilMs?: number
     lastSpellId?: CanonicalSpellId | null
     lastLoadoutSlotIndex?: number | null
     differentSpellStreak?: number
@@ -505,6 +500,10 @@ export interface CombatState {
     limitBreakUsed?: boolean
     singularityUntilMs?: number
     recentManaSpend?: Array<{ atMs: number; amount: number }>
+    reservoirCycleReady?: boolean
+    manaCollapseReady?: boolean
+    manaCollapseLastAtMs?: number
+    emergencyConversionReady?: boolean
     nextManaRestoreFlat?: number
     renewalLastAtMs?: number
     v7EventLastAtMs?: Record<string, number>
@@ -561,7 +560,7 @@ export interface CombatState {
     artifactLastSpellAtMs?: number
     artifactAfterHealWaterReady?: boolean
     artifactNextIdleDamageMultiplier?: number
-    artifactFreeFocusSnapshot?: number
+    artifactManaBandSnapshot?: number
   }
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]
@@ -618,8 +617,7 @@ export interface ProgressState {
   requestProgress: Record<string, number>
   guildReputation: number
   requestClaims: Record<string, boolean>
-  permanentFocusBonuses: Record<string, number>
-  focusImprovement: FocusImprovementState
+  permanentManaBonuses: Record<string, number>
   startingSchoolId: SchoolId | null
   tutorialStage: TutorialStage
   lifetimeKillsByMonster: Partial<Record<MonsterId, number>>
@@ -647,10 +645,6 @@ export interface DarkPortalProgressState {
   recoveredShards: PortalShardId[]
 }
 
-export interface FocusImprovementState {
-  rank: number
-  level: number
-}
 
 export interface ChannelingProgress {
   pillars: Record<ManaPillarId, ManaPillarState>
@@ -712,9 +706,7 @@ export interface GameState {
 export interface DebugOverrides {
   bonusManaRegenFlat: number
   bonusMaxManaFlat: number
-  bonusMaxFocusFlat: number
   allowManaOverCap: boolean
-  allowFocusOverCap: boolean
   showLockedTransmutationRecipes: boolean
   showLockedArtificingRecipes: boolean
   playerImmortal: boolean
@@ -737,13 +729,6 @@ export interface DebugOverrides {
   arcaneFluxCapacityOverride: number | null
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
-export interface FocusReservation {
-  id: string
-  sourceType: 'combat' | 'research' | 'transmutation' | 'channeling'
-  sourceId: string
-  amount: number
-  label: string
-}
 
 export type ManaFlowState = 'surplus' | 'balanced' | 'deficit'
 export interface ManaDemandSource {

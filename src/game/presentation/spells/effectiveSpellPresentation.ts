@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { SPELLS } from '../../content/spells/spells'
-import { getCooldownRecoveryMultiplier, getCombatSpellAutoCastFocusCost, getEffectiveManaCost } from '../../systems/combat/combatStats'
+import { getCooldownRecoveryMultiplier, getEffectiveManaCost } from '../../systems/combat/combatStats'
 import { getCombatModifierContributions, getCombatModifiers, type CombatModifierContribution } from '../../systems/combat/modifiers'
 import { getPeriodicTiming, resolveStatusDuration } from '../../systems/combat/statusRuntime'
 import { resolveMagnitude } from '../../systems/combat/magnitude'
@@ -21,9 +21,9 @@ export type SpellPresentationState = {
   arcaneCore: GameState['arcaneCore']
   progress: Pick<GameState['progress'], 'spellRanks'>
   activities: Pick<GameState['activities'], 'channeling' | 'research' | 'transmutation' | 'autoCast'>
-  player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana' | 'maxFocus'>
+  player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
   combat: Pick<GameState['combat'], 'active' | 'activeSpellLoadout' | 'enemyId' | 'enemyHp' | 'enemyMaxHp' | 'enemyBarrier' | 'playerBarrier' | 'enemyInstanceKey' | 'playerStatuses' | 'enemyStatuses'>
-  debug: Pick<GameState['debug'], 'allowFocusOverCap'>
+  debug: Pick<GameState['debug'], 'allowManaOverCap'>
 }
 
 export interface EffectiveSpellValue {
@@ -229,11 +229,6 @@ export const getEffectiveSpellCooldown = (state: SpellPresentationState, spellId
 export const getEffectiveSpellManaCost = (state: SpellPresentationState, spellId: SpellId): EffectiveSpellValue => {
   const base = SPELLS[spellId].manaCost
   const effective = getEffectiveManaCost(state, base)
-  return { base, effective, changed: effective !== base }
-}
-
-export const getEffectiveSpellFocusCost = (state: SpellPresentationState, base: number): EffectiveSpellValue => {
-  const effective = getCombatSpellAutoCastFocusCost(state, base)
   return { base, effective, changed: effective !== base }
 }
 

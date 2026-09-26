@@ -8,7 +8,7 @@ export const ARCANE_CORE_MAJOR_GATES: Record<ArcaneCoreRingIndex, number> = { 1:
 export const ARCANE_CORE_RING_NAMES: Record<ArcaneCoreBranchId, Record<ArcaneCoreRingIndex, string>> = {
   power: { 1: 'Foundation', 2: 'Precision', 3: 'Arcane Assault', 4: 'Ascendancy', 5: 'Ruin', 6: 'Cataclysm', 7: 'Sovereignty', 8: 'Apotheosis' },
   vitality: { 1: 'Foundation', 2: 'Fortification', 3: 'Aegis', 4: 'Immortality', 5: 'Bastion', 6: 'Renewal', 7: 'Undying', 8: 'Eternal Aegis' },
-  focus: { 1: 'Reservoir', 2: 'Flow', 3: 'Resonance', 4: 'Transcendence', 5: 'Convergence', 6: 'Overchannel', 7: 'Astral Mind', 8: 'Singularity' },
+  mana: { 1: 'Fundamentals', 2: 'Casting Rhythm', 3: 'Spell Cycling', 4: 'Overflow', 5: 'Convergence', 6: 'Overchannel', 7: 'Astral Balance', 8: 'Singularity' },
   control: { 1: 'Timing', 2: 'Suppression', 3: 'Dominion', 4: 'Absolute Control', 5: 'Interference', 6: 'Temporal Mastery', 7: 'Lockdown', 8: 'Absolute Stasis' },
 }
 

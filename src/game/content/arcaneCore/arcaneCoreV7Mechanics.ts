@@ -23,7 +23,7 @@ const lastPart = (value: string) => value.split(':').pop() ?? value
 const rankIndex = (rank: number, length: number) => Math.max(0, Math.min(length - 1, Math.floor(rank) - 1))
 const atRank = <T>(values: readonly T[], rank: number) => values[rankIndex(rank, values.length)]
 const pct = (values: readonly number[], rank: number, digits = 1) => `${Number(atRank(values, rank).toFixed(digits))}%`
-const mana = (values: readonly number[], rank: number) => `${atRank(values, rank)} Mana`
+const manaValue = (values: readonly number[], rank: number) => `${atRank(values, rank)} Mana`
 const pp = (values: readonly number[], rank: number) => {
   const value = atRank(values, rank)
   return `${value} percentage point${value === 1 ? '' : 's'}`
@@ -38,7 +38,7 @@ const power: DescriptorMap = {
   'Opening Volley': r => [`The first damaging Spell of each encounter deals +${pct([1,2,3,4,5],r)} Damage.`],
   'Mana Edge': r => [`While above 80% Mana, damaging Spells deal +${pct([0.5,1,1.5,2,2.5],r)} Damage.`],
   'Arcane Rhythm': () => ['Every 5th successful damaging Spell deals +10% Damage.'],
-  'Critical Recovery': r => [`A direct Spell Crit restores ${mana([1,2,3,4,5],r)}. Internal cooldown: 750 ms.`],
+  'Critical Recovery': r => [`A direct Spell Crit restores ${manaValue([1,2,3,4,5],r)}. Internal cooldown: 750 ms.`],
   'Marked Precision': r => [`Against a Controlled enemy, damaging Spells gain +${pp([0.2,0.4,0.6,0.8,1],r)} Crit Chance.`],
   'Second Chance': r => [`After a damaging Spell fails to Crit, the next damaging Spell gains +${pp([0.2,0.4,0.6,0.8,1],r)} Crit Chance. Consumed by the next damaging Spell; does not guarantee a Crit.`],
   'Perfect Window': r => [`While the enemy is above 90% Health, Spells gain +${pct([2,4,6,8,10],r)} Crit Damage.`],
@@ -118,46 +118,46 @@ const vitality: DescriptorMap = {
   'Eternal Aegis': () => ['15% of effective Healing grants Barrier and 15% of effective Barrier gained heals you. Each conversion is capped at 3% Max Health per event. Conversion-generated effects cannot recursively trigger the opposite conversion.'],
 }
 
-const focus: DescriptorMap = {
-  Conservation: r => [`Every 6th successful Spell restores ${mana([1,2,3,4,5],r)} after completion.`],
+const mana: DescriptorMap = {
+  Conservation: r => [`Every 6th successful Spell restores ${manaValue([1,2,3,4,5],r)} after completion.`],
   'Emergency Flow': r => [`While below 25% Mana, gain +${pct([5,10,15,20,25],r)} Mana Regen.`],
   'Full Reservoir': r => [`While above 90% Mana, if you have not completed a Spell for 3 seconds, your next Spell costs ${pct([2,4,6,8,10],r)} less Mana. Consumed on use.`],
   'Quiet Mind': r => [`While below 30% Mana, restore ${pct([1,1.5,2,2.5,3],r)} Max Mana. Internal cooldown: 5 seconds.`],
   'Deep Breathing': () => ['The first time each encounter Mana falls below 25%, restore 10% Max Mana. Once per encounter. Does not grant a free cast.'],
-  'Echo Harmony': r => [`Every 3rd AUTO Spell restores ${mana([1,2,3,4,5],r)}.`],
-  'Manual Reservoir': r => [`A MANUAL Spell cast immediately after an AUTO Spell restores ${mana([1,2,3,4,5],r)}.`],
+  'Casting Harmony': r => [`Every 3rd AUTO Spell restores ${manaValue([1,2,3,4,5],r)}.`],
+  'Manual Reservoir': r => [`A MANUAL Spell cast immediately after an AUTO Spell restores ${manaValue([1,2,3,4,5],r)}.`],
   'Alternating Mind': r => [`When cast mode changes between AUTO and MANUAL, the new cast gains +${pct([1,2,3,4,5],r)} Action Speed.`],
   'Efficient Queue': r => [`A MANUAL queued Spell costs ${pct([1,2,3,4,5],r)} less Mana.`],
   'Dual Mind': () => ['When AUTO resolves, the next MANUAL cast within 5 seconds gains 8% lower Mana Cost and +5% Action Speed. MANUAL applies the same prepared bonus to the next AUTO cast. Consumed on use; does not stack.'],
-  'Reserved Power': r => [`For damaging Spells, every 10 Reserved Focus grants +${pct([0.5,1,1.5,2,2.5],r)} Damage, capped at +10% Damage.`],
-  'Free Mind': r => [`For all Spells, every 10 Free Focus grants +${pct([0.5,1,1.5,2,2.5],r)} Action Speed, capped at +10% Action Speed.`],
-  'Resonant Cast': r => [`Casting 3 different Spells in succession restores ${mana([1,2,3,4,5],r)} when the third Spell completes. Repeating a Spell resets the sequence.`],
+  'High Current': r => [`Above 70% Mana, damaging Spells deal +${pct([0.5,1,1.5,2,2.5],r)} Damage.`],
+  'Low Tide': r => [`When a Spell leaves Mana below 30%, prepare the next Spell with +${pct([2,4,6,8,10],r)} Action Speed. One prepared bonus at a time.`],
+  'Spell Cycle': r => [`Cast 3 different Spells in succession. When the third completes, restore ${manaValue([1,2,3,4,5],r)}. Repeating a Spell resets the sequence.`],
   'Prepared Slot': r => [`The first cast from each loadout slot in an encounter costs ${pct([1,2,3,4,5],r)} less Mana.`],
-  Resonance: () => ['Every 10th successful Spell refunds 50% of its final Mana cost after completion. The Spell must have enough Mana to begin normally.'],
+  'Arcane Recirculation': () => ['Every 10th successful Spell refunds 50% of its final Mana cost after completion. The Spell must still have enough Mana to begin normally.'],
   'Overflow Ward': r => [`Excess Mana restoration is converted to Barrier at ${pct([10,15,20,25,30],r,0)} conversion value, capped at 3% Max Health per cast.`],
   'Mana to Tempo': r => [`When a single effect restores at least 5% Max Mana, the next Spell gains +${pct([1,2,3,4,5],r)} Action Speed. One prepared bonus at a time.`],
   'Stable Reserve': r => [`While above 75% Mana, Spells cost ${pct([1,2,3,4,5],r)} less Mana.`],
   'Emergency Conversion': r => [`While below 20% Mana, your next Spell restores ${pct([1,2,3,4,5],r)} Max Mana after completion. Consumed on use.`],
   Transcendence: () => ['Excess Mana restoration becomes Barrier at 50% conversion value, capped at 5% Max Health per cast. It does not convert overflow into cooldown reduction.'],
   'Balanced Mind': r => [`If the active loadout contains at least 2 AUTO slots and 2 MANUAL slots, gain +${pct([0.5,1,1.5,2,2.5],r)} Action Speed.`],
-  'Manual Battery': r => [`MANUAL Spells restore ${mana([1,2,3,4,5],r)} after completion.`],
+  'Manual Battery': r => [`MANUAL Spells restore ${manaValue([1,2,3,4,5],r)} after completion.`],
   'Convergent Queue': r => [`MANUAL queued Spells gain +${pct([1,2,3,4,5],r)} Effectiveness to Damage, Healing and Barrier values.`],
-  'Reserved Conversion': r => [`Before the enemy resolves its first damaging Spell in the encounter, AUTO Spells restore ${mana([1,2,3,4,5],r)} per 20 Reserved Focus, capped at 25 Mana per cast.`],
+  'Reservoir Cycle': r => [`After spending at least 20% Max Mana inside a rolling 4-second window, prepare the next AUTO Spell. That AUTO Spell restores ${pct([1,2,3,4,5],r)} Max Mana after completion. One prepared Reservoir Cycle at a time.`],
   'Deep Reservoir': () => ['The first Spell each encounter costs 0 Mana and still starts its normal cooldown.'],
-  'Overchannel:perk': r => [`While the Overchannel Major effect is active, each successful Spell restores ${mana([1,2,3,4,5],r)}.`],
+  'Overchannel Recovery': r => [`While the Overchannel Major effect is active, each successful Spell restores ${manaValue([1,2,3,4,5],r)}.`],
   'Deep Draw': r => [`While below 20% Mana, Spells cost ${pct([1,2,3,4,5],r)} less Mana.`],
-  'Arcane Return': r => [`Every successful completed Spell restores ${mana([1,2,3,4,5],r)}.`],
+  'Arcane Return': r => [`Every successful completed Spell restores ${manaValue([1,2,3,4,5],r)}.`],
   'Reservoir Break': r => [`While above 80% Mana, damaging Spells deal +${pct([2,4,6,8,10],r)} Damage.`],
   'Overchannel:major': () => ['After spending at least 25% Max Mana within 4 seconds, enter Overchannel for 5 seconds: +10% Action Speed, +7.5% Damage/Healing/Barrier Effectiveness, and Mana Regen is disabled. Cannot stack with itself.'],
-  'Astral Reserved Power': () => ['Every 10 Reserved Focus grants damaging Spells +0.5% Damage, capped at +7.5% Damage.'],
-  'Astral Open Mind': () => ['Every 10 Free Focus grants +0.5% Action Speed, capped at +7.5% Action Speed.'],
+  'Astral Reserve': r => [`Above 75% Mana, damaging Spells deal +${pct([1,2,3,4,5],r)} Damage.`],
+  'Astral Release': r => [`Below 25% Mana, the first Spell every 4 seconds gains +${pct([2,4,6,8,10],r)} Action Speed.`],
   'Astral Rotation': r => [`After casting from 3 different loadout slots in succession, refund ${pct([1,2,3,4,5],r)} of that Spell's final Mana cost.`],
-  'Echo Cascade': r => [`After 3 consecutive AUTO casts, the next MANUAL Spell gains +${pct([2,4,6,8,10],r)} Action Speed. Consumed on that MANUAL Spell.`],
-  'Astral Mind': () => ['Every 10 Reserved Focus grants +0.5% Spell Power, and every 10 Free Focus grants +0.5% Action Speed. Each side is capped at +7.5%.'],
+  'Astral Cascade': r => [`After 3 consecutive AUTO casts, the next MANUAL Spell gains +${pct([2,4,6,8,10],r)} Action Speed. Consumed on that MANUAL Spell.`],
+  'Astral Equilibrium': () => ['Above 75% Mana, gain +7.5% Damage/Healing/Barrier Effectiveness. Below 25% Mana, gain +7.5% Action Speed. Between 25% and 75% Mana, no bonus. Only one side applies.'],
   'Zero Point': r => [`Every 8th Spell costs ${pct([20,40,60,80,100],r,0)} less Mana. At Rank 5 the 8th Spell costs 0 Mana.`],
   'Event Horizon': r => [`Completing a Spell while at 100% Mana stores 1 Event Horizon charge, maximum ${atRank([1,2,3,4,5],r)} charges. While below 25% Mana, a successful Spell consumes 1 charge to restore 5% Max Mana.`],
   'Singularity Manual': r => [`Each AUTO Spell may prepare one Singularity charge. The next MANUAL Spell consumes it and refunds ${pct([2,4,6,8,10],r)} of that MANUAL Spell's final Mana cost. Maximum 1 prepared charge.`],
-  'Focus Collapse': r => [`An AUTO Spell cast while more than 75% of Max Focus is Reserved, or a MANUAL Spell cast while less than 25% of Max Focus is Reserved, gains +${pct([1,2,3,4,5],r)} Action Speed.`],
+  'Mana Collapse': r => [`When Mana crosses from at least 25% to below 25%, prepare the next Spell with +${pct([2,4,6,8,10],r)} Action Speed. Internal cooldown: 5 seconds. One prepared bonus at a time.`],
   'Arcane Singularity': () => ['Once per encounter, when a Spell would leave Mana below 10%, set Mana to 50% Max Mana and enter Singularity for 5 seconds. During Singularity, Mana Costs are reduced by 40% and Mana Regen is disabled.'],
 }
 
@@ -165,10 +165,10 @@ const control: DescriptorMap = {
   'Opening Control': r => [`The first Control-tagged Status applied each encounter delays the enemy current action by ${atRank([50,100,150,200,250],r)} ms.`],
   'Controlled Strike': r => [`Damaging Spells deal +${pct([1,2,3,4,5],r)} Damage against a Controlled enemy.`],
   'Recovery Window': r => [`When a Control Status expires naturally, reduce your longest remaining Spell cooldown by ${atRank([40,80,120,160,200],r)} ms.`],
-  'Tempo Theft': r => [`When the enemy begins an action while Controlled, restore ${mana([1,2,3,4,5],r)}.`],
+  'Tempo Theft': r => [`When the enemy begins an action while Controlled, restore ${manaValue([1,2,3,4,5],r)}.`],
   'Controlled Tempo': () => ['The first Control-tagged Status applied each encounter delays the enemy current action by 150 ms and grants the next Spell +3% Action Speed. Once per encounter.'],
   'Layered Control': r => [`Applying a Control Status while the enemy has at least 2 Negative Statuses prepares the next damaging Spell with +${pct([1,2,3,4,5],r)} Damage. Consumed on use.`],
-  'Controlled Flow': r => [`Applying a Control Status restores ${mana([1,2,3,4,5],r)}. Internal cooldown: 1 second.`],
+  'Controlled Flow': r => [`Applying a Control Status restores ${manaValue([1,2,3,4,5],r)}. Internal cooldown: 1 second.`],
   'Debuff Pressure': r => [`Against an enemy with at least 2 Negative Statuses, damaging Spells deal +${pct([1,2,3,4,5],r)} Damage.`],
   'Control Refresh': r => [`Applying a Control Status prepares the next Control Status with +${pct([1,2,3,4,5],r)} Status Duration. Consumed by the next Control Status.`],
   'Suppression Window': () => ['Applying a Control-tagged Status during the final 25% of the enemy action delays that action by 250 ms. Internal cooldown: 8 seconds.'],
@@ -180,11 +180,11 @@ const control: DescriptorMap = {
   Aftershock: r => [`When a Control Status expires naturally, apply Chilled for ${atRank([1,2,3,4,5],r)} second${r === 1 ? '' : 's'}. Chilled reduces Action Speed and Basic Attack Speed by 20%.`],
   'Tremor Lock': r => [`Applying a Control Status delays the enemy current action by ${atRank([50,100,150,200,250],r)} ms.`],
   'Cold Precision': r => [`Applying a Control Status to an enemy that is already Controlled prepares the next damaging Spell with +${pct([1.5,3,4.5,6,7.5],r)} Damage. Consumed on use.`],
-  'Control Conversion': r => [`When one of your Control Statuses is removed before natural expiry, restore ${mana([1,2,3,4,5],r)} and reduce your longest remaining Spell cooldown by ${atRank([100,200,300,400,500],r)} ms.`],
+  'Control Conversion': r => [`When one of your Control Statuses is removed before natural expiry, restore ${manaValue([1,2,3,4,5],r)} and reduce your longest remaining Spell cooldown by ${atRank([100,200,300,400,500],r)} ms.`],
   'Perfect Timing': () => ['Applying a Control-tagged Status during the final 25% of the enemy action delays that action by 500 ms. Internal cooldown: 7 seconds.'],
   'Spell Interference': r => [`Applying a Control Status delays the enemy current action by ${atRank([50,100,150,200,250],r)} ms.`],
   'Status Fracture': r => [`Applying a Control Status while the enemy has at least 3 Negative Statuses delays the enemy current action by ${atRank([50,100,150,200,250],r)} ms.`],
-  'Debuff Theft': r => [`Applying a Control Status restores ${mana([1,2,3,4,5],r)}.`],
+  'Debuff Theft': r => [`Applying a Control Status restores ${manaValue([1,2,3,4,5],r)}.`],
   'Manual Disruption': r => [`A MANUAL Spell cast while the enemy has an active action timer deals +${pct([1,2,3,4,5],r)} Damage.`],
   Dominion: () => ['While the enemy has at least 3 Negative Statuses, its action timer progresses 10% slower and it takes +5% Damage from the player.'],
   'Prepared Cast': r => [`The first MANUAL Spell each encounter gains +${pct([2,4,6,8,10],r)} Action Speed.`],
@@ -205,7 +205,7 @@ const control: DescriptorMap = {
 }
 
 const describeV7Mechanic = (branch: ArcaneCoreBranchId, name: string, nodeType: ArcaneCoreNodeType, rank: number): string[] => {
-  const descriptor = branch === 'power' ? power[name] : branch === 'vitality' ? vitality[name] : branch === 'focus' ? focus[`${name}:${nodeType}`] ?? focus[name] : control[name]
+  const descriptor = branch === 'power' ? power[name] : branch === 'vitality' ? vitality[name] : branch === 'mana' ? mana[`${name}:${nodeType}`] ?? mana[name] : control[name]
   if (!descriptor) throw new Error(`Missing Arcane Core V7 presentation descriptor: ${branch}/${name}/${nodeType}`)
   return descriptor(Math.max(1, Math.floor(rank)))
 }
@@ -213,7 +213,7 @@ const describeV7Mechanic = (branch: ArcaneCoreBranchId, name: string, nodeType: 
 const inferRuntimeKind = (node: ArcaneCoreNodeDefinition): ArcaneCoreV7RuntimeKind => {
   if (node.nodeType === 'major') return 'combat-event'
   if (node.branchId === 'control') return 'timeline'
-  if (node.branchId === 'focus') return 'resource'
+  if (node.branchId === 'mana') return 'resource'
   if (node.branchId === 'vitality') return 'survival'
   return 'cast-modifier'
 }

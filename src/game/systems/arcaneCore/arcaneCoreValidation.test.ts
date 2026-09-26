@@ -8,7 +8,7 @@ import { ARCANE_CORE_V7_MECHANIC_REGISTRY, validateArcaneCoreV7MechanicCoverage 
 describe('Arcane Core V7 catalog', () => {
   it('contains four Cores with eight Rings of eight standards and one Major', () => {
     expect(validateArcaneCoreCatalog()).toEqual([])
-    expect(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).toEqual(['power', 'vitality', 'focus', 'control'])
+    expect(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).toEqual(['power', 'vitality', 'mana', 'control'])
     expect(ARCANE_CORE_NODES).toHaveLength(ARCANE_CORE_NODE_COUNT)
     expect(ARCANE_CORE_BRANCHES.every((branch) => branch.nodes.length === ARCANE_CORE_NODE_COUNT_PER_BRANCH)).toBe(true)
     for (const branch of ARCANE_CORE_BRANCHES) for (const ring of ARCANE_CORE_RING_INDICES) {

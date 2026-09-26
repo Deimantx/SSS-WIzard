@@ -3,7 +3,6 @@ import { BALANCE } from '../../core/balance/balance'
 import { DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { getEquipmentStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
 import { getPlayerManaCapacityBreakdown, getPlayerManaRegenBreakdown } from '../mana/playerMana'
-import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
 import { getSpellPower } from '../spells/spellPower'
 import type { EquipmentStats, GameState } from '../../types'
 import type { CombatActor } from './magnitude'
@@ -20,7 +19,6 @@ export interface CommonCombatStats {
   healthRegen: number
   maxMana: number
   manaRegen: number
-  maxFocus: number
   spellPower: number
   critChance: number
   critDamageMultiplier: number
@@ -33,7 +31,6 @@ export interface CommonCombatStats {
   healingDoneBonus: number
   barrierPowerBonus: number
   manaCostReduction: number
-  focusEfficiency: number
 }
 
 export interface PlayerCombatStats extends CommonCombatStats {}
@@ -69,7 +66,6 @@ const getPlayerSheetStats = (state: PlayerSheetState): PlayerCombatStats => {
     healthRegen: BALANCE.player.healthRegenPerSecond + playerEquipmentStat(state, 'healthRegen'),
     maxMana: getPlayerManaCapacityBreakdown(state).total,
     manaRegen: getPlayerManaRegenBreakdown(state).total,
-    maxFocus: getFocusCapacityBreakdown(state).total,
     spellPower: getSpellPower(state),
     critChance: clampPercent(BALANCE.player.baseCritChance + finite(equipment.critChance), 0, MAX_CRIT_CHANCE),
     critDamageMultiplier: clampPercent(BALANCE.player.baseCritDamage + finite(equipment.critDamage), MIN_CRIT_DAMAGE_MULTIPLIER, MAX_CRIT_DAMAGE_MULTIPLIER),
@@ -82,7 +78,6 @@ const getPlayerSheetStats = (state: PlayerSheetState): PlayerCombatStats => {
     healingDoneBonus: finite(equipment.healingDonePct),
     barrierPowerBonus: finite(equipment.barrierPowerPct),
     manaCostReduction: clampPercent(finite(equipment.manaCostReductionPct), 0, 0.8),
-    focusEfficiency: clampPercent(finite(equipment.focusEfficiencyPct), 0, 0.8),
   }
 }
 
@@ -93,7 +88,6 @@ const getPlayerRuntimeStats = (state: GameState): PlayerCombatStats => {
     ...sheet,
     maxHealth: sheet.maxHealth,
     maxMana: state.player.maxMana,
-    maxFocus: state.player.maxFocus,
     healthRegen: sheet.healthRegen + getCombatModifiers(state, 'player', 'health-regen-flat'),
     critChance: getCritChance(state, 'player'),
     critDamageMultiplier: getCritDamageMultiplier(state, 'player'),
@@ -121,7 +115,6 @@ const getEnemyStats = (state: GameState): EnemyCombatStats => {
     healthRegen: 0,
     maxMana: 0,
     manaRegen: 0,
-    maxFocus: 0,
     spellPower: 0,
     basicAttackDamage: monster ? resolveWorldTierEnemyProfile(monster.id, getActiveEncounterWorldTier(state)).basicAttackDamage : 0,
     basicAttackSpeedMultiplier,
@@ -138,7 +131,6 @@ const getEnemyStats = (state: GameState): EnemyCombatStats => {
     healingDoneBonus: getHealingDoneBonus(state, 'enemy'),
     barrierPowerBonus: getBarrierPowerBonus(state, 'enemy'),
     manaCostReduction: 0,
-    focusEfficiency: 0,
   }
 }
 
@@ -181,7 +173,3 @@ export const getBarrierPowerBonus = (state: GameState, actor: CombatActor, sourc
 export const getCooldownRecoveryMultiplier = (state: CombatModifierState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
 
 export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
-/** Focus Efficiency is intentionally scoped to combat Spell Auto-Cast reservation. */
-export const getCombatSpellAutoCastFocusCost = (state: EquipmentStatsState, baseFocusCost: number) => Math.max(1, Math.ceil(Math.max(0, baseFocusCost) * (1 - clampPercent(playerEquipmentStat(state, 'focusEfficiencyPct'), 0, 0.8))))
-/** Compatibility alias for existing combat presentation callers. */
-export const getEffectiveFocusCost = getCombatSpellAutoCastFocusCost

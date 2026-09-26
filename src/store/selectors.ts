@@ -1,9 +1,8 @@
-import { manaRegenPerSecond, selectFreeFocus, selectRawFreeFocus, selectUsedFocus } from '../game/engine'
+import { manaRegenPerSecond } from '../game/engine'
 import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../game/engine/channelingEngine'
 import { isAutoHuntUnlocked } from '../game/systems/combat/combatBossSelectors'
 import type { GameStore } from './gameStore'
 
-export { selectUsedFocus, selectFreeFocus, selectRawFreeFocus }
 export const selectManaRegen = (state: GameStore) => manaRegenPerSecond(state)
 export const selectManaRegenBreakdown = (state: GameStore) => getManaRegenBreakdown(state)
 export const selectManaCapacityBreakdown = (state: GameStore) => getManaCapacityBreakdown(state)

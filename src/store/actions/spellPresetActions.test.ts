@@ -45,10 +45,9 @@ describe('selected combat loadout actions', () => {
     expect(state.spellPresets.presets[0].slots[0].automation).toMatchObject({ conditions: [{ type: 'player-barrier-below', value: 10 }] })
   })
 
-  it('allows AUTO and automation when prepared Focus is currently unavailable', () => {
+  it('allows AUTO and automation without a separate resource reservation', () => {
     const state = createInitialState()
     state.progress.spellRanks = { 'fire-bolt': 1 }
-    state.player.maxFocus = 0
     expect(addSpellToSelectedPresetAction(state, 'fire-bolt')).toEqual({ ok: true })
     const preset = state.spellPresets.presets[0]
 

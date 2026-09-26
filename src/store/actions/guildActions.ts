@@ -29,8 +29,8 @@ export const promoteGuildAction = (state: GameState) => {
   const complete = Object.values(GUILD_REQUESTS).every((request) => (state.progress.requestProgress[request.id] ?? 0) >= request.target)
   if (state.progress.guildRank === 'initiate' && complete && state.progress.guildReputation >= 175) {
     state.progress.guildRank = 'apprentice'
-    if (!state.progress.permanentFocusBonuses['guild-apprentice']) state.progress.permanentFocusBonuses['guild-apprentice'] = BALANCE.focus.guildApprenticeBonus
+    if (!state.progress.permanentManaBonuses['guild-apprentice']) state.progress.permanentManaBonuses['guild-apprentice'] = 10
     recalculateDerivedStats(state)
-    pushNotification(state, 'Guild rank increased to Apprentice - +10 permanent Focus', 'success')
+    pushNotification(state, 'Guild rank increased to Apprentice - +10 permanent Max Mana', 'success')
   }
 }

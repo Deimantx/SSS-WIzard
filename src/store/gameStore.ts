@@ -32,8 +32,6 @@ import {
   manaRegenPerSecond,
   pushNotification,
   recalculateDerivedStats,
-  selectFreeFocus,
-  selectUsedFocus,
 } from "../game/engine";
 import {
   abandonCurrentEncounter,
@@ -211,7 +209,6 @@ import {
   getCombatEntryPreset,
   getNextSpellPresetId,
   getSelectedSpellPreset,
-  getSpellAutoCastFocusCost,
   getSpellPresetProjection,
   validateSelectedCombatLoadout,
   isSpellUnlocked,
@@ -529,9 +526,7 @@ export interface GameActions {
   ) => void;
   setDebugManaRegenBonus: (amount: number) => void;
   setDebugMaxManaBonus: (amount: number) => void;
-  setDebugMaxFocusBonus: (amount: number) => void;
   setDebugAllowManaOverCap: (enabled: boolean) => void;
-  setDebugAllowFocusOverCap: (enabled: boolean) => void;
   setDebugAcolyteBonus: (amount: number) => void;
   setDebugAcolyteTotalOverride: (amount: number | null) => void;
   setDebugIgnoreAcolyteLimit: (enabled: boolean) => void;
@@ -1037,21 +1032,10 @@ export const useGameStore = create<GameStore>()(
         recalculateDerivedStats(state);
         return state;
       }),
-    setDebugMaxFocusBonus: (amount) =>
-      set((state) => {
-        state.debug.bonusMaxFocusFlat = sanitizeDebugNumber(amount);
-        recalculateDerivedStats(state);
-        return state;
-      }),
     setDebugAllowManaOverCap: (enabled) =>
       set((state) => {
         state.debug.allowManaOverCap = enabled;
         recalculateDerivedStats(state);
-        return state;
-      }),
-    setDebugAllowFocusOverCap: (enabled) =>
-      set((state) => {
-        state.debug.allowFocusOverCap = enabled;
         return state;
       }),
     setDebugAcolyteBonus: (amount) =>
@@ -2973,7 +2957,5 @@ export const useGameStore = create<GameStore>()(
   })),
 );
 
-export const useGameStoreSelectors = { selectUsedFocus, selectFreeFocus };
-export { selectUsedFocus, selectFreeFocus };
 export const selectManaRegen = (state: GameStore) => manaRegenPerSecond(state);
 export const makeInitialState = createInitialState;

@@ -4,7 +4,7 @@ import type { CombatEffect, CombatModifier, CombatTriggerRule, DamageType } from
 import { getEquipmentCombatPresentation } from '../equipment/equipmentCombatPresentation'
 import { mergeArtifactResolvedEffects } from '../../systems/artifacts/artifactProgression'
 
-export type ArtifactEffectTone = 'artifact' | 'fire' | 'water' | 'earth' | 'air' | 'health' | 'defense' | 'mana' | 'focus' | 'critical' | 'utility' | 'special'
+export type ArtifactEffectTone = 'artifact' | 'fire' | 'water' | 'earth' | 'air' | 'health' | 'defense' | 'mana' | 'critical' | 'utility' | 'special'
 
 export interface ArtifactEffectPresentationLine {
   text: string
@@ -40,7 +40,6 @@ const statTone = (key: string, damageType?: DamageType): ArtifactEffectTone => {
   if (key === 'maxHealth' || key === 'maxHealthPct' || key === 'healthRegen') return 'health'
   if (key === 'defense' || key === 'damageReductionPct' || key === 'barrierPowerPct') return 'defense'
   if (key === 'maxMana' || key === 'maxManaPct' || key === 'manaRegen' || key === 'manaCostReductionPct') return 'mana'
-  if (key === 'maxFocus' || key === 'focusEfficiencyPct') return 'focus'
   if (key === 'critChance' || key === 'critDamage') return 'critical'
   if (key === 'cooldownRecoveryPct' || key === 'statusDurationPct') return 'air'
   return 'artifact'
@@ -63,8 +62,8 @@ const effectTone = (effect: CombatEffect): ArtifactEffectTone => {
     case 'deal-damage': return damageTone(effect.components.map((component) => component.damageType)) ?? 'artifact'
     case 'heal': return 'health'
     case 'gain-barrier': return 'defense'
-    case 'restore-resource': return effect.resource === 'mana' ? 'mana' : 'focus'
-    case 'drain-resource': return effect.resource === 'mana' ? 'mana' : 'focus'
+    case 'restore-resource': return 'mana'
+    case 'drain-resource': return 'mana'
     case 'modify-cooldown':
     case 'modify-action-timer': return 'air'
     default: return 'special'
@@ -82,8 +81,8 @@ const formatSpecialEffect = (special: ArtifactSpecialEffect) => {
     case 'barrier-break': return `When Barrier breaks, gain a Barrier equal to ${percentLabel(special.barrierMaxHealthPercent)} of Max Health. Cooldown ${secondsLabel(special.cooldownMs)}.`
     case 'barrier-gain-mana': return `When you gain Barrier, restore ${percentLabel(special.maxHealthPercent)} of Max Health as Mana. Cooldown ${secondsLabel(special.cooldownMs)}.`
     case 'hp-threshold-barrier-status-immunity': return `Below ${percentLabel(special.threshold)} Health, gain a ${percentLabel(special.barrierMaxHealthPercent)} Max Health Barrier and Status immunity for ${secondsLabel(special.durationMs)}.`
-    case 'nth-spell-refund': return `Every ${special.every}th Spell restores ${percentLabel(special.focusPercent)} Focus and ${percentLabel(special.manaPercent)} Mana.`
-    case 'first-spell-after-focus-change': return `Your first Spell after Focus changes costs ${percentLabel(special.manaReduction)} less Mana.`
+    case 'nth-spell-mana-refund': return `Every ${special.every}th Spell refunds ${percentLabel(special.manaPercent)} of its final Mana cost.`
+    case 'mana-band-shift': return `When Mana crosses a 25%, 50%, or 75% boundary, the next Spell costs ${percentLabel(special.manaReduction)} less Mana. One prepared bonus at a time. Internal cooldown: ${secondsLabel(special.cooldownMs)}.`
     case 'first-spell-after-idle': return `After ${secondsLabel(special.idleMs)} without casting, your next Spell deals ${percentLabel(special.damageIncrease)} more damage.`
     case 'air-spell-repeat': return `Every ${special.every}th Air Spell repeats at ${percentLabel(special.effectiveness)} effectiveness.`
     case 'burn-refresh-detonation': return `Refreshing Burning detonates ${percentLabel(special.damagePercent)} of its remaining damage.`

@@ -250,10 +250,10 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.progress.forestHeartUnlocked = true
       pushNotification(state, 'Forest Heart defeated - Guild unlocked', 'success')
     }
-    if (bossId === 'forest-heart' && !state.progress.permanentFocusBonuses['forest-heart']) {
-      state.progress.permanentFocusBonuses['forest-heart'] = BALANCE.focus.forestHeartBonus
+    if (bossId === 'forest-heart' && !state.progress.permanentManaBonuses['forest-heart']) {
+      state.progress.permanentManaBonuses['forest-heart'] = 10
       recalculateDerivedStats(state)
-      pushNotification(state, 'WHISPERING WOODS COMPLETE / Howling Den unlocked.', 'success')
+      pushNotification(state, 'WHISPERING WOODS COMPLETE / +10 permanent Max Mana.', 'success')
     }
     if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
     if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {

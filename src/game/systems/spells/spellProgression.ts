@@ -22,16 +22,6 @@ export function isSpellUnlocked(state: { progress: SpellRankState }, spellId: Sp
   return getSpellRank(state, spellId) !== null
 }
 
-/** @deprecated Auto-Cast no longer consumes Focus. Kept as a compatibility read returning zero. */
-export function getAutoCastFocusCostForRank(_rank: SpellRank): number { return 0 }
-
-/** @deprecated Auto-Cast no longer consumes Focus. */
-export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equipment?: GameState['equipment']; artifactProgress?: GameState['artifactProgress']; arcaneCore?: GameState['arcaneCore'] }, spellId: SpellId): number | null {
-  const rank = getSpellRank(state, spellId)
-  if (rank === null) return null
-  return getAutoCastFocusCostForRank(rank)
-}
-
 export function formatSpellRank(rank: SpellRank): string {
   return RANK_LABELS[rank]
 }

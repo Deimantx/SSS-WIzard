@@ -1,5 +1,5 @@
 import { SPELLS } from '../../content/spells/spells'
-import { formatSpellRank, getSpellAutoCastFocusCost, type SpellRank } from '../../systems/spells'
+import { formatSpellRank, type SpellRank } from '../../systems/spells'
 import type { SchoolId, SpellId } from '../../types'
 import { formatTime } from '../../utils'
 import { buildSpellEffectTooltipModel, getCompactSpellEffectRows, getExpandedSpellEffectRows, type SpellEffectTooltipModel, type SpellEffectTooltipRow } from './spellEffectTooltipModel'
@@ -19,7 +19,6 @@ export interface SpellDetailPresentation {
   castTimeLabel: string
   cooldownMs: number
   cooldownLabel: string
-  autoCastFocus: number
   autoCastActive: boolean
   spellPower: number
   spellPowerBreakdown: ReturnType<typeof getEffectiveSpellPower>
@@ -64,5 +63,5 @@ export function buildSpellDetailPresentation(state: SpellPresentationState, spel
   const cooldown = getEffectiveSpellCooldown(state, spellId)
   const spellPowerBreakdown = getEffectiveSpellPower(state)
   const castTimeMs = getEffectiveSpellCastTimeMs(state, spellId)
-  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: mana.effective, castTimeMs, castTimeLabel: formatTime(castTimeMs), cooldownMs: cooldown.effective, cooldownLabel: formatTime(cooldown.effective), autoCastFocus: getSpellAutoCastFocusCost(state, spellId) ?? 0, autoCastActive: Boolean(state.combat.active && state.combat.activeSpellLoadout?.slots.some((slot) => slot.spellId === spellId && slot.autoCast)), spellPower: spellPowerBreakdown.total, spellPowerBreakdown, effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
+  return { spellId, spellName: spell.name, school: spell.school, rankLabel: formatSpellRank(rank), description: spell.description, manaCost: mana.effective, castTimeMs, castTimeLabel: formatTime(castTimeMs), cooldownMs: cooldown.effective, cooldownLabel: formatTime(cooldown.effective), autoCastActive: Boolean(state.combat.active && state.combat.activeSpellLoadout?.slots.some((slot) => slot.spellId === spellId && slot.autoCast)), spellPower: spellPowerBreakdown.total, spellPowerBreakdown, effects: spell.effects.map((_, index) => buildSpellEffectTooltipModel(state, spellId, index)) }
 }

@@ -143,8 +143,8 @@ describe('profile storage and session lifecycle', () => {
       state.progress.bossKillsByBoss['grove-sentinel'] = 2
       state.progress.requestProgress['arcane-supply'] = 20
       state.progress.requestClaims['arcane-supply'] = true
-      state.progress.permanentFocusBonuses['forest-heart'] = 10
-      state.progress.permanentFocusBonuses['guild-apprentice'] = 10
+      state.progress.permanentManaBonuses['forest-heart'] = 10
+      state.progress.permanentManaBonuses['guild-apprentice'] = 10
       state.progress.autoHuntBossByDungeon['whispering-woods'] = true
       return state
     })
@@ -157,8 +157,8 @@ describe('profile storage and session lifecycle', () => {
     expect(progress.bossKillsByBoss['grove-sentinel']).toBe(2)
     expect(progress.requestProgress['arcane-supply']).toBe(20)
     expect(progress.requestClaims['arcane-supply']).toBe(true)
-    expect(progress.permanentFocusBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
-    expect(Object.values(progress.permanentFocusBonuses).reduce((sum, value) => sum + value, 0)).toBe(20)
+    expect(progress.permanentManaBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
+    expect(Object.values(progress.permanentManaBonuses).reduce((sum, value) => sum + value, 0)).toBe(20)
     expect(progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
   })
 

@@ -86,7 +86,7 @@ export const ACT1_ARTIFACTS: AuthoredItemRegistry = {
     icon: '◇',
     color: '#b9a7ff',
     equipmentTier: 2,
-    buildTags: ['spell', 'mana', 'focus', 'status'],
+    buildTags: ['spell', 'mana', 'status'],
     equipmentBudgetProfile: 'signature',
     equipmentSlot: 'helmet',
     sellValue: null,

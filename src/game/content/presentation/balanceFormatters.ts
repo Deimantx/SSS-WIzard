@@ -204,7 +204,6 @@ export const formatStatLabel = (key: string) => {
     healthRegen: 'Health Regen',
     maxMana: 'Max Mana',
     manaRegen: 'Mana regeneration',
-    maxFocus: 'Max Focus',
     defense: 'Defense',
     critChance: 'Critical Strike chance',
     critDamage: 'Critical Strike damage',
@@ -216,7 +215,6 @@ export const formatStatLabel = (key: string) => {
     damageOverTimePct: 'Damage over time',
     statusDurationPct: 'Status duration',
     manaCostReductionPct: 'Mana cost reduction',
-    focusEfficiencyPct: 'Focus efficiency',
     resistances: 'Resistances',
   }
   return labels[key] ?? readableId(key)

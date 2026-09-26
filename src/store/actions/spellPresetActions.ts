@@ -3,8 +3,7 @@ import type { CanonicalSpellId, GameState, SpellAutomationConfig, SpellId, Spell
 
 export interface ApplySpellPresetResult {
   ok: boolean
-  reason?: 'focus' | 'missing-preset' | 'empty'
-  requiredExtraFocus?: number
+  reason?: 'missing-preset' | 'empty'
   unavailableSpellIds?: CanonicalSpellId[]
 }
 
@@ -147,7 +146,7 @@ export type ApplyPresetSlotAutomationResult =
   | { ok: true }
   | { ok: false; reason: 'missing-preset' | 'missing-slot'; message: string }
 
-/** Applies the editor's mode and rule without treating Focus shortage as an editor failure. */
+/** Applies the editor's mode and rule without resource reservations. */
 export const applyPresetSlotAutomationAction = (state: GameState, id: SpellPresetId, spellId: CanonicalSpellId, automation: SpellAutomationConfig, autoCast: boolean): ApplyPresetSlotAutomationResult => {
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
   if (!preset) return { ok: false, reason: 'missing-preset', message: 'This preset no longer exists.' }

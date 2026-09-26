@@ -1,7 +1,7 @@
 import { Children, cloneElement, createContext, isValidElement, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent, type ReactElement, type ReactNode, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 
-export type TooltipAccent = 'neutral' | 'mana' | 'health' | 'focus' | 'success' | 'warning' | 'danger' | 'elemental'
+export type TooltipAccent = 'neutral' | 'mana' | 'health' | 'acolyte' | 'success' | 'warning' | 'danger' | 'elemental'
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right'
 
 interface TooltipRequest { id: string; element: HTMLElement; content: ReactNode; accent: TooltipAccent; placement: TooltipPlacement; tooltipId: string; wide: boolean; modal?: boolean }

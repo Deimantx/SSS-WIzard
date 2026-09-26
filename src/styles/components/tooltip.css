@@ -84,7 +84,7 @@
 .game-tooltip-neutral { --tooltip-accent: var(--ui-accent); }
 .game-tooltip-mana { --tooltip-accent: var(--semantic-mana); }
 .game-tooltip-health { --tooltip-accent: var(--resource-health); }
-.game-tooltip-focus { --tooltip-accent: var(--semantic-focus); }
+.game-tooltip-acolyte { --tooltip-accent: var(--resource-focus); }
 .game-tooltip-success { --tooltip-accent: var(--ui-success); }
 .game-tooltip-warning { --tooltip-accent: var(--ui-warning); }
 .game-tooltip-danger { --tooltip-accent: var(--ui-danger); }

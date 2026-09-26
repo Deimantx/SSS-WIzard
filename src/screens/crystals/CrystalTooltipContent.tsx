@@ -20,7 +20,6 @@ export const CRYSTAL_STAT_LABELS: Record<string, string> = {
   healthRegen: "Health Regen",
   maxMana: "Max Mana",
   manaRegen: "Mana Regen",
-  maxFocus: "Max Focus",
   defense: "Defense",
   critChance: "Crit Chance",
   critDamage: "Crit Damage",
@@ -29,7 +28,6 @@ export const CRYSTAL_STAT_LABELS: Record<string, string> = {
   damageOverTimePct: "Damage over Time",
   statusDurationPct: "Status Duration",
   manaCostReductionPct: "Mana Cost Reduction",
-  focusEfficiencyPct: "Focus Efficiency",
 };
 
 const PERCENT_STATS = new Set([
@@ -40,7 +38,6 @@ const PERCENT_STATS = new Set([
   "damageOverTimePct",
   "statusDurationPct",
   "manaCostReductionPct",
-  "focusEfficiencyPct",
 ]);
 
 export const formatCrystalStat = (key: string, value: number) =>

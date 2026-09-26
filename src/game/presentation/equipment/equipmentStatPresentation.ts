@@ -17,7 +17,6 @@ const STAT_LABELS: Record<string, string> = {
   healthRegen: 'Health Regen',
   maxMana: 'Max Mana',
   manaRegen: 'Mana Regen',
-  maxFocus: 'Max Focus',
   spellPower: 'Spell Power',
   critChance: 'Crit Chance',
   critDamage: 'Crit Damage',
@@ -36,8 +35,6 @@ const STAT_LABELS: Record<string, string> = {
   statusDurationBonus: 'Status Duration',
   manaCostReductionPct: 'Mana Cost Reduction',
   manaCostReduction: 'Mana Cost Reduction',
-  focusEfficiencyPct: 'Focus Efficiency',
-  focusEfficiency: 'Focus Efficiency',
   fireSpellDamage: 'Fire Spell Damage',
   airSpellDamage: 'Air Spell Damage',
   barrierReceivedFlat: 'Barrier Received',
@@ -49,7 +46,6 @@ const STAT_DESCRIPTIONS: Record<string, string> = {
   healthRegen: 'Restores Health over time while outside a full-health state.',
   maxMana: 'Increases the amount of Mana available for Spells.',
   manaRegen: 'Restores Mana over time.',
-  maxFocus: 'Increases the Focus capacity available to supported activities.',
   spellPower: 'Increases spell scaling for effects that use Spell Power.',
   critChance: 'Chance for a Direct Hit to critically strike. Damage over Time, Healing and Barrier effects cannot Crit.',
   critDamage: 'Damage multiplier applied to a Critical Direct Hit.',
@@ -68,8 +64,6 @@ const STAT_DESCRIPTIONS: Record<string, string> = {
   statusDurationBonus: 'Increases the duration of Statuses you apply.',
   manaCostReductionPct: 'Reduces Spell Mana costs, subject to the current cap.',
   manaCostReduction: 'Reduces Spell Mana costs, subject to the current cap.',
-  focusEfficiencyPct: 'Reduces Focus reserved by supported systems such as Auto-Cast.',
-  focusEfficiency: 'Reduces Focus reserved by supported systems such as Auto-Cast.',
   fireSpellDamage: 'Additional damage for Fire Spells only.',
   airSpellDamage: 'Additional damage for Air Spells only.',
   barrierReceivedFlat: 'Adds flat Barrier capacity whenever you gain Barrier.',
@@ -79,7 +73,7 @@ const STAT_DESCRIPTIONS: Record<string, string> = {
 const PERCENT_KEYS = new Set([
   'critChance', 'critDamage', 'critDamageMultiplier', 'cooldownRecoveryPct', 'healingDonePct', 'healingDoneBonus',
   'barrierPowerPct', 'barrierPowerBonus', 'damageOverTimePct', 'damageOverTimeBonus', 'statusDurationPct', 'statusDurationBonus',
-  'manaCostReductionPct', 'manaCostReduction', 'focusEfficiencyPct', 'focusEfficiency', 'fireSpellDamage', 'airSpellDamage',
+  'manaCostReductionPct', 'manaCostReduction', 'fireSpellDamage', 'airSpellDamage',
   'negativeStatusDurationReceived',
 ])
 

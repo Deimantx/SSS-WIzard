@@ -117,7 +117,6 @@ describe("Crystal System V1", () => {
 
   it("keeps combat loadout independence outside Crystal capacity checks", () => {
     const state = createInitialState();
-    state.player.baseMaxFocus = 69;
     state.activities.channeling.acolytesAssigned = 5;
     state.activities.transmutation.jobs['fire-fragment'] = { acolyteAssigned: true, progressMs: 0 };
     state.crystals.owned["concentration-t1"] = 1;

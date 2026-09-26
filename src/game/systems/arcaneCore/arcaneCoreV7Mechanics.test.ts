@@ -55,10 +55,45 @@ describe('Arcane Core V7 mechanic safety', () => {
 
   it('evaluates Deep Breathing at projected post-cost Mana', () => {
     const state = createInitialState()
-    const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'focus')!.nodes.find((entry) => entry.name === 'Deep Breathing')!
+    const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'mana')!.nodes.find((entry) => entry.name === 'Deep Breathing')!
     state.arcaneCore.nodes[node.id] = { rank: 1 }
     const modifiers = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 2, maxMana: 100, playerMana: 26, enemyHealthPercent: 100 }, true)
     expect(modifiers.manaRestoreFlat).toBeCloseTo(10)
+  })
+
+  it('keeps Mana mode-change and low-Mana preparation effects on their intended next cast', () => {
+    const state = createInitialState()
+    const mana = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'mana')!
+    const node = (name: string) => mana.nodes.find((entry) => entry.name === name)!
+    state.arcaneCore.nodes[node('Manual Reservoir').id] = { rank: 1 }
+    state.arcaneCore.nodes[node('Dual Mind').id] = { rank: 1 }
+    state.arcaneCore.nodes[node('Astral Cascade').id] = { rank: 1 }
+    state.arcaneCore.nodes[node('Emergency Conversion').id] = { rank: 1 }
+
+    const autoContext = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    commitArcaneCoreV6SpellCast(state, autoContext)
+    const manual = commitArcaneCoreV6SpellCast(state, { ...autoContext, origin: 'manual-direct', playerMana: 80 })
+    expect(manual.manaRestoreFlat).toBeCloseTo(1)
+
+    state.combat.arcaneCoreRuntime.elapsedMs = 1_000
+    const preparedAuto = getArcaneCoreV6CastModifiers(state, { ...autoContext, playerMana: 80 }, true)
+    expect(preparedAuto.manaCostMultiplier).toBeCloseTo(0.92)
+    expect(preparedAuto.actionSpeedMultiplier).toBeCloseTo(1.05)
+    state.combat.arcaneCoreRuntime.elapsedMs = 6_001
+    expect(getArcaneCoreV6CastModifiers(state, { ...autoContext, playerMana: 80 }, true).manaCostMultiplier).toBeCloseTo(1)
+    delete state.arcaneCore.nodes[node('Dual Mind').id]
+
+    commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 80 })
+    commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 60 })
+    commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 40 })
+    const cascade = commitArcaneCoreV6SpellCast(state, { ...autoContext, origin: 'manual-direct', playerMana: 20 })
+    expect(cascade.actionSpeedMultiplier).toBeCloseTo(1.02)
+
+    state.combat.arcaneCoreRuntime.emergencyConversionReady = false
+    const lowMana = commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 15, manaCost: 2 })
+    expect(lowMana.manaRestoreFlat).toBe(0)
+    expect(state.combat.arcaneCoreRuntime.emergencyConversionReady).toBe(true)
+    expect(getArcaneCoreV6CastModifiers(state, { ...autoContext, playerMana: 13 }, true).manaRestoreFlat).toBeCloseTo(1)
   })
 
   it('prepares Burst Window only when a positive cooldown crosses to zero', () => {

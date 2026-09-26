@@ -198,7 +198,7 @@ describe('dungeon-specific Guild request progression', () => {
     promoteGuildAction(state)
 
     expect(state.progress.guildRank).toBe('apprentice')
-    expect(state.progress.permanentFocusBonuses['guild-apprentice']).toBe(10)
+    expect(state.progress.permanentManaBonuses['guild-apprentice']).toBe(10)
   })
 
   it('claims each completed Guild Request once and preserves the authored reputation total', () => {

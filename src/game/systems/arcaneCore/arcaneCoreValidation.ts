@@ -6,7 +6,7 @@ import { validateArcaneCoreV7RuntimeCoverage } from './arcaneCoreV7Runtime'
 
 export const validateArcaneCoreCatalog = () => {
   const errors: string[] = []
-  const branchIds = new Set(['power', 'vitality', 'focus', 'control'])
+  const branchIds = new Set(['power', 'vitality', 'mana', 'control'])
   if (ARCANE_CORE_BRANCHES.length !== 4 || new Set(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).size !== 4 || ARCANE_CORE_BRANCHES.some((branch) => !branchIds.has(branch.id))) errors.push('Arcane Core must contain exactly four authored branches')
   if (ARCANE_CORE_NODES.length !== ARCANE_CORE_NODE_COUNT) errors.push(`Arcane Core must contain ${ARCANE_CORE_NODE_COUNT} nodes`)
   const ids = new Set<string>()

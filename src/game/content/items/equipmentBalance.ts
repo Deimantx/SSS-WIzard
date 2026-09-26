@@ -24,7 +24,6 @@ export const EQUIPMENT_BUILD_TAG_LABELS = {
   defense: 'Defense',
   sustain: 'Sustain',
   mana: 'Mana',
-  focus: 'Focus',
   healing: 'Healing',
   fire: 'Fire',
   water: 'Water',

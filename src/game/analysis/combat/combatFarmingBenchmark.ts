@@ -49,7 +49,6 @@ export interface CombatFarmingBenchmarkBuildSummary {
   guardianName: string | null
   maxHealth: number
   maxMana: number
-  maxFocus: number
   schoolLevels: Record<SchoolId, number>
   arcaneCorePoints: number
 }
@@ -159,7 +158,6 @@ export const buildCombatFarmingBenchmarkBuildSummary = (state: Pick<GameState, '
     guardianName: guardianId ? GUARDIANS[guardianId]?.name ?? guardianId : null,
     maxHealth: state.player.maxHealth,
     maxMana: state.player.maxMana,
-    maxFocus: state.player.maxFocus,
     schoolLevels: Object.fromEntries(SCHOOL_IDS.map((schoolId) => [schoolId, state.schools[schoolId].level])) as Record<SchoolId, number>,
     arcaneCorePoints: state.arcaneCore.totalPointsEarned ?? 0,
   }

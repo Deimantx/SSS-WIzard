@@ -136,7 +136,7 @@ export const WHISPERING_WOODS_MONSTERS = {
         id: "mist-lance",
         name: "Mist Lance",
         actionTimeMs: 2100,
-        description: "A focused lance of mist chills the Wizard.",
+        description: "A concentrated lance of mist chills the Wizard.",
         effects: [scaledDirectDamage("water", 1.2), applyStatus("chilled", "opponent", 5000)],
         tags: ["special", "water", "direct", "debuff"],
       },

@@ -307,7 +307,7 @@ describe('screen smoke coverage', () => {
     const user = userEvent.setup()
     const progress = useGameStore.getState().progress
     const player = useGameStore.getState().player
-    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, 'earthen-barrier': 1 } }, player: { ...player, maxFocus: 0 } })
+    useGameStore.setState({ progress: { ...progress, spellRanks: { 'fire-bolt': 1, 'earthen-barrier': 1 } }, player })
     render(<GameShell />)
     await goToMagicSchools(user)
     expect(document.querySelector('.schools-browser-panel select')).toBeNull()

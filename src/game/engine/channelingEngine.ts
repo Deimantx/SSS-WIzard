@@ -110,7 +110,7 @@ export const advanceChanneling = (state: GameState, deltaMs: number, manaRateOve
     if (effect?.type === 'mana-overflow-to-barrier') {
       const barrierCap = state.player.maxHealth * effect.maxHealthPercentPerSecondCap * delta / 1000
       const barrierGain = Math.min(barrierCap, overflow * effect.conversion)
-      if (barrierGain > 0) gainBarrier(state, barrierGain, { actor: 'player', kind: 'arcane-core', sourceId: 'focus-mana-overflow', tags: ['special', 'barrier'] }, 'player', ['special', 'barrier'], { mode: 'add', durationMs: null })
+      if (barrierGain > 0) gainBarrier(state, barrierGain, { actor: 'player', kind: 'arcane-core', sourceId: 'mana-overflow', tags: ['special', 'barrier'] }, 'player', ['special', 'barrier'], { mode: 'add', durationMs: null })
     }
   }
   const gained = state.player.mana - before

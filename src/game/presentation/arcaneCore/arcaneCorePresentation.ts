@@ -30,7 +30,6 @@ const PERCENT_STATS = new Set<ArcaneCoreModifierKey>([
   "damageOverTimePct",
   "barrierPowerPct",
   "healingDonePct",
-  "focusEfficiencyPct",
   "manaCostReductionPct",
   "cooldownRecoveryPct",
   "statusDurationPct",
@@ -50,8 +49,6 @@ const STAT_LABELS: Partial<Record<ArcaneCoreModifierKey, string>> = {
   healingDonePct: "Healing Done",
   maxMana: "Maximum Mana",
   manaRegen: "Mana Regeneration",
-  maxFocus: "Maximum Focus",
-  focusEfficiencyPct: "Combat Auto-Cast Efficiency",
   manaCostReductionPct: "Spell Mana Cost",
   cooldownRecoveryPct: "Cooldown Recovery",
   statusDurationPct: "Status Duration",
@@ -165,14 +162,14 @@ export const formatArcaneCoreCondition = (
   }
 };
 
-interface ArcaneCoreResonanceSource {
+interface ArcaneCoreEffectSource {
   nodeId: string;
   nodeName: string;
   value: number;
   formattedValue?: string;
 }
 
-export interface ArcaneCoreResonanceEntry {
+export interface ArcaneCoreEffectEntry {
   id: string;
   label: string;
   formattedValue: string;
@@ -181,13 +178,13 @@ export interface ArcaneCoreResonanceEntry {
   conditionText?: string;
   sourceNodeIds: string[];
   sourceNodeNames: string[];
-  sources?: ArcaneCoreResonanceSource[];
+  sources?: ArcaneCoreEffectSource[];
 }
 
-export interface ArcaneCoreResonanceSummary {
-  alwaysOn: ArcaneCoreResonanceEntry[];
-  conditional: ArcaneCoreResonanceEntry[];
-  mechanics: ArcaneCoreResonanceEntry[];
+export interface ArcaneCoreEffectSummary {
+  alwaysOn: ArcaneCoreEffectEntry[];
+  conditional: ArcaneCoreEffectEntry[];
+  mechanics: ArcaneCoreEffectEntry[];
 }
 
 const isMeaningful = (value: number) =>
@@ -208,16 +205,16 @@ const isV6Mechanic = (
  * and combat modifiers. Combat modifiers remain the gameplay source of truth;
  * this read model only adds labels, provenance, and conditional grouping.
  */
-const buildArcaneCoreResonanceSummary = (
+const buildArcaneCoreEffectSummary = (
   core: Pick<ArcaneCoreState, "nodes">,
   nodes: readonly ArcaneCoreNodeDefinition[],
-): ArcaneCoreResonanceSummary => {
+): ArcaneCoreEffectSummary => {
   const alwaysOn = new Map<
     string,
     {
       label: string;
       value: number;
-      sources: ArcaneCoreResonanceSource[];
+      sources: ArcaneCoreEffectSource[];
       kind: "stat" | "modifier";
     }
   >();
@@ -229,10 +226,10 @@ const buildArcaneCoreResonanceSummary = (
       value: number;
       actor: CombatModifier["actor"];
       condition: NonNullable<CombatModifier["condition"]>;
-      sources: ArcaneCoreResonanceSource[];
+      sources: ArcaneCoreEffectSource[];
     }
   >();
-  const mechanics: ArcaneCoreResonanceEntry[] = [];
+  const mechanics: ArcaneCoreEffectEntry[] = [];
 
   nodes.forEach((node) => {
     const rank = getArcaneCoreNodeRank(core, node.id);
@@ -330,7 +327,7 @@ const buildArcaneCoreResonanceSummary = (
     value: {
       label: string;
       value: number;
-      sources: ArcaneCoreResonanceSource[];
+      sources: ArcaneCoreEffectSource[];
       kind: "stat" | "modifier";
     },
   ) => ({
@@ -376,16 +373,16 @@ const buildArcaneCoreResonanceSummary = (
   };
 };
 
-export const getArcaneCoreResonanceSummary = (
+export const getArcaneCoreEffectSummary = (
   core: Pick<ArcaneCoreState, "nodes">,
-): ArcaneCoreResonanceSummary =>
-  buildArcaneCoreResonanceSummary(core, ARCANE_CORE_NODES);
+): ArcaneCoreEffectSummary =>
+  buildArcaneCoreEffectSummary(core, ARCANE_CORE_NODES);
 
-export const getArcaneCoreBranchResonanceSummary = (
+export const getArcaneCoreBranchEffectSummary = (
   core: Pick<ArcaneCoreState, "nodes">,
   branchId: ArcaneCoreBranchId,
-): ArcaneCoreResonanceSummary =>
-  buildArcaneCoreResonanceSummary(
+): ArcaneCoreEffectSummary =>
+  buildArcaneCoreEffectSummary(
     core,
     ARCANE_CORE_NODES.filter((node) => node.branchId === branchId),
   );
@@ -471,10 +468,6 @@ export const getArcaneCoreNodeEffectTexts = (
         return `Convert ${trimNumber(value.conversion * 100, 0)}% Mana overflow to Barrier`;
       case "nth-spell-free":
         return `Every ${value.every}th Spell costs 0 Mana`;
-      case "reserved-focus-spell-power":
-        return `+${trimNumber(value.spellPowerPerReservedFocus)} Spell Power per reserved Focus`;
-      case "free-focus-mana-regen":
-        return `+${trimNumber(value.manaRegenPerFreeFocus)} Mana/s per free Focus`;
       case "nth-spell-cooldown-pulse":
         return `Every ${value.every}th Spell reduces cooldowns by ${value.cooldownReductionMs} ms`;
     }

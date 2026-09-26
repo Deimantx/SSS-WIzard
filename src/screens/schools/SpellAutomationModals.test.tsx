@@ -8,7 +8,7 @@ import { SpellLoadoutDndProvider } from './SpellLoadoutDnd'
 
 const focusState = () => {
   const state = useGameStore.getState()
-  return { activities: state.activities, progress: state.progress, equipment: state.equipment, artifactProgress: state.artifactProgress, arcaneCore: state.arcaneCore, player: { maxFocus: state.player.maxFocus } }
+  return { activities: state.activities, progress: state.progress, equipment: state.equipment, artifactProgress: state.artifactProgress, arcaneCore: state.arcaneCore, player: { health: state.player.health, maxHealth: state.player.maxHealth, mana: state.player.mana, maxMana: state.player.maxMana } }
 }
 
 function renderAutomationModal(spellId: 'earthen-barrier' | 'cleansing-tide' | 'fire-bolt', automation?: { conditions: Array<{ type: 'player-hp'; operator: 'below'; percent: number }>; targetRule: 'current-enemy' }, withTooltips = false) {

@@ -22,8 +22,8 @@ describe('V6 Artifact roster', () => {
   it('uses the authored Fire critical-chance progression while preserving stable node IDs', () => {
     const emberFocus = ARTIFACTS['ember-staff'].minorNodes.find((node) => node.id === 'quickkindle')
     const pyreFocus = ARTIFACTS['pyrebound-staff'].minorNodes.find((node) => node.id === 'cinder-tempo')
-    expect(emberFocus).toMatchObject({ name: 'Cinder Focus', description: 'Spell Critical Chance' })
-    expect(pyreFocus).toMatchObject({ name: 'Pyre Focus', description: 'Spell Critical Chance' })
+    expect(emberFocus).toMatchObject({ name: 'Cinder Precision', description: 'Spell Critical Chance' })
+    expect(pyreFocus).toMatchObject({ name: 'Pyre Precision', description: 'Spell Critical Chance' })
     expect(emberFocus?.rankEffects).toHaveLength(10)
     expect(pyreFocus?.rankEffects).toHaveLength(10)
     expect(mergeArtifactResolvedEffects(emberFocus?.rankEffects ?? []).stats?.critChance).toBeCloseTo(0.075, 10)

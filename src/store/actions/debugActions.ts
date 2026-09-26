@@ -7,9 +7,7 @@ export type CombatTimeScale = typeof COMBAT_TIME_SCALES[number]
 export const createDefaultDebugOverrides = (): DebugOverrides => ({
   bonusManaRegenFlat: 0,
   bonusMaxManaFlat: 0,
-  bonusMaxFocusFlat: 0,
   allowManaOverCap: false,
-  allowFocusOverCap: false,
   showLockedTransmutationRecipes: false,
   showLockedArtificingRecipes: false,
   playerImmortal: false,

@@ -53,7 +53,6 @@ describe('profile save recovery and historical compatibility', () => {
       expect(loaded.state?.currencies.gold).toBe(321)
       expect(loaded.state?.activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', remainingQuantity: 17 })
       expect(loaded.state?.activities.transmutation.jobs['fire-fragment']).toMatchObject({ progressMs: 500 })
-      expect(loaded.state?.progress.focusImprovement.level).toBe(4)
     }
     if (label === 'V13') {
       expect(loaded.state?.combat.enemyCurrentActionId).toBe('arc-spark')

@@ -19,16 +19,19 @@
 .starting-school-content h1 { margin: 8px 0 12px; font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 4.5rem); letter-spacing: .02em; }
 .starting-school-lede { max-width: 680px; margin: 0 auto 30px; color: var(--ui-text-muted); line-height: 1.55; }
 .starting-school-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; text-align: left; }
-.starting-school-card { position: relative; min-height: 300px; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 22px; border-top: 2px solid var(--starting-school-color); background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel) 94%, transparent), color-mix(in srgb, var(--starting-school-color) 7%, var(--ui-panel))); transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease; }
+.starting-school-card { position: relative; min-height: 360px; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 22px 22px 14px; border-top: 2px solid var(--starting-school-color); background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel) 94%, transparent), color-mix(in srgb, var(--starting-school-color) 7%, var(--ui-panel))); transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease; }
 .starting-school-card:hover, .starting-school-card:focus-within { border-color: var(--starting-school-color); background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel) 90%, transparent), color-mix(in srgb, var(--starting-school-color) 12%, var(--ui-panel))); box-shadow: 0 0 26px color-mix(in srgb, var(--starting-school-color) 10%, transparent); }
 .starting-school-card-heading { display: flex; align-items: center; gap: 12px; min-height: 58px; }
 .starting-school-card-icon { display: grid; place-items: center; width: 48px; height: 48px; color: var(--starting-school-color); border: 1px solid color-mix(in srgb, var(--starting-school-color) 70%, var(--ui-border)); border-radius: 14px; background: color-mix(in srgb, var(--starting-school-color) 11%, transparent); }
 .starting-school-card-eyebrow, .starting-school-section-label { color: var(--starting-school-color); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; }
 .starting-school-card h2 { margin: 4px 0 0; color: var(--ui-text); font: var(--text-md) var(--font-body); }
 .starting-school-artifact, .starting-school-spells { margin-top: 18px; }
+.starting-school-spells { margin-bottom: 12px; }
 .starting-school-section-label { display: block; color: var(--ui-text-muted); }
-.starting-school-artifact-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: var(--ui-text); font-size: var(--text-sm); font-weight: 650; }
-.starting-school-artifact-icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--starting-school-color); }
+.starting-school-artifact-row { display: flex; align-items: center; gap: 10px; min-width: 0; margin-top: 8px; color: var(--ui-text); font-size: var(--text-sm); font-weight: 650; }
+.starting-school-artifact-icon { display: grid; flex: 0 0 52px; place-items: center; width: 52px; height: 52px; overflow: hidden; color: var(--starting-school-color); }
+.starting-school-artifact-icon .item-icon-tile { width: 52px; height: 52px; font-size: 31px; }
+.starting-school-artifact-row > strong { min-width: 0; overflow-wrap: anywhere; }
 .starting-school-spell-list { display: grid; gap: 7px; margin-top: 8px; }
 .starting-school-spell { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--ui-text); font-size: var(--text-sm); }
 .starting-school-spell strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

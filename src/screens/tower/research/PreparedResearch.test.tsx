@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
-import { prepareResearchAction, setResearchEchoesAction } from '../../../store/actions/researchActions'
+import { prepareResearchAction } from '../../../store/actions/researchActions'
 import { BALANCE } from '../../../game/core/balance/balance'
 import { resetAllUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { PreparedResearch } from './PreparedResearch'
@@ -16,20 +16,21 @@ describe('PreparedResearch', () => {
     ;(['fire', 'water', 'earth', 'air'] as const).forEach((school, index) => {
       state.inventory[`${school}-fragment`] = 10
       prepareResearchAction(state, `${school}-fragment` as never, school, 5)
-      setResearchEchoesAction(state, `research-${index + 1}` as never, index === 0 ? 2 : 1)
+      const slotId = `research-${index + 1}` as keyof typeof state.activities.research.slots
+      state.activities.research.slots[slotId]!.acolyteAssigned = true
     })
     useGameStore.getState().hydrateState(state)
     render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
 
     expect(document.querySelectorAll('.prepared-research-row')).toHaveLength(4)
     expect(screen.getByText('4 / 4')).toBeTruthy()
-    expect(screen.getByText('5 / 5 ECHOES')).toBeTruthy()
+    expect(screen.getByLabelText('4 Research Acolytes assigned')).toBeTruthy()
     expect(Array.from(document.querySelectorAll('.prepared-research-compact-progress .progress > i')).map((fill) => fill.className)).toEqual(['violet', 'fire', 'violet', 'water', 'violet', 'earth', 'violet', 'air'])
-    expect((screen.getByRole('button', { name: /Assign Research Echo to Air Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /Assign Research Acolyte to Air Fragment/ }) as HTMLButtonElement).disabled).toBe(false)
 
-    fireEvent.click(screen.getByRole('button', { name: /Remove Research Echo from Fire Fragment/ }))
-    expect(useGameStore.getState().activities.research.slots['research-1']?.echoesAssigned).toBe(1)
-    expect(screen.getByText('4 / 5 ECHOES')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Remove Research Acolyte from Fire Fragment/ }))
+    expect(useGameStore.getState().activities.research.slots['research-1']?.acolyteAssigned).toBe(false)
+    expect(screen.getByLabelText('3 Research Acolytes assigned')).toBeTruthy()
     expect(document.querySelectorAll('.game-tooltip-trigger').length).toBeGreaterThan(0)
   })
 
@@ -39,7 +40,7 @@ describe('PreparedResearch', () => {
     state.player.baseMaxFocus = 10
     state.player.maxFocus = 10
     prepareResearchAction(state, 'fire-fragment', 'fire', 5)
-    setResearchEchoesAction(state, 'research-1' as never, 1)
+    state.activities.research.slots['research-1']!.acolyteAssigned = true
     useGameStore.getState().hydrateState(state)
     render(<TooltipProvider><PreparedResearch /></TooltipProvider>)
 
@@ -50,8 +51,8 @@ describe('PreparedResearch', () => {
     expect(screen.getByText('XP REMAINING')).toBeTruthy()
     expect(screen.getByText('EST. NEXT LEVEL')).toBeTruthy()
     expect(screen.getByText('SCHOOL XP')).toBeTruthy()
-    expect(screen.getByText('FOCUS RESERVED')).toBeTruthy()
-    expect((screen.getByRole('button', { name: /Assign Research Echo to Fire Fragment/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByLabelText(/minus 0\.5 Arcane Flux per second/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: /Assign Research Acolyte to Fire Fragment/ }) as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('keeps current-item and school-level progress bars visible with their real values', () => {

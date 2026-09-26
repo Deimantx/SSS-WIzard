@@ -19,6 +19,9 @@ export interface ItemTooltipRecipeContext {
   status: string
   baseDurationMs?: number
   manaCost?: number
+  arcaneFluxCost?: number
+  resonanceCost?: number | Partial<Record<'fire' | 'water' | 'earth' | 'air', number>>
+  acolytesAssigned?: number
   outputQuantity: number
   ingredients: Array<{ itemId: ItemId; quantity: number }>
   unlockReason?: string
@@ -84,7 +87,7 @@ export function ItemTooltipContent({ itemId, owned, protectedItem = false, equip
       {item.researchSchool && <div className="tooltip-section item-tooltip-research"><small>RESEARCH</small><div className="item-tooltip-research-grid">{(Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>).map((schoolId) => <TooltipRow key={schoolId} label={SCHOOLS[schoolId].name} value={getResearchXp(itemId, schoolId) + ' XP'} />)}</div></div>}
       {visibleStats.length > 0 && <div className="tooltip-section item-tooltip-stats"><small>STATS</small><div className="item-tooltip-stat-list">{visibleStats.filter(([, value]) => value !== 0).map(([key, value]) => <TooltipRow key={key} label={friendlyStatLabel(key)} value={formatStat(key, value)} />)}</div></div>}
       {item.kind === 'equipment' && <EquipmentCombatDetails item={item} compact />}
-      {recipeContext && <div className="tooltip-section item-tooltip-recipe"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} />{recipeContext.baseDurationMs !== undefined && <TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} />}{recipeContext.manaCost !== undefined && <TooltipRow label="Mana" value={formatResourceAmount(recipeContext.manaCost)} />}<TooltipRow label="Output" value={'×' + recipeContext.outputQuantity} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => ITEMS[ingredient.itemId].name + ' ×' + ingredient.quantity).join(' · ') : 'Mana only'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
+      {recipeContext && <div className="tooltip-section item-tooltip-recipe"><small>RECIPE</small><TooltipRow label="Status" value={recipeContext.status} />{recipeContext.baseDurationMs !== undefined && <TooltipRow label="Base time" value={formatDuration(recipeContext.baseDurationMs)} />}{recipeContext.arcaneFluxCost !== undefined ? <TooltipRow label="Arcane Flux" value={formatResourceAmount(recipeContext.arcaneFluxCost)} /> : recipeContext.manaCost !== undefined && <TooltipRow label="Mana" value={formatResourceAmount(recipeContext.manaCost)} />}{recipeContext.resonanceCost !== undefined && <TooltipRow label="Resonance" value={formatResonanceCost(recipeContext.resonanceCost)} />}{recipeContext.acolytesAssigned !== undefined && <TooltipRow label="Acolytes" value={recipeContext.acolytesAssigned} />}<TooltipRow label="Output" value={'×' + recipeContext.outputQuantity} /><p>{recipeContext.ingredients.length ? recipeContext.ingredients.map((ingredient) => ITEMS[ingredient.itemId].name + ' ×' + ingredient.quantity).join(' · ') : 'No material inputs'}</p>{recipeContext.unlockReason && <p>{recipeContext.unlockReason}</p>}</div>}
       {extraContent}
       {flow && <div className="tooltip-section item-tooltip-flow"><small>CURRENT FLOW</small>{production && <TooltipRow label="Production" value={production} />}{consumption && <TooltipRow label="Consumption" value={consumption} />}<TooltipRow label="Net" value={formatItemFlowRate(flow.netPerHour)} />{flow.depletionEtaMs !== null && <TooltipRow label="Depletes in" value={formatFlowEta(flow.depletionEtaMs) ?? '-'} />}</div>}
       <div className="tooltip-section item-tooltip-source"><small>SOURCE</small><p>{getItemSourceLabel(itemId)}</p></div>
@@ -95,6 +98,12 @@ function formatDuration(ms: number) {
   if (ms < 1000) return `${Math.round(ms)}ms`
   const seconds = ms / 1000
   return seconds >= 60 ? `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s` : `${Math.round(seconds)}s`
+}
+
+function formatResonanceCost(cost: number | Partial<Record<'fire' | 'water' | 'earth' | 'air', number>>) {
+  if (typeof cost === 'number') return formatResourceAmount(cost)
+  const entries = Object.entries(cost).filter(([, amount]) => Number(amount) > 0)
+  return entries.length ? entries.map(([school, amount]) => `${school} ${formatResourceAmount(Number(amount))}`).join(' · ') : 'None'
 }
 
 function TooltipRow({ label, value }: { label: string; value: ReactNode }) { return <span className="tooltip-row"><span>{label}</span><b>{value}</b></span> }

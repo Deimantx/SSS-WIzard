@@ -2,7 +2,7 @@ import { MONSTERS } from '../../content/monsters'
 import { BALANCE } from '../../core/balance/balance'
 import { DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { getEquipmentStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
-import { getManaCapacityBreakdown, getManaRegenBreakdown } from '../../engine/channelingEngine'
+import { getPlayerManaCapacityBreakdown, getPlayerManaRegenBreakdown } from '../mana/playerMana'
 import { getFocusCapacityBreakdown } from '../focus/focusCapacity'
 import { getSpellPower } from '../spells/spellPower'
 import type { EquipmentStats, GameState } from '../../types'
@@ -67,8 +67,8 @@ const getPlayerSheetStats = (state: PlayerSheetState): PlayerCombatStats => {
   return {
     maxHealth: playerBaseMaxHealth(state),
     healthRegen: BALANCE.player.healthRegenPerSecond + playerEquipmentStat(state, 'healthRegen'),
-    maxMana: getManaCapacityBreakdown(state).total,
-    manaRegen: getManaRegenBreakdown(state).total,
+    maxMana: getPlayerManaCapacityBreakdown(state).total,
+    manaRegen: getPlayerManaRegenBreakdown(state).total,
     maxFocus: getFocusCapacityBreakdown(state).total,
     spellPower: getSpellPower(state),
     critChance: clampPercent(BALANCE.player.baseCritChance + finite(equipment.critChance), 0, MAX_CRIT_CHANCE),

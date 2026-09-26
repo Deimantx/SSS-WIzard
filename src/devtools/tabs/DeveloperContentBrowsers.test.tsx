@@ -49,7 +49,7 @@ describe('Developer content browsers', () => {
     expect(screen.getByText('30')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Cast selected' })).toBeTruthy()
     expect(rendered.container.querySelector('pre')).toBeNull()
-    expect(rendered.container.textContent).toContain('6 s')
+    expect(rendered.container.textContent).toContain('3.5 s')
     expect(rendered.container.textContent).toContain('75% of Spell Power Fire damage')
     expect(rendered.container.textContent).not.toContain('runtime registry')
   })

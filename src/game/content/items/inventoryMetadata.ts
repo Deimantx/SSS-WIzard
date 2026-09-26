@@ -2,7 +2,6 @@ import { GUILD_REQUESTS } from '../guild/guildRequests'
 import { MANA_PILLARS } from '../channeling/manaPillars'
 import { RECIPES } from '../recipes/recipes'
 import { getItemSourceLabel, ITEMS } from './items'
-import { FOCUS_IMPROVEMENT } from '../focus/focusImprovement'
 import { EQUIPMENT_BUILD_TAG_LABELS } from './equipmentBalance'
 import type { InventoryCategory, InventoryMaterialSubtype, ItemId, RecipeId, ScreenId } from '../../types'
 
@@ -49,10 +48,7 @@ export function getItemUses(itemId: ItemId): InventoryDestination[] {
     if (recipe.ingredients.some((ingredient) => ingredient.itemId === itemId)) uses.push({ label: recipe.name, destination: recipe.kind === 'artificing' ? 'tower-artificing' : 'tower-transmutation', detail: recipe.kind === 'artificing' ? 'Artificing recipe' : 'Transmutation recipe', recipeId: recipe.id })
   })
   if (itemId === 'life-essence' || Object.values(MANA_PILLARS).some((pillar) => pillar.fragmentRequirements.includes(itemId))) {
-    uses.push({ label: 'Pillars of Mana', destination: 'tower-channeling', detail: 'Permanent Tower progression' })
-  }
-  if (itemId === 'prismatic-fragment') {
-    uses.push({ label: FOCUS_IMPROVEMENT.name, destination: 'tower-focus', detail: 'Permanent Focus progression' })
+    uses.push({ label: 'Leyline Pillars', destination: 'tower-channeling', detail: 'Permanent Tower progression' })
   }
   Object.values(GUILD_REQUESTS).forEach((request) => {
     if (request.kind === 'donation' && request.itemId === itemId) uses.push({ label: request.name, destination: 'guild', detail: 'Guild request' })

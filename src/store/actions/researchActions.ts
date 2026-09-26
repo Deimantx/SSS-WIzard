@@ -1,16 +1,18 @@
 import { ITEMS } from '../../game/content/items/items'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { BALANCE } from '../../game/core/balance/balance'
-import { canReserveFocusAction } from './focusActions'
-import { pushNotification, selectFreeFocus } from '../../game/engine'
-import { getResearchAssignOneEachState, getResearchAvailableQuantity, getResearchEchoCapacity, getResearchEchoesAssigned, getResearchJobStatus } from '../../game/systems/research/researchSelectors'
+import { pushNotification } from '../../game/engine'
+import { getResearchAvailableQuantity } from '../../game/systems/research/researchSelectors'
 import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReservations'
 import type { GameState, ItemId, ResearchJobState, ResearchSlotId, SchoolId } from '../../game/types'
+import { assignResearchAcolyteAction, removeResearchAcolyteAction, assignOneResearchAcolyteEachAction, clearResearchAcolytesAction } from './acolyteActions'
+
+export { assignResearchAcolyteAction, removeResearchAcolyteAction, assignOneResearchAcolyteEachAction, clearResearchAcolytesAction }
 
 const validSchool = (schoolId: SchoolId) => Boolean(SCHOOLS[schoolId])
 const finiteQuantity = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : 0
 const isProtected = (state: GameState, itemId: ItemId) => Boolean(state.protectedItems[itemId]) || Object.values(state.equipment).includes(itemId)
-const makeJob = (itemId: ItemId, targetSchoolId: SchoolId, quantity: number): ResearchJobState => ({ itemId, targetSchoolId, requestedQuantity: quantity, remainingQuantity: quantity, progressMs: 0, echoesAssigned: 0, status: 'prepared' })
+const makeJob = (itemId: ItemId, targetSchoolId: SchoolId, quantity: number): ResearchJobState => ({ itemId, targetSchoolId, requestedQuantity: quantity, remainingQuantity: quantity, progressMs: 0, acolyteAssigned: false, echoesAssigned: 0, status: 'prepared' })
 
 const notify = (state: GameState, text: string) => pushNotification(state, text, 'warning', { key: 'research-action', cooldownMs: 1200 })
 
@@ -47,80 +49,33 @@ export const removePreparedResearchAction = (state: GameState, slotId: ResearchS
   return true
 }
 
-const addResearchEcho = (job: ResearchJobState) => {
-  job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned)) + 1
-  job.status = 'running'
-}
-
 export const assignResearchEchoAction = (state: GameState, slotId: ResearchSlotId) => {
-  const job = state.activities.research.slots[slotId]
-  if (!job) return false
-  const status = getResearchJobStatus(state, slotId)
-  if (status === 'level-cap' || status === 'protected' || status === 'missing-item') {
-    notify(state, status === 'level-cap' ? 'This Research batch is at the current Magic School cap.' : status === 'protected' ? 'This Research item is protected.' : 'This Research batch is missing its item.')
-    return false
-  }
-  const capacity = getResearchEchoCapacity(state)
-  if (getResearchEchoesAssigned(state) >= capacity) { notify(state, `Research Echo capacity reached: ${capacity} / ${capacity}.`); return false }
-  if (!canReserveFocusAction(state, BALANCE.research.echoFocusCost)) { notify(state, `Not enough free Focus. Each Research Echo requires ${BALANCE.research.echoFocusCost} Focus. Free Focus: ${selectFreeFocus(state)}`); return false }
-  addResearchEcho(job)
-  return true
+  return assignResearchAcolyteAction(state, slotId)
 }
 
 export const assignOneResearchEchoEachAction = (state: GameState) => {
-  const assignment = getResearchAssignOneEachState(state)
-  if (!assignment.canAssign) {
-    if (assignment.blockedReason === 'echo-capacity') notify(state, `Need ${assignment.targetCount} free Research Echo slots to assign one to every prepared batch. Free slots: ${assignment.freeEchoSlots}.`)
-    else if (assignment.blockedReason === 'focus') notify(state, `Assigning one Echo to each batch requires ${assignment.requiredFocus} Focus. Free Focus: ${assignment.freeFocus}.`)
-    return false
-  }
-  assignment.targetSlotIds.forEach((slotId) => {
-    const job = state.activities.research.slots[slotId]
-    if (job) addResearchEcho(job)
-  })
-  return true
+  return assignOneResearchAcolyteEachAction(state) > 0
 }
 
 export const removeResearchEchoAction = (state: GameState, slotId: ResearchSlotId) => {
-  const job = state.activities.research.slots[slotId]
-  if (!job) return false
-  job.echoesAssigned = Math.max(0, Math.floor(job.echoesAssigned) - 1)
-  if (job.echoesAssigned === 0 && (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana')) job.status = 'prepared'
-  return true
+  return removeResearchAcolyteAction(state, slotId)
 }
 
 export const assignMaxResearchEchoesAction = (state: GameState, slotId: ResearchSlotId) => {
-  const current = Math.max(0, finiteQuantity(state.activities.research.slots[slotId]?.echoesAssigned))
-  const capacity = getResearchEchoCapacity(state)
-  const maxAttempts = Number.isSafeInteger(capacity) ? capacity : 1000
-  for (let index = 0; index < maxAttempts; index += 1) if (!assignResearchEchoAction(state, slotId)) break
-  return Math.max(0, finiteQuantity(state.activities.research.slots[slotId]?.echoesAssigned)) - current
+  return assignResearchAcolyteAction(state, slotId) ? 1 : 0
 }
 
 export const pauseResearchAction = (state: GameState, slotId: ResearchSlotId) => {
-  const job = state.activities.research.slots[slotId]
-  if (!job) return false
-  job.echoesAssigned = 0
-  if (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana') job.status = 'prepared'
-  return true
+  return removeResearchAcolyteAction(state, slotId)
 }
 
 export const setResearchEchoesAction = (state: GameState, slotId: ResearchSlotId, amount: number, force = false) => {
-  const job = state.activities.research.slots[slotId]
-  if (!job) return false
-  const target = Math.max(0, finiteQuantity(amount))
-  const current = Math.max(0, Math.floor(job.echoesAssigned))
-  if (target <= current) { job.echoesAssigned = target; if (!target && (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana')) job.status = 'prepared'; return true }
-  if (force && state.debug.ignoreEchoLimit) { job.echoesAssigned = target; return true }
-  for (let index = current; index < target; index += 1) if (!assignResearchEchoAction(state, slotId)) break
-  return true
+  if (amount > 0) return assignResearchAcolyteAction(state, slotId)
+  return removeResearchAcolyteAction(state, slotId)
 }
 
 export const clearResearchEchoesAction = (state: GameState) => {
-  RESEARCH_SLOT_ORDER.forEach((slotId) => {
-    const job = state.activities.research.slots[slotId]
-    if (job) { job.echoesAssigned = 0; if (job.status === 'running' || job.status === 'mana-limited' || job.status === 'waiting-mana') job.status = 'prepared' }
-  })
+  clearResearchAcolytesAction(state)
 }
 
 export const clearPreparedResearchAction = (state: GameState) => {

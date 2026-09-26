@@ -61,9 +61,7 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
         ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
         : failure.reason === 'unavailable'
           ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
-        : failure.focus
-          ? `NOT ENOUGH FOCUS · Combat Loadout: ${selectedPreset?.name ?? 'Selected Preset'} · Combat Focus Required: ${failure.focus.combatFocusRequired} · Max Focus: ${failure.focus.maxFocus} · Currently Used: ${failure.focus.activeNonCombatFocus} · Available for Combat: ${failure.focus.availableForCombat} · Missing Focus: ${failure.focus.missingFocus}. Free additional Focus before starting combat.`
-          : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus.`
+        : `${selectedPreset?.name ?? 'Selected Preset'} could not activate.`
   }
   return failure.reason === 'missing-preset'
     ? `Selected Preset is unavailable. Continuing with ${continuingWith}.`
@@ -71,9 +69,7 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
       ? `${selectedPreset?.name ?? 'Selected Preset'} has no Spells. Continuing with ${continuingWith}.`
       : failure.reason === 'unavailable'
         ? `${selectedPreset?.name ?? 'Selected Preset'} has no currently unlocked Spells. Continuing with ${continuingWith}.`
-        : failure.focus
-          ? `Selected Preset is ${failure.focus.missingFocus} Focus short. Continuing with ${continuingWith}.`
-          : `${selectedPreset?.name ?? 'Selected Preset'} could not activate — requires ${failure.requiredExtraFocus ?? 0} more Focus. Continuing with ${continuingWith}.`
+        : `${selectedPreset?.name ?? 'Selected Preset'} could not activate. Continuing with ${continuingWith}.`
 }
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
@@ -287,10 +283,12 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     state.combat.dungeonSequenceIndex = Math.min(sequenceLength, Math.max(0, (state.combat.dungeonSequenceIndex ?? 0) + 1))
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
+    if (state.progress.tutorialStage === 'combat') { state.progress.tutorialStage = 'first-kill'; pushNotification(state, 'FIRST VICTORY · The Tower is ready for Acolyte work.', 'success', { key: 'tutorial-first-kill', cooldownMs: 1000 }) }
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
   } else {
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
+    if (state.progress.tutorialStage === 'combat') { state.progress.tutorialStage = 'first-kill'; pushNotification(state, 'FIRST VICTORY · The Tower is ready for Acolyte work.', 'success', { key: 'tutorial-first-kill', cooldownMs: 1000 }) }
     const requirement = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
     const beforeThreat = Math.max(0, state.combat.threatCleared)
     const threatGain = resolveThreatGainForKill(state, enemyId, encounterWorldTier)

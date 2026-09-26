@@ -158,7 +158,6 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
       <div className="developer-summary-grid developer-balance-summary-grid">
         <Summary label="Max HP" value={formatNumber(buildSummary.maxHealth)} />
         <Summary label="Max Mana" value={formatNumber(buildSummary.maxMana)} />
-        <Summary label="Max Focus" value={formatNumber(buildSummary.maxFocus)} />
         <Summary label="Guardian" value={buildSummary.guardianName ?? 'None'} />
         <Summary label="Spell preset" value={buildSummary.selectedSpellPresetName ?? 'None'} />
         <Summary label="Arcane Core" value={formatNumber(buildSummary.arcaneCorePoints)} />

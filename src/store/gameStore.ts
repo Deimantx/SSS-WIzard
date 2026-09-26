@@ -119,6 +119,7 @@ import {
   toggleItemProtectionAction,
 } from "./actions/inventoryActions";
 import { equipItemAction, unequipItemAction } from "./actions/equipmentActions";
+import { chooseStartingSchoolAction, chooseStartingSchoolDebugAction, grantStarterArtifactAction, resetTutorialAction, setTutorialStageAction, skipTutorialAction } from "./actions/onboardingActions";
 import {
   donateGuildRequestAction,
   claimGuildRewardAction,
@@ -137,14 +138,17 @@ import {
 } from "./actions/progressionActions";
 import {
   setChannelingEchoesAction,
+  assignChannelingAcolyteAction,
+  removeChannelingAcolyteAction,
+  setChannelingAcolytesDebugAction,
   upgradeManaPillarAction,
   setManaPillarLevelAction,
   setChannelingManaGeneratedAction,
+  setChannelingFluxGeneratedAction,
   setChannelingSustainAction,
   setChannelingDiscoveryAction,
 } from "./actions/channelingActions";
 import {
-  canReserveFocusAction,
   setFocusImprovementLevelAction,
   upgradeFocusCapacityAction,
 } from "./actions/focusActions";
@@ -159,6 +163,10 @@ import {
   removePreparedResearchAction,
   removeResearchEchoAction,
   setResearchEchoesAction,
+  assignResearchAcolyteAction,
+  removeResearchAcolyteAction,
+  assignOneResearchAcolyteEachAction,
+  clearResearchAcolytesAction,
 } from "./actions/researchActions";
 import {
   assignMaxTransmutationEchoesAction,
@@ -170,6 +178,9 @@ import {
   removeTransmutationEchoAction,
   setTransmutationEchoCapacityOverrideAction,
   setTransmutationEchoesAction,
+  assignTransmutationAcolyteAction,
+  removeTransmutationAcolyteAction,
+  clearTransmutationAcolytesAction,
   upgradeTransmutationArrayAction,
 } from "./actions/transmutationActions";
 import { forceCompleteTransmutationCycle } from "../game/systems/transmutation/transmutationEngine";
@@ -261,7 +272,7 @@ import {
   combatDefeatSink,
   publishOfflineCombatDefeat,
 } from "../game/ui/combatDefeatStore";
-import { clearCombatEntryBlock, showCombatFocusBlock } from "../game/ui/combatEntryBlockStore";
+import { clearCombatEntryBlock } from "../game/ui/combatEntryBlockStore";
 import { createCombatEventSink } from "../game/systems/combat/combatEventSink";
 import {
   combatTelemetryObserver,
@@ -501,11 +512,20 @@ export interface RecentAcquisition {
 export interface GameActions {
   tick: (deltaMs: number) => void;
   setScreen: (screen: ScreenId) => void;
+  chooseStartingSchool: (schoolId: SchoolId) => boolean;
+  debugChooseStartingSchool: (schoolId: SchoolId) => boolean;
+  resetTutorialForDebug: () => void;
+  setTutorialStageForDebug: (stage: import("../game/types").TutorialStage) => void;
+  skipTutorialForDebug: () => void;
+  grantStarterArtifactForDebug: (schoolId: SchoolId) => void;
   selectGuardian: (guardianId: GuardianId) => void;
   completeStoryEvent: (eventId: StoryEventId) => void;
   addArcaneEcho: () => void;
   removeArcaneEcho: () => void;
   setChannelingEchoes: (amount: number) => void;
+  assignChannelingAcolyte: () => void;
+  removeChannelingAcolyte: () => void;
+  setChannelingAcolytesDebug: (amount: number) => void;
   forceSetEchoes: (amount: number) => void;
   upgradeManaPillar: (pillarId: ManaPillarId) => void;
   setManaPillarLevel: (pillarId: ManaPillarId, level: number) => void;
@@ -518,6 +538,7 @@ export interface GameActions {
   upgradeFocusCapacity: () => void;
   setFocusImprovementLevel: (level: number) => void;
   setChannelingManaGenerated: (amount: number) => void;
+  setChannelingFluxGenerated: (amount: number) => void;
   setChannelingFiveEchoSustain: (amount: number) => void;
   setChannelingDiscovery: (
     id: ChannelingDiscoveryId,
@@ -529,6 +550,10 @@ export interface GameActions {
   setDebugAllowManaOverCap: (enabled: boolean) => void;
   setDebugAllowFocusOverCap: (enabled: boolean) => void;
   setDebugIgnoreEchoLimit: (enabled: boolean) => void;
+  setDebugAcolyteBonus: (amount: number) => void;
+  setDebugAcolyteTotalOverride: (amount: number | null) => void;
+  setDebugIgnoreAcolyteLimit: (enabled: boolean) => void;
+  setDebugArcaneFluxCapacity: (amount: number | null) => void;
   setDebugShowLockedTransmutationRecipes: (enabled: boolean) => void;
   setDebugShowLockedArtificingRecipes: (enabled: boolean) => void;
   setDebugPlayerImmortal: (enabled: boolean) => void;
@@ -551,6 +576,10 @@ export interface GameActions {
   ) => void;
   removePreparedResearch: (slotId: ResearchSlotId) => void;
   assignResearchEcho: (slotId: ResearchSlotId) => void;
+  assignResearchAcolyte: (slotId: ResearchSlotId) => void;
+  removeResearchAcolyte: (slotId: ResearchSlotId) => void;
+  assignOneResearchAcolyteEach: () => void;
+  clearResearchAcolytes: () => void;
   assignMaxResearchEchoes: (slotId: ResearchSlotId) => void;
   pauseResearch: (slotId: ResearchSlotId) => void;
   assignOneResearchEchoEach: () => void;
@@ -560,6 +589,9 @@ export interface GameActions {
   clearPreparedResearch: () => void;
   forceResearchCycle: (slotId: ResearchSlotId) => void;
   assignTransmutationEcho: (recipeId: TransmutationRecipeId) => void;
+  assignTransmutationAcolyte: (recipeId: TransmutationRecipeId) => void;
+  removeTransmutationAcolyte: (recipeId: TransmutationRecipeId) => void;
+  clearTransmutationAcolytes: () => void;
   removeTransmutationEcho: (recipeId: TransmutationRecipeId) => void;
   assignMaxTransmutationEchoes: (recipeId: TransmutationRecipeId) => void;
   clearTransmutationRecipeEchoes: (recipeId: TransmutationRecipeId) => void;
@@ -817,28 +849,14 @@ const grantDebugArtifactMaterialsInState = (state: GameState) => {
 };
 
 const spellUnlocked = isSpellUnlocked;
-const canReserveFocus = canReserveFocusAction;
-
 const getCombatEntryFailureMessage = (state: GameState, failure: ReturnType<typeof validateSelectedCombatLoadout>) => {
   const preset = getCombatEntryPreset(state)
   if (failure.ok) return ''
-  if (failure.reason !== 'focus' || !failure.focus) {
-    return failure.reason === 'missing-preset'
-      ? 'Select a Spell Preset before entering combat.'
-      : failure.reason === 'empty'
-        ? `${preset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
-        : `${preset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
-  }
-  const focus = failure.focus
-  return `NOT ENOUGH FOCUS · Combat Loadout: ${preset?.name ?? 'Selected Preset'} · Combat Focus Required: ${focus.combatFocusRequired} · Max Focus: ${focus.maxFocus} · Currently Used: ${focus.activeNonCombatFocus} · Available for Combat: ${focus.availableForCombat} · Missing Focus: ${focus.missingFocus}. Free additional Focus before starting combat.`
-}
-
-const showCombatFocusPreflightBlock = (state: GameState, failure: ReturnType<typeof validateSelectedCombatLoadout>) => {
-  if (failure.ok) return false
-  if (failure.reason !== 'focus' || !failure.focus) return false
-  const preset = getCombatEntryPreset(state)
-  showCombatFocusBlock({ kind: 'focus', loadoutName: preset?.name ?? 'Selected Preset', ...failure.focus })
-  return true
+  return failure.reason === 'missing-preset'
+    ? 'Select a Spell Preset before entering combat.'
+    : failure.reason === 'empty'
+      ? `${preset?.name ?? 'Selected Preset'} has no Spells. Add at least one Spell in Manage Presets.`
+      : `${preset?.name ?? 'Selected Preset'} has no currently unlocked Spells.`
 }
 
 const toggleAutoCastState = (state: GameState, requestedSpellId: SpellId) => {
@@ -935,6 +953,28 @@ export const useGameStore = create<GameStore>()(
         return state;
       });
     },
+    chooseStartingSchool: (schoolId) => {
+      let chosen = false;
+      set((state) => {
+        chosen = chooseStartingSchoolAction(state, schoolId);
+        if (chosen) recalculateDerivedStats(state);
+        return state;
+      });
+      return chosen;
+    },
+    debugChooseStartingSchool: (schoolId) => {
+      let chosen = false;
+      set((state) => {
+        chosen = chooseStartingSchoolDebugAction(state, schoolId);
+        if (chosen) recalculateDerivedStats(state);
+        return state;
+      });
+      return chosen;
+    },
+    resetTutorialForDebug: () => set((state) => { resetTutorialAction(state); return state; }),
+    setTutorialStageForDebug: (stage) => set((state) => { setTutorialStageAction(state, stage); return state; }),
+    skipTutorialForDebug: () => set((state) => { skipTutorialAction(state); recalculateDerivedStats(state); return state; }),
+    grantStarterArtifactForDebug: (schoolId) => set((state) => { grantStarterArtifactAction(state, schoolId); return state; }),
     completeStoryEvent: (eventId) =>
       set((state) => {
         const destination = completeStoryEventAction(state, eventId);
@@ -951,42 +991,22 @@ export const useGameStore = create<GameStore>()(
         return state;
       }),
     addArcaneEcho: () => {
-      const before = get().activities.channeling.echoesAssigned;
-      set((state) => {
-        const current = state.activities.channeling.echoesAssigned;
-        if (current >= BALANCE.channeling.maxEchoes) return state;
-        if (!canReserveFocus(state, BALANCE.channeling.echoFocusCost)) {
-          pushNotification(
-            state,
-            `Not enough free Focus. Arcane Echo requires ${BALANCE.channeling.echoFocusCost} Focus. Free Focus: ${selectFreeFocus(state)}`,
-            "warning",
-            { key: "action-echo", cooldownMs: 1 },
-          );
-          return state;
-        }
-        state.activities.channeling.echoesAssigned = current + 1;
-        return state;
-      });
-      const changed = get().activities.channeling.echoesAssigned !== before;
+      const before = get().activities.channeling.acolytesAssigned;
+      set((state) => { assignChannelingAcolyteAction(state); return state; });
+      const changed = get().activities.channeling.acolytesAssigned !== before;
       emitActionFeel(
-        changed ? "echo" : "error",
-        ".echo-counter",
+        changed ? "focus" : "error",
+        ".channeling-stepper",
         "var(--ui-secondary)",
       );
       return changed;
     },
     removeArcaneEcho: () => {
-      const before = get().activities.channeling.echoesAssigned;
-      set((state) => {
-        state.activities.channeling.echoesAssigned = Math.max(
-          0,
-          state.activities.channeling.echoesAssigned - 1,
-        );
-        return state;
-      });
-      const changed = get().activities.channeling.echoesAssigned !== before;
+      const before = get().activities.channeling.acolytesAssigned;
+      set((state) => { removeChannelingAcolyteAction(state); return state; });
+      const changed = get().activities.channeling.acolytesAssigned !== before;
       if (changed)
-        emitActionFeel("echo", ".echo-counter", "var(--ui-secondary)");
+        emitActionFeel("focus", ".channeling-stepper", "var(--ui-secondary)");
       return changed;
     },
     setChannelingEchoes: (amount) =>
@@ -994,6 +1014,9 @@ export const useGameStore = create<GameStore>()(
         setChannelingEchoesAction(state, amount);
         return state;
       }),
+    assignChannelingAcolyte: () => set((state) => { assignChannelingAcolyteAction(state); return state }),
+    removeChannelingAcolyte: () => set((state) => { removeChannelingAcolyteAction(state); return state }),
+    setChannelingAcolytesDebug: (amount) => set((state) => { setChannelingAcolytesDebugAction(state, sanitizeDebugNumber(amount)); return state }),
     forceSetEchoes: (amount) =>
       set((state) => {
         setChannelingEchoesAction(state, sanitizeDebugNumber(amount), true);
@@ -1043,6 +1066,11 @@ export const useGameStore = create<GameStore>()(
         setChannelingManaGeneratedAction(state, amount);
         return state;
       }),
+    setChannelingFluxGenerated: (amount) =>
+      set((state) => {
+        setChannelingFluxGeneratedAction(state, amount);
+        return state;
+      }),
     setChannelingFiveEchoSustain: (amount) =>
       set((state) => {
         setChannelingSustainAction(state, amount);
@@ -1084,6 +1112,26 @@ export const useGameStore = create<GameStore>()(
     setDebugIgnoreEchoLimit: (enabled) =>
       set((state) => {
         state.debug.ignoreEchoLimit = enabled;
+        return state;
+      }),
+    setDebugAcolyteBonus: (amount) =>
+      set((state) => {
+        state.debug.bonusAcolytes = sanitizeDebugNumber(amount);
+        return state;
+      }),
+    setDebugAcolyteTotalOverride: (amount) =>
+      set((state) => {
+        state.debug.acolyteTotalOverride = amount === null ? null : sanitizeDebugNumber(amount);
+        return state;
+      }),
+    setDebugIgnoreAcolyteLimit: (enabled) =>
+      set((state) => {
+        state.debug.ignoreAcolyteLimit = enabled;
+        return state;
+      }),
+    setDebugArcaneFluxCapacity: (amount) =>
+      set((state) => {
+        state.debug.arcaneFluxCapacityOverride = amount === null ? null : sanitizeDebugNumber(amount);
         return state;
       }),
     setDebugShowLockedArtificingRecipes: (enabled) =>
@@ -1169,10 +1217,10 @@ export const useGameStore = create<GameStore>()(
     resetDebugOverrides: () =>
       set((state) => {
         resetDebugState(state);
-        state.activities.channeling.echoesAssigned = clamp(
-          state.activities.channeling.echoesAssigned,
+        state.activities.channeling.acolytesAssigned = clamp(
+          state.activities.channeling.acolytesAssigned ?? 0,
           0,
-          BALANCE.channeling.maxEchoes,
+          state.debug.ignoreAcolyteLimit ? Number.MAX_SAFE_INTEGER : state.debug.acolyteTotalOverride ?? state.tower.acolytes.base + Object.values(state.tower.acolytes.permanentBonuses).reduce((sum, value) => sum + value, 0) + state.debug.bonusAcolytes,
         );
         recalculateDerivedStats(state);
         return state;
@@ -1192,6 +1240,10 @@ export const useGameStore = create<GameStore>()(
         assignResearchEchoAction(state, slotId);
         return state;
       }),
+    assignResearchAcolyte: (slotId) => set((state) => { assignResearchAcolyteAction(state, slotId); return state }),
+    removeResearchAcolyte: (slotId) => set((state) => { removeResearchAcolyteAction(state, slotId); return state }),
+    assignOneResearchAcolyteEach: () => set((state) => { assignOneResearchAcolyteEachAction(state); return state }),
+    clearResearchAcolytes: () => set((state) => { clearResearchAcolytesAction(state); return state }),
     assignMaxResearchEchoes: (slotId) =>
       set((state) => {
         assignMaxResearchEchoesAction(state, slotId);
@@ -1240,6 +1292,9 @@ export const useGameStore = create<GameStore>()(
       });
       return result;
     },
+    assignTransmutationAcolyte: (recipeId) => set((state) => { assignTransmutationAcolyteAction(state, recipeId); return state }),
+    removeTransmutationAcolyte: (recipeId) => set((state) => { removeTransmutationAcolyteAction(state, recipeId); return state }),
+    clearTransmutationAcolytes: () => set((state) => { clearTransmutationAcolytesAction(state); return state }),
     removeTransmutationEcho: (recipeId) => {
       const before =
         get().activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0;
@@ -1879,7 +1934,6 @@ export const useGameStore = create<GameStore>()(
         return;
       const preflight = validateSelectedCombatLoadout(currentState)
       if (!preflight.ok) {
-        if (showCombatFocusPreflightBlock(currentState, preflight)) return;
         set((state) => {
           pushNotification(state, getCombatEntryFailureMessage(state, preflight), "warning", { key: `combat-focus-preflight:${state.spellPresets.selectedPresetId ?? 'missing'}`, cooldownMs: 1000 })
           return state
@@ -1941,7 +1995,6 @@ export const useGameStore = create<GameStore>()(
       if (!sameLocation) {
         const preflight = validateSelectedCombatLoadout(currentState)
         if (!preflight.ok) {
-          if (showCombatFocusPreflightBlock(currentState, preflight)) return false;
           set((state) => {
             pushNotification(state, getCombatEntryFailureMessage(state, preflight), "warning", { key: `combat-focus-preflight:${state.spellPresets.selectedPresetId ?? 'missing'}`, cooldownMs: 1000 })
             return state

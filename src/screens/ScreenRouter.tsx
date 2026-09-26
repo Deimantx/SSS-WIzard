@@ -10,7 +10,7 @@ import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
-import { TowerChannelingScreen, TowerFocusScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen, TowerSummoningScreen } from './tower/TowerScreens'
+import { TowerChannelingScreen, TowerFocusScreen, TowerAcolyteScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen, TowerSummoningScreen } from './tower/TowerScreens'
 import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
 import { isScreenUnlocked } from '../game/systems/story/storyProgression'
 import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
@@ -18,11 +18,13 @@ import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelector
 import { ArcaneCoreScreen } from './arcane-core/ArcaneCoreScreen'
 import { CrystalsScreen } from './crystals/CrystalsScreen'
 import { isCrystalSystemUnlocked } from '../game/systems/crystals/crystalRuntime'
+import { StartingSchoolScreen } from './onboarding/StartingSchoolScreen'
 
 function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'home') return <HomeScreenV2 />
   if (screen === 'tower-channeling') return <TowerChannelingScreen />
-  if (screen === 'tower-focus') return <TowerFocusScreen />
+  if (screen === 'tower-focus') return <TowerAcolyteScreen />
+  if (screen === 'tower-acolytes') return <TowerAcolyteScreen />
   if (screen === 'tower-research') return <TowerResearchScreen />
   if (screen === 'tower-transmutation') return <TowerTransmutationScreen />
   if (screen === 'tower-artificing') return <TowerArtificingScreen />
@@ -44,6 +46,7 @@ export function ScreenRouter() {
   const requestedScreen = useGameStore((state) => state.ui.screen)
   const storyProgress = useGameStore((state) => state.storyProgress)
   const progress = useGameStore((state) => state.progress)
+  if (progress.startingSchoolId === null) return <StartingSchoolScreen />
   const screen = requestedScreen === 'crystals'
     ? isCrystalSystemUnlocked({ progress }) ? requestedScreen : 'home'
     : requestedScreen === 'tower-summoning'

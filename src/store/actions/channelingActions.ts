@@ -1,20 +1,21 @@
 import { CHANNELING_DISCOVERIES } from '../../game/content/channeling/channelingDiscoveries'
 import { MANA_PILLARS, getManaPillarLevelCost } from '../../game/content/channeling/manaPillars'
-import { BALANCE } from '../../game/core/balance/balance'
 import { ITEMS } from '../../game/content/items/items'
 import { checkChannelingDiscoveries } from '../../game/engine/channelingEngine'
-import { canReserveFocus as canReserveFocusNormal, pushNotification, recalculateDerivedStats } from '../../game/engine'
+import { pushNotification, recalculateDerivedStats } from '../../game/engine'
 import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../../game/types'
 import { clamp } from '../../game/utils'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
+import { assignChannelingAcolyteAction, removeChannelingAcolyteAction, setChannelingAcolytesDebugAction } from './acolyteActions'
+
+export { assignChannelingAcolyteAction, removeChannelingAcolyteAction, setChannelingAcolytesDebugAction }
 
 const isProtected = (state: GameState, itemId: keyof GameState['inventory']) => Boolean(state.protectedItems[itemId])
-const canReserveFocus = (state: GameState, amount: number) => state.debug.allowFocusOverCap || canReserveFocusNormal(state, amount)
 const announceDiscoveries = (state: GameState, ids: ChannelingDiscoveryId[]) => ids.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') })
 
 export const setChannelingEchoesAction = (state: GameState, amount: number, force = false) => {
-  const upper = force && state.debug.ignoreEchoLimit ? 1_000_000_000 : BALANCE.channeling.maxEchoes
-  state.activities.channeling.echoesAssigned = clamp(Math.round(amount), 0, upper)
+  if (force) state.debug.ignoreAcolyteLimit = true
+  setChannelingAcolytesDebugAction(state, amount)
 }
 
 export const upgradeManaPillarAction = (state: GameState, pillarId: ManaPillarId) => {
@@ -55,6 +56,13 @@ export const setChannelingManaGeneratedAction = (state: GameState, amount: numbe
   if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
 }
 
+export const setChannelingFluxGeneratedAction = (state: GameState, amount: number) => {
+  state.progress.channeling.totalFluxGenerated = Math.max(0, amount)
+  const discoveries = checkChannelingDiscoveries(state)
+  announceDiscoveries(state, discoveries)
+  if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
+}
+
 export const setChannelingSustainAction = (state: GameState, amount: number) => {
   state.progress.channeling.fiveEchoSustainMs = Math.max(0, amount)
   announceDiscoveries(state, checkChannelingDiscoveries(state))
@@ -65,4 +73,4 @@ export const setChannelingDiscoveryAction = (state: GameState, id: ChannelingDis
   recalculateDerivedStats(state)
 }
 
-export const canStartChannelingAction = canReserveFocus
+export const canStartChannelingAction = (_state: GameState) => true

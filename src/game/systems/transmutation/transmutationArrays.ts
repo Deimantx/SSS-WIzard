@@ -8,6 +8,8 @@ export interface TransmutationArrayBonuses {
   preservationChance: number
   replicationChance: number
   manaCostReductionPct: number
+  fluxCostReductionPct: number
+  resonanceCostReductionPct: number
   echoCapacityBonus: number
 }
 
@@ -33,11 +35,17 @@ export const getTransmutationArrayBonuses = (state: Pick<GameState, 'progress'>)
     preservationChance: getTransmutationArrayEffectValue('conservation-array', levels['conservation-array']),
     replicationChance: getTransmutationArrayEffectValue('replication-array', levels['replication-array']),
     manaCostReductionPct: getTransmutationArrayEffectValue('mana-refinement-array', levels['mana-refinement-array']),
+    fluxCostReductionPct: getTransmutationArrayEffectValue('mana-refinement-array', levels['mana-refinement-array']),
+    resonanceCostReductionPct: levels['echo-stabilization-array'] >= 5 ? levels['echo-stabilization-array'] * 0.01 : 0,
     echoCapacityBonus: getTransmutationArrayEffectValue('echo-stabilization-array', levels['echo-stabilization-array']),
   }
 }
 
-export const getEffectiveTransmutationManaCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(0, recipe.manaCost * (1 - getTransmutationArrayBonuses(state).manaCostReductionPct))
+export const getEffectiveTransmutationManaCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(0, (recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).manaCostReductionPct))
+
+export const getEffectiveTransmutationFluxCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(1, Math.ceil((recipe.arcaneFluxCost ?? recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).fluxCostReductionPct)))
+export const getEffectiveTransmutationResonanceCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Object.fromEntries(Object.entries(recipe.resonanceCost ?? {}).map(([type, amount]) => [type, Math.max(1, Math.ceil((amount ?? 0) * (1 - getTransmutationArrayBonuses(state).resonanceCostReductionPct)))])) as NonNullable<RecipeDefinition['resonanceCost']>
+export const getEffectiveTransmutationStaffedWorkMultiplier = (state: Pick<GameState, 'progress'>, staffed: boolean) => staffed ? getTransmutationArrayBonuses(state).craftSpeedMultiplier : 0
 
 export const getEffectiveTransmutationWorkMultiplier = (state: Pick<GameState, 'progress'>, echoesAssigned: number) => Math.max(0, Number.isFinite(echoesAssigned) ? Math.floor(echoesAssigned) : 0) * getTransmutationArrayBonuses(state).craftSpeedMultiplier
 

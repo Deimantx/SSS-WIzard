@@ -60,7 +60,7 @@ describe('progressive Spell effect tooltip details', () => {
     fireEvent.pointerEnter(screen.getByRole('button', { name: 'Inspect Ignite' }))
     expect(await screen.findByText('MANA')).toBeTruthy()
     expect(screen.getByText('COOLDOWN')).toBeTruthy()
-    expect(screen.getByText('AUTO-CAST FOCUS')).toBeTruthy()
+    expect(screen.getByText('AUTO-CAST')).toBeTruthy()
     expect(screen.getByText('Damage Per Tick')).toBeTruthy()
     expect(screen.getAllByText('Hold Alt for more details')).toHaveLength(1)
     expect(screen.queryByText('Scaling')).toBeNull()

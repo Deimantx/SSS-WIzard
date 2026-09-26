@@ -94,7 +94,7 @@ export const getContinuousManaDemandPerSecond = (state: ContinuousManaDemandStat
     const echoes = Math.max(0, Math.floor(finiteNonNegative(job?.echoesAssigned)))
     const unlocked = isRecipeUnlocked(state, recipe)
     const hasMaterials = recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
-    if (echoes > 0 && unlocked && recipe.manaCost > 0 && hasMaterials) demand += continuousManaPerSecond(getEffectiveTransmutationManaCost(state, recipe), recipe.baseDurationMs, getEffectiveTransmutationWorkMultiplier(state, echoes))
+    if (echoes > 0 && unlocked && (recipe.manaCost ?? 0) > 0 && hasMaterials) demand += continuousManaPerSecond(getEffectiveTransmutationManaCost(state, recipe), recipe.baseDurationMs, getEffectiveTransmutationWorkMultiplier(state, echoes))
   })
 
   const research = state.activities.research

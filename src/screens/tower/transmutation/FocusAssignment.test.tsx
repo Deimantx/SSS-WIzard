@@ -26,12 +26,12 @@ describe('FocusAssignment locked state', () => {
     expect(body?.querySelectorAll('.transmutation-assignment-row')).toHaveLength(2)
   })
 
-  it('shows authoritative output and Mana rates for active assignments', () => {
+  it('shows authoritative output and Flux rates for active assignments', () => {
     useGameStore.getState().setTransmutationEchoes('fire-fragment', 1)
     render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
     expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('450 / hr')
-    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('3.13 Mana/s')
+    expect(document.querySelector('.transmutation-assignment-metrics')?.textContent).toContain('1.25 Flux/s')
   })
 
   it('keeps selected active recipe metrics compact without a duplicate cycle line', () => {
@@ -39,8 +39,8 @@ describe('FocusAssignment locked state', () => {
     render(<FocusAssignment selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
 
     expect(document.querySelector('.transmutation-focus-selected-name strong')?.textContent).toContain('Fire Fragment')
-    expect(document.querySelector('.transmutation-focus-selected-status')?.textContent).toBe('ACTIVE')
-    expect(document.querySelector('.transmutation-focus-selected-metrics')?.textContent).toMatch(/1 Echo.*8\.0s.*450 \/ hr.*3\.13 Mana\/s/)
+    expect(document.querySelector('.transmutation-focus-selected-status')?.textContent).toBe('WAITING RESONANCE')
+    expect(document.querySelector('.transmutation-focus-selected-metrics')?.textContent).toMatch(/ACOLYTE.*8\.0s.*450 \/ hr.*1\.25 Flux\/s/)
     expect(document.querySelector('.transmutation-focus-effective-time')).toBeNull()
   })
 })

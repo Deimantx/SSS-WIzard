@@ -55,16 +55,16 @@ describe('Transmutation Arrays upgrade presentation', () => {
     expect(screen.getByRole('button', { name: /Temporal Array/ }).getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('keeps Echo Stabilization milestone progression distinct from per-level arrays', () => {
+  it('keeps Resonance Stabilization milestone progression distinct from per-level arrays', () => {
     renderPanel()
 
-    fireEvent.click(screen.getByRole('button', { name: /Echo Stabilization Array/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Resonance Stabilization Array/ }))
     expect(screen.getByText('NEXT MILESTONE · Lv5')).toBeTruthy()
-    expect(screen.getByText('+0 Echo Capacity')).toBeTruthy()
-    expect(screen.getByText('+1 Echo Capacity')).toBeTruthy()
+    expect(screen.getByText('+0 Acolyte capacity')).toBeTruthy()
+    expect(screen.queryByText('+1 Acolyte capacity')).toBeNull()
 
     act(() => { useGameStore.getState().forceSetTransmutationArrayLevel('echo-stabilization-array', 5) })
     expect(screen.getByText('NEXT MILESTONE · Lv10')).toBeTruthy()
-    expect(screen.getByText('+2 Echo Capacity')).toBeTruthy()
+    expect(screen.getByText('+1 Acolyte capacity')).toBeTruthy()
   })
 })

@@ -1,6 +1,5 @@
 import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
 import { MANA_PILLARS, getManaPillarLevelCost } from '../../game/content/channeling/manaPillars'
-import { FOCUS_IMPROVEMENT, getFocusImprovementLevelCost } from '../../game/content/focus/focusImprovement'
 import { RECIPES } from '../../game/content/recipes/recipes'
 import { ARTIFICING_RECIPES } from '../../game/content/recipes/artificingRecipes'
 import { ITEMS } from '../../game/content/items/items'
@@ -69,12 +68,6 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
     const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
     if (!ingredient) continue
     needs.push(need(`recipe:${recipe.id}`, recipe.name, recipe.kind === 'artificing' ? 'Artificing recipe' : 'Transmutation recipe', recipe.kind === 'artificing' ? 'tower-artificing' : 'tower-transmutation', itemId, ingredient.quantity, state, flow))
-  }
-
-  const focusLevel = Math.max(0, Math.floor(state.progress.focusImprovement.level))
-  const focusCost = getFocusImprovementLevelCost(focusLevel + 1)
-  if (focusCost && itemId === 'prismatic-fragment') {
-    needs.push(need(`focus:${FOCUS_IMPROVEMENT.id}`, `${FOCUS_IMPROVEMENT.name} Lv ${focusLevel + 1}`, 'Next Focus Capacity level', 'tower-focus', itemId, focusCost.primary, state, flow))
   }
 
   return needs

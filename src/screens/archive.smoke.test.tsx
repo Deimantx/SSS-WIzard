@@ -11,7 +11,7 @@ const navItem = (label: string) => within(screen.getByRole('navigation', { name:
 const mojibakePattern = new RegExp(['\\u00c3\\u00a2', '\\u00c3\\u201a', '\\u00c3\\u0192', '\\u00ef\\u00bf\\u00bd'].join('|'))
 
 describe('archive screens', () => {
-  beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); resetAllUiPreferences() })
+  beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); useGameStore.setState((state) => { state.progress.startingSchoolId = 'fire'; state.progress.tutorialStage = 'complete'; state.ui.screen = 'home'; state.combat.active = false }); resetAllUiPreferences() })
 
   it('keeps undiscovered collection details redacted', async () => {
     const user = userEvent.setup()

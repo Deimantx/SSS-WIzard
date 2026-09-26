@@ -2,8 +2,8 @@ import { Button, Card, Status } from '../../components/ui'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { formatDuration, formatNumber } from '../../game/content/presentation/balanceFormatters'
 import { getSchoolProgressInfo } from '../../game/systems/schools'
-import { formatSpellRank, getAllSpellsInOrder, getSpellAutoCastFocusCost as getFullSpellAutoCastFocusCost, getAutoCastFocusCostForRank, getSpellRank } from '../../game/systems/spells'
-import type { SchoolId, SpellId } from '../../game/types'
+import { formatSpellRank, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells'
+import type { SchoolId } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField } from './DeveloperTabPrimitives'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
@@ -11,9 +11,6 @@ import { formatResourceAmount } from '../../game/presentation/resources/resource
 export function DeveloperSchools() {
   const schools = useGameStore((state) => state.schools)
   const progress = useGameStore((state) => state.progress)
-  const equipment = useGameStore((state) => state.equipment)
-  const artifactProgress = useGameStore((state) => state.artifactProgress)
-  const arcaneCore = useGameStore((state) => state.arcaneCore)
   const setSchoolXpDebug = useGameStore((state) => state.setSchoolXpDebug)
   const setSchoolLevelDebug = useGameStore((state) => state.setSchoolLevelDebug)
   const setLevelCap = useGameStore((state) => state.setLevelCap)
@@ -23,7 +20,6 @@ export function DeveloperSchools() {
   const resetCooldowns = useGameStore((state) => state.resetSpellCooldowns)
   const schoolIds = Object.keys(SCHOOLS) as SchoolId[]
   const setAllLevels = (level: number) => { if (level > progress.magicLevelCap) setLevelCap(level); schoolIds.forEach((id) => setSchoolLevelDebug(id, level)) }
-  const getSpellAutoCastFocusCost = (_state: { progress: typeof progress }, spellId: SpellId) => getFullSpellAutoCastFocusCost({ progress, equipment, artifactProgress, arcaneCore }, spellId)
 
   return <div className="developer-tab-grid">
     <Card title="Magic schools">
@@ -34,8 +30,8 @@ export function DeveloperSchools() {
       <div className="developer-button-grid"><Button variant="secondary" onClick={() => setLevelCap(20)}>Set cap to 20</Button><Button variant="secondary" onClick={() => setLevelCap(40)}>Set cap to 40</Button></div><NumberField label="Magic School level cap" value={progress.magicLevelCap} onChange={setLevelCap} />
     </Card>
     <Card title="Spell access">
-      <div className="developer-spell-list">{getAllSpellsInOrder().map((spell) => { const rank = getSpellRank({ progress }, spell.id); const focusCost = getSpellAutoCastFocusCost({ progress }, spell.id); return <div className="developer-spell-row" key={spell.id}><div><strong>{spell.name}</strong><small>{SCHOOLS[spell.school].name} · unlocks at Level {spell.unlockLevel} · {rank ? formatSpellRank(rank) : 'Locked'} · {formatResourceAmount(spell.manaCost)} Mana · {formatDuration(spell.cooldownMs)} cooldown · Auto-Cast: {focusCost === null ? 'unavailable' : `${focusCost} Focus`}</small></div><Status tone={rank ? 'success' : 'locked'}>{rank ? 'UNLOCKED' : 'LOCKED'}</Status><Button variant="ghost" onClick={() => debugUnlock(spell.id)}>Unlock Rank I</Button><Button variant="danger" onClick={() => debugLock(spell.id)} disabled={!rank}>Lock spell</Button></div> })}</div>
+      <div className="developer-spell-list">{getAllSpellsInOrder().map((spell) => { const rank = getSpellRank({ progress }, spell.id); return <div className="developer-spell-row" key={spell.id}><div><strong>{spell.name}</strong><small>{SCHOOLS[spell.school].name} · unlocks at Level {spell.unlockLevel} · {rank ? formatSpellRank(rank) : 'Locked'} · {formatResourceAmount(spell.manaCost)} Mana · {formatDuration(spell.cooldownMs)} cooldown · Auto-Cast: independent</small></div><Status tone={rank ? 'success' : 'locked'}>{rank ? 'UNLOCKED' : 'LOCKED'}</Status><Button variant="ghost" onClick={() => debugUnlock(spell.id)}>Unlock Rank I</Button><Button variant="danger" onClick={() => debugLock(spell.id)} disabled={!rank}>Lock spell</Button></div> })}</div>
     </Card>
-    <Card title="Auto-Cast Focus costs"><div className="developer-rank-table">{([1, 2, 3, 4, 5, 6, 7, 8] as const).map((rank) => <span key={rank}><strong>{formatSpellRank(rank)}</strong><small>{getAutoCastFocusCostForRank(rank)} Focus</small></span>)}</div><p className="muted">Higher-rank mechanics and player-facing advancement are deferred to a future Tower system.</p></Card>
+    <Card title="Auto-Cast capacity"><p className="muted">Auto-Cast is independent from Tower staffing. Spell Rank affects the authored spell, while Mana and cooldowns govern combat eligibility.</p></Card>
   </div>
 }

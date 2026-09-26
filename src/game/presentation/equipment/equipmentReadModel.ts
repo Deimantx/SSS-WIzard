@@ -3,7 +3,7 @@ import { EQUIPMENT_BUILD_TAG_LABELS } from '../../content/items/equipmentBalance
 import { getEquipmentCombatModifierTotal } from '../../core/equipment/equipmentStats'
 import { evaluateEquipmentChange, type EquipmentChangeFailureReason } from '../../core/equipment/equipmentChange'
 import { getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
-import { validateFocusForEquipment, type FocusLoadoutValidation } from '../../systems/focus/focusLoadoutValidation'
+import type { FocusLoadoutValidation } from '../../systems/focus/focusLoadoutValidation'
 import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
 import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
 import { formatEquipmentStat, getEquipmentStatLabel, isMeaningfulEquipmentStatValue } from './equipmentStatPresentation'
@@ -211,11 +211,9 @@ export function getEquipmentPreview(state: EquipmentSheetState, itemId: ItemId, 
   const current = getEquipmentStatSnapshot(state, state.equipment)
   const result = evaluateEquipmentChange(state, itemId, targetPosition)
   if (!result.ok) return { compatible: false, reason: getFailureMessage(state, itemId, result.reason), failureReason: result.reason, position: targetPosition ?? null, equipment: null, current, preview: null, impact: {}, focusValidation: null }
-  const focusValidation = validateFocusForEquipment(state, result.nextEquipment)
   const preview = getEquipmentStatSnapshot(state, result.nextEquipment)
   const impact = subtractSnapshots(current, preview)
-  if (!focusValidation.valid) return { compatible: false, reason: `Free ${focusValidation.deficit} Focus before equipping this item.`, failureReason: 'insufficient-focus-capacity', position: result.position, equipment: result.nextEquipment, current, preview, impact, focusValidation }
-  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact, focusValidation }
+  return { compatible: true, reason: null, failureReason: null, position: result.position, equipment: result.nextEquipment, current, preview, impact, focusValidation: null }
 }
 
 export const getEquipmentCopyAvailability = (state: Pick<GameState, 'equipment' | 'inventory'>, itemId: ItemId) => {

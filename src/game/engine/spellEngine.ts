@@ -11,7 +11,6 @@ import { getCombatModifiers } from '../systems/combat/modifiers'
 import { getSpellCombatSource } from '../systems/spells/spellSource'
 import { getSpellCastTimeMultiplier } from '../systems/spells/spellCastTiming'
 import { getArtifactPreCastDamageMultiplier, getArtifactPreCastManaMultiplier, getArtifactSpellCritDamageBonus } from '../systems/artifacts/artifactProgression'
-import { selectFreeFocus } from '../systems/focus/focusReservations'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreV6CastModifiers } from '../systems/arcaneCore/arcaneCoreV7Runtime'
@@ -106,7 +105,7 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
   const baseManaCost = manaPreview?.baseManaCost ?? getEffectiveManaCost(state, spell.manaCost)
   const v6Preview = manaPreview?.modifiers ?? getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
   const free = manaPreview?.free ?? (isArcaneCoreSpellFree(state) || v6Preview.free)
-  const manaCost = Math.max(1, Math.ceil((manaPreview?.manaCost ?? baseManaCost * v6Preview.manaCostMultiplier) * getArtifactPreCastManaMultiplier(state, selectFreeFocus(state))))
+  const manaCost = Math.max(1, Math.ceil((manaPreview?.manaCost ?? baseManaCost * v6Preview.manaCostMultiplier) * getArtifactPreCastManaMultiplier(state, 0)))
   const gustMultiplier = getCastWorkMultiplier(state, spell.id)
   const multiplier = gustMultiplier / Math.max(0.1, v6Preview.actionSpeedMultiplier)
   const castWorkMs = spell.castTimeMs * multiplier

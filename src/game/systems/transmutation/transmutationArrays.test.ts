@@ -10,7 +10,7 @@ describe('Transmutation Arrays', () => {
     expect(TRANSMUTATION_ARRAY_IDS).toHaveLength(5)
     expect(Object.values(state.progress.transmutation.arrays).every((array) => array.rank === 1 && array.level === 0)).toBe(true)
     TRANSMUTATION_ARRAY_IDS.forEach((id) => { state.progress.transmutation.arrays[id].level = 10 })
-    expect(getTransmutationArrayBonuses(state)).toEqual({ craftSpeedPct: 0.3, craftSpeedMultiplier: 1.3, preservationChance: 0.05, replicationChance: 0.2, manaCostReductionPct: 0.2, echoCapacityBonus: 2 })
+    expect(getTransmutationArrayBonuses(state)).toEqual({ craftSpeedPct: 0.3, craftSpeedMultiplier: 1.3, preservationChance: 0.05, replicationChance: 0.2, manaCostReductionPct: 0.2, fluxCostReductionPct: 0.2, resonanceCostReductionPct: 0.1, echoCapacityBonus: 2 })
   })
 
   it('uses weighted Channeling-equivalent costs', () => {
@@ -33,7 +33,7 @@ describe('Transmutation Arrays', () => {
     state.progress.transmutation.arrays['temporal-array'].level = 10
     state.progress.transmutation.arrays['mana-refinement-array'].level = 10
     const recipe = TRANSMUTATION_RECIPES['prismatic-fragment']
-    expect(getEffectiveTransmutationDuration(state, recipe, 1)).toBeCloseTo(18_461.538, 2)
-    expect(getEffectiveTransmutationManaCost(state, recipe)).toBe(40)
+    expect(getEffectiveTransmutationDuration(state, recipe, 1)).toBeCloseTo(9_230.769, 2)
+    expect(getEffectiveTransmutationManaCost(state, recipe)).toBe(0)
   })
 })

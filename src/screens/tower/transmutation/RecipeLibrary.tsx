@@ -5,7 +5,8 @@ import { Card, Progress, SearchInput, Status } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
 import { isTransmutationRecipeId, type RecipeDefinition } from '../../../game/content/recipes/recipes'
-import { canAssignTransmutationEcho, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationFocusReserved, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { canAssignTransmutationEcho, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getEffectiveTransmutationFluxCost, getEffectiveTransmutationResonanceCost } from '../../../game/systems/transmutation/transmutationArrays'
 import type { RecipeCategory, TransmutationRecipeId } from '../../../game/types'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../../store/gameStore'
@@ -84,8 +85,8 @@ function getEmptyMessage(filters: TransmutationRecipeFilters, query: string, sho
   const normalizedQuery = query.trim()
   if (normalizedQuery) return `No recipes match "${normalizedQuery}"${hasActiveContextFilter(filters) ? ' within the selected filters' : ''}.`
   if (!showLocked && counts.unlocked === 0) return 'No recipes are unlocked yet.'
-  if (filters.craftableOnly) return 'No unlocked recipes are craftable with the current Mana and materials.'
-  if (filters.activeOnly) return 'No recipes currently have Arcane Echoes assigned.'
+  if (filters.craftableOnly) return 'No unlocked recipes are craftable with the current Resonance and materials.'
+  if (filters.activeOnly) return 'No recipes currently have Acolytes assigned.'
   if ((filters.categoryFilter === 'elemental' || filters.categoryFilter === 'material') && filters.tierFilter !== 'all') return `No T${filters.tierFilter} ${filters.categoryFilter} recipes are available.`
   return 'No recipes match this filter.'
 }
@@ -100,22 +101,22 @@ function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe:
   const preferences = useUiPreferences()
   const item = ITEMS[recipe.output.itemId]
   const owned = state.inventory[recipe.output.itemId] ?? 0
-  const echoes = Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0))
+  const acolytes = (getTransmutationJob(state, recipe.id)?.acolyteAssigned ?? ((getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0) > 0)) ? 1 : 0
   const progress = getTransmutationJob(state, recipe.id)?.progressMs ?? 0
   const status = getRecipeStatus(state, recipe)
   const locked = status === 'locked'
   const cardMeta = getTransmutationRecipeCardMeta(item)
   const [usesOpen, setUsesOpen] = React.useState(false)
   const uses = getVisibleItemUsesForTransmutation(state, recipe.output.itemId)
-  return <><ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, manaCost: recipe.manaCost, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
-      <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${echoes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${statusText(status)}` }, sections: [{ id: 'echoes', actions: [{ id: 'start', label: echoes ? 'Assign +1 Echo' : 'Start Production', disabled: locked, disabledReason: locked ? getRecipeUnlockReason(recipe) ?? 'Recipe locked' : undefined, onSelect: () => { onSelect(recipe.id); state.assignTransmutationEcho(recipe.id) } }, { id: 'max', label: 'Assign Max Echoes', disabled: locked || !canAssignTransmutationEcho(state), disabledReason: locked ? getRecipeUnlockReason(recipe) ?? 'Recipe locked' : 'No free Echoes or Focus', onSelect: () => { onSelect(recipe.id); state.assignMaxTransmutationEchoes(recipe.id) } }, { id: 'remove', label: 'Remove 1 Echo', disabled: echoes <= 0, onSelect: () => { onSelect(recipe.id); state.removeTransmutationEcho(recipe.id) } }, { id: 'stop', label: 'Stop Production', icon: Square, disabled: echoes <= 0, onSelect: () => { onSelect(recipe.id); state.clearTransmutationRecipeEchoes(recipe.id) } }] }, { id: 'recipe', actions: [{ id: 'pin', label: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? 'Unpin Recipe' : 'Pin Recipe', icon: Pin, onSelect: () => setUiPreferences({ screenState: { transmutation: { pinnedRecipeId: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'output', label: 'Open in Inventory', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: recipe.output.itemId }); state.setScreen('inventory') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'Used In...', icon: Library, onSelect: () => setUsesOpen(true) }] : [])] }] }) }}>
-      <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{echoes > 0 && <span className="transmutation-echo-badge">{echoes}E</span>}</span>
+  return <><ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, arcaneFluxCost: getEffectiveTransmutationFluxCost(state, recipe), resonanceCost: getEffectiveTransmutationResonanceCost(state, recipe), acolytesAssigned: acolytes, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
+      <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${acolytes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${statusText(status)}` }, sections: [{ id: 'acolytes', actions: [{ id: 'start', label: acolytes ? 'Keep Acolyte Assigned' : 'Assign Acolyte', disabled: locked || acolytes > 0, disabledReason: locked ? getRecipeUnlockReason(recipe) ?? 'Recipe locked' : acolytes > 0 ? 'Already staffed' : undefined, onSelect: () => { onSelect(recipe.id); state.assignTransmutationAcolyte(recipe.id) } }, { id: 'remove', label: 'Remove Acolyte', disabled: acolytes <= 0, onSelect: () => { onSelect(recipe.id); state.removeTransmutationAcolyte(recipe.id) } }, { id: 'stop', label: 'Stop Production', icon: Square, disabled: acolytes <= 0, onSelect: () => { onSelect(recipe.id); state.clearTransmutationAcolytes() } }] }, { id: 'recipe', actions: [{ id: 'pin', label: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? 'Unpin Recipe' : 'Pin Recipe', icon: Pin, onSelect: () => setUiPreferences({ screenState: { transmutation: { pinnedRecipeId: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'output', label: 'Open in Inventory', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: recipe.output.itemId }); state.setScreen('inventory') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'Used In...', icon: Library, onSelect: () => setUsesOpen(true) }] : [])] }] }) }}>
+      <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{acolytes > 0 && <span className="transmutation-echo-badge">{acolytes}A</span>}</span>
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>
       {newRecipe && <span className="archive-new-badge recipe-new-badge">NEW</span>}
       <span className="transmutation-tile-badges" aria-label={cardMeta.badges.join(', ')}>{cardMeta.badges.map((badge, index) => <span className={`transmutation-badge ${cardMeta.tier !== null && index === 0 ? 'tier' : ''}`} key={badge}>{badge}</span>)}</span>
-      <span className="transmutation-tile-footer"><span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>{status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'mana-limited' || status === 'waiting-mana' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}</span>
-      {echoes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'mana-limited'} />}
+      <span className="transmutation-tile-footer"><span className="transmutation-tile-owned">OWNED {formatOwned(owned)}</span>{status !== 'paused' && <span className="transmutation-tile-status"><Status tone={locked ? 'locked' : status === 'active' ? 'active' : status === 'flux-limited' || status === 'waiting-flux' || status === 'waiting-resonance' || status === 'waiting-materials' ? 'warning' : 'neutral'}>{statusText(status)}</Status></span>}</span>
+      {acolytes > 0 && <Progress value={getRecipeProgressPercent(recipe, progress)} tone="gold" running={status === 'active' || status === 'flux-limited'} />}
     </button>
   </ItemTooltip><ItemUsesDialog itemId={recipe.output.itemId} uses={uses} open={usesOpen} onClose={() => setUsesOpen(false)} onSelectRecipe={(id) => { setUsesOpen(false); if (isTransmutationRecipeId(id)) onSelect(id); else { setUiPreferences({ screenState: { artificing: { selectedRecipeId: id } } }); state.setScreen('tower-artificing') } }} /></>
 }
@@ -126,8 +127,9 @@ function formatOwned(value: number) {
 
 function statusText(status: TransmutationStatus) {
   if (status === 'active') return 'ACTIVE'
-  if (status === 'mana-limited') return 'MANA LIMITED'
-  if (status === 'waiting-mana') return 'WAITING MANA'
+  if (status === 'flux-limited') return 'FLUX LIMITED'
+  if (status === 'waiting-flux') return 'WAITING FLUX'
+  if (status === 'waiting-resonance') return 'WAITING RESONANCE'
   if (status === 'waiting-materials') return 'WAITING MATERIALS'
   if (status === 'locked') return 'LOCKED'
   return 'PAUSED'

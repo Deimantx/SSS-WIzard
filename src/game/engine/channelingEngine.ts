@@ -4,11 +4,11 @@ import { MANA_PILLARS } from '../content/channeling/manaPillars'
 import { getEquipmentStats } from '../core/equipment/equipmentStats'
 import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
-import { getCombatModifiers } from '../systems/combat/modifiers'
 import { stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
-import { getArcaneCoreDynamicManaRegen, getArcaneCoreDynamicManaRegenMultiplier } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { getArcaneCoreSpecialEffects } from '../systems/arcaneCore/arcaneCoreProgression'
 import { gainBarrier } from '../systems/combat/barrierRuntime'
+import { getPlayerManaRegenBreakdown, playerManaRegenPerSecond } from '../systems/mana/playerMana'
+import { getArcaneFluxCapacityBreakdown } from '../systems/channeling/channelingRuntime'
 
 export interface ManaRegenBreakdown {
   baseNatural: number
@@ -69,28 +69,13 @@ export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCa
 }
 
 export const getManaRegenBreakdown = (state: ChannelingRegenState): ManaRegenBreakdown => {
-  const stats = getEquipmentStats(state)
-  const echoes = state.debug?.ignoreEchoLimit ? Math.max(0, state.activities.channeling.echoesAssigned) : clamp(state.activities.channeling.echoesAssigned, 0, BALANCE.channeling.maxEchoes)
-  const baseNatural = BALANCE.channeling.baseNaturalRegenPerSecond
-  const leylineConduitBonus = pillarLevel(state, 'leyline-conduit')
-  const stableLeylineBonus = state.progress.channeling.discoveries['stable-leyline'] ? BALANCE.channeling.stableLeylineRegenBonus : 0
-  const equipmentPassiveBonus = stats.manaRegen ?? 0
-  const developerBonus = state.debug?.bonusManaRegenFlat ?? 0
-  const arcaneCoreDynamicBonus = state.player ? getArcaneCoreDynamicManaRegen(state as never) : 0
-  const passiveBeforeResonance = baseNatural + leylineConduitBonus + stableLeylineBonus + equipmentPassiveBonus + developerBonus + arcaneCoreDynamicBonus
-  const manaResonanceMultiplier = 1 + pillarLevel(state, 'mana-resonance') * 0.05
-  const passiveAfterResonance = passiveBeforeResonance * manaResonanceMultiplier
-  const echoBase = echoes * BALANCE.channeling.echoManaPerSecond
-  const echoAttunementMultiplier = 1 + pillarLevel(state, 'echo-attunement') * 0.05
-  const echoDiscoveryMultiplier = state.progress.channeling.discoveries['echo-resonance'] ? BALANCE.channeling.discoveryEchoMultiplier : 1
-  const echoTotal = echoBase * echoAttunementMultiplier * echoDiscoveryMultiplier
-  const disruptionMultiplier = state.player && state.combat ? Math.max(0, 1 + getCombatModifiers(state as never, 'player', 'mana-regen-percent')) : 1
-  const arcaneCoreManaRegenMultiplier = state.player ? getArcaneCoreDynamicManaRegenMultiplier(state as never) : 1
-  const arcaneCoreRegenDisabled = Boolean(state.combat?.arcaneCoreRuntime.manaRegenDisabledUntilMs && state.combat.arcaneCoreRuntime.manaRegenDisabledUntilMs > state.combat.arcaneCoreRuntime.elapsedMs)
-  return { baseNatural, leylineConduitBonus, stableLeylineBonus, equipmentPassiveBonus, developerBonus, passiveBeforeResonance, manaResonanceMultiplier, passiveAfterResonance, echoBase, echoAttunementMultiplier, echoDiscoveryMultiplier, echoTotal, total: stabilizeResourceValue((passiveAfterResonance + echoTotal) * disruptionMultiplier * arcaneCoreManaRegenMultiplier * (arcaneCoreRegenDisabled ? 0 : 1)) }
+  const regen = getPlayerManaRegenBreakdown(state)
+  const passiveBeforeResonance = regen.base + regen.equipment + regen.developer + regen.arcaneCore
+  return { baseNatural: regen.base, leylineConduitBonus: 0, stableLeylineBonus: 0, equipmentPassiveBonus: regen.equipment, developerBonus: regen.developer, passiveBeforeResonance, manaResonanceMultiplier: 1, passiveAfterResonance: passiveBeforeResonance, echoBase: 0, echoAttunementMultiplier: 1, echoDiscoveryMultiplier: 1, echoTotal: 0, total: regen.total }
 }
 
-export const manaRegenPerSecond = (state: ChannelingRegenState) => getManaRegenBreakdown(state).total
+/** Compatibility export: player Mana is no longer produced by Channeling. */
+export const manaRegenPerSecond = (state: ChannelingRegenState) => playerManaRegenPerSecond(state as never)
 
 export const getManaPillarDefinition = (id: ManaPillarId) => MANA_PILLARS[id]
 
@@ -98,9 +83,9 @@ export const checkChannelingDiscoveries = (state: GameState): ChannelingDiscover
   const channeling = state.progress.channeling
   const newlyCompleted: ChannelingDiscoveryId[] = []
   const conditions: Record<ChannelingDiscoveryId, boolean> = {
-    'stable-leyline': channeling.totalManaGenerated >= BALANCE.channeling.stableLeylineThreshold,
-    'echo-resonance': channeling.fiveEchoSustainMs >= BALANCE.channeling.echoResonanceDurationMs,
-    'deep-reservoir': state.player.maxMana >= BALANCE.channeling.deepReservoirThreshold,
+    'stable-leyline': (channeling.totalFluxGenerated ?? 0) >= BALANCE.channeling.stableLeylineThreshold,
+    'echo-resonance': (state.activities.channeling.acolytesAssigned ?? state.activities.channeling.echoesAssigned ?? 0) >= BALANCE.channeling.harmonicWorkforceAcolytes && channeling.fiveEchoSustainMs >= BALANCE.channeling.echoResonanceDurationMs,
+    'deep-reservoir': getArcaneFluxCapacityBreakdown(state).total >= 1500,
   }
   CHANNELING_DISCOVERIES.forEach(({ id }) => {
     if (!channeling.discoveries[id] && conditions[id]) {
@@ -131,7 +116,8 @@ export const advanceChanneling = (state: GameState, deltaMs: number, manaRateOve
   const gained = state.player.mana - before
   state.progress.channeling.totalManaGenerated += gained
   if (!state.progress.channeling.discoveries['echo-resonance']) {
-    state.progress.channeling.fiveEchoSustainMs = state.activities.channeling.echoesAssigned === BALANCE.channeling.maxEchoes
+    const acolytes = state.activities.channeling.acolytesAssigned ?? state.activities.channeling.echoesAssigned ?? 0
+    state.progress.channeling.fiveEchoSustainMs = acolytes >= BALANCE.channeling.harmonicWorkforceAcolytes
       ? state.progress.channeling.fiveEchoSustainMs + delta
       : 0
   }

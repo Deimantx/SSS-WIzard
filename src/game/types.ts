@@ -6,8 +6,8 @@ export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
-export type ActivityStatus = 'running' | 'mana-limited' | 'paused' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
+export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 /**
  * Canonical item IDs grouped by authored ownership. Keep this list aligned
@@ -307,9 +307,13 @@ export interface PlayerState {
   baseMaxFocus: number
   healthRegenTimerMs: number
 }
-export interface ChannelingActivity { echoesAssigned: number }
+export interface ChannelingActivity {
+  acolytesAssigned?: number
+  /** @deprecated Compatibility-only input for pre-Acolyte callers. */
+  echoesAssigned: number
+}
 export type ResearchSlotId = 'research-1' | 'research-2' | 'research-3' | 'research-4'
-export type ResearchJobStatus = 'prepared' | 'running' | 'mana-limited' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
+export type ResearchJobStatus = 'prepared' | 'running' | 'flux-limited' | 'waiting-flux' | 'mana-limited' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
 export type ResearchStatus = ResearchJobStatus
 export interface ResearchJobState {
   itemId: ItemId
@@ -317,6 +321,8 @@ export interface ResearchJobState {
   requestedQuantity: number
   remainingQuantity: number
   progressMs: number
+  acolyteAssigned?: boolean
+  /** @deprecated Compatibility-only input for pre-Acolyte callers. */
   echoesAssigned: number
   status: ResearchJobStatus
 }
@@ -350,7 +356,12 @@ export interface ResearchActivity {
   /** @deprecated V8 compatibility only. */
   status?: ResearchStatus | 'idle' | 'paused' | 'waiting-focus' | 'completed'
 }
-export interface TransmutationJobState { echoesAssigned: number; progressMs: number }
+export interface TransmutationJobState {
+  acolyteAssigned?: boolean
+  progressMs: number
+  /** @deprecated Compatibility-only input for pre-Acolyte callers. */
+  echoesAssigned: number
+}
 export interface TransmutationActivity { jobs: Partial<Record<TransmutationRecipeId, TransmutationJobState>> }
 export type ArtificingJob =
   | { kind: 'recipe'; recipeId: ArtificingRecipeId }
@@ -609,6 +620,8 @@ export interface ProgressState {
   requestClaims: Record<string, boolean>
   permanentFocusBonuses: Record<string, number>
   focusImprovement: FocusImprovementState
+  startingSchoolId: SchoolId | null
+  tutorialStage: TutorialStage
   lifetimeKillsByMonster: Partial<Record<MonsterId, number>>
   bossKillsByBoss: Partial<Record<MonsterId, number>>
   autoHuntBossByDungeon: Record<DungeonId, boolean>
@@ -642,8 +655,21 @@ export interface FocusImprovementState {
 export interface ChannelingProgress {
   pillars: Record<ManaPillarId, ManaPillarState>
   totalManaGenerated: number
+  totalFluxGenerated?: number
   fiveEchoSustainMs: number
   discoveries: Record<ChannelingDiscoveryId, boolean>
+}
+
+export type TutorialStage = 'choose-school' | 'combat' | 'first-kill' | 'tower-work' | 'channeling' | 'transmutation' | 'research' | 'complete'
+
+export interface TowerState {
+  acolytes: {
+    base: number
+    permanentBonuses: Record<string, number>
+  }
+  resources: {
+    arcaneFlux: number
+  }
 }
 
 export interface ManaPillarState {
@@ -662,6 +688,7 @@ export interface GameState {
   schools: Record<SchoolId, SchoolState>
   currencies: { gold: number }
   resonance: ResonanceState
+  tower: TowerState
   worldTier: WorldTierState
   inventory: Partial<Record<ItemId, number>>
   crystals: CrystalState
@@ -706,6 +733,10 @@ export interface DebugOverrides {
   artifactIgnoreOwnership: boolean
   arcaneCoreFreeCosts: boolean
   arcaneCoreIgnorePrerequisites: boolean
+  bonusAcolytes: number
+  acolyteTotalOverride: number | null
+  ignoreAcolyteLimit: boolean
+  arcaneFluxCapacityOverride: number | null
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 export interface FocusReservation {
@@ -733,7 +764,7 @@ export interface ManaFlowBreakdown {
   etaKind: 'full' | 'empty' | 'starved' | null
 }
 
-export type ActivityTelemetryStatus = 'running' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat'
+export type ActivityTelemetryStatus = 'running' | 'flux-limited' | 'waiting-flux' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'paused' | 'combat'
 export interface ActivityMetric {
   label: string
   value: string

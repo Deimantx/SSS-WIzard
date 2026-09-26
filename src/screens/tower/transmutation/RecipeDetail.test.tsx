@@ -40,11 +40,11 @@ describe('RecipeDetail Used In summary', () => {
     expect(screen.queryByText('Progress is preserved.')).toBeNull()
   })
 
-  it('keeps paused production concise when no Echoes are assigned', () => {
+  it('keeps paused production concise when no Acolyte is assigned', () => {
     render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
 
     expect(document.querySelector('.transmutation-production-paused .status')?.textContent).toBe('PAUSED')
-    expect(screen.getByText('Assign an Arcane Echo to begin production.')).toBeTruthy()
+    expect(screen.getByText('Assign an Acolyte to begin production.')).toBeTruthy()
   })
 
 

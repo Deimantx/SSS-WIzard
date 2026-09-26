@@ -10,7 +10,7 @@ import { getRecipeStatus } from '../../game/systems/transmutation/transmutationS
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { getAllSpellsInOrder } from '../../game/systems/spells'
 import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
-import type { ArtificingRecipeId, ItemId, MonsterId, RecipeId } from '../../game/types'
+import type { ArtificingRecipeId, ItemId, MonsterId, RecipeId, SchoolId, TutorialStage } from '../../game/types'
 import { formatOfflineBank } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
 import { DEVELOPER_LOADOUTS, type DeveloperEquipmentLoadout } from '../developerLoadouts'
@@ -19,6 +19,16 @@ import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
 import { getQuickTestingResourceGrants, QUICK_TESTING_RESOURCE_TARGETS } from '../developerQuickTesting'
 
 const defaultRecipe = RECIPE_ORDER.find((id) => RECIPES[id].ingredients.length > 0) ?? RECIPE_ORDER[0]
+const tutorialStages: readonly { id: TutorialStage; label: string }[] = [
+  { id: 'choose-school', label: 'Choose School' },
+  { id: 'combat', label: 'Combat' },
+  { id: 'first-kill', label: 'First Kill' },
+  { id: 'tower-work', label: 'Tower Work' },
+  { id: 'channeling', label: 'Channeling' },
+  { id: 'transmutation', label: 'Transmutation' },
+  { id: 'research', label: 'Research' },
+  { id: 'complete', label: 'Complete' },
+]
 
 const loadoutItemCounts = (loadout: DeveloperEquipmentLoadout) => Object.values(loadout.slots).reduce<Record<string, number>>((counts, itemId) => {
   if (itemId) counts[itemId] = (counts[itemId] ?? 0) + 1
@@ -99,6 +109,7 @@ export function DeveloperQuickSetup() {
         <section className="developer-quick-testing"><h3>QUICK TESTING READY</h3><p className="muted">Ensures only these resources reach at least 10,000. It does not change story, progression, equipment, spells, or Black Portal Shards.</p><div className="developer-owned-list">{Object.entries(QUICK_TESTING_RESOURCE_TARGETS).map(([itemId, target]) => <span key={itemId}>{formatReadableId(itemId)}<strong>≥ {target.toLocaleString()}</strong></span>)}</div><Button variant="primary" onClick={prepareQuickTesting}>QUICK TESTING READY</Button>{quickTestingFeedback && <Status tone="success">{quickTestingFeedback}</Status>}</section>
         <section><h3>Player</h3><div className="button-row"><Button onClick={restoreHealth}>Full Health</Button><Button onClick={restoreMana}>Full Mana</Button><Button variant="secondary" onClick={state.clearPlayerStatuses}>Clear Player Statuses</Button><Button variant="secondary" onClick={state.clearPlayerBarrier}>Clear Player Barrier</Button><Button variant={state.debug.playerImmortal ? 'success' : 'secondary'} onClick={() => state.setDebugPlayerImmortal(!state.debug.playerImmortal)}>God Mode: {state.debug.playerImmortal ? 'ON' : 'OFF'}</Button></div></section>
         <section><h3>Fresh Start / Reset</h3><p className="muted">Reset the persisted gameplay state for the currently selected profile. UI appearance and custom layouts are preserved.</p><Button variant="danger" disabled={!hasActiveProfile} onClick={resetCurrentProfile}>Reset Current Profile Progress</Button></section>
+        <section><h3>Tutorial controls</h3><p className="muted">Exercise the authored onboarding path without changing save migrations.</p><div className="button-row"><Button variant="danger" onClick={state.resetTutorialForDebug}>Reset Tutorial</Button><Button variant="secondary" onClick={state.skipTutorialForDebug}>Skip Tutorial</Button></div><div className="button-row">{(['fire', 'water', 'earth', 'air'] as SchoolId[]).map((schoolId) => <Button key={schoolId} variant={state.progress.startingSchoolId === schoolId ? 'success' : 'ghost'} onClick={() => state.debugChooseStartingSchool(schoolId)}>Choose {SCHOOLS[schoolId].name}</Button>)}</div><label>Tutorial stage<select aria-label="Developer tutorial stage" value={state.progress.tutorialStage} onChange={(event) => state.setTutorialStageForDebug(event.target.value as TutorialStage)}>{tutorialStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.label}</option>)}</select></label><div className="button-row"><Button variant="secondary" onClick={() => state.setTutorialStageForDebug('tower-work')}>Re-run Tower Work Unlock</Button><Button variant="ghost" onClick={() => state.grantStarterArtifactForDebug(state.progress.startingSchoolId ?? 'fire')}>Grant Starter Artifact</Button></div><small className="muted">Current: {state.progress.tutorialStage} · Starting school: {state.progress.startingSchoolId ?? 'none'}</small></section>
         <section><h3>Loadouts</h3><p className="muted">Each loadout uses its explicit authored slot map.</p><div className="developer-button-grid">{DEVELOPER_LOADOUTS.map((loadout) => <Button key={loadout.id} variant="secondary" onClick={() => loadLoadout(loadout)}>{loadout.label}</Button>)}</div></section>
         <section><h3>Resources &amp; Magic</h3><label>Recipe<select aria-label="Quick Setup recipe" value={selectedRecipe} onChange={(event) => { setSelectedRecipe(event.target.value as RecipeId); setRecipeFeedback('') }}>{RECIPE_ORDER.map((id) => { const recipe = RECIPES[id]; const category = 'category' in recipe ? recipe.category : 'artificing'; const status = 'category' in recipe ? getRecipeStatus(state, recipe) : getArtificingCatalogRecipeState(state, id as ArtificingRecipeId)?.status ?? 'LOCKED'; return <option value={id} key={id}>{recipe.name} · {formatReadableId(category)} · {formatReadableId(status)}</option> })}</select></label><div className="button-row"><Button variant="secondary" onClick={grantMissingRecipeIngredients} disabled={selectedRecipeDefinition.ingredients.length === 0}>Grant Missing Ingredients</Button><Button variant="secondary" onClick={unlockRankOneSpells}>Unlock Rank-I Spells</Button><Button variant="secondary" onClick={state.resetSpellCooldowns}>Reset Spell Cooldowns</Button><Button variant="ghost" onClick={state.resetDebugOverrides}>Clear Debug Overrides</Button></div><small className="muted">Selected recipe: {selectedRecipeDefinition.name} · {formatReadableId(recipeCategory)} · {formatReadableId(recipeStatus)}</small>{recipeFeedback && <Status tone="success">{recipeFeedback}</Status>}</section>
       </div>

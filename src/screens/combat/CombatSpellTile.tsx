@@ -65,8 +65,8 @@ export function CombatSpellTile({ spellId, autoCast, autoCastPriority, presentat
     </GameTooltip>
     {currentCast && <span className="spell-combat-intent-badge is-casting" aria-hidden="true">CASTING</span>}
     {manuallyQueued && <span className="spell-combat-intent-badge is-next" aria-hidden="true"><strong>NEXT</strong><small>{queuedState?.replace(/^NEXT,?\s*/, '')}</small></span>}
-    <GameTooltip accent="focus" content={<TooltipContent title={autoCast ? `AUTO-CAST · PRIORITY ${String(autoCastPriority ?? 0).padStart(2, '0')}` : 'MANUAL CAST'} description={autoCast ? `${tilePresentation.autoCastFocus} Focus reserved. Automation evaluates this Spell after earlier AUTO priorities.` : 'This Spell is ignored by Auto-Cast. It reserves 0 Auto-Cast Focus.'} />}>
-      <div className={`spell-combat-mode-bar${autoCast ? ' is-auto' : ' is-manual'}`} aria-label={autoCast ? `Auto-Cast, priority ${autoCastPriority ?? 0}` : 'Manual Cast, no Auto-Cast Focus'}>
+    <GameTooltip accent="mana" content={<TooltipContent title={autoCast ? `AUTO-CAST · PRIORITY ${String(autoCastPriority ?? 0).padStart(2, '0')}` : 'MANUAL CAST'} description={autoCast ? 'Automation evaluates this Spell after earlier AUTO priorities. Auto-Cast has no separate capacity cost.' : 'This Spell is ignored by Auto-Cast until enabled in the preset.'} />}>
+      <div className={`spell-combat-mode-bar${autoCast ? ' is-auto' : ' is-manual'}`} aria-label={autoCast ? `Auto-Cast, priority ${autoCastPriority ?? 0}` : 'Manual Cast'}>
         <span>{autoCast ? 'AUTO' : 'MANUAL'}</span>
         {autoCast && <strong>#{String(autoCastPriority ?? 0).padStart(2, '0')}</strong>}
       </div>

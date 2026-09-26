@@ -3,8 +3,9 @@ import { isRecipeUnlocked } from './transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import type { GameState, ItemId, TransmutationRecipeId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
-import { allocateContinuousMana, CONTINUOUS_MANA_EPSILON, requestedManaForProgress, type ContinuousManaAllocation, type ContinuousManaFundingResult, type ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
-import { getEffectiveTransmutationManaCost, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
+import { allocateTowerFlux, requestedFluxForProgress, TOWER_FLUX_EPSILON, type TowerFluxAllocation, type TowerFluxFundingResult, type TowerFluxWorkRequest } from '../simulation/towerFluxScheduler'
+import { getEffectiveTransmutationFluxCost, getEffectiveTransmutationResonanceCost, getEffectiveTransmutationStaffedWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
+import { canSpendResonanceBundle, spendResonanceBundle } from '../resonance/resonanceRuntime'
 
 export interface TransmutationAdvanceContext {
   mode: 'live' | 'banked'
@@ -20,8 +21,9 @@ const isUnlocked = isRecipeUnlocked
 const requestKey = (recipeId: TransmutationRecipeId) => `transmutation-${recipeId}`
 
 const getAvailableCrafts = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId]) => {
-  if (recipe.ingredients.length === 0) return Number.POSITIVE_INFINITY
-  return Math.min(...recipe.ingredients.map((ingredient) => Math.floor(getConsumableQuantity(state, ingredient.itemId) / Math.max(1, ingredient.quantity))))
+  const ingredientCycles = recipe.ingredients.length === 0 ? Number.POSITIVE_INFINITY : Math.min(...recipe.ingredients.map((ingredient) => Math.floor(getConsumableQuantity(state, ingredient.itemId) / Math.max(1, ingredient.quantity))))
+  const resonance = Object.entries(getEffectiveTransmutationResonanceCost(state, recipe)).map(([type, amount]) => Math.floor((state.resonance[type as keyof typeof state.resonance] ?? 0) / Math.max(1, amount ?? 0)))
+  return Math.min(ingredientCycles, resonance.length ? Math.min(...resonance) : Number.POSITIVE_INFINITY)
 }
 
 const normalizeProgress = (job: { progressMs: number }, durationMs: number) => {
@@ -36,64 +38,64 @@ const normalizeProgress = (job: { progressMs: number }, durationMs: number) => {
   return job.progressMs
 }
 
-const hasMaterialsForCycle = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId]) => recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
+const hasMaterialsForCycle = (state: GameState, recipe: (typeof RECIPES)[TransmutationRecipeId]) => recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity) && canSpendResonanceBundle(state.resonance, getEffectiveTransmutationResonanceCost(state, recipe))
 
 /** Builds all eligible Transmutation demand before any continuous work mutates inventory. */
-export const buildTransmutationWorkRequests = (state: GameState, deltaMs: number): ContinuousManaWorkRequest[] => {
+export const buildTransmutationWorkRequests = (state: GameState, deltaMs: number): TowerFluxWorkRequest[] => {
   const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
-  const requests: ContinuousManaWorkRequest[] = []
+  const requests: TowerFluxWorkRequest[] = []
 
   for (const recipeId of RECIPE_ORDER) {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
     const echoes = finiteEchoes(job?.echoesAssigned)
-    if (!job || echoes <= 0 || !isUnlocked(state, recipe)) continue
-    job.echoesAssigned = echoes
+    if (!job || !(job.acolyteAssigned ?? echoes > 0) || !isUnlocked(state, recipe)) continue
+    job.acolyteAssigned = job.acolyteAssigned ?? echoes > 0
     const progress = normalizeProgress(job, recipe.baseDurationMs)
     const availableCrafts = getAvailableCrafts(state, recipe)
     if (availableCrafts <= 0) continue
     const workCapacity = Number.isFinite(availableCrafts)
       ? Math.max(0, availableCrafts * recipe.baseDurationMs - progress)
       : Number.POSITIVE_INFINITY
-    const requestedProgressMs = Math.min(delta * getEffectiveTransmutationWorkMultiplier(state, echoes), workCapacity)
-    if (requestedProgressMs <= CONTINUOUS_MANA_EPSILON) continue
-    const manaPerCycle = getEffectiveTransmutationManaCost(state, recipe)
+    const requestedProgressMs = Math.min(delta * getEffectiveTransmutationStaffedWorkMultiplier(state, true), workCapacity)
+    if (requestedProgressMs <= TOWER_FLUX_EPSILON) continue
+    const fluxPerCycle = getEffectiveTransmutationFluxCost(state, recipe)
     requests.push({
       key: requestKey(recipeId),
       system: 'transmutation',
       sourceId: recipeId,
       requestedProgressMs,
-      manaPerCycle,
+      fluxPerCycle,
       cycleDurationMs: recipe.baseDurationMs,
-      requestedMana: requestedManaForProgress(manaPerCycle, requestedProgressMs, recipe.baseDurationMs),
+      requestedFlux: requestedFluxForProgress(fluxPerCycle, requestedProgressMs, recipe.baseDurationMs),
     })
   }
   return requests
 }
 
 /** Applies only work that the shared scheduler funded for this tick. */
-export const applyTransmutationAllocations = (state: GameState, _requests: readonly ContinuousManaWorkRequest[], allocations: Record<string, ContinuousManaAllocation>, context: TransmutationAdvanceContext) => {
+export const applyTransmutationAllocations = (state: GameState, _requests: readonly TowerFluxWorkRequest[], allocations: Record<string, TowerFluxAllocation>, context: TransmutationAdvanceContext) => {
   for (const recipeId of RECIPE_ORDER) {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
     const echoes = finiteEchoes(job?.echoesAssigned)
-    if (!job || echoes <= 0 || !isUnlocked(state, recipe)) continue
+    if (!job || !(job.acolyteAssigned ?? echoes > 0) || !isUnlocked(state, recipe)) continue
     const allocation = allocations[requestKey(recipeId)]
     const fundedProgressMs = allocation?.fundedProgressMs ?? 0
     const before = normalizeProgress(job, recipe.baseDurationMs)
 
-    if (fundedProgressMs > CONTINUOUS_MANA_EPSILON) job.progressMs = before + fundedProgressMs
-    while (job.progressMs >= recipe.baseDurationMs - CONTINUOUS_MANA_EPSILON) {
+    if (fundedProgressMs > TOWER_FLUX_EPSILON) job.progressMs = before + fundedProgressMs
+    while (job.progressMs >= recipe.baseDurationMs - TOWER_FLUX_EPSILON) {
       if (!hasMaterialsForCycle(state, recipe)) {
         // Eligibility is planned from a pre-work snapshot. If an external
         // mutation invalidated it, retain only honest partial work.
-        job.progressMs = Math.min(recipe.baseDurationMs - CONTINUOUS_MANA_EPSILON, Math.max(0, job.progressMs))
+        job.progressMs = Math.min(recipe.baseDurationMs - TOWER_FLUX_EPSILON, Math.max(0, job.progressMs))
         break
       }
       if (!completeTransmutationCycle(state, recipe, context)) break
       job.progressMs = Math.max(0, job.progressMs - recipe.baseDurationMs)
     }
-    job.progressMs = Math.min(recipe.baseDurationMs - CONTINUOUS_MANA_EPSILON, Math.max(0, job.progressMs))
+    job.progressMs = Math.min(recipe.baseDurationMs - TOWER_FLUX_EPSILON, Math.max(0, job.progressMs))
 
     // The selector derives ACTIVE/MANA LIMITED/WAITING MANA from current
     // eligibility, Mana production, and the assigned Echoes.
@@ -102,9 +104,9 @@ export const applyTransmutationAllocations = (state: GameState, _requests: reado
 }
 
 /** Advances assigned recipes in stable output order after shared funding is planned. */
-export function advanceTransmutation(state: GameState, deltaMs: number, context: TransmutationAdvanceContext = { mode: 'live' }, funding?: ContinuousManaFundingResult) {
+export function advanceTransmutation(state: GameState, deltaMs: number, context: TransmutationAdvanceContext = { mode: 'live' }, funding?: TowerFluxFundingResult) {
   const requests = buildTransmutationWorkRequests(state, deltaMs)
-  const result = funding ?? allocateContinuousMana(state, requests)
+  const result = funding ?? allocateTowerFlux(state, requests)
   applyTransmutationAllocations(state, requests, result.allocations, context)
   return state
 }
@@ -114,7 +116,7 @@ export const forceCompleteTransmutationCycle = (state: GameState, recipeId: Tran
   const recipe = RECIPES[recipeId]
   if (!recipe) return false
   if (!isUnlocked(state, recipe)) return false
-  const job = state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { echoesAssigned: 0, progressMs: 0 })
+  const job = state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { acolyteAssigned: true, echoesAssigned: 1, progressMs: 0 })
   if (!hasMaterialsForCycle(state, recipe)) {
     job.progressMs = 0
     return false
@@ -128,11 +130,15 @@ export const completeTransmutationCycle = (state: GameState, recipe: (typeof REC
   if (RECIPES[recipe.id] !== recipe || !hasMaterialsForCycle(state, recipe)) return false
   const roll = context.random ?? Math.random
   const bonuses = getTransmutationArrayBonuses(state)
-  const preserved = recipe.ingredients.length > 0 && roll() < bonuses.preservationChance
+  const preserved = (recipe.ingredients.length > 0 || Object.keys(recipe.resonanceCost ?? {}).length > 0) && roll() < bonuses.preservationChance
+  const resonanceCost = getEffectiveTransmutationResonanceCost(state, recipe)
   const consumedIngredients = preserved ? [] : recipe.ingredients
-  if (!preserved) recipe.ingredients.forEach((ingredient) => {
+  if (!preserved) {
+    if (!spendResonanceBundle(state.resonance, resonanceCost)) return false
+    recipe.ingredients.forEach((ingredient) => {
     state.inventory[ingredient.itemId] = Math.max(0, (state.inventory[ingredient.itemId] ?? 0) - ingredient.quantity)
-  })
+    })
+  }
   const replicated = roll() < bonuses.replicationChance
   const outputQuantity = recipe.output.quantity * (replicated ? 2 : 1)
   grantItem(state, recipe.output.itemId, outputQuantity)

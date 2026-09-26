@@ -22,6 +22,6 @@ describe('Transmutation Used In read model', () => {
 
     expect(visibleUses.find((use) => use.label === 'Ember Staff')).toMatchObject({ recipeId: 'ember-staff', detail: 'Artificing recipe' })
     expect(visibleUses.find((use) => use.recipeId === 'pyrebound-staff')).toMatchObject({ locked: true, detail: 'Artificing recipe' })
-    expect(visibleUses.some((use) => use.label === 'Pillars of Mana')).toBe(true)
+    expect(visibleUses.some((use) => use.label === 'Leyline Pillars')).toBe(true)
   })
 })

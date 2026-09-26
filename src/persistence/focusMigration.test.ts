@@ -22,7 +22,7 @@ describe('Focus and Prismatic save migration', () => {
     const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
     expect(loaded.inventory['prismatic-fragment']).toBe(77)
     expect(loaded.progress.focusImprovement).toEqual({ rank: 1, level: 4 })
-    expect(loaded.activities.transmutation.jobs['prismatic-fragment']).toEqual({ echoesAssigned: 2, progressMs: 4_321 })
+    expect(loaded.activities.transmutation.jobs['prismatic-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 2, progressMs: 4_321 })
     expect(loaded.player.maxFocus).toBe(120)
   })
 

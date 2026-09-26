@@ -10,4 +10,4 @@ export const SCHOOLS: Record<SchoolId, { id: SchoolId; name: string; glyph: stri
 
 export const FRAGMENT_ORDER: ElementId[] = ['fire', 'water', 'earth', 'air']
 /** Compatibility view for older content consumers; Research V2 reads authored item metadata directly. */
-export const RESEARCH_ITEMS = FRAGMENT_ORDER.map((school) => ({ itemId: SCHOOLS[school].fragment, school, xp: BALANCE.research.matchingXp, mana: BALANCE.research.manaCostPerItem, durationMs: BALANCE.research.durationPerItemMs, label: `${SCHOOLS[school].name} Fragment` }))
+export const RESEARCH_ITEMS = FRAGMENT_ORDER.map((school) => ({ itemId: SCHOOLS[school].fragment, school, xp: BALANCE.research.matchingXp, flux: BALANCE.research.arcaneFluxPerItem, durationMs: BALANCE.research.durationPerItemMs, label: `${SCHOOLS[school].name} Fragment` }))

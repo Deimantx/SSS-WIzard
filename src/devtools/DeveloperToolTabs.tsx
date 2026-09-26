@@ -5,7 +5,7 @@ import { DeveloperCombat } from './tabs/DeveloperCombat'
 import { DeveloperChanneling } from './tabs/DeveloperChanneling'
 import { DeveloperCharacter } from './tabs/DeveloperCharacter'
 import { DeveloperDiagnostics } from './tabs/DeveloperDiagnostics'
-import { DeveloperFocus } from './tabs/DeveloperFocus'
+import { DeveloperAcolytes } from './tabs/DeveloperAcolytes'
 import { DeveloperTransmutation } from './tabs/DeveloperTransmutation'
 import { DeveloperResearch } from './tabs/DeveloperResearch'
 import { DeveloperInventory } from './tabs/DeveloperInventory'
@@ -25,7 +25,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'quick') return <DeveloperQuickSetup />
   if (tab === 'character') return <DeveloperCharacter />
   if (tab === 'channeling') return <DeveloperChanneling />
-  if (tab === 'focus') return <DeveloperFocus />
+  if (tab === 'acolytes') return <DeveloperAcolytes />
   if (tab === 'artificing') return <DeveloperArtificing />
   if (tab === 'artifacts') return <DeveloperArtifacts />
   if (tab === 'resonance') return <DeveloperResonance />

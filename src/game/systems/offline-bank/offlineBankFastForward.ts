@@ -1,15 +1,14 @@
 import { BALANCE } from '../../core/balance/balance'
 import { advanceChannelingState, advanceGameStateContinuous, advanceGameStateStep, advanceCombatStateWithRemaining, getNextCombatBoundaryMs, type AdvanceContext } from '../simulation/advanceGameState'
-import { manaRegenPerSecond } from '../../engine/channelingEngine'
+import { playerManaRegenPerSecond as manaRegenPerSecond } from '../mana/playerMana'
 import { getActiveArtificingJob } from '../artificing/artificingSelectors'
 import { buildResearchWorkRequests, ensureResearchActivity } from '../research/researchEngine'
 import { TRANSMUTATION_RECIPES, TRANSMUTATION_RECIPE_ORDER } from '../../content/recipes/recipes'
 import { isRecipeUnlocked } from '../transmutation/transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { getEffectiveTransmutationWorkMultiplier } from '../transmutation/transmutationArrays'
-import { getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
 import { buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
-import type { ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
+import type { TowerFluxWorkRequest } from '../simulation/towerFluxScheduler'
 import { prepareAutoCastRuntime, type PreparedAutoCastRuntime } from '../spells'
 import type { CombatEventSink } from '../combat/combatTypes'
 import type { GameState, ItemId } from '../../types'
@@ -73,9 +72,9 @@ const minBoundary = (values: readonly (number | null | undefined)[]) => {
 }
 const positiveRateBoundary = (remaining: number, ratePerSecond: number) => ratePerSecond > 0 && Number.isFinite(ratePerSecond) ? Math.max(0, remaining / ratePerSecond * 1000) : null
 
-const getNextManaBoundaryMs = (state: GameState, production = manaRegenPerSecond(state), demand = getContinuousManaDemandPerSecond(state)) => {
+const getNextManaBoundaryMs = (state: GameState, production = manaRegenPerSecond(state)) => {
   if (state.debug.allowManaOverCap) return null
-  const net = production - demand
+  const net = production
   const epsilonManaMovement = Math.max(RESOURCE_EPSILON, OFFLINE_FAST_FORWARD_EPSILON_MS * Math.abs(net) / 1000)
   if (net < 0 && state.player.mana > epsilonManaMovement) return state.player.mana / -net * 1000
   if (net > 0 && state.player.mana < state.player.maxMana) {
@@ -89,9 +88,9 @@ const getNextResearchBoundaryMs = (state: GameState) => {
   const research = ensureResearchActivity(state)
   let next: number | null = null
   Object.values(research.slots).forEach((job) => {
-    if (!job || job.remainingQuantity <= 0 || job.echoesAssigned <= 0) return
+    if (!job || job.remainingQuantity <= 0 || !(job.acolyteAssigned ?? job.echoesAssigned > 0)) return
     const remaining = Math.max(0, BALANCE.research.durationPerItemMs - Math.max(0, job.progressMs))
-    next = minBoundary([next, positiveRateBoundary(remaining, job.echoesAssigned)])
+    next = minBoundary([next, positiveRateBoundary(remaining, 1)])
   })
   return next
 }
@@ -101,11 +100,11 @@ const getNextTransmutationBoundaryMs = (state: GameState) => {
   TRANSMUTATION_RECIPE_ORDER.forEach((recipeId) => {
     const recipe = TRANSMUTATION_RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    if (!job || job.echoesAssigned <= 0 || !isRecipeUnlocked(state, recipe)) return
+    if (!job || !(job.acolyteAssigned ?? job.echoesAssigned > 0) || !isRecipeUnlocked(state, recipe)) return
     const hasMaterials = recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
     if (!hasMaterials) return
     const remaining = Math.max(0, recipe.baseDurationMs - Math.max(0, job.progressMs))
-    const rate = getEffectiveTransmutationWorkMultiplier(state, job.echoesAssigned)
+    const rate = getEffectiveTransmutationWorkMultiplier(state, 1)
     next = minBoundary([next, positiveRateBoundary(remaining, rate)])
   })
   return next
@@ -116,13 +115,15 @@ const getNextArtificingBoundaryMs = (state: GameState) => {
   return Math.max(0, 5_000 - Math.max(0, state.activities.artificing.progressMs))
 }
 
-const getNextChannelingBoundaryMs = (state: GameState, manaRate = manaRegenPerSecond(state)) => {
+const getNextChannelingBoundaryMs = (state: GameState) => {
   const channeling = state.progress.channeling
   const boundaries: (number | null)[] = []
-  const manaCanAccrue = state.debug.allowManaOverCap || state.player.mana < state.player.maxMana
-  if (!channeling.discoveries['stable-leyline'] && manaRate > 0 && manaCanAccrue) boundaries.push((BALANCE.channeling.stableLeylineThreshold - channeling.totalManaGenerated) / manaRate * 1000)
-  if (!channeling.discoveries['echo-resonance'] && state.activities.channeling.echoesAssigned === BALANCE.channeling.maxEchoes) boundaries.push(BALANCE.channeling.echoResonanceDurationMs - channeling.fiveEchoSustainMs)
-  if (state.player.maxMana >= BALANCE.channeling.deepReservoirThreshold && !channeling.discoveries['deep-reservoir']) boundaries.push(0)
+  const acolytes = Math.max(0, Math.floor(state.activities.channeling.acolytesAssigned ?? 0))
+  const fluxRate = acolytes > 0 ? BALANCE.channeling.baseFluxPerAcolytePerSecond * acolytes : 0
+  const fluxCanAccrue = state.tower.resources.arcaneFlux < BALANCE.channeling.baseArcaneFluxCapacity
+  if (!channeling.discoveries['stable-leyline'] && fluxRate > 0 && fluxCanAccrue) boundaries.push((BALANCE.channeling.stableLeylineThreshold - (channeling.totalFluxGenerated ?? 0)) / fluxRate * 1000)
+  if (!channeling.discoveries['echo-resonance'] && acolytes >= BALANCE.channeling.harmonicWorkforceAcolytes) boundaries.push(BALANCE.channeling.echoResonanceDurationMs - channeling.fiveEchoSustainMs)
+  if (state.tower.resources.arcaneFlux >= BALANCE.channeling.deepReservoirThreshold && !channeling.discoveries['deep-reservoir']) boundaries.push(0)
   return minBoundary(boundaries)
 }
 
@@ -152,6 +153,7 @@ const stateBoundarySignature = (state: GameState) => [
   state.combat.playerStatuses.length,
   state.combat.enemyStatuses.length,
   state.player.mana,
+  state.tower.resources.arcaneFlux,
   state.player.health,
   state.activities.artificing.progressMs,
 ].join('|')
@@ -183,20 +185,20 @@ const createMetrics = (): OfflineFastForwardMetrics => ({
 })
 
 interface PreparedWorkTemplate {
-  request: ContinuousManaWorkRequest
+  request: TowerFluxWorkRequest
   progressPerMs: number
-  manaPerMs: number
-  prepared: ContinuousManaWorkRequest
+  fluxPerMs: number
+  prepared: TowerFluxWorkRequest
 }
 
 interface OfflineContinuousEpoch {
   manaRate: number
-  demandPerSecond: number
+  fluxDemandPerSecond: number
   research: PreparedWorkTemplate[]
   transmutation: PreparedWorkTemplate[]
-  preparedResearch: ContinuousManaWorkRequest[]
-  preparedTransmutation: ContinuousManaWorkRequest[]
-  preparedRequests: ContinuousManaWorkRequest[]
+  preparedResearch: TowerFluxWorkRequest[]
+  preparedTransmutation: TowerFluxWorkRequest[]
+  preparedRequests: TowerFluxWorkRequest[]
   autoCastRuntime: PreparedAutoCastRuntime
 }
 
@@ -214,23 +216,23 @@ const createEpoch = (state: GameState, context: AdvanceContext, metrics: Offline
   const transmutationRequests = buildTransmutationWorkRequests(state, 1)
   metrics.researchPlannerCalls += 1
   metrics.transmutationPlannerCalls += 1
-  const toTemplate = (request: ContinuousManaWorkRequest): PreparedWorkTemplate => ({
+  const toTemplate = (request: TowerFluxWorkRequest): PreparedWorkTemplate => ({
     request,
     progressPerMs: request.requestedProgressMs,
-    manaPerMs: request.requestedMana,
-    prepared: { ...request, requestedProgressMs: 0, requestedMana: 0 },
+    fluxPerMs: request.requestedFlux,
+    prepared: { ...request, requestedProgressMs: 0, requestedFlux: 0 },
   })
   const research = researchRequests.map(toTemplate)
   const transmutation = transmutationRequests.map(toTemplate)
-  const demandPerSecond = [...researchRequests, ...transmutationRequests].reduce((total, request) => total + request.requestedMana * 1000, 0)
+  const fluxDemandPerSecond = [...researchRequests, ...transmutationRequests].reduce((total, request) => total + request.requestedFlux * 1000, 0)
   const preparedResearch = research.map((template) => template.prepared)
   const preparedTransmutation = transmutation.map((template) => template.prepared)
-  return { manaRate: manaRegenPerSecond(state), demandPerSecond, research, transmutation, preparedResearch, preparedTransmutation, preparedRequests: [...preparedResearch, ...preparedTransmutation], autoCastRuntime: prepareAutoCastRuntime(state) }
+  return { manaRate: manaRegenPerSecond(state), fluxDemandPerSecond, research, transmutation, preparedResearch, preparedTransmutation, preparedRequests: [...preparedResearch, ...preparedTransmutation], autoCastRuntime: prepareAutoCastRuntime(state) }
 }
 
-const scalePreparedWork = (templates: readonly PreparedWorkTemplate[], deltaMs: number) => templates.forEach(({ prepared, progressPerMs, manaPerMs }) => {
+const scalePreparedWork = (templates: readonly PreparedWorkTemplate[], deltaMs: number) => templates.forEach(({ prepared, progressPerMs, fluxPerMs }) => {
   prepared.requestedProgressMs = progressPerMs * deltaMs
-  prepared.requestedMana = manaPerMs * deltaMs
+  prepared.requestedFlux = fluxPerMs * deltaMs
 })
 
 const prepareEpochWork = (epoch: OfflineContinuousEpoch, deltaMs: number) => {
@@ -239,17 +241,17 @@ const prepareEpochWork = (epoch: OfflineContinuousEpoch, deltaMs: number) => {
 }
 
 const itemCanChangePassiveWork = (state: GameState, itemId: ItemId) => {
-  const researchUsesItem = Object.values(ensureResearchActivity(state).slots).some((job) => Boolean(job && job.echoesAssigned > 0 && job.itemId === itemId))
+  const researchUsesItem = Object.values(ensureResearchActivity(state).slots).some((job) => Boolean(job && (job.acolyteAssigned ?? job.echoesAssigned > 0) && job.itemId === itemId))
   if (researchUsesItem) return true
   return TRANSMUTATION_RECIPE_ORDER.some((recipeId) => {
     const job = state.activities.transmutation.jobs[recipeId]
-    if (!job || job.echoesAssigned <= 0) return false
+    if (!job || !(job.acolyteAssigned ?? job.echoesAssigned > 0)) return false
     return TRANSMUTATION_RECIPES[recipeId].ingredients.some((ingredient) => ingredient.itemId === itemId)
   })
 }
 
 const getPreparedWorkBoundaryMs = (state: GameState, templates: readonly PreparedWorkTemplate[], kind: 'research' | 'transmutation', epoch: OfflineContinuousEpoch) => {
-  if (!templates.length || (state.player.mana <= OFFLINE_FAST_FORWARD_EPSILON_MS && epoch.manaRate <= epoch.demandPerSecond)) return null
+  if (!templates.length || (state.tower.resources.arcaneFlux <= OFFLINE_FAST_FORWARD_EPSILON_MS && epoch.fluxDemandPerSecond <= 0)) return null
   let next: number | null = null
   for (const template of templates) {
     const job = kind === 'research'
@@ -266,15 +268,15 @@ const getPreparedWorkBoundaryMs = (state: GameState, templates: readonly Prepare
 const createEventSchedule = (state: GameState, epoch: OfflineContinuousEpoch, metrics: OfflineFastForwardMetrics): OfflineEventSchedule => {
   const boundaryStartedAt = now()
   metrics.combatBoundaryCalls += 1
-  const combatAt = state.combat.active ? getNextCombatBoundaryMs(state, { manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond, autoCastRuntime: epoch.autoCastRuntime }) : null
+  const combatAt = state.combat.active ? getNextCombatBoundaryMs(state, { manaDeltaPerSecond: epoch.manaRate, autoCastRuntime: epoch.autoCastRuntime }) : null
   metrics.timing.boundaryMs += now() - boundaryStartedAt
   return {
     combatAt,
     researchAt: getPreparedWorkBoundaryMs(state, epoch.research, 'research', epoch),
     transmutationAt: getPreparedWorkBoundaryMs(state, epoch.transmutation, 'transmutation', epoch),
     artificingAt: getNextArtificingBoundaryMs(state),
-    channelingAt: getNextChannelingBoundaryMs(state, epoch.manaRate),
-    manaAt: getNextManaBoundaryMs(state, epoch.manaRate, epoch.demandPerSecond),
+    channelingAt: getNextChannelingBoundaryMs(state),
+    manaAt: getNextManaBoundaryMs(state, epoch.manaRate),
   }
 }
 
@@ -384,7 +386,7 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
       context.onItemAcquired?.(itemId, quantity)
     },
     autoCastRuntime: epoch.autoCastRuntime,
-    manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond,
+    manaDeltaPerSecond: epoch.manaRate,
     onAutoCastCheck: (elapsedMs) => { metrics.autoCastChecks += 1; metrics.timing.autoCastMs += elapsedMs; context.onAutoCastCheck?.(elapsedMs) },
     onContinuousManaAllocation: () => { metrics.continuousManaAllocationCalls += 1; context.onContinuousManaAllocation?.() },
     onAnalyticsAdvance: (elapsedMs) => { metrics.timing.analyticsMs += elapsedMs; context.onAnalyticsAdvance?.(elapsedMs) },
@@ -417,8 +419,8 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
   const refreshCombatSchedule = () => {
     const started = now()
     metrics.combatBoundaryCalls += 1
-    schedule.combatAt = state.combat.active
-      ? getNextCombatBoundaryMs(state, { manaDeltaPerSecond: epoch.manaRate - epoch.demandPerSecond, autoCastRuntime: epoch.autoCastRuntime })
+      schedule.combatAt = state.combat.active
+      ? getNextCombatBoundaryMs(state, { manaDeltaPerSecond: epoch.manaRate, autoCastRuntime: epoch.autoCastRuntime })
       : null
     metrics.timing.boundaryMs += now() - started
   }
@@ -426,8 +428,8 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
     schedule.researchAt = getPreparedWorkBoundaryMs(state, epoch.research, 'research', epoch)
     schedule.transmutationAt = getPreparedWorkBoundaryMs(state, epoch.transmutation, 'transmutation', epoch)
     schedule.artificingAt = getNextArtificingBoundaryMs(state)
-    schedule.channelingAt = getNextChannelingBoundaryMs(state, epoch.manaRate)
-    schedule.manaAt = getNextManaBoundaryMs(state, epoch.manaRate, epoch.demandPerSecond)
+    schedule.channelingAt = getNextChannelingBoundaryMs(state)
+    schedule.manaAt = getNextManaBoundaryMs(state, epoch.manaRate)
   }
 
   while (remaining > OFFLINE_FAST_FORWARD_EPSILON_MS) {
@@ -490,7 +492,7 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
       epoch = createEpoch(state, eventContext, metrics)
       epochDirty = false
       eventContext.autoCastRuntime = epoch.autoCastRuntime
-      eventContext.manaDeltaPerSecond = epoch.manaRate - epoch.demandPerSecond
+      eventContext.manaDeltaPerSecond = epoch.manaRate
       schedule = createEventSchedule(state, epoch, metrics)
     } else {
       if (due.research || due.transmutation || due.artificing || due.channeling || due.mana) refreshPassiveSchedules()

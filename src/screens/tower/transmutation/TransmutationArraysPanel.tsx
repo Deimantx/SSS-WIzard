@@ -33,8 +33,8 @@ export function TransmutationArraysPanel() {
 
   return <Card className="transmutation-arrays-panel" title="TRANSMUTATION ARRAYS" action={<div className="transmutation-array-mastery-summary"><span>RANK I MASTERY</span><strong>{mastered} / {TRANSMUTATION_ARRAY_IDS.length}</strong><ArrayMastery arrays={arrays} /></div>}>
     <div ref={scrollRef} className="transmutation-arrays-panel-scroll" data-scroll-owner="transmutation-arrays" tabIndex={0}>
-      <p className="transmutation-arrays-intro">Permanent Arrays tune Transmutation speed, yield, Mana, and Echo capacity.</p>
-      <div className="transmutation-array-bonus-summary"><span>ACTIVE BONUSES</span><strong>Speed +{formatPercent(bonuses.craftSpeedPct)} · Preserve {formatPercent(bonuses.preservationChance)} · Replicate {formatPercent(bonuses.replicationChance)} · Mana −{formatPercent(bonuses.manaCostReductionPct)} · Echo +{bonuses.echoCapacityBonus}</strong></div>
+      <p className="transmutation-arrays-intro">Permanent Arrays tune Transmutation speed, yield, Arcane Flux, and Acolyte efficiency.</p>
+      <div className="transmutation-array-bonus-summary"><span>ACTIVE BONUSES</span><strong>Speed +{formatPercent(bonuses.craftSpeedPct)} · Preserve {formatPercent(bonuses.preservationChance)} · Replicate {formatPercent(bonuses.replicationChance)} · Flux −{formatPercent(bonuses.manaCostReductionPct)} · Acolyte capacity +{bonuses.echoCapacityBonus}</strong></div>
       <div className="transmutation-array-selector-grid" aria-label="Transmutation Arrays">
         {TRANSMUTATION_ARRAY_IDS.map((arrayId) => <ArraySelector key={arrayId} arrayId={arrayId} selected={selectedArrayId === arrayId} onSelect={() => setSelectedArrayId(arrayId)} />)}
       </div>
@@ -85,7 +85,7 @@ function SelectedArrayInspector({ arrayId }: { arrayId: TransmutationArrayId }) 
     <div className="transmutation-array-selected-head"><div className="transmutation-array-selected-identity"><span className="transmutation-array-selected-mark" aria-hidden="true" /><div><span className="eyebrow">RANK I · {ARRAY_CATEGORIES[arrayId]} ARRAY</span><h3>{definition.name}</h3><span className="transmutation-array-selected-level">LEVEL {level} / {definition.maxLevel}</span></div></div>{mastered && <Status tone="success">MASTERED</Status>}</div>
     <p className="transmutation-array-selected-description">{definition.description}</p>
     <div className="transmutation-array-level"><span>LEVEL PROGRESSION</span><div className="transmutation-array-marks" aria-label={`${definition.name} progress ${level} of ${definition.maxLevel}`}>{Array.from({ length: definition.maxLevel }, (_, index) => <i className={index < level ? 'filled' : ''} key={index} />)}</div></div>
-    {mastered ? <div className="transmutation-array-effect-row is-mastered"><div><span>CURRENT</span><strong>{effectText(definition, currentValue)}</strong></div><p>RANK I MASTERED<br /><small>Further ranks are not yet available.</small></p></div> : <GameTooltip block content={<TooltipContent title={definition.effectLabel} description={effectTooltip(definition)} />} accent="elemental"><div className="transmutation-array-effect-row"><div><span>CURRENT</span><strong>{effectText(definition, currentValue)}</strong></div><b aria-hidden="true">→</b><div><span>{definition.effect === 'echo-capacity' ? `NEXT MILESTONE · Lv${level < 5 ? 5 : 10}` : 'NEXT'}</span><strong>{definition.effect === 'echo-capacity' ? `+${nextValue} Echo Capacity` : effectText(definition, nextValue)}</strong></div></div></GameTooltip>}
+    {mastered ? <div className="transmutation-array-effect-row is-mastered"><div><span>CURRENT</span><strong>{effectText(definition, currentValue)}</strong></div><p>RANK I MASTERED<br /><small>Further ranks are not yet available.</small></p></div> : <GameTooltip block content={<TooltipContent title={definition.effectLabel} description={effectTooltip(definition)} />} accent="elemental"><div className="transmutation-array-effect-row"><div><span>CURRENT</span><strong>{effectText(definition, currentValue)}</strong></div><b aria-hidden="true">→</b><div><span>{definition.effect === 'echo-capacity' ? `NEXT MILESTONE · Lv${level < 5 ? 5 : 10}` : 'NEXT'}</span><strong>{definition.effect === 'echo-capacity' ? `+${nextValue} Acolyte Capacity` : effectText(definition, nextValue)}</strong></div></div></GameTooltip>}
     {!mastered && cost && <div className="transmutation-array-costs"><span className="eyebrow">COST · OWNED / AVAILABLE / REQUIRED</span><div className="transmutation-array-requirements">{requirements.map(({ itemId, quantity }) => <ItemRequirementTile key={itemId} itemId={itemId} owned={inventory[itemId] ?? 0} available={getConsumableQuantity(consumableState, itemId)} equipped={getEquippedReservedQuantity({ equipment }, itemId)} required={quantity} protectedItem={Boolean(protectedItems[itemId])} />)}</div></div>}
     <GameTooltip block disabled={canUpgrade} content={reason}><Button variant={canUpgrade ? 'secondary' : 'ghost'} disabled={!canUpgrade} ariaLabel={reason || `Upgrade ${definition.name}`} onClick={() => upgrade(arrayId)}>{mastered ? 'RANK I MASTERED' : 'UPGRADE'}</Button></GameTooltip>
   </section>
@@ -101,24 +101,24 @@ function getArrayAccent(definition: TransmutationArrayDefinition) {
 }
 
 function compactEffectText(definition: TransmutationArrayDefinition, value: number) {
-  if (definition.effect === 'mana-cost-reduction-percent') return `−${formatPercent(value)} Mana`
-  if (definition.effect === 'echo-capacity') return `+${value} Echo`
+  if (definition.effect === 'mana-cost-reduction-percent') return `−${formatPercent(value)} Flux`
+  if (definition.effect === 'echo-capacity') return `+${value} Acolyte capacity`
   if (definition.effect === 'craft-speed-percent') return `+${formatPercent(value)} Speed`
   if (definition.effect === 'preservation-chance') return `${formatPercent(value)} Preserve`
   return `${formatPercent(value)} Replicate`
 }
 
 function effectTooltip(definition: TransmutationArrayDefinition) {
-  if (definition.effect === 'craft-speed-percent') return 'Increases work completed per real second. Echo speed and Array speed multiply together.'
+  if (definition.effect === 'craft-speed-percent') return 'Increases work completed per real second. Acolyte work and Array speed multiply together.'
   if (definition.effect === 'preservation-chance') return 'One roll per completed cycle can preserve all recipe ingredients. Ingredientless recipes receive no benefit.'
-  if (definition.effect === 'replication-chance') return 'One independent roll can grant one extra authored output. No second cycle, Mana payment, or ingredient payment.'
-  if (definition.effect === 'mana-cost-reduction-percent') return 'Reduces effective Mana paid per Transmutation cycle. The authored recipe cost remains unchanged.'
-  return 'Adds Transmutation Echo capacity at Rank I milestones Lv5 and Lv10.'
+  if (definition.effect === 'replication-chance') return 'One independent roll can grant one extra authored output. No second cycle, Flux payment, or ingredient payment.'
+  if (definition.effect === 'mana-cost-reduction-percent') return 'Reduces effective Arcane Flux paid per Transmutation cycle. The authored recipe cost remains unchanged.'
+  return 'Adds shared Acolyte capacity at Rank I milestones Lv5 and Lv10.'
 }
 
 function effectText(definition: TransmutationArrayDefinition, value: number) {
-  if (definition.effect === 'mana-cost-reduction-percent') return `−${formatPercent(value)} Mana / Cycle`
-  if (definition.effect === 'echo-capacity') return `+${value} Echo Capacity`
+  if (definition.effect === 'mana-cost-reduction-percent') return `−${formatPercent(value)} Flux / Cycle`
+  if (definition.effect === 'echo-capacity') return `+${value} Acolyte Capacity`
   if (definition.effect === 'craft-speed-percent') return `+${formatPercent(value)} Speed`
   if (definition.effect === 'preservation-chance') return `${formatPercent(value)} Preservation`
   return `${formatPercent(value)} Replication`

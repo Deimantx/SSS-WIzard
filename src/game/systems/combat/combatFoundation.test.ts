@@ -253,7 +253,7 @@ describe('post-implementation combat audit regressions', () => {
     state.activities.autoCast['fire-bolt'] = true
     state.combat.spellCooldowns['fire-bolt'] = 1000
     advanceGameState(state, 1000, { mode: 'live' })
-    expect(state.player.mana).toBe(45)
+    expect(state.player.mana).toBe(55)
     expect(state.combat.spellCooldowns['fire-bolt']).toBe(0)
     expect(state.combat.queuedPlayerSpellId).toBe('fire-bolt')
   })

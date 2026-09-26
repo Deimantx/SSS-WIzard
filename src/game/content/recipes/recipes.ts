@@ -25,7 +25,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
     if (!ITEMS[recipe.output.itemId]) errors.push(`${recipe.id}: unknown output item ${recipe.output.itemId}`)
     if (!Number.isInteger(recipe.output.quantity) || recipe.output.quantity < 1) errors.push(`${recipe.id}: output quantity must be positive`)
     if ('baseDurationMs' in recipe && (!Number.isFinite(recipe.baseDurationMs) || recipe.baseDurationMs <= 0)) errors.push(`${recipe.id}: invalid duration`)
-    if ('manaCost' in recipe && (!Number.isFinite(recipe.manaCost) || recipe.manaCost < 0)) errors.push(`${recipe.id}: invalid Mana cost` )
+    if ('manaCost' in recipe && (!Number.isFinite(recipe.manaCost ?? 0) || (recipe.manaCost ?? 0) < 0)) errors.push(`${recipe.id}: invalid Mana cost` )
     if (isArtificingRecipe(recipe)) {
       if (recipe.sourceDungeonId && !Object.prototype.hasOwnProperty.call(DUNGEONS, recipe.sourceDungeonId)) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
       if (ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: Artificing output must be Equipment`)

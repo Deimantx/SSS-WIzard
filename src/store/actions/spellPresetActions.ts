@@ -121,7 +121,6 @@ export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset
   const projection = getSpellPresetFocusProjection(state, stored)
   if (shouldAutoSelect && projection.validSlots.length) state.spellPresets.selectedPresetId = stored.id
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
-  if (state.spellPresets.selectedPresetId === stored.id && projection.validSlots.length && !projection.canApply) pushPresetNotification(state, `Saved ${stored.name}; it is ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} Focus short for combat.`, 'warning')
   return true
 }
 
@@ -179,7 +178,6 @@ export const selectSpellPresetAction = (state: GameState, id: SpellPresetId): Ap
   state.spellPresets.selectedPresetId = id
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   if (projection.unavailableSpellIds.length) pushPresetNotification(state, `${preset.name} selected; unavailable slots are excluded until available.`, 'warning')
-  if (!projection.canApply) pushPresetNotification(state, `${preset.name} selected; ${Math.max(0, projection.totalAfterApply - state.player.maxFocus)} Focus short for combat.`, 'warning')
   return { ok: true, unavailableSpellIds: projection.unavailableSpellIds }
 }
 

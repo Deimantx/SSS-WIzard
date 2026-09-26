@@ -89,15 +89,15 @@ describe('RecipeLibrary screen preferences', () => {
     expect(screen.queryByRole('button', { name: /Prismatic Fragment/ })).toBeNull()
   })
 
-  it('uses a single ACTIVE status alongside the Echo badge', () => {
+  it('uses a single ACTIVE status alongside the Acolyte badge', () => {
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    act(() => { useGameStore.getState().setTransmutationEchoes('fire-fragment', 1) })
+    act(() => { useGameStore.getState().assignTransmutationAcolyte('fire-fragment') })
 
-    expect(useGameStore.getState().activities.transmutation.jobs['fire-fragment']?.echoesAssigned).toBe(1)
-    expect(screen.getByRole('button', { name: /1E/ })).toBeTruthy()
-    const tileStatuses = document.querySelectorAll('.transmutation-tile-status .status.active')
+    expect(useGameStore.getState().activities.transmutation.jobs['fire-fragment']?.acolyteAssigned).toBe(true)
+    expect(screen.getByRole('button', { name: /1A/ })).toBeTruthy()
+    const tileStatuses = document.querySelectorAll('.transmutation-tile-status .status.warning')
     expect(tileStatuses).toHaveLength(1)
-    expect(tileStatuses[0].textContent).toBe('ACTIVE')
+    expect(tileStatuses[0].textContent).toBe('WAITING RESONANCE')
     expect(screen.queryByText('1E ACTIVE')).toBeNull()
   })
 

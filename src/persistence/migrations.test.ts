@@ -295,7 +295,7 @@ describe('save navigation migration', () => {
       activities: { ...initial.activities, condense: { running: true, element: 'water', progressMs: 3000 } },
     } as any)
 
-    expect(migrated.activities.transmutation.jobs['water-fragment']).toEqual({ echoesAssigned: 1, progressMs: 4000 })
+    expect(migrated.activities.transmutation.jobs['water-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 1, progressMs: 4000 })
     expect(migrated.activities.transmutation.jobs['fire-fragment']).toBeUndefined()
   })
 
@@ -312,7 +312,7 @@ describe('save navigation migration', () => {
       },
     } as any)
 
-    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 2000 })
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 1, progressMs: 2000 })
     expect(migrated.activities.transmutation.jobs).not.toHaveProperty('ember-staff')
     expect(migrated.inventory).toMatchObject({ 'ember-staff': 2, 'fire-fragment': 48, 'artifact-essence': 24 })
     expect(migrated.saveVersion).toBe(8)
@@ -348,7 +348,7 @@ describe('save navigation migration', () => {
     } as any)
 
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.activities.research.slots['research-1']).toEqual({ itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 12, remainingQuantity: 9, progressMs: 2300, echoesAssigned: 1, status: 'running' })
+    expect(migrated.activities.research.slots['research-1']).toEqual({ itemId: 'fire-fragment', targetSchoolId: 'water', requestedQuantity: 12, remainingQuantity: 9, progressMs: 2300, acolyteAssigned: true, echoesAssigned: 1, status: 'running' })
   })
 
   it('keeps blocked V8 Research work prepared without assigning an Echo', () => {
@@ -377,7 +377,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave(JSON.parse(JSON.stringify(state)))
 
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.activities.research.slots).toEqual(state.activities.research.slots)
+    expect(migrated.activities.research.slots).toEqual(Object.fromEntries(Object.entries(state.activities.research.slots).map(([slotId, job]) => [slotId, job ? { ...job, acolyteAssigned: true } : null])))
   })
 
   it('preserves a non-default current V9 gameplay snapshot through serialization and migration', () => {
@@ -397,8 +397,8 @@ describe('save navigation migration', () => {
     expect(migrated.currencies).toEqual({ gold: 321 })
     expect(migrated.equipment.weapon).toBe('tideglass-wand')
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
-    expect(migrated.activities.research.slots['research-1']).toEqual(state.activities.research.slots['research-1'])
-    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
+    expect(migrated.activities.research.slots['research-1']).toEqual({ ...state.activities.research.slots['research-1'], acolyteAssigned: true })
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 1, progressMs: 0 })
   })
 
   it('round-trips V18 committed Basic, Skill, and switched-Pattern timing state', () => {
@@ -640,7 +640,7 @@ describe('save navigation migration', () => {
       saveVersion: 10,
       activities: { ...initial.activities, transmutation: { jobs: { 'fire-fragment': { echoesAssigned: 1, progressMs: 8000 } } } },
     } as any)
-    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ echoesAssigned: 1, progressMs: 0 })
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 1, progressMs: 0 })
   })
 
   it('clears legacy Research waiting-Mana full bars while preserving the batch', () => {
@@ -901,7 +901,7 @@ describe('v45 Black Sigil Reach migration', () => {
 
   it('converts Hall kill Threat proportionally and preserves the valid target', () => {
     const migrated = migrateSave(activeSave({ dungeonId: 'hall-of-unbound-names', enemyId: 'name-eater', targetEnemyId: 'name-eater', threatCleared: 30 }) as any)
-    expect(migrated.saveVersion).toBe(48)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.targetEnemyId).toBe('name-eater')
     expect(migrated.combat.threatCleared).toBe(20000)
   })
@@ -963,7 +963,7 @@ describe('v45 Black Sigil Reach migration', () => {
     targeted.worldTier.current = 4
     targeted.worldTier.highestUnlocked = 4
     const targetedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(targeted))))
-    expect(targetedLoaded.saveVersion).toBe(48)
+    expect(targetedLoaded.saveVersion).toBe(SAVE_VERSION)
     expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, enemyWorldTier: 4, threatCleared: 80000 })
 
     const sequence = createInitialState()
@@ -974,7 +974,7 @@ describe('v45 Black Sigil Reach migration', () => {
     sequence.combat.inBossFight = true
     sequence.combat.enemyHp = 12000
     const sequenceLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(sequence))))
-    expect(sequenceLoaded.saveVersion).toBe(48)
+    expect(sequenceLoaded.saveVersion).toBe(SAVE_VERSION)
     expect(sequenceLoaded.combat).toMatchObject({ dungeonId: 'black-gate', dungeonSequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
   })
 })

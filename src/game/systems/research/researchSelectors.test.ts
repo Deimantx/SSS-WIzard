@@ -6,8 +6,9 @@ import { getResearchNextLevelEtaMs } from './researchSelectors'
 const withResearchJob = (quantity: number, progressMs = 0, echoesAssigned = 1) => {
   const state = createInitialState()
   state.player.mana = 100
+  state.tower.resources.arcaneFlux = 5
   state.inventory['fire-fragment'] = 10
-  state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: quantity, remainingQuantity: quantity, progressMs, echoesAssigned, status: 'running' }
+  state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: quantity, remainingQuantity: quantity, progressMs, acolyteAssigned: echoesAssigned > 0, echoesAssigned, status: 'running' }
   return state
 }
 
@@ -27,7 +28,7 @@ describe('research next-level ETA', () => {
   it('uses all assigned Echoes for the effective cycle time', () => {
     const state = withResearchJob(8, 0, 5)
     state.schools.fire.xp = 8
-    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 16_000, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(state, 'research-1')).toEqual({ etaMs: 80_000, beyondBatch: false })
   })
 
   it('requires nine matching items to cross Level 1 to Level 2', () => {
@@ -48,7 +49,7 @@ describe('research next-level ETA', () => {
     const waitingMana = withResearchJob(2, 5_000)
     waitingMana.player.mana = 0
     waitingMana.debug.bonusManaRegenFlat = -5
-    expect(getResearchNextLevelEtaMs(waitingMana, 'research-1')).toEqual({ etaMs: null, beyondBatch: false })
+    expect(getResearchNextLevelEtaMs(waitingMana, 'research-1')).toEqual({ etaMs: null, beyondBatch: true })
     const protectedItem = withResearchJob(2)
     protectedItem.protectedItems['fire-fragment'] = true
     expect(getResearchNextLevelEtaMs(protectedItem, 'research-1')).toEqual({ etaMs: null, beyondBatch: false })

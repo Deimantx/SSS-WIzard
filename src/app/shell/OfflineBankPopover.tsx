@@ -5,8 +5,8 @@ import { getActivityTelemetry } from '../../game/systems/activity/activityTeleme
 import { formatCompactDuration, formatOfflineBank } from '../../game/utils'
 import type { OfflineBankProgress } from '../../game/systems/offline-bank/offlineBankSimulation'
 import { useGameStore } from '../../store/gameStore'
-import { getTransmutationEchoesAssigned } from '../../game/systems/transmutation/transmutationSelectors'
-import { getResearchEchoesAssigned } from '../../game/systems/research/researchSelectors'
+import { getTransmutationAcolytesAssigned } from '../../game/systems/transmutation/transmutationSelectors'
+import { getResearchAcolytesAssigned } from '../../game/systems/research/researchSelectors'
 import { useSampledGameReadModel } from './sampledGameReadModel'
 
 const presets = [{ label: '1 MIN', short: '1m', ms: 60_000 }, { label: '5 MIN', short: '5m', ms: 300_000 }, { label: '15 MIN', short: '15m', ms: 900_000 }, { label: '1 HOUR', short: '1h', ms: 3_600_000 }]
@@ -31,7 +31,7 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
   const activities = useSampledGameReadModel((state) => getActivityTelemetry(state), 250)
   const canAdvance = useSampledGameReadModel((state) => {
     const meaningfulRecovery = state.combat.active && (Boolean(state.combat.enemyId) || state.player.health < state.player.maxHealth || state.combat.encounterTimerMs > 0)
-    return getTransmutationEchoesAssigned(state) > 0 || getResearchEchoesAssigned(state) > 0 || meaningfulRecovery
+    return getTransmutationAcolytesAssigned(state) > 0 || getResearchAcolytesAssigned(state) > 0 || meaningfulRecovery
   }, 250)
 
   useEffect(() => {

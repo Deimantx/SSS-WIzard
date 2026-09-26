@@ -1,7 +1,7 @@
 import { BALANCE } from './core/balance/balance'
 import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from './core/balance/schoolXpCurve'
 import { ITEMS, getResearchXp } from './content/items/items'
-import { getManaCapacityBreakdown, manaRegenPerSecond as getChannelingManaRegen } from './engine/channelingEngine'
+import { getPlayerManaCapacityBreakdown, playerManaRegenPerSecond } from './systems/mana/playerMana'
 import type { GameState, ItemId, SchoolId } from './types'
 import { clamp, uid } from './utils'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
@@ -22,13 +22,13 @@ export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)
   const rawMaxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
   state.player.maxHealth = rawMaxHealth * (1 + (stats.maxHealthPct ?? 0))
-  state.player.maxMana = getManaCapacityBreakdown(state).total
+  state.player.maxMana = getPlayerManaCapacityBreakdown(state).total
   state.player.maxFocus = getFocusCapacityBreakdown(state).total
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
   state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana))
 }
 
-export const manaRegenPerSecond = getChannelingManaRegen
+export const manaRegenPerSecond = playerManaRegenPerSecond
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   return getSchoolProgressInfo(state, school).progress
 }

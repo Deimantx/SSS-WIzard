@@ -2,7 +2,9 @@ import { BALANCE } from '../../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../../content/channeling/channelingDiscoveries'
 import { MONSTERS } from '../../content/monsters'
 import { SPELLS } from '../../content/spells/spells'
-import { advanceChanneling, manaRegenPerSecond } from '../../engine/channelingEngine'
+import { manaRegenPerSecond } from '../../engine'
+import { advanceArcaneFlux } from '../channeling/channelingRuntime'
+import { advancePlayerMana } from '../mana/playerMana'
 import { pushNotification, recalculateDerivedStats } from '../../engine'
 import { castSpellInternal, getPlayerSpellCastRate, getSpellStartFailure, resolvePlayerSpellCast, spellRequiresEnemyTarget } from '../../engine/spellEngine'
 import { executeCombatEffects } from '../combat/effectResolver'
@@ -19,7 +21,7 @@ import type { SimulationReportCollector } from '../offline-bank/offlineBankRepor
 import { applyTransmutationAllocations, buildTransmutationWorkRequests } from '../transmutation/transmutationEngine'
 import { advanceArtificing, type ArtificingCompletion } from '../artificing/artificingEngine'
 import { applyResearchAllocations, buildResearchWorkRequests } from '../research/researchEngine'
-import { allocateContinuousMana, getContinuousManaDemandPerSecond, type ContinuousManaWorkRequest } from './continuousManaScheduler'
+import { allocateTowerFlux, type TowerFluxWorkRequest } from './towerFluxScheduler'
 import { getNextAutoCastEligibilityBoundaryMs, getNextAutomatedSpellCooldownMs, isSpellUnlocked, selectNextAutomatedSpellFast, type PreparedAutoCastRuntime } from '../spells'
 import { MAX_SIMULATION_DELTA_MS, SIMULATION_QUANTUM_MS } from './simulationConstants'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
@@ -58,9 +60,9 @@ export interface AdvanceContext {
  * normal authoritative request planning path.
  */
 export interface AdvanceContinuousOptions {
-  preparedWorkRequests?: readonly ContinuousManaWorkRequest[]
-  preparedResearchRequests?: readonly ContinuousManaWorkRequest[]
-  preparedTransmutationRequests?: readonly ContinuousManaWorkRequest[]
+  preparedWorkRequests?: readonly TowerFluxWorkRequest[]
+  preparedResearchRequests?: readonly TowerFluxWorkRequest[]
+  preparedTransmutationRequests?: readonly TowerFluxWorkRequest[]
   manaRegenPerSecondOverride?: number
 }
 
@@ -146,14 +148,9 @@ const advanceObservers = (state: GameState, delta: number, context: AdvanceConte
 }
 
 export const advanceChannelingState = (state: GameState, delta: number, context: AdvanceContext, manaRateOverride?: number) => {
-  const channelingTick = advanceChanneling(state, delta, manaRateOverride)
-  if (channelingTick.discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
-  channelingTick.discoveries.forEach((id) => {
-    context.report?.recordDiscovery(id)
-    const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id)
-    if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success')
-  })
-  return channelingTick
+  const manaTick = advancePlayerMana(state, delta, manaRateOverride)
+  const channelingTick = advanceArcaneFlux(state, delta)
+  return { ...channelingTick, gainedMana: manaTick.gained, discoveries: [] as const }
 }
 
 const getNextHealthRegenEventMs = (state: GameState, skipFullHealth = false) => skipFullHealth && state.player.health >= state.player.maxHealth ? Number.POSITIVE_INFINITY : state.player.healthRegenTimerMs > 0 ? state.player.healthRegenTimerMs : Number.POSITIVE_INFINITY
@@ -162,7 +159,7 @@ const getNextHealthRegenEventMs = (state: GameState, skipFullHealth = false) => 
 export const getNextCombatBoundaryMs = (state: GameState, options: { manaDeltaPerSecond?: number; autoCastRuntime?: PreparedAutoCastRuntime } = {}): number | null => {
   if (!state.combat.active || (state.combat.enemyId && !MONSTERS[state.combat.enemyId])) return null
   const cooldownRecovery = getCooldownRecoveryMultiplier(state)
-  const manaDeltaPerSecond = options.manaDeltaPerSecond ?? (manaRegenPerSecond(state) - getContinuousManaDemandPerSecond(state))
+  const manaDeltaPerSecond = options.manaDeltaPerSecond ?? manaRegenPerSecond(state)
   if (state.player.health <= 0 || (state.combat.enemyId && state.combat.enemyHp <= 0)) return 0
   if (!state.combat.enemyId) {
     if (state.combat.encounterTimerMs <= 0) return 0
@@ -464,7 +461,7 @@ export const advanceGameStateContinuous = (state: GameState, delta: number, cont
     ?? buildTransmutationWorkRequests(state, delta)
   const continuousRequests = options.preparedWorkRequests ?? [...researchRequests, ...transmutationRequests]
   if (continuousRequests.length > 0) {
-    const funding = allocateContinuousMana(state, continuousRequests)
+    const funding = allocateTowerFlux(state, continuousRequests)
     context.onContinuousManaAllocation?.()
     applyResearchAllocations(state, researchRequests, funding.allocations, context)
     applyTransmutationAllocations(state, transmutationRequests, funding.allocations, context)

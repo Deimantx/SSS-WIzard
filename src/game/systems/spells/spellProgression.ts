@@ -1,6 +1,5 @@
 import { SPELLS } from '../../content/spells/spells'
 import type { GameState, SchoolId, SpellId } from '../../types'
-import { getCombatSpellAutoCastFocusCost } from '../combat/combatStats'
 
 export const MIN_SPELL_RANK = 1
 export const MAX_SPELL_RANK = 8
@@ -23,15 +22,14 @@ export function isSpellUnlocked(state: { progress: SpellRankState }, spellId: Sp
   return getSpellRank(state, spellId) !== null
 }
 
-export function getAutoCastFocusCostForRank(rank: SpellRank): number {
-  return rank * 10
-}
+/** @deprecated Auto-Cast no longer consumes Focus. Kept as a compatibility read returning zero. */
+export function getAutoCastFocusCostForRank(_rank: SpellRank): number { return 0 }
 
-export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equipment: GameState['equipment']; artifactProgress: GameState['artifactProgress']; arcaneCore: GameState['arcaneCore'] }, spellId: SpellId): number | null {
+/** @deprecated Auto-Cast no longer consumes Focus. */
+export function getSpellAutoCastFocusCost(state: { progress: SpellRankState; equipment?: GameState['equipment']; artifactProgress?: GameState['artifactProgress']; arcaneCore?: GameState['arcaneCore'] }, spellId: SpellId): number | null {
   const rank = getSpellRank(state, spellId)
   if (rank === null) return null
-  const base = getAutoCastFocusCostForRank(rank)
-  return getCombatSpellAutoCastFocusCost(state, base)
+  return getAutoCastFocusCostForRank(rank)
 }
 
 export function formatSpellRank(rank: SpellRank): string {

@@ -4,11 +4,15 @@ import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { BALANCE } from '../../core/balance/balance'
 import { selectFreeFocus } from '../../engine'
+import { selectFreeAcolytes, selectTotalAcolytes } from '../acolytes'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import { continuousManaPerSecond, estimateContinuousFundingRatio, CONTINUOUS_MANA_EPSILON, getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
 import type { EquipmentItemSlot, GameState, ItemId, RecipeCategory, TransmutationRecipeId, TransmutationCategoryFilter, TransmutationJobState, TransmutationTierFilter } from '../../types'
-import { getEffectiveTransmutationCraftsPerHour, getEffectiveTransmutationDuration, getEffectiveTransmutationManaCost, getEffectiveTransmutationOutputPerHour, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
+import { getEffectiveTransmutationCraftsPerHour, getEffectiveTransmutationDuration, getEffectiveTransmutationFluxCost, getEffectiveTransmutationManaCost, getEffectiveTransmutationOutputPerHour, getEffectiveTransmutationResonanceCost, getEffectiveTransmutationWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
 import { hasEnoughResource } from '../../presentation/resources/resourcePresentation'
+import { canSpendResonanceBundle } from '../resonance/resonanceRuntime'
+import { getArcaneFluxProductionPerSecond } from '../channeling/channelingRuntime'
+import { estimateTowerFluxFundingRatio } from '../simulation/towerFluxScheduler'
 
 export interface TransmutationRecipeFilters {
   categoryFilter: TransmutationCategoryFilter
@@ -27,7 +31,7 @@ export interface TransmutationRecipeFilterCounts {
   active: number
 }
 
-export type TransmutationStatus = 'paused' | 'active' | 'mana-limited' | 'waiting-mana' | 'waiting-materials' | 'locked'
+export type TransmutationStatus = 'paused' | 'active' | 'flux-limited' | 'waiting-flux' | 'waiting-resonance' | 'waiting-materials' | 'locked' | 'mana-limited' | 'waiting-mana'
 
 export interface RecipeConsumableRequirement {
   itemId: RecipeDefinition['ingredients'][number]['itemId']
@@ -46,14 +50,15 @@ export interface RecipeMaterialCapacity {
 
 export const isRecipeUnlocked = isAuthoredRecipeUnlocked
 export const getTransmutationJob = (state: Pick<GameState, 'activities'>, recipeId: TransmutationRecipeId): TransmutationJobState | undefined => state.activities.transmutation.jobs[recipeId]
-export const getTransmutationEchoesAssigned = (state: Pick<GameState, 'activities'>) => RECIPE_ORDER.reduce((total, recipeId) => total + Math.max(0, Math.floor(state.activities.transmutation.jobs[recipeId]?.echoesAssigned ?? 0)), 0)
-export const getTransmutationEchoCapacity = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'debug'>>) => state.debug?.ignoreEchoLimit ? Number.MAX_SAFE_INTEGER : Math.max(0, Math.floor(state.debug?.transmutationEchoCapacityOverride ?? BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(state).echoCapacityBonus))
+export const getTransmutationAcolytesAssigned = (state: Pick<GameState, 'activities'>) => RECIPE_ORDER.reduce((total, recipeId) => { const job = state.activities.transmutation.jobs[recipeId]; return total + ((job?.acolyteAssigned ?? (job?.echoesAssigned ?? 0) > 0) ? 1 : 0) }, 0)
+export const getTransmutationEchoesAssigned = getTransmutationAcolytesAssigned
+export const getTransmutationEchoCapacity = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => state.debug?.ignoreAcolyteLimit || state.debug?.ignoreEchoLimit ? Number.MAX_SAFE_INTEGER : state.tower ? selectTotalAcolytes(state as GameState) : Math.max(0, Math.floor(BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(state).echoCapacityBonus))
 export const getTransmutationFreeEchoCapacity = (state: Pick<GameState, 'activities' | 'progress'> & Partial<Pick<GameState, 'debug'>>) => Math.max(0, getTransmutationEchoCapacity(state) - getTransmutationEchoesAssigned(state))
 export const getTransmutationEchoFocusCost = () => BALANCE.transmutation.echoFocusCost
 export const getTransmutationFocusReserved = (echoesAssigned: number) => Math.max(0, Math.floor(echoesAssigned)) * BALANCE.transmutation.echoFocusCost
 export const getTransmutationSpeedMultiplier = (echoesAssigned: number) => Math.max(1, Math.floor(echoesAssigned))
 export const getRecipeCurrentSpeedMultiplier = (echoesAssigned: number) => Math.max(0, Math.floor(Number.isFinite(echoesAssigned) ? echoesAssigned : 0))
-export const canAssignTransmutationEcho = (state: Pick<GameState, 'activities' | 'progress' | 'player' | 'equipment' | 'artifactProgress' | 'arcaneCore'> & Partial<Pick<GameState, 'debug'>>) => getTransmutationFreeEchoCapacity(state) > 0 && Boolean(state.debug?.allowFocusOverCap || selectFreeFocus(state) >= BALANCE.transmutation.echoFocusCost)
+export const canAssignTransmutationEcho = (state: Pick<GameState, 'activities' | 'progress' | 'player' | 'equipment' | 'artifactProgress' | 'arcaneCore'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => Boolean(state.tower ? selectFreeAcolytes(state as GameState) > 0 : getTransmutationFreeEchoCapacity(state) > 0)
 export const getRecipeEffectiveDuration = (recipe: RecipeDefinition, echoesAssigned: number, state?: Pick<GameState, 'progress'>) => state ? getEffectiveTransmutationDuration(state, recipe, echoesAssigned) ?? recipe.baseDurationMs : recipe.baseDurationMs / Math.max(1, echoesAssigned)
 export const getRecipeCurrentEffectiveDuration = (recipe: RecipeDefinition, echoesAssigned: number, state?: Pick<GameState, 'progress'>) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? state ? getEffectiveTransmutationDuration(state, recipe, echoesAssigned) : recipe.baseDurationMs / getRecipeCurrentSpeedMultiplier(echoesAssigned) : null
 export const getRecipeCurrentRemainingDuration = (recipe: RecipeDefinition, progressMs: number, echoesAssigned: number, state?: Pick<GameState, 'progress'>) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? getRecipeRemainingMs(recipe, progressMs) / (state ? getEffectiveTransmutationWorkMultiplier(state, echoesAssigned) : getRecipeCurrentSpeedMultiplier(echoesAssigned)) : null
@@ -61,7 +66,8 @@ export const getRecipeCraftsPerHour = (recipe: RecipeDefinition, echoesAssigned:
 export const getRecipeOutputPerHour = (recipe: RecipeDefinition, echoesAssigned: number, state?: Pick<GameState, 'progress'>) => state ? getEffectiveTransmutationOutputPerHour(state, recipe, echoesAssigned) : getRecipeCraftsPerHour(recipe, echoesAssigned) * recipe.output.quantity
 export const getRecipeCurrentOutputPerHour = (recipe: RecipeDefinition, echoesAssigned: number, state?: Pick<GameState, 'progress'>) => getRecipeCurrentSpeedMultiplier(echoesAssigned) > 0 ? getRecipeOutputPerHour(recipe, echoesAssigned, state) : 0
 export const getRecipeRemainingMs = (recipe: RecipeDefinition, progressMs: number) => Math.max(0, recipe.baseDurationMs - Math.max(0, progressMs))
-export const getRecipeManaDemandPerSecond = (recipe: RecipeDefinition, echoesAssigned: number, state?: Pick<GameState, 'progress'>) => state ? continuousManaPerSecond(getEffectiveTransmutationManaCost(state, recipe), recipe.baseDurationMs, getEffectiveTransmutationWorkMultiplier(state, echoesAssigned)) : continuousManaPerSecond(recipe.manaCost, recipe.baseDurationMs, echoesAssigned)
+export const getRecipeFluxDemandPerSecond = (recipe: RecipeDefinition, acolytesAssigned: number, state?: Pick<GameState, 'progress'>) => state ? continuousManaPerSecond(getEffectiveTransmutationFluxCost(state, recipe), recipe.baseDurationMs, acolytesAssigned > 0 ? 1 : 0) : continuousManaPerSecond(recipe.arcaneFluxCost ?? recipe.manaCost ?? 0, recipe.baseDurationMs, acolytesAssigned > 0 ? 1 : 0)
+export const getRecipeManaDemandPerSecond = getRecipeFluxDemandPerSecond
 export const getRecipeProgressPercent = (recipe: RecipeDefinition, progressMs: number) => Math.min(100, Math.max(0, progressMs / Math.max(1, recipe.baseDurationMs) * 100))
 
 export function getRecipeConsumableRequirements(state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, recipe: RecipeDefinition): RecipeConsumableRequirement[] {
@@ -85,20 +91,20 @@ export function getRecipeMaterialCapacity(requirements: RecipeConsumableRequirem
 }
 
 export const hasRecipeMaterials = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment'>, recipe: RecipeDefinition) => getRecipeConsumableRequirements(state, recipe).every((requirement) => requirement.available >= requirement.required)
-export const isRecipeCraftable = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress'>, recipe: RecipeDefinition) => isRecipeUnlocked(state, recipe) && hasEnoughResource(state.player.mana, getEffectiveTransmutationManaCost(state, recipe)) && hasRecipeMaterials(state, recipe)
+export const isRecipeCraftable = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'resonance'>, recipe: RecipeDefinition) => isRecipeUnlocked(state, recipe) && canSpendResonanceBundle(state.resonance, getEffectiveTransmutationResonanceCost(state, recipe) as never) && hasRecipeMaterials(state, recipe)
 
-export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition): TransmutationStatus {
+export function getRecipeStatus(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'player' | 'progress' | 'schools' | 'tower' | 'resonance'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition): TransmutationStatus {
   if (!isRecipeUnlocked(state, recipe)) return 'locked'
   const job = state.activities.transmutation.jobs[recipe.id]
-  const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
+  const staffed = Boolean(job?.acolyteAssigned ?? (job?.echoesAssigned ?? 0) > 0)
+  const echoes = staffed ? 1 : 0
   if (echoes <= 0) return 'paused'
   if (!hasRecipeMaterials(state, recipe)) return 'waiting-materials'
-  if (recipe.manaCost > 0) {
-    const demand = getContinuousManaDemandPerSecond(state)
-    const ratio = estimateContinuousFundingRatio(state.player.mana, manaRegenPerSecond(state), demand, BALANCE.tickMs)
-    if (ratio <= CONTINUOUS_MANA_EPSILON) return 'waiting-mana'
-    if (ratio < 1 - CONTINUOUS_MANA_EPSILON) return 'mana-limited'
-  }
+  if (!canSpendResonanceBundle(state.resonance, getEffectiveTransmutationResonanceCost(state, recipe) as never)) return 'waiting-resonance'
+  const demand = getRecipeFluxDemandPerSecond(recipe, 1, state)
+  const ratio = estimateTowerFluxFundingRatio(state.tower.resources.arcaneFlux, getArcaneFluxProductionPerSecond(state).total, demand, BALANCE.tickMs)
+  if (ratio <= 1e-9) return 'waiting-flux'
+  if (ratio < 1 - 1e-9) return 'flux-limited'
   return 'active'
 }
 
@@ -119,20 +125,20 @@ function matchesRecipeContext(state: Pick<GameState, 'inventory' | 'equipment'>,
   return true
 }
 
-function matchesRecipeState(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters) {
+function matchesRecipeState(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools' | 'resonance'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters) {
   if (filters.craftableOnly && !isRecipeCraftable(state, recipe)) return false
-  if (filters.activeOnly && Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0)) <= 0) return false
+  if (filters.activeOnly && !Boolean(getTransmutationJob(state, recipe.id)?.acolyteAssigned ?? (getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0) > 0)) return false
   return true
 }
 
-export function matchesTransmutationRecipe(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters, query = '', showLocked = false) {
+export function matchesTransmutationRecipe(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools' | 'resonance'> & Partial<Pick<GameState, 'debug'>>, recipe: RecipeDefinition, filters: TransmutationRecipeFilters, query = '', showLocked = false) {
   if (!showLocked && !isRecipeUnlocked(state, recipe)) return false
   if (!matchesRecipeContext(state, recipe, filters) || !matchesRecipeState(state, recipe, filters)) return false
   const normalizedQuery = query.trim().toLowerCase()
   return normalizedQuery.length === 0 || recipeSearchText(recipe).includes(normalizedQuery)
 }
 
-export function getVisibleTransmutationRecipes(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, filters: TransmutationRecipeFilters, query = '', showLocked = false) {
+export function getVisibleTransmutationRecipes(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools' | 'resonance'> & Partial<Pick<GameState, 'debug'>>, filters: TransmutationRecipeFilters, query = '', showLocked = false) {
   return getTransmutationRecipeEntries().filter((recipe) => matchesTransmutationRecipe(state, recipe, filters, query, showLocked))
 }
 
@@ -141,7 +147,7 @@ export function getTransmutationTierOptions() {
   return [...new Set(tiers)].sort((a, b) => a - b)
 }
 
-export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools'> & Partial<Pick<GameState, 'debug'>>, filters: TransmutationRecipeFilters, query = '', showLocked = false): TransmutationRecipeFilterCounts {
+export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'player' | 'progress' | 'schools' | 'resonance'> & Partial<Pick<GameState, 'debug'>>, filters: TransmutationRecipeFilters, query = '', showLocked = false): TransmutationRecipeFilterCounts {
   const recipes = getTransmutationRecipeEntries()
   const accessible = recipes.filter((recipe) => showLocked || isRecipeUnlocked(state, recipe))
   const counts: TransmutationRecipeFilterCounts = {
@@ -151,7 +157,7 @@ export function getTransmutationRecipeFilterCounts(state: Pick<GameState, 'activ
     categories: { all: accessible.length, elemental: 0, material: 0 },
           tierCounts: { elemental: {}, material: {} },
     craftable: accessible.filter((recipe) => isRecipeCraftable(state, recipe)).length,
-    active: accessible.filter((recipe) => Math.max(0, Math.floor(getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0)) > 0).length,
+    active: accessible.filter((recipe) => Boolean(getTransmutationJob(state, recipe.id)?.acolyteAssigned ?? (getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0) > 0)).length,
     }
   for (const recipe of accessible) {
     counts.categories[recipe.category] += 1

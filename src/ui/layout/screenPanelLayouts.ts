@@ -229,10 +229,10 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // CHANNELING
   // ============================================================
   'tower-channeling': screen({
-    'channeling-mana-core': panel({ order: 1, columnStart: 1, columnSpan: 6, rowStart: 1, minHeight: 0, preferredHeight: 354, label: 'Mana Core' }),
-    'channeling-echoes': panel({ order: 2, columnStart: 7, columnSpan: 6, rowStart: 1, minHeight: 354, preferredHeight: 354, label: 'Arcane Echoes' }),
+    'channeling-mana-core': panel({ order: 1, columnStart: 1, columnSpan: 6, rowStart: 1, minHeight: 0, preferredHeight: 354, label: 'Arcane Flux Core' }),
+    'channeling-echoes': panel({ order: 2, columnStart: 7, columnSpan: 6, rowStart: 1, minHeight: 354, preferredHeight: 354, label: 'Acolyte Channeling' }),
     'channeling-breakdown': panel({ order: 3, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Channeling Breakdown' }),
-    'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Pillars of Mana' }),
+    'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Leyline Pillars' }),
   }, ['channeling-mana-core', 'channeling-echoes', 'channeling-breakdown', 'channeling-pillars']),
 
   // ============================================================
@@ -242,6 +242,11 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'focus-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 282, preferredHeight: 498, label: 'Focus overview' }),
     'focus-reservations': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 354, preferredHeight: 570, label: 'Active Focus usage' }),
     'focus-improvement': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 390, preferredHeight: 570, label: 'Focus improvement' }),
+  }, ['focus-summary', 'focus-reservations', 'focus-improvement']),
+  'tower-acolytes': screen({
+    'focus-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 282, preferredHeight: 498, label: 'Acolyte roster' }),
+    'focus-reservations': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 354, preferredHeight: 570, label: 'Active Acolyte assignments' }),
+    'focus-improvement': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 390, preferredHeight: 570, label: 'Acolyte sources' }),
   }, ['focus-summary', 'focus-reservations', 'focus-improvement']),
 
   // ============================================================

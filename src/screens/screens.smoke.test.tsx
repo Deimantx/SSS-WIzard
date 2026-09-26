@@ -15,7 +15,7 @@ const goToTower = async (user: ReturnType<typeof userEvent.setup>, label: string
 const goToMagicSchools = async (user: ReturnType<typeof userEvent.setup>) => { await user.click(navItem('Magic Schools')); await user.click(screen.getByRole('tab', { name: /FIRE/ })) }
 
 describe('screen smoke coverage', () => {
-  beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); resetAllUiPreferences() })
+  beforeEach(() => { window.localStorage.clear(); useGameStore.getState().resetSave(); useGameStore.setState((state) => { state.progress.startingSchoolId = 'fire'; state.progress.tutorialStage = 'complete'; state.ui.screen = 'home'; state.combat.active = false }); resetAllUiPreferences() })
 
   it('renders each Wizard Tower system as its own focused screen', async () => {
     const user = userEvent.setup()
@@ -24,7 +24,7 @@ describe('screen smoke coverage', () => {
     expect(screenScroll).toBeTruthy()
     expect(screenScroll?.firstElementChild?.classList.contains('game-screen-transition')).toBe(true)
     expect(screenScroll?.querySelector('.screen-content')).toBeTruthy()
-    for (const item of [{ label: 'Channeling', heading: 'Channeling Chamber' }, { label: 'Focus', heading: 'Focus governs every parallel action.' }, { label: 'Transmutation', heading: 'Shape Mana into elemental matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
+    for (const item of [{ label: 'Channeling', heading: 'Channeling Chamber' }, { label: 'Acolytes', heading: 'Tower Acolytes' }, { label: 'Transmutation', heading: 'Shape Resonance into elemental matter.' }, { label: 'Research', heading: 'Research turns fragments into understanding.' }]) { await goToTower(user, item.label); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
   })
 
   it('opens and closes the Arcane Discoveries modal with three real cards and six placeholders', async () => {
@@ -34,7 +34,7 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('button', { name: 'Arcane Discoveries 0/3' }))
     expect(screen.getByRole('dialog', { name: 'Arcane Discoveries' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Stable Leyline' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Echo Resonance' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Harmonic Workforce' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Deep Reservoir' })).toBeTruthy()
     expect(screen.getAllByText('Undiscovered')).toHaveLength(6)
     await user.keyboard('{Escape}')
@@ -45,8 +45,8 @@ describe('screen smoke coverage', () => {
     const user = userEvent.setup()
     render(<GameShell />)
     await goToTower(user, 'Channeling')
-    expect(screen.getByRole('heading', { name: 'PILLARS OF MANA' })).toBeTruthy()
-    for (const name of ['Leyline Conduit', 'Arcane Reservoir', 'Mana Resonance', 'Astral Expansion', 'Echo Attunement']) expect(screen.getByRole('button', { name: new RegExp(name) })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'LEYLINE PILLARS' })).toBeTruthy()
+    for (const name of ['Leyline Conduit', 'Arcane Reservoir', 'Flux Resonance', 'Astral Expansion', 'Acolyte Attunement']) expect(screen.getByRole('button', { name: new RegExp(name) })).toBeTruthy()
     await user.click(navItem('Collection'))
     expect(screen.getByRole('heading', { name: 'ITEM COLLECTION' })).toBeTruthy()
     expect(screen.queryByText('Apprentice Wand')).toBeNull()
@@ -57,13 +57,13 @@ describe('screen smoke coverage', () => {
     const user = userEvent.setup()
     render(<GameShell />)
     await goToTower(user, 'Channeling')
-    expect(screen.getByRole('heading', { name: 'PILLARS OF MANA' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Channeling Breakdown' })).toBeTruthy()
-    expect(screen.getAllByText('PASSIVE MANA').length).toBeGreaterThan(0)
-    expect(screen.getByText('Base Mana / Echo')).toBeTruthy()
-    expect(screen.getByText('PASSIVE TOTAL')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'LEYLINE PILLARS' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'CHANNELING BREAKDOWN' })).toBeTruthy()
+    expect(screen.getAllByText('PRODUCTION').length).toBeGreaterThan(0)
+    expect(screen.getByText('Base / Acolyte')).toBeTruthy()
+    expect(screen.getByText('FINAL PRODUCTION')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'View Detailed Breakdown' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'View Echo Modifiers' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'View Acolyte Modifiers' })).toBeNull()
   })
 
   it('navigates every major screen through grouped shell navigation', async () => {
@@ -161,13 +161,13 @@ describe('screen smoke coverage', () => {
   it('shows shared School Mastery and Current Arcane Work on Overview', () => {
     render(<GameShell />)
     expect(screen.getByRole('heading', { name: 'MAGIC SCHOOL MASTERY' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'CURRENT ARCANE WORK' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'CURRENT TOWER WORK' })).toBeTruthy()
     for (const school of ['Fire', 'Water', 'Earth', 'Air']) expect(screen.getByText(school, { selector: 'strong' })).toBeTruthy()
-    expect(screen.getAllByText('No Echoes assigned').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('No Acolytes assigned').length).toBeGreaterThan(0)
     expect(screen.getByText('No active recipes')).toBeTruthy()
   })
 
-  it('renders the fresh spellbook state and canonical spell Focus costs', async () => {
+  it('renders the fresh spellbook state with independent Auto-Cast', async () => {
     const user = userEvent.setup()
     render(<GameShell />)
 
@@ -191,7 +191,7 @@ describe('screen smoke coverage', () => {
     await user.click(fireBoltTile)
     const spellInspectorScroll = document.querySelector('.schools-inspector-panel .spell-inspector-scroll')
     expect(spellInspectorScroll?.classList.contains('smart-scroll-region')).toBe(true)
-    expect(screen.getByText(/Auto-Cast Focus/)).toBeTruthy()
+    expect(screen.getByText(/Auto-Cast/)).toBeTruthy()
     expect(screen.queryByText('Current Rank')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Auto-Cast OFF' })).toBeNull()
     expect(screen.queryByText('10 Focus reserved')).toBeNull()
@@ -208,7 +208,7 @@ describe('screen smoke coverage', () => {
     render(<GameShell />)
     await goToMagicSchools(user)
     await user.click(screen.getByRole('button', { name: /Fire Bolt,/ }))
-    expect(screen.getByText('Auto-Cast Focus')).toBeTruthy()
+    expect(screen.getByText('Auto-Cast')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Auto-Cast (ON|OFF)/ })).toBeNull()
     expect(screen.queryByText('Always')).toBeNull()
     expect(screen.queryByText('Focus reserved')).toBeNull()

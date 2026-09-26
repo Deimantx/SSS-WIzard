@@ -38,7 +38,6 @@ export function DeveloperCharacter() {
         <Summary label="Developer Max Mana Bonus" value={formatResourceAmount(debug.bonusMaxManaFlat)} />
         <Summary label="Current Mana Regen" value={`+${formatResourceRate(regen.total)}/s`} />
         <Summary label="Developer Mana Regen Bonus" value={`+${formatResourceRate(debug.bonusManaRegenFlat)}/s`} />
-        <Summary label="Final Max Focus" value={player.maxFocus} />
         <Summary label="Spell Power Base" value={spellPower.base} />
         <Summary label="Spell Power Equipment" value={spellPower.equipment} />
         <Summary label="Spell Power Total" value={spellPower.total} />
@@ -55,7 +54,6 @@ export function DeveloperCharacter() {
         <Summary label="Spell Power" value={effectiveEquipment.spellPower} />
         <Summary label="Max HP" value={effectiveEquipment.maxHealth} />
         <Summary label="Max Mana" value={formatResourceAmount(effectiveEquipment.maxMana)} />
-        <Summary label="Max Focus" value={effectiveEquipment.maxFocus} />
         <Summary label="Mana Regen" value={`${formatResourceRate(effectiveEquipment.manaRegen)}/s`} />
         <Summary label="Crit Chance" value={`${Math.round(effectiveEquipment.critChance * 100)}%`} />
         <Summary label="Crit Damage" value={`${Math.round(effectiveEquipment.critDamageMultiplier * 100)}%`} />
@@ -66,7 +64,6 @@ export function DeveloperCharacter() {
         <Summary label="Healing Done" value={`${Math.round(effectiveEquipment.healingDoneBonus * 100)}%`} />
         <Summary label="Barrier Power" value={`${Math.round(effectiveEquipment.barrierPowerBonus * 100)}%`} />
         <Summary label="Mana Cost Reduction" value={`${Math.round(effectiveEquipment.manaCostReduction * 100)}%`} />
-        <Summary label="Focus Efficiency" value={`${Math.round(effectiveEquipment.focusEfficiency * 100)}%`} />
         <Summary label="Fire Spell Damage" value={`${Math.round(effectiveEquipment.fireSpellDamage * 100)}%`} />
         <Summary label="Air Spell Damage" value={`${Math.round(effectiveEquipment.airSpellDamage * 100)}%`} />
         <Summary label="Barrier Received" value={`+${effectiveEquipment.barrierReceivedFlat}`} />
@@ -80,7 +77,6 @@ export function DeveloperCharacter() {
         <Summary label="Spell Power" value={resolvedCombat.spellPower} />
         <Summary label="Max HP" value={resolvedCombat.maxHealth} />
         <Summary label="Max Mana" value={formatResourceAmount(resolvedCombat.maxMana)} />
-        <Summary label="Max Focus" value={resolvedCombat.maxFocus} />
         <Summary label="Mana Regen" value={`${formatResourceRate(resolvedCombat.manaRegen)}/s`} />
         <Summary label="Crit Chance" value={`${Math.round(resolvedCombat.critChance * 100)}%`} />
         <Summary label="Crit Damage" value={`${Math.round(resolvedCombat.critDamageMultiplier * 100)}%`} />
@@ -91,7 +87,6 @@ export function DeveloperCharacter() {
         <Summary label="Healing Done" value={`${Math.round(resolvedCombat.healingDoneBonus * 100)}%`} />
         <Summary label="Barrier Power" value={`${Math.round(resolvedCombat.barrierPowerBonus * 100)}%`} />
         <Summary label="Mana Cost Reduction" value={`${Math.round(resolvedCombat.manaCostReduction * 100)}%`} />
-        <Summary label="Focus Efficiency" value={`${Math.round(resolvedCombat.focusEfficiency * 100)}%`} />
         {Object.entries(resolvedCombat.resistances).map(([type, value]) => <Summary key={type} label={`${type[0].toUpperCase()}${type.slice(1)} Resistance`} value={`${Math.round((value ?? 0) * 100)}%`} />)}
         <Summary label="Combat RNG State" value={combatRngState} />
       </div>

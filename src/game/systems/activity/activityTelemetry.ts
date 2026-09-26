@@ -3,17 +3,17 @@ import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
-import { BALANCE } from '../../core/balance/balance'
 import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
 import { resolveBossThreatRequirement } from '../combat/combatThreat'
-import { getRecipeOutputPerHour, getRecipeCurrentRemainingDuration, getRecipeManaDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
-import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFocusReserved, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchManaPerSecond, getResearchXpPerHour } from '../research/researchSelectors'
+import { getRecipeOutputPerHour, getRecipeCurrentRemainingDuration, getRecipeFluxDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
+import { getPreparedResearchJobs, getResearchBatchEtaMs, getResearchFluxPerSecond, getResearchItemsPerHour, getResearchJobProgressPercent, getResearchJobStatus, getResearchXpPerHour } from '../research/researchSelectors'
 import type { ActivityMetric, ActivityTelemetry, GameState } from '../../types'
 import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSignedRate } from '../../utils'
 
 const metric = (label: string, value: string, tone?: ActivityMetric['tone']): ActivityMetric => ({ label, value, tone })
 const percent = (value: number, max: number) => Math.round(clamp(value / Math.max(1, max) * 100, 0, 100))
+const hasAcolyte = (job: { acolyteAssigned?: boolean; echoesAssigned?: number } | undefined) => Boolean(job?.acolyteAssigned ?? (job?.echoesAssigned ?? 0) > 0)
 
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
@@ -40,19 +40,14 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
       const boss = state.combat.inBossFight
       const enemyLabel = boss ? 'Boss HP' : 'Enemy HP'
       activities.push({
-        id: 'combat',
-        label: 'COMBAT',
-        subtitle: boss ? enemy.name : dungeon.name,
-        screen: 'combat',
-        status: 'combat',
-        progressPercent: enemyPercent,
+        id: 'combat', label: 'COMBAT', subtitle: boss ? enemy.name : dungeon.name, screen: 'combat', status: 'combat', progressPercent: enemyPercent,
         bars: [
           { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
           { label: enemyLabel, value: `${formatNumber(state.combat.enemyHp)} / ${formatNumber(state.combat.enemyMaxHp)} (${enemyPercent}%)`, percent: enemyPercent, tone: 'negative' },
         ],
-        collapsedSummary: sequence ? `${dungeon.name} · ${sequenceRunLabel} · P${playerPercent}% / E${enemyPercent}%` : boss ? `Boss ${enemy.name} · P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% · Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`,
+        collapsedSummary: sequence ? `${dungeon.name} | ${sequenceRunLabel} | P${playerPercent}% / E${enemyPercent}%` : boss ? `Boss ${enemy.name} | P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% | Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`,
         metrics: [
-          metric(boss ? 'Boss Action' : 'Enemy Action', `${nextLabel} · ${formatCompactDuration(nextTime)}`),
+          metric(boss ? 'Boss Action' : 'Enemy Action', `${nextLabel} | ${formatCompactDuration(nextTime)}`),
           ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)]),
           ...(boss ? [metric('Boss Encounter', enemy.name)] : []),
         ],
@@ -60,86 +55,71 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
       })
     } else {
       activities.push({
-        id: 'combat',
-        label: 'COMBAT',
-        subtitle: dungeon.name,
-        screen: 'combat',
-        status: 'paused',
-        remainingMs: state.combat.encounterTimerMs,
-        bars: [
-          { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
-        ],
-        collapsedSummary: sequence ? `${dungeon.name} · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}` : `Combat · NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
-        metrics: [
-          metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)),
-          ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)]),
-        ],
+        id: 'combat', label: 'COMBAT', subtitle: dungeon.name, screen: 'combat', status: 'paused', remainingMs: state.combat.encounterTimerMs,
+        bars: [{ label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' }],
+        collapsedSummary: sequence ? `${dungeon.name} | NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}` : `Combat | NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
+        metrics: [metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)), ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)])],
         accent: 'red',
       })
     }
   }
 
   const researchJobs = getPreparedResearchJobs(state).filter((job) => {
-    if (job.echoesAssigned <= 0) return false
+    if (!hasAcolyte(job)) return false
     const status = getResearchJobStatus(state, job.slotId)
-    return status === 'running' || status === 'mana-limited' || status === 'waiting-mana'
+    return status === 'running' || status === 'flux-limited' || status === 'waiting-flux'
   })
   if (researchJobs.length > 0) {
-    const totalEchoes = researchJobs.reduce((sum, job) => sum + job.echoesAssigned, 0)
+    const totalAcolytes = researchJobs.length
     const totalXpPerHour = researchJobs.reduce((sum, job) => sum + getResearchXpPerHour(job), 0)
     const totalItemsPerHour = researchJobs.reduce((sum, job) => sum + getResearchItemsPerHour(job), 0)
-    const manaDemand = researchJobs.reduce((sum, job) => sum + getResearchManaPerSecond(job), 0)
+    const fluxDemand = researchJobs.reduce((sum, job) => sum + getResearchFluxPerSecond(job), 0)
     const researchStatuses = researchJobs.map((job) => getResearchJobStatus(state, job.slotId))
-    const waiting = researchStatuses.filter((status) => status === 'waiting-mana').length
-    const limited = researchStatuses.filter((status) => status === 'mana-limited').length
+    const waiting = researchStatuses.filter((status) => status === 'waiting-flux').length
+    const limited = researchStatuses.filter((status) => status === 'flux-limited').length
     const etaCandidates = limited === 0 && waiting === 0 ? researchJobs.map((job) => getResearchBatchEtaMs(job)).filter((eta): eta is number => eta !== null) : []
     const remainingMs = etaCandidates.length ? Math.min(...etaCandidates) : undefined
     const first = researchJobs[0]
     const firstItem = ITEMS[first.itemId]
     const schoolName = SCHOOLS[first.targetSchoolId].name
-    activities.push({ id: 'research', label: 'RESEARCH', subtitle: `${researchJobs.length} batches · ${totalEchoes} Echoes`, screen: 'tower-research', status: waiting === researchJobs.length ? 'waiting-mana' : 'running', progressPercent: Math.round(researchJobs.reduce((sum, job) => sum + getResearchJobProgressPercent(state, job.slotId), 0) / researchJobs.length), remainingMs, collapsedSummary: waiting === researchJobs.length ? `Research · ${researchJobs.length} batches · WAITING MANA` : `Research · ${researchJobs.length} batches · ${formatRatePerHour(totalXpPerHour)} XP/h`, metrics: [metric('Batches', `${researchJobs.length}`), metric('Target', `${firstItem.name} → ${schoolName}`), metric('XP/h', formatRatePerHour(totalXpPerHour)), metric('Items/h', formatRatePerHour(totalItemsPerHour)), metric('Mana', formatSignedRate(-manaDemand), 'negative'), metric('Focus', `${getResearchFocusReserved(state)}`), ...(waiting > 0 ? [metric('Waiting', `${waiting}`, 'warning')] : [])], accent: 'violet' })
+    activities.push({ id: 'research', label: 'RESEARCH', subtitle: `${researchJobs.length} batches | ${totalAcolytes} Acolytes`, screen: 'tower-research', status: waiting === researchJobs.length ? 'waiting-flux' : 'running', progressPercent: Math.round(researchJobs.reduce((sum, job) => sum + getResearchJobProgressPercent(state, job.slotId), 0) / researchJobs.length), remainingMs, collapsedSummary: waiting === researchJobs.length ? `Research | ${researchJobs.length} batches | WAITING FLUX` : `Research | ${researchJobs.length} batches | ${formatRatePerHour(totalXpPerHour)} XP/h`, metrics: [metric('Batches', `${researchJobs.length}`), metric('Target', `${firstItem.name} -> ${schoolName}`), metric('XP/h', formatRatePerHour(totalXpPerHour)), metric('Items/h', formatRatePerHour(totalItemsPerHour)), metric('Flux demand', formatSignedRate(-fluxDemand), 'negative'), metric('Acolytes', `${totalAcolytes}`), ...(waiting > 0 ? [metric('Waiting', `${waiting}`, 'warning')] : [])], accent: 'violet' })
   }
   const researchCard = activities.find((activity) => activity.id === 'research')
   if (researchCard) {
-    const activeResearch = getPreparedResearchJobs(state).filter((job) => job.echoesAssigned > 0)
+    const activeResearch = getPreparedResearchJobs(state).filter((job) => hasAcolyte(job))
     const statuses = activeResearch.map((job) => getResearchJobStatus(state, job.slotId))
-    const limited = statuses.filter((status) => status === 'mana-limited').length
-    const waiting = statuses.filter((status) => status === 'waiting-mana').length
+    const limited = statuses.filter((status) => status === 'flux-limited').length
+    const waiting = statuses.filter((status) => status === 'waiting-flux').length
     if (limited > 0 && waiting < statuses.length) {
-      researchCard.status = 'mana-limited'
-      researchCard.collapsedSummary = `Research · ${activeResearch.length} batches · MANA LIMITED`
+      researchCard.status = 'flux-limited'
+      researchCard.collapsedSummary = `Research | ${activeResearch.length} batches | FLUX LIMITED`
     }
   }
 
   const jobs = RECIPE_ORDER.map((recipeId) => {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    const echoes = Math.max(0, Math.floor(job?.echoesAssigned ?? 0))
-    return job && echoes > 0 && isRecipeUnlocked(state, recipe) ? { recipe, job, echoes, status: getRecipeStatus(state, recipe) } : null
+    const acolytes = hasAcolyte(job) ? 1 : 0
+    return job && acolytes > 0 && isRecipeUnlocked(state, recipe) ? { recipe, job, acolytes, status: getRecipeStatus(state, recipe) } : null
   }).filter((entry): entry is NonNullable<typeof entry> => entry !== null)
   if (jobs.length > 0) {
-    const totalEchoes = jobs.reduce((sum, entry) => sum + entry.echoes, 0)
-    const totalFocus = totalEchoes * BALANCE.transmutation.echoFocusCost
-    const totalOutput = jobs.reduce((sum, entry) => sum + getRecipeOutputPerHour(entry.recipe, entry.echoes, state), 0)
-    const manaDemand = jobs.reduce((sum, entry) => sum + getRecipeManaDemandPerSecond(entry.recipe, entry.echoes, state), 0)
-    const waitingMana = jobs.filter((entry) => entry.status === 'waiting-mana').length
-    const manaLimited = jobs.filter((entry) => entry.status === 'mana-limited').length
+    const totalAcolytes = jobs.reduce((sum, entry) => sum + entry.acolytes, 0)
+    const totalOutput = jobs.reduce((sum, entry) => sum + getRecipeOutputPerHour(entry.recipe, entry.acolytes, state), 0)
+    const fluxDemand = jobs.reduce((sum, entry) => sum + getRecipeFluxDemandPerSecond(entry.recipe, entry.acolytes, state), 0)
+    const waitingFlux = jobs.filter((entry) => entry.status === 'waiting-flux').length
+    const fluxLimited = jobs.filter((entry) => entry.status === 'flux-limited').length
     const waitingMaterials = jobs.filter((entry) => entry.status === 'waiting-materials').length
-    const remainingMs = manaLimited === 0 && waitingMana === 0 && waitingMaterials === 0
-      ? Math.min(...jobs.map((entry) => getRecipeCurrentRemainingDuration(entry.recipe, entry.job.progressMs ?? 0, entry.echoes, state) ?? 0))
+    const remainingMs = fluxLimited === 0 && waitingFlux === 0 && waitingMaterials === 0
+      ? Math.min(...jobs.map((entry) => getRecipeCurrentRemainingDuration(entry.recipe, entry.job.progressMs ?? 0, entry.acolytes, state) ?? 0))
       : undefined
-    const status = waitingMaterials === jobs.length ? 'waiting-materials' : waitingMana === jobs.length ? 'waiting-mana' : manaLimited > 0 ? 'mana-limited' : 'running'
-    activities.push({ id: 'transmutation', label: 'TRANSMUTATION', subtitle: `${jobs.length} recipe${jobs.length === 1 ? '' : 's'} · ${totalEchoes} Echoes`, screen: 'tower-transmutation', status, progressPercent: Math.round(jobs.reduce((sum, entry) => sum + (entry.job.progressMs ?? 0) / entry.recipe.baseDurationMs, 0) / jobs.length * 100), remainingMs, collapsedSummary: `Transmutation · ${jobs.length} recipe${jobs.length === 1 ? '' : 's'} · ${totalEchoes} Echoes`, metrics: [metric('Output', formatRatePerHour(totalOutput)), metric('Mana', `${formatSignedRate(-manaDemand)} /s`, 'negative'), metric('Focus', `${totalFocus}`), ...(waitingMana + waitingMaterials > 0 ? [metric('Waiting', `${waitingMana + waitingMaterials}`,'warning')] : [])], accent: 'gold' })
+    const status = waitingMaterials === jobs.length ? 'waiting-materials' : waitingFlux === jobs.length ? 'waiting-flux' : fluxLimited > 0 ? 'flux-limited' : 'running'
+    activities.push({ id: 'transmutation', label: 'TRANSMUTATION', subtitle: `${jobs.length} recipe${jobs.length === 1 ? '' : 's'} | ${totalAcolytes} Acolytes`, screen: 'tower-transmutation', status, progressPercent: Math.round(jobs.reduce((sum, entry) => sum + (entry.job.progressMs ?? 0) / entry.recipe.baseDurationMs, 0) / jobs.length * 100), remainingMs, collapsedSummary: `Transmutation | ${jobs.length} recipe${jobs.length === 1 ? '' : 's'} | ${totalAcolytes} Acolytes`, metrics: [metric('Output', formatRatePerHour(totalOutput)), metric('Flux demand', `${formatSignedRate(-fluxDemand)} /s`, 'negative'), metric('Acolytes', `${totalAcolytes}`), ...(waitingFlux + waitingMaterials > 0 ? [metric('Waiting', `${waitingFlux + waitingMaterials}`, 'warning')] : [])], accent: 'gold' })
   }
 
   const transmutationCard = activities.find((activity) => activity.id === 'transmutation')
-  if (transmutationCard?.status === 'mana-limited') {
+  if (transmutationCard?.status === 'flux-limited') {
     const outputMetric = transmutationCard.metrics.find((entry) => entry.label === 'Output')
     if (outputMetric) outputMetric.label = 'Potential'
   }
-  activities.forEach((activity) => {
-    const manaMetric = activity.metrics.find((entry) => entry.label === 'Mana')
-    if (manaMetric) manaMetric.label = 'Mana demand'
-  })
   return activities
 }

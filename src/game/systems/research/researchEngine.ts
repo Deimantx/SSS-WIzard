@@ -4,7 +4,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { grantSchoolXp } from '../../engine'
 import type { GameState, ItemId, ResearchActivity, ResearchJobState, ResearchSlotId, SchoolId } from '../../types'
-import { allocateContinuousMana, CONTINUOUS_MANA_EPSILON, requestedManaForProgress, type ContinuousManaAllocation, type ContinuousManaFundingResult, type ContinuousManaWorkRequest } from '../simulation/continuousManaScheduler'
+import { allocateTowerFlux, requestedFluxForProgress, TOWER_FLUX_EPSILON, type TowerFluxAllocation, type TowerFluxFundingResult, type TowerFluxWorkRequest } from '../simulation/towerFluxScheduler'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
 
 export interface ResearchAdvanceContext {
@@ -33,8 +33,9 @@ export const ensureResearchActivity = (state: GameState): ResearchActivity => {
       requestedQuantity: finiteQuantity(research.requestedQuantity) || finiteQuantity(research.remainingQuantity),
       remainingQuantity: finiteQuantity(research.remainingQuantity),
       progressMs: finiteProgress(research.progressMs),
+      acolyteAssigned: true,
       echoesAssigned: 1,
-      status: research.status === 'waiting-mana' ? 'waiting-mana' : research.status === 'level-cap' ? 'level-cap' : 'running',
+      status: research.status === 'waiting-mana' ? 'waiting-flux' : research.status === 'level-cap' ? 'level-cap' : 'running',
     }
   }
   return research
@@ -51,6 +52,7 @@ export const consumePreparedResearchItem = (state: GameState, slotId: ResearchSl
 const stopBlocked = (job: ResearchJobState, status: ResearchJobState['status'], context: ResearchAdvanceContext) => {
   const changed = job.status !== status
   job.status = status
+  job.acolyteAssigned = false
   job.echoesAssigned = 0
   const progress = finiteProgress(job.progressMs)
   // A blocked full bar belongs to the old completion-burst model and cannot
@@ -72,10 +74,10 @@ const normalizeJobProgress = (job: ResearchJobState) => {
 }
 
 /** Builds all eligible Research demand before any item, XP, or school state mutates. */
-export const buildResearchWorkRequests = (state: GameState, deltaMs: number, context: ResearchAdvanceContext = { mode: 'live' }): ContinuousManaWorkRequest[] => {
+export const buildResearchWorkRequests = (state: GameState, deltaMs: number, context: ResearchAdvanceContext = { mode: 'live' }): TowerFluxWorkRequest[] => {
   const research = ensureResearchActivity(state)
   const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
-  const requests: ContinuousManaWorkRequest[] = []
+  const requests: TowerFluxWorkRequest[] = []
 
   for (const slotId of RESEARCH_SLOT_ORDER) {
     const job = research.slots[slotId]
@@ -83,26 +85,27 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
     job.requestedQuantity = finiteQuantity(job.requestedQuantity)
     job.remainingQuantity = finiteQuantity(job.remainingQuantity)
     job.echoesAssigned = finiteQuantity(job.echoesAssigned)
+    job.acolyteAssigned = job.acolyteAssigned ?? job.echoesAssigned > 0
     const progress = normalizeJobProgress(job)
     if (job.remainingQuantity <= 0) { research.slots[slotId] = null; continue }
     const item = ITEMS[job.itemId]
     if (!item || !item.researchSchool || !SCHOOLS[job.targetSchoolId]) { stopBlocked(job, 'missing-item', context); continue }
     if (isProtected(state, job.itemId)) { stopBlocked(job, 'protected', context); continue }
     if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) { stopBlocked(job, 'level-cap', context); continue }
-    if (job.echoesAssigned <= 0) { job.status = 'prepared'; continue }
+    if (!job.acolyteAssigned) { job.status = 'prepared'; continue }
     const availableItems = Math.min(job.remainingQuantity, getRawAvailable(state, job.itemId))
     if (availableItems < 1) { stopBlocked(job, 'missing-item', context); continue }
     const workCapacity = Math.max(0, availableItems * BALANCE.research.durationPerItemMs - progress)
-    const requestedProgressMs = Math.min(delta * job.echoesAssigned, workCapacity)
-    if (requestedProgressMs <= CONTINUOUS_MANA_EPSILON) continue
+    const requestedProgressMs = Math.min(delta, workCapacity)
+    if (requestedProgressMs <= TOWER_FLUX_EPSILON) continue
     requests.push({
       key: requestKey(slotId),
       system: 'research',
       sourceId: slotId,
       requestedProgressMs,
-      manaPerCycle: BALANCE.research.manaCostPerItem,
+      fluxPerCycle: BALANCE.research.arcaneFluxPerItem,
       cycleDurationMs: BALANCE.research.durationPerItemMs,
-      requestedMana: requestedManaForProgress(BALANCE.research.manaCostPerItem, requestedProgressMs, BALANCE.research.durationPerItemMs),
+      requestedFlux: requestedFluxForProgress(BALANCE.research.arcaneFluxPerItem, requestedProgressMs, BALANCE.research.durationPerItemMs),
     })
   }
   return requests
@@ -121,7 +124,7 @@ const completeResearchCycle = (state: GameState, slotId: ResearchSlotId, job: Re
 }
 
 /** Applies only Research work funded by the shared scheduler. */
-export const applyResearchAllocations = (state: GameState, requests: readonly ContinuousManaWorkRequest[], allocations: Record<string, ContinuousManaAllocation>, context: ResearchAdvanceContext) => {
+export const applyResearchAllocations = (state: GameState, requests: readonly TowerFluxWorkRequest[], allocations: Record<string, TowerFluxAllocation>, context: ResearchAdvanceContext) => {
   const requested = new Map(requests.map((request) => [request.key, request]))
   const research = ensureResearchActivity(state)
 
@@ -132,9 +135,9 @@ export const applyResearchAllocations = (state: GameState, requests: readonly Co
     const allocation = allocations[requestKey(slotId)]
     const fundedProgressMs = allocation?.fundedProgressMs ?? 0
     const progress = normalizeJobProgress(job)
-    if (fundedProgressMs > CONTINUOUS_MANA_EPSILON) job.progressMs = progress + fundedProgressMs
+    if (fundedProgressMs > TOWER_FLUX_EPSILON) job.progressMs = progress + fundedProgressMs
 
-    while (job.progressMs >= BALANCE.research.durationPerItemMs - CONTINUOUS_MANA_EPSILON && job.remainingQuantity > 0) {
+    while (job.progressMs >= BALANCE.research.durationPerItemMs - TOWER_FLUX_EPSILON && job.remainingQuantity > 0) {
       const result = completeResearchCycle(state, slotId, job, context)
       if (result !== 'complete') {
         stopBlocked(job, result, context)
@@ -146,24 +149,24 @@ export const applyResearchAllocations = (state: GameState, requests: readonly Co
 
     const current = research.slots[slotId]
     if (!current) continue
-    current.progressMs = Math.min(BALANCE.research.durationPerItemMs - CONTINUOUS_MANA_EPSILON, Math.max(0, current.progressMs))
-    if (!request || request.requestedProgressMs <= CONTINUOUS_MANA_EPSILON) {
-      if (current.echoesAssigned > 0 && current.status !== 'level-cap' && current.status !== 'protected' && current.status !== 'missing-item') current.status = 'running'
-    } else if (fundedProgressMs <= CONTINUOUS_MANA_EPSILON) {
-      current.status = 'waiting-mana'
-    } else if (fundedProgressMs + CONTINUOUS_MANA_EPSILON < request.requestedProgressMs) {
-      current.status = 'mana-limited'
+    current.progressMs = Math.min(BALANCE.research.durationPerItemMs - TOWER_FLUX_EPSILON, Math.max(0, current.progressMs))
+    if (!request || request.requestedProgressMs <= TOWER_FLUX_EPSILON) {
+      if (current.acolyteAssigned && current.status !== 'level-cap' && current.status !== 'protected' && current.status !== 'missing-item') current.status = 'running'
+    } else if (fundedProgressMs <= TOWER_FLUX_EPSILON) {
+      current.status = 'waiting-flux'
+    } else if (fundedProgressMs + TOWER_FLUX_EPSILON < request.requestedProgressMs) {
+      current.status = 'flux-limited'
     } else {
-      current.status = current.echoesAssigned > 0 ? 'running' : 'prepared'
+      current.status = current.acolyteAssigned ? 'running' : 'prepared'
     }
   }
   return state
 }
 
 /** Advances every Echo-assigned prepared batch after shared funding is planned. */
-export function advanceResearch(state: GameState, deltaMs: number, context: ResearchAdvanceContext = { mode: 'live' }, funding?: ContinuousManaFundingResult) {
+export function advanceResearch(state: GameState, deltaMs: number, context: ResearchAdvanceContext = { mode: 'live' }, funding?: TowerFluxFundingResult) {
   const requests = buildResearchWorkRequests(state, deltaMs, context)
-  const result = funding ?? allocateContinuousMana(state, requests)
+  const result = funding ?? allocateTowerFlux(state, requests)
   applyResearchAllocations(state, requests, result.allocations, context)
   return state
 }

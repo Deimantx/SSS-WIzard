@@ -248,8 +248,8 @@ const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, 
   if (regression && source && regressionResult) logProgressionRegression(slotId, source, regressionResult)
   console.error(`[profile-save] ${detail}`)
   const message = regression
-    ? 'SAVE PROTECTION ACTIVE · Impossible progression regression detected. Previous save was not overwritten.'
-    : 'SAVE FAILED · Gameplay data was not overwritten.'
+    ? 'SAVE PROTECTION ACTIVE · A possible progression rollback was blocked.'
+    : 'SAVE FAILED · The game could not write to browser storage.'
   recordSaveFailure(slotId, regression ? `${message} ${detail}` : message, regression)
   return { ok: false, error: message }
 }
@@ -307,7 +307,7 @@ export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options
     recordSuccessfulSave(slotId, savedAt)
     return { ok: true, error: null }
   } catch (error) {
-    if (transactionStarted && !options?.explicitReset) {
+    if (transactionStarted) {
       try { storageKeys(slotId).forEach((key, index) => writeVerified(key, previous[index] ?? null)) }
       catch (restoreError) { console.error('[profile-save] Save failed and previous storage could not be fully restored.', restoreError) }
     }

@@ -1,6 +1,6 @@
 import { migrateSave } from '../persistence/migrations'
 import { LEGACY_SAVE_BACKUP_KEY, LEGACY_SAVE_KEY } from '../persistence/saveSchema'
-import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
+import { loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
 import { DIFFICULTIES, GAME_MODES, type DifficultyId, type GameModeId, type ProfileMetadata, type ProfileRegistry, type ProfileSlotId } from './profileTypes'
 import { PROFILE_REGISTRY_KEY, PROFILE_SLOT_IDS } from './profileKeys'
 
@@ -57,7 +57,9 @@ const migrateLegacySave = (): ProfileRegistry | null => {
       slotId: 'slot-1', slotNumber: 1, name: 'Profile 1', gameMode: 'default', difficulty: 'normal',
       createdAt: state.lastSavedAt || now, lastPlayedAt: null, lastSavedAt: state.lastSavedAt || null,
     }
-    const result = saveProfileGame('slot-1', state)
+    // A legacy global save intentionally takes ownership of Slot 1. Clear
+    // any stale profile candidate chain before anchoring the migrated state.
+    const result = resetProfileGame('slot-1', state)
     if (!result.ok) return null
     const verification = loadProfileGame('slot-1')
     if (!verification.state) return null

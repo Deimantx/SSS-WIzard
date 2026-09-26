@@ -1,26 +1,38 @@
 .acolyte-screen .card { border-radius: 8px; }
-.acolyte-roster-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
-.acolyte-metric { padding: var(--space-3); border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-strong); }
-.acolyte-metric span, .acolyte-source-row span { display: block; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
-.acolyte-metric strong { display: block; margin-top: var(--space-1); color: var(--ui-text); font: var(--text-md) var(--font-mono); }
-.acolyte-worker-markers { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); }
-.acolyte-worker-markers span { width: 8px; height: 8px; border: 1px solid var(--ui-secondary); border-radius: 50%; background: transparent; }
+.acolyte-roster-panel .card-head, .acolyte-assignments-panel .card-head, .acolyte-sources-panel .card-head { min-height: 34px; }
+.acolyte-roster-availability { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.acolyte-worker-markers { display: flex; gap: 9px; margin: 2px 0 12px; }
+.acolyte-worker-markers span { width: 10px; height: 10px; border: 1px solid var(--ui-secondary); border-radius: 50%; background: transparent; }
 .acolyte-worker-markers span.is-assigned { background: var(--ui-secondary); box-shadow: 0 0 8px color-mix(in srgb, var(--ui-secondary) 45%, transparent); }
-.acolyte-roster-progress { margin-bottom: var(--space-4); }
-.acolyte-roster-progress > div, .acolyte-source-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
-.acolyte-roster-progress > div { margin-bottom: var(--space-2); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.acolyte-roster-progress { margin-bottom: 12px; }
+.acolyte-roster-progress > div { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .acolyte-roster-progress strong { color: var(--ui-text); }
-.acolyte-assignment-list { display: grid; gap: var(--space-2); }
-.acolyte-assignment-row { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; width: 100%; padding: var(--space-3); color: var(--ui-text); text-align: left; border: 1px solid var(--ui-border); border-left: 3px solid var(--ui-secondary); border-radius: 7px; background: var(--ui-panel-strong); cursor: pointer; }
+.acolyte-roster-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.acolyte-metric { min-width: 0; padding: 10px 12px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-strong); }
+.acolyte-metric span, .acolyte-source-row span, .acolyte-source-total span { display: block; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.acolyte-metric strong { display: block; margin-top: 3px; color: var(--ui-text); font: var(--text-md) var(--font-mono); }
+.acolyte-metric.is-warning strong { color: var(--ui-warning); }
+.acolyte-roster-summary { margin: 11px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.acolyte-assignment-list { display: grid; gap: 8px; }
+.acolyte-assignment-row { position: relative; display: grid; grid-template-columns: 108px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 11px 12px; color: var(--ui-text); text-align: left; border: 1px solid var(--ui-border); border-left: 3px solid var(--ui-secondary); border-radius: 7px; background: var(--ui-panel-strong); cursor: pointer; transition: border-color 180ms ease, background 180ms ease, transform 180ms ease; }
 .acolyte-assignment-row.is-channeling { border-left-color: #69b9ff; }
 .acolyte-assignment-row.is-research { border-left-color: #b795ff; }
 .acolyte-assignment-row.is-transmutation { border-left-color: var(--ui-warning); }
-.acolyte-assignment-row:hover, .acolyte-assignment-row:focus-visible { border-color: var(--ui-border-strong); background: color-mix(in srgb, var(--ui-secondary) 8%, var(--ui-panel-strong)); }
+.acolyte-assignment-row:hover, .acolyte-assignment-row:focus-visible { border-color: var(--ui-border-strong); background: color-mix(in srgb, var(--ui-secondary) 8%, var(--ui-panel-strong)); transform: translateX(2px); }
 .acolyte-assignment-source { color: var(--ui-secondary); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; }
-.acolyte-assignment-status { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.acolyte-assignment-status span { color: var(--ui-text); font-size: var(--text-sm); }
-.acolyte-empty { padding: var(--space-5); color: var(--ui-text-muted); text-align: center; }
-.acolyte-source-row { padding: var(--space-3) 0; border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-sm) var(--font-mono); }
-.acolyte-source-row strong { color: var(--ui-secondary); }
-.acolyte-source-note { margin: var(--space-4) 0 0; color: var(--ui-text-muted); font: var(--text-xs) var(--font-body); line-height: 1.5; }
-@media (max-width: 600px) { .acolyte-roster-grid { grid-template-columns: 1fr; } .acolyte-assignment-row { grid-template-columns: 1fr auto; } .acolyte-assignment-source { grid-column: 1 / -1; } }
+.acolyte-assignment-main { display: grid; gap: 3px; min-width: 0; }
+.acolyte-assignment-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); }
+.acolyte-assignment-main small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.acolyte-assignment-status { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); white-space: nowrap; }
+.acolyte-assignment-status span { margin-left: 5px; color: var(--ui-text); font-size: var(--text-md); }
+.acolyte-empty { padding: 22px 10px; color: var(--ui-text-muted); text-align: center; }
+.acolyte-empty strong { color: var(--ui-text); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; }
+.acolyte-empty p { max-width: 420px; margin: 8px auto 0; font-size: var(--text-xs); line-height: 1.5; }
+.acolyte-source-list { display: grid; gap: 0; }
+.acolyte-source-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 10px 0; border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-sm) var(--font-body); }
+.acolyte-source-row strong { color: var(--ui-secondary); font: var(--text-sm) var(--font-mono); }
+.acolyte-source-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ui-border-strong); }
+.acolyte-source-total strong { color: var(--ui-text); font: var(--text-lg) var(--font-mono); }
+.acolyte-source-note { margin: 12px 0 0; color: var(--ui-text-muted); font: var(--text-xs) var(--font-body); line-height: 1.5; }
+@media (max-width: 760px) { .acolyte-roster-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .acolyte-assignment-row { grid-template-columns: 1fr auto; } .acolyte-assignment-source { grid-column: 1 / -1; } }
+@media (max-width: 460px) { .acolyte-roster-grid { gap: 8px; } .acolyte-metric { padding: 9px 8px; } .acolyte-assignment-status { font-size: 10px; } }

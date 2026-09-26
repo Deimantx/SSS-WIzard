@@ -236,9 +236,9 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   }, ['channeling-mana-core', 'channeling-acolytes', 'channeling-breakdown', 'channeling-pillars']),
 
   'tower-acolytes': screen({
-    'acolyte-roster': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 282, preferredHeight: 498, label: 'Acolyte roster' }),
-    'acolyte-assignments': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 354, preferredHeight: 570, label: 'Active Acolyte assignments' }),
-    'acolyte-sources': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 390, preferredHeight: 570, label: 'Acolyte sources' }),
+    'acolyte-roster': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 170, preferredHeight: 210, label: 'Acolyte roster' }),
+    'acolyte-assignments': panel({ order: 2, columnStart: 1, columnSpan: 8, rowStart: 2, minHeight: 260, preferredHeight: 420, label: 'Active Acolyte assignments' }),
+    'acolyte-sources': panel({ order: 3, columnStart: 9, columnSpan: 4, rowStart: 2, minHeight: 260, preferredHeight: 420, label: 'Acolyte sources' }),
   }, ['acolyte-roster', 'acolyte-assignments', 'acolyte-sources']),
 
   // ============================================================

@@ -150,10 +150,10 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   home: screen({
     'home-objective': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 100, label: 'Main objective' }),
     'home-school-mastery': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 210, label: 'Magic School Mastery' }),
-    'home-checklist': panel({ order: 3, columnStart: 1, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 354, label: 'Chapter checklist' }),
-    'home-wizard': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 354, label: 'The wizard' }),
+    'home-chronicles': panel({ order: 3, columnStart: 1, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 290, label: 'Chronicles summary' }),
+    'home-wizard': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 290, label: 'The wizard' }),
     'home-arcane-work': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 246, label: 'Current Arcane Work' }),
-  }, ['home-objective', 'home-school-mastery', 'home-checklist', 'home-wizard', 'home-arcane-work']),
+  }, ['home-objective', 'home-school-mastery', 'home-chronicles', 'home-wizard', 'home-arcane-work']),
 
   // ============================================================
   // COMBAT

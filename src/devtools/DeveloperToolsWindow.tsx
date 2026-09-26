@@ -8,7 +8,7 @@ import { getActiveDebugOverrides } from './debugOverridePresentation'
 
 const tabGroups: readonly { label: string; tabs: readonly { id: DeveloperToolsTab; label: string }[] }[] = [
   { label: 'QUICK', tabs: [{ id: 'quick', label: 'Quick Setup' }] },
-  { label: 'PLAYER', tabs: [{ id: 'character', label: 'Character' }, { id: 'inventory', label: 'Inventory & Equipment' }, { id: 'progression', label: 'Progression' }, { id: 'crystals', label: 'Crystals' }, { id: 'arcane-core', label: 'Arcane Core' }] },
+  { label: 'PLAYER', tabs: [{ id: 'character', label: 'Character' }, { id: 'inventory', label: 'Inventory & Equipment' }, { id: 'progression', label: 'Progression' }, { id: 'chronicles', label: 'Chronicles' }, { id: 'crystals', label: 'Crystals' }, { id: 'arcane-core', label: 'Arcane Core' }] },
   { label: 'MAGIC', tabs: [{ id: 'spells', label: 'Spells & Schools' }, { id: 'research', label: 'Research' }, { id: 'channeling', label: 'Channeling' }, { id: 'acolytes', label: 'Acolytes' }, { id: 'transmutation', label: 'Transmutation' }, { id: 'artificing', label: 'Artificing' }, { id: 'artifacts', label: 'Artifacts' }, { id: 'resonance', label: 'Resonance' }] },
   { label: 'COMBAT', tabs: [{ id: 'combat', label: 'Combat Lab' }, { id: 'world-tier', label: 'World Tier' }, { id: 'monsters', label: 'Monsters' }, { id: 'statuses', label: 'Statuses' }] },
   { label: 'SYSTEM', tabs: [{ id: 'save', label: 'Save / Profile' }, { id: 'diagnostics', label: 'Advanced Diagnostics' }, { id: 'ui-tuning', label: 'UI Tuning' }] },

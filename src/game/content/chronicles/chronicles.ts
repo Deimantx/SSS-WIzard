@@ -24,6 +24,12 @@ export type ChronicleReward =
   | { type: 'crystal'; variantId: CrystalVariantId; quantity: number }
   | { type: 'arcane-points'; amount: number }
 
+export interface ChronicleChapterDefinition {
+  id: ChronicleChapterId
+  name: string
+  description: string
+}
+
 export interface ChronicleObjectiveDefinition {
   id: ChronicleObjectiveId
   chapterId: ChronicleChapterId
@@ -39,6 +45,11 @@ export interface ChronicleObjectiveDefinition {
   onCompleteReward?: ChronicleReward[]
   optional?: boolean
 }
+
+export const CHRONICLE_CHAPTERS: readonly ChronicleChapterDefinition[] = [
+  { id: 'first-frontier', name: 'First Frontier', description: 'Establish the Tower, master the first schools, and answer the call of the Verdant Circle.' },
+  { id: 'shattered-frontier', name: 'Shattered Frontier', description: 'Push beyond the first gate, bind a Guardian, and survive a world that no longer stays still.' },
+]
 
 export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 'm1-choose-school', chapterId: 'first-frontier', track: 'main', title: 'Choose Your School', description: 'Choose the Magic School that will shape your first frontier.', condition: { type: 'starting-school-selected' }, navigateTo: 'schools' },

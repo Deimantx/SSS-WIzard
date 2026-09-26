@@ -8,8 +8,6 @@ import { getSpellRank } from '../../game/systems/spells'
 import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { useGameStore } from '../../store/gameStore'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
-import { CHRONICLE_OBJECTIVES } from '../../game/content/chronicles/chronicles'
-import { getChronicleMainObjective } from '../../game/systems/chronicles/chronicleRuntime'
 import { getGuildPointsAvailable } from '../../game/systems/guild/guildSelectors'
 
 const schoolIds = Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>
@@ -20,8 +18,6 @@ export function DeveloperProgression() {
   const totalBosses = MONSTER_IDS.filter((id) => isBossMonster(MONSTERS[id])).length
   const discoveredBosses = progress.discoveredMonsters.filter((id) => isBossMonster(MONSTERS[id])).length
   const discoveredEquipment = progress.discoveredItems.filter((id) => ITEMS[id]?.kind === 'equipment').length
-  const chronicleObjective = getChronicleMainObjective(state)
-  const chronicleComplete = progress.chronicle.completedObjectiveIds.length
   const flags = [
     { label: 'First Boss defeated', value: progress.firstBossKill },
     { label: 'Final boss defeated', value: progress.firstMainBossKill },
@@ -52,10 +48,6 @@ export function DeveloperProgression() {
       <div className="developer-summary-grid"><Summary label="Guild" value={progress.guildUnlocked ? 'Unlocked' : 'Locked'} /><Summary label="Rank" value={progress.guildRank} /><Summary label="Reputation" value={progress.guildReputation} /><Summary label="Guild Points" value={`${getGuildPointsAvailable(state)} available / ${progress.guildPointsEarned} earned`} /></div>
       <div className="developer-button-grid"><Button variant="secondary" onClick={state.promoteGuild}>Promote if legal</Button><Button variant="ghost" onClick={() => state.debugGrantGuildPoint(1)}>Grant 1 GP</Button><NumberField label="Guild reputation" value={progress.guildReputation} onChange={state.setGuildReputation} /></div>
       <div className="developer-owned-list">{flags.map((flag) => <span key={flag.label}>{flag.label}<strong>{flag.value ? 'ON' : 'OFF'}</strong></span>)}</div>
-    </Card>
-    <Card title="CHRONICLES · Tester controls">
-      <div className="developer-summary-grid"><Summary label="Completed" value={`${chronicleComplete} / ${CHRONICLE_OBJECTIVES.length}`} /><Summary label="Next main" value={chronicleObjective?.title ?? 'Complete'} /><Summary label="Events" value={Object.values(progress.chronicle.eventFlags).filter(Boolean).length} /></div>
-      <div className="developer-button-grid"><Button variant="secondary" onClick={state.debugReconcileChronicles}>Reconcile evidence</Button><Button variant="ghost" onClick={() => state.debugSetChronicleEvent('first-fragment-transmuted', true)}>Mark Fragment event</Button><Button variant="ghost" onClick={() => state.debugSetChronicleEvent('first-research-batch-completed', true)}>Mark Research event</Button></div>
     </Card>
   </div>
 }

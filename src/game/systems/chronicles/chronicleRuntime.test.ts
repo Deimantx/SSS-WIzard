@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
+import { debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
 
 describe('Chronicle runtime', () => {
   it('latches objectives and does not duplicate one-time rewards', () => {
@@ -41,5 +41,19 @@ describe('Chronicle runtime', () => {
     state.guardians.selectedGuardianId = 'fire-guardian'
     reconcileChronicleProgress(state, { notify: false })
     expect(state.progress.chronicle.completedObjectiveIds).toContain('sf-bind-guardian')
+  })
+
+  it('supports Chronicle-only tester completion and safe reset semantics', () => {
+    const state = createInitialState()
+    debugCompleteChroniclePrerequisites(state, 'm3-heart-of-the-woods')
+    expect(state.progress.chronicle.completedObjectiveIds).toEqual(['m1-choose-school', 'm2-first-blood'])
+    debugCompleteChronicleObjective(state, 'm3-heart-of-the-woods')
+    expect(state.progress.chronicle.completedObjectiveIds).toContain('m3-heart-of-the-woods')
+
+    state.progress.chronicle.grantedUnlockRewardIds.push('sf-socket-first-crystal')
+    debugResetAllChronicles(state)
+    expect(state.progress.chronicle.completedObjectiveIds).toEqual([])
+    expect(state.progress.chronicle.eventFlags).toEqual({})
+    expect(state.progress.chronicle.grantedUnlockRewardIds).toContain('sf-socket-first-crystal')
   })
 })

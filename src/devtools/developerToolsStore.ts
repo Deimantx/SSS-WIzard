@@ -1,14 +1,14 @@
 import { useSyncExternalStore } from 'react'
 import { clampDeveloperToolsGeometry, getDefaultDeveloperGeometry, loadDeveloperToolsGeometry, saveDeveloperToolsGeometry, type DeveloperToolsGeometry, type DeveloperToolsMode } from './developerToolsWindowGeometry'
 
-export type DeveloperToolsTab = 'quick' | 'character' | 'progression' | 'crystals' | 'arcane-core' | 'inventory' | 'spells' | 'research' | 'channeling' | 'acolytes' | 'transmutation' | 'artificing' | 'artifacts' | 'resonance' | 'combat' | 'world-tier' | 'monsters' | 'statuses' | 'save' | 'diagnostics' | 'ui-tuning'
+export type DeveloperToolsTab = 'quick' | 'character' | 'progression' | 'chronicles' | 'crystals' | 'arcane-core' | 'inventory' | 'spells' | 'research' | 'channeling' | 'acolytes' | 'transmutation' | 'artificing' | 'artifacts' | 'resonance' | 'combat' | 'world-tier' | 'monsters' | 'statuses' | 'save' | 'diagnostics' | 'ui-tuning'
 export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'status' | 'telemetry' | 'balance'
 export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; combatTab: DeveloperCombatTab; showArtifactDevPanel: boolean }
 
 export function normalizeDeveloperToolsTab(tab: string): DeveloperToolsTab {
   if (tab === 'equipment') return 'inventory'
   if (tab === 'schools') return 'spells'
-  const allowed: DeveloperToolsTab[] = ['quick', 'character', 'progression', 'crystals', 'arcane-core', 'inventory', 'spells', 'research', 'channeling', 'acolytes', 'transmutation', 'artificing', 'artifacts', 'resonance', 'combat', 'world-tier', 'monsters', 'statuses', 'save', 'diagnostics', 'ui-tuning']
+  const allowed: DeveloperToolsTab[] = ['quick', 'character', 'progression', 'chronicles', 'crystals', 'arcane-core', 'inventory', 'spells', 'research', 'channeling', 'acolytes', 'transmutation', 'artificing', 'artifacts', 'resonance', 'combat', 'world-tier', 'monsters', 'statuses', 'save', 'diagnostics', 'ui-tuning']
   return allowed.includes(tab as DeveloperToolsTab) ? tab as DeveloperToolsTab : 'quick'
 }
 

@@ -1,12 +1,10 @@
-import { ChevronRight, Clock3, Heart, Menu, Settings, Sparkles, Users, Wrench } from 'lucide-react'
+import { Clock3, Heart, Menu, Settings, Sparkles, Users, Wrench } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ScreenId } from '../../game/types'
 import { getManaFlowBreakdown } from '../../game/systems/channeling/manaFlow'
-import { getArcaneFluxCapacityBreakdown, getArcaneFluxProductionPerSecond } from '../../game/systems/channeling/channelingRuntime'
 import { selectTotalAcolytes, selectUsedAcolytes } from '../../game/systems/acolytes'
 import { formatNumber, formatOfflineBank, formatSignedRate } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
-import { getNavigationContext } from '../navigation'
 import { dismissGameTooltips, GameTooltip, TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { GameValue } from '../../ui/game-feel/GameValue'
 import { FpsCounter } from '../../ui/performance/FpsCounter'
@@ -24,26 +22,23 @@ interface TopbarProps {
 
 export const clampResourcePercent = (value: number, max: number) => max <= 0 ? 0 : Math.max(0, Math.min(100, value / max * 100))
 
-export function Topbar({ screen, offlineBankOpen, onOfflineBankToggle, onDeveloperTools, onSettings, onMobileMenu }: TopbarProps) {
+export function Topbar({ offlineBankOpen, onOfflineBankToggle, onDeveloperTools, onSettings, onMobileMenu }: TopbarProps) {
   const health = useGameStore((state) => state.player.health)
   const maxHealth = useGameStore((state) => state.player.maxHealth)
   const mana = useGameStore((state) => state.player.mana)
   const maxMana = useGameStore((state) => state.player.maxMana)
   const acolytes = useSampledGameReadModel((state) => ({ total: selectTotalAcolytes(state), used: selectUsedAcolytes(state) }))
-  const flux = useSampledGameReadModel((state) => ({ current: state.tower.resources.arcaneFlux, capacity: getArcaneFluxCapacityBreakdown(state).total, production: getArcaneFluxProductionPerSecond(state).total }))
   const offlineBankMs = useGameStore((state) => state.offlineBankMs)
   const flow = useSampledGameReadModel((state) => getManaFlowBreakdown(state))
   const freeAcolytes = Math.max(0, acolytes.total - acolytes.used)
-  const navigation = getNavigationContext(screen)
   const acolytePercent = clampResourcePercent(acolytes.used, acolytes.total)
-  const fluxPercent = clampResourcePercent(flux.current, flux.capacity)
   const manaPercent = clampResourcePercent(mana, maxMana)
   const hpPercent = clampResourcePercent(health, maxHealth)
   const flowLabel = flow.state === 'surplus' ? 'SURPLUS' : flow.state === 'deficit' ? 'DEFICIT' : 'BALANCED'
   const isManaOverCap = mana > maxMana
   const flowDetail = isManaOverCap && flow.state === 'surplus' ? 'OVER CAP' : flow.etaKind === 'full' ? (flow.etaMs === null ? 'FULL' : `FULL IN ${formatDuration(flow.etaMs)}`) : flow.etaKind === 'empty' ? `EMPTY IN ${formatDuration(flow.etaMs ?? 0)}` : flow.etaKind === 'starved' ? 'STARVED' : ''
 
-  type ResourceId = 'health' | 'mana' | 'acolytes' | 'flux'
+  type ResourceId = 'health' | 'mana' | 'acolytes'
   const resource = (id: ResourceId, children: ReactNode, tooltip: ReactNode, accent: 'neutral' | 'mana' | 'health' | 'acolyte' = 'neutral') => {
     return <div key={id} className={`topbar-resource-slot topbar-resource-slot-${id}`}>
       <GameTooltip block content={tooltip} accent={accent}>{children}</GameTooltip>
@@ -59,7 +54,7 @@ export function Topbar({ screen, offlineBankOpen, onOfflineBankToggle, onDevelop
       <details className="mana-flow-details"><summary onClick={() => dismissGameTooltips()}><span>{flowLabel} {formatSignedRate(flow.net)}</span>{flowDetail && <small> · {flowDetail}</small>}</summary><div className="mana-flow-popover"><strong>Mana Flow</strong><div className="flow-row"><span>Production</span><b>{formatSignedRate(flow.production)}</b></div><div className="flow-row flow-demand-heading"><span>Consumption</span><b>{formatSignedRate(-flow.demand)}</b></div>{flow.demandSources.length ? flow.demandSources.map((source) => <div className="flow-row flow-source" key={source.id}><span>{source.label}{source.estimated ? ' · estimated' : ''}</span><b>{formatSignedRate(-source.manaPerSecond)}</b></div>) : <div className="flow-empty">No active Mana consumers.</div>}<div className="flow-row flow-net"><span>Net</span><b>{formatSignedRate(flow.net)}</b></div></div></details>
     </div>, <TooltipContent title="Mana" description="Current reserves, production, and active consumption."><TooltipRow label="Current" value={`${formatResourceAmount(mana)} / ${formatResourceAmount(maxMana)}`} /><TooltipRow label="Net flow" value={formatSignedRate(flow.net)} /></TooltipContent>, 'mana')
     if (id === 'acolytes') return resource(id, <div className={`topbar-resource acolyte-resource ${freeAcolytes === 0 ? 'tight-resource' : ''}`} tabIndex={0} aria-label="Acolyte staffing"><div className="acolyte-head"><span><Users size={14} /> ACOLYTES</span><strong>{formatNumber(freeAcolytes)} FREE</strong></div><small>{formatNumber(acolytes.used)} ASSIGNED / {formatNumber(acolytes.total)} TOTAL</small><Meter value={acolytePercent} tone="acolyte" /></div>, <TooltipContent title="Acolyte staffing" description="Acolytes are the shared workforce for Channeling, Research, and Transmutation."><TooltipRow label="Free" value={formatNumber(freeAcolytes)} /><TooltipRow label="Assigned" value={formatNumber(acolytes.used)} /><TooltipRow label="Total" value={formatNumber(acolytes.total)} /></TooltipContent>, 'acolyte')
-    return resource(id, <div className="topbar-resource flux-resource" tabIndex={0} aria-label="Arcane Flux"><div className="acolyte-head"><span><Sparkles size={14} /> FLUX</span><strong>{formatResourceAmount(flux.current)} / {formatResourceAmount(flux.capacity)}</strong></div><small>+{formatSignedRate(flux.production)} / S</small><Meter value={fluxPercent} tone="mana" /></div>, <TooltipContent title="Arcane Flux" description="Tower Flux funds Research and Transmutation work. Channeling Acolytes refill this reserve."><TooltipRow label="Current" value={`${formatResourceAmount(flux.current)} / ${formatResourceAmount(flux.capacity)}`} /><TooltipRow label="Generation" value={`+${formatSignedRate(flux.production)} / s`} /></TooltipContent>, 'mana')
+    return null
   }
 
   const utilities = <div className="topbar-utility-cluster" aria-label="Header utilities">
@@ -77,9 +72,8 @@ export function Topbar({ screen, offlineBankOpen, onOfflineBankToggle, onDevelop
 
   return <header className="topbar topbar-v3">
     <button className="mobile-menu" onClick={onMobileMenu} aria-label="Go to overview"><Menu size={19} /></button>
-    <div className="topbar-context"><GameTooltip block content={<TooltipContent title="Current location" description={`${navigation.group.breadcrumb} · ${navigation.item.label}`} />}><div className="crumb"><span>{navigation.group.breadcrumb}</span>{navigation.group.id !== 'overview' && <ChevronRight size={14} />}<strong>{navigation.item.label}</strong></div></GameTooltip></div>
     <div className="topbar-flex-spacer" aria-hidden="true" />
-    <div className="topbar-right-hud"><div className="topbar-resource-cluster">{renderResource('health')}{renderResource('mana')}{renderResource('acolytes')}{renderResource('flux')}</div>{utilities}</div>
+    <div className="topbar-right-hud"><div className="topbar-resource-cluster">{renderResource('health')}{renderResource('mana')}{renderResource('acolytes')}</div>{utilities}</div>
   </header>
 }
 

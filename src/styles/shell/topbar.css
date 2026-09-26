@@ -1,14 +1,10 @@
 .topbar-v3 { position: relative; z-index: var(--z-sticky); min-height: 82px; height: 82px; flex: 0 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 28px; overflow: visible; border-bottom: 1px solid var(--ui-border); background: var(--ui-topbar); backdrop-filter: blur(18px); }
-.topbar-context { flex: 0 1 280px; min-width: 0; height: 62px; }
-.topbar-context > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
-.topbar-context .crumb { width: 100%; height: 100%; min-width: 0; }
 .topbar-flex-spacer { flex: 1 1 auto; min-width: 18px; align-self: stretch; }
 .topbar-right-hud { display: flex; align-items: stretch; justify-content: flex-end; gap: 12px; min-width: 0; flex: 0 0 auto; height: 62px; }
 .topbar-resource-cluster { display: flex; align-items: stretch; gap: 8px; min-width: 0; height: 62px; }
 .topbar-resource-slot { position: relative; flex: 0 0 auto; min-width: 0; height: 62px; }
 .topbar-resource-slot-health { width: 160px; }
-.topbar-resource-slot-mana { width: 480px; }
-.topbar-resource-slot-focus { width: 180px; }
+.topbar-resource-slot-mana { width: clamp(300px, 27vw, 390px); }
 .topbar-resource-slot > .game-tooltip-trigger { display: block; width: 100%; height: 100%; }
 .topbar-resource, .mana-hero { position: relative; width: 100%; height: 100%; min-width: 0; border: 1px solid var(--ui-border); border-radius: 9px; background: color-mix(in srgb, var(--ui-panel) 88%, transparent); color: var(--ui-text-soft); overflow: visible; }
 .topbar-resource { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
@@ -74,19 +70,16 @@
   .topbar-utility-cluster { gap: 5px; padding-left: 10px; }
 }
 @media (max-width: 1200px) and (min-width: 981px) {
-  .topbar-context { flex-basis: 190px; }
   .topbar-resource-cluster { gap: 6px; }
   .topbar-resource-slot-health { width: 145px !important; }
-  .topbar-resource-slot-mana { width: min(480px, 31vw) !important; }
-  .topbar-resource-slot-focus { width: 160px !important; }
+  .topbar-resource-slot-mana { width: clamp(300px, 35vw, 390px) !important; }
   .topbar-resource-slot > .game-tooltip-trigger { width: 100% !important; }
   .topbar-tool-button { padding-inline: 7px; }
 }
 @media (max-width: 980px) {
   .topbar-v3 { height: auto; min-height: 82px; flex-wrap: wrap; }
-  .topbar-context { order: 1; flex: 1 1 auto; max-width: none; height: 44px; }
-  .topbar-flex-spacer { display: none; }
-  .topbar-right-hud { order: 3; width: 100%; height: 58px; justify-content: flex-end; }
+  .topbar-flex-spacer { display: block; }
+  .topbar-right-hud { order: 1; width: 100%; height: 58px; justify-content: flex-end; }
   .topbar-resource-cluster { flex: 1 1 auto; height: 58px; }
   .topbar-resource-slot { flex: 1 1 0; width: auto !important; height: 58px; }
   .topbar-resource-slot > .game-tooltip-trigger { width: 100% !important; }
@@ -119,7 +112,6 @@
     padding-block: 8px;
   }
 
-  .topbar-context,
   .topbar-right-hud,
   .topbar-resource-cluster,
   .topbar-resource-slot {

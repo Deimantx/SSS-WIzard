@@ -1,7 +1,7 @@
-import { createRing, linearStat, major, minor, modifier, perk, rankedModifier, v7Mechanic, v7MechanicWith } from './arcaneCoreNodeFactory'
+import { createRing, linearStat, major, minor, modifier, perk, rankedModifier, arcaneCoreMechanic, arcaneCoreMechanicWith } from './arcaneCoreNodeFactory'
 import { debuffed, negativeStatuses, selfControlled, selfDebuffed, selfNegativeStatuses } from './arcaneCoreContentHelpers'
 
-const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => v7Mechanic('control', ring, slot, name)
+const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => arcaneCoreMechanic('control', ring, slot, name)
 const enemyDamage = (perRank: number) => rankedModifier('damage-dealt-percent', perRank, selfDebuffed, 'enemy')
 const controlledDamage = (perRank: number) => rankedModifier('damage-dealt-percent', perRank, debuffed)
 
@@ -37,7 +37,7 @@ const ring3 = createRing('control', 3, [
   perk('control-r3-kill-momentum', 'Chain Control', 'After 2 control Statuses, the next control Status prepares +1/2/3/4/5% Damage for the next damaging Spell.', mechanic(3, 'S5', 'Chain Control')),
   perk('control-r3-controlled-flow', 'Status Echo', 'The next control Status gains a moderate duration benefit.', mechanic(3, 'S6', 'Status Echo')),
   perk('control-r3-cooldown-mastery', 'Queued Dominion', 'Queued Spells gain a bounded control-status benefit.', mechanic(3, 'S7', 'Queued Dominion')),
-  perk('control-r3-debuff-execution', 'Suppressed Enemy', 'While the enemy has at least 2 Negative Statuses, it deals 1/2/3/4/5% less Damage.', v7MechanicWith('control', 3, 'S8', 'Suppressed Enemy', (rank) => ({ modifiers: [modifier('damage-dealt-percent', -rank * 0.01, negativeStatuses(2), 'enemy')] }))),
+  perk('control-r3-debuff-execution', 'Suppressed Enemy', 'While the enemy has at least 2 Negative Statuses, it deals 1/2/3/4/5% less Damage.', arcaneCoreMechanicWith('control', 3, 'S8', 'Suppressed Enemy', (rank) => ({ modifiers: [modifier('damage-dealt-percent', -rank * 0.01, negativeStatuses(2), 'enemy')] }))),
   major('control-r3-dominion', 'Temporal Flow', 'The first control-tagged Status applied each encounter delays the enemy by 300 ms and grants +5% Action Speed to the next Spell. Once per encounter.', mechanic(3, 'M', 'Temporal Flow')),
 ])
 
@@ -62,7 +62,7 @@ const ring5 = createRing('control', 5, [
   perk('control-r5-kill-interference', 'Status Fracture', 'A Status applied to an already controlled enemy creates a bounded fracture.', mechanic(5, 'S6', 'Status Fracture')),
   perk('control-r5-action-interference', 'Debuff Theft', 'Applying a control Status restores 1/2/3/4/5 Mana.', mechanic(5, 'S7', 'Debuff Theft')),
   perk('control-r5-vulnerability-pressure', 'Manual Disruption', 'A MANUAL Spell while the enemy action is active gains +1/2/3/4/5% Damage.', mechanic(5, 'S8', 'Manual Disruption')),
-  major('control-r5-temporal-fracture', 'Dominion', 'While the enemy has 3+ negative Statuses, its action timer progresses 10% slower and it takes +5% Damage from the player.', v7MechanicWith('control', 5, 'M', 'Dominion', () => ({ modifiers: [modifier('action-speed-percent', -0.10, selfNegativeStatuses(3), 'enemy'), modifier('damage-dealt-percent', 0.05, negativeStatuses(3))] }))),
+  major('control-r5-temporal-fracture', 'Dominion', 'While the enemy has 3+ negative Statuses, its action timer progresses 10% slower and it takes +5% Damage from the player.', arcaneCoreMechanicWith('control', 5, 'M', 'Dominion', () => ({ modifiers: [modifier('action-speed-percent', -0.10, selfNegativeStatuses(3), 'enemy'), modifier('damage-dealt-percent', 0.05, negativeStatuses(3))] }))),
 ])
 
 const ring6 = createRing('control', 6, [
@@ -86,7 +86,7 @@ const ring7 = createRing('control', 7, [
   perk('control-r7-vulnerability-mastery', 'Control Cascade', 'Applying 3 different control Statuses delays the enemy action by 100/200/300/400/500 ms.', mechanic(7, 'S6', 'Control Cascade')),
   perk('control-r7-barrier-control', 'Controlled Target', 'Enemies with a control-tagged Status take more Damage from the player.', mechanic(7, 'S7', 'Controlled Target')),
   perk('control-r7-layered-lockdown', 'No Escape', 'A control Status expiring near low enemy Health creates a bounded delay.', mechanic(7, 'S8', 'No Escape')),
-  major('control-r7-total-lockdown', 'Total Lockdown', 'While an enemy has at least two different control-tagged Statuses, its action timer progresses 10% slower, it deals 7.5% less Damage, and it takes 7.5% more Damage from the player.', v7MechanicWith('control', 7, 'M', 'Total Lockdown', () => ({ modifiers: [modifier('action-speed-percent', -0.10, selfControlled, 'enemy'), modifier('damage-dealt-percent', -0.075, selfControlled, 'enemy'), modifier('damage-dealt-percent', 0.075, selfControlled)] }))),
+  major('control-r7-total-lockdown', 'Total Lockdown', 'While an enemy has at least two different control-tagged Statuses, its action timer progresses 10% slower, it deals 7.5% less Damage, and it takes 7.5% more Damage from the player.', arcaneCoreMechanicWith('control', 7, 'M', 'Total Lockdown', () => ({ modifiers: [modifier('action-speed-percent', -0.10, selfControlled, 'enemy'), modifier('damage-dealt-percent', -0.075, selfControlled, 'enemy'), modifier('damage-dealt-percent', 0.075, selfControlled)] }))),
 ])
 
 const ring8 = createRing('control', 8, [

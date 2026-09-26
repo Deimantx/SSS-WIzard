@@ -3,9 +3,9 @@ import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from '../../content/arcaneCor
 import { ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_NODE_COUNT, ARCANE_CORE_NODE_COUNT_PER_BRANCH } from '../../content/arcaneCore/arcaneCoreBalance'
 import { ARCANE_CORE_RING_INDICES } from '../../content/arcaneCore/arcaneCoreRings'
 import { validateArcaneCoreCatalog } from './arcaneCoreValidation'
-import { ARCANE_CORE_V7_MECHANIC_REGISTRY, validateArcaneCoreV7MechanicCoverage } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
+import { ARCANE_CORE_MECHANIC_REGISTRY, validateArcaneCoreMechanicCoverage } from '../../content/arcaneCore/arcaneCoreMechanics'
 
-describe('Arcane Core V7 catalog', () => {
+describe('Arcane Core Arcane Core catalog', () => {
   it('contains four Cores with eight Rings of eight standards and one Major', () => {
     expect(validateArcaneCoreCatalog()).toEqual([])
     expect(ARCANE_CORE_BRANCHES.map((branch) => branch.id)).toEqual(['power', 'vitality', 'mana', 'control'])
@@ -22,8 +22,8 @@ describe('Arcane Core V7 catalog', () => {
     expect(ARCANE_CORE_MAX_LEVEL).toBe(1377) // legacy migration curve remains isolated from the live wallet.
   })
 
-  it('has one live V7 runtime entry for every authored mechanic slot', () => {
-    expect(validateArcaneCoreV7MechanicCoverage()).toEqual([])
-    expect(Object.keys(ARCANE_CORE_V7_MECHANIC_REGISTRY)).toHaveLength(160)
+  it('has one live Arcane Core runtime entry for every authored mechanic slot', () => {
+    expect(validateArcaneCoreMechanicCoverage()).toEqual([])
+    expect(Object.keys(ARCANE_CORE_MECHANIC_REGISTRY)).toHaveLength(160)
   })
 })

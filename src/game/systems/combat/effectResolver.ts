@@ -58,7 +58,7 @@ import {
 } from "./combatTypes";
 import { stabilizeResourceValue } from "../../presentation/resources/resourcePresentation";
 import { getArcaneCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvival } from "../arcaneCore/arcaneCoreRuntime";
-import { recordArcaneCoreV6CriticalResult } from "../arcaneCore/arcaneCoreV7Runtime";
+import { recordArcaneCoreCriticalResult } from "../arcaneCore/arcaneCoreMechanicRuntime";
 import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 const MAX_EFFECT_DEPTH = 20;
@@ -395,7 +395,7 @@ const applyDamage = (
     ),
   );
   if (source.actor === "player" && source.kind === "spell" && isDirectHit(tags))
-    recordArcaneCoreV6CriticalResult(state, rolls.critical === true);
+    recordArcaneCoreCriticalResult(state, rolls.critical === true);
   const resolvedBeforeBarrier = breakdowns.reduce(
     (sum, breakdown) => sum + breakdown.resolvedBeforeBarrier,
     0,

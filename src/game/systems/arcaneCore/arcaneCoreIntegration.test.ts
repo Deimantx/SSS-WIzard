@@ -23,8 +23,8 @@ describe('Arcane Core V8 integration', () => {
     state.arcaneCore.nodes[node('mana', 'Arcane Recirculation').id] = { rank: 1 }
     const effects = getArcaneCoreSpecialEffects(state.arcaneCore)
     expect(effects).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'power:r1:S5', displayName: 'Opportunist', rank: 5 }),
-      expect.objectContaining({ type: 'v6-mechanic', mechanicId: 'mana:r3:M', displayName: 'Arcane Recirculation', rank: 1 }),
+      expect.objectContaining({ type: 'arcane-core-mechanic', mechanicId: 'power:r1:S5', displayName: 'Opportunist', rank: 5 }),
+      expect.objectContaining({ type: 'arcane-core-mechanic', mechanicId: 'mana:r3:M', displayName: 'Arcane Recirculation', rank: 1 }),
     ]))
   })
 

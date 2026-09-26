@@ -45,11 +45,11 @@ describe('SpellRow tooltip runtime integration', () => {
     vi.useFakeTimers()
     renderSpellRow()
 
-    fireEvent.pointerEnter(screen.getByLabelText('Mana Cost: 30'))
+    fireEvent.pointerEnter(screen.getByLabelText('Mana Cost: 15'))
     act(() => { vi.advanceTimersByTime(200) })
     expect(screen.getByRole('tooltip').textContent).toContain('Mana spent when the Spell successfully resolves.')
 
-    fireEvent.pointerLeave(screen.getByLabelText('Mana Cost: 30'))
+    fireEvent.pointerLeave(screen.getByLabelText('Mana Cost: 15'))
     act(() => { vi.advanceTimersByTime(70) })
     fireEvent.pointerEnter(screen.getByRole('img', { name: 'Direct Damage' }))
     act(() => { vi.advanceTimersByTime(200) })
@@ -86,7 +86,7 @@ describe('SpellRow tooltip runtime integration', () => {
     vi.useFakeTimers()
     renderSpellRow()
 
-    fireEvent.pointerEnter(screen.getByLabelText('Mana Cost: 30'))
+    fireEvent.pointerEnter(screen.getByLabelText('Mana Cost: 15'))
     act(() => { vi.advanceTimersByTime(200) })
     expect(screen.getByRole('tooltip')).toBeTruthy()
 

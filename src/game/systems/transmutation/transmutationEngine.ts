@@ -12,7 +12,7 @@ export interface TransmutationAdvanceContext {
   report?: { recordTransmutation: (recipeId: TransmutationRecipeId, output: ItemId, quantity: number, ingredients: { itemId: ItemId; quantity: number }[]) => void }
   onItemAcquired?: (itemId: ItemId, quantity: number) => void
   random?: () => number
-  onTransmutationComplete?: () => void
+  onTransmutationComplete?: (recipeId: TransmutationRecipeId) => void
 }
 
 const finiteNonNegative = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
@@ -140,6 +140,6 @@ export const completeTransmutationCycle = (state: GameState, recipe: (typeof REC
   grantItem(state, recipe.output.itemId, outputQuantity)
   context.onItemAcquired?.(recipe.output.itemId, outputQuantity)
   context.report?.recordTransmutation(recipe.id, recipe.output.itemId, outputQuantity, consumedIngredients)
-  context.onTransmutationComplete?.()
+  context.onTransmutationComplete?.(recipe.id)
   return true
 }

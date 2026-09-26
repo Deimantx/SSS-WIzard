@@ -58,8 +58,8 @@ describe('BestiaryResonanceYield', () => {
 
     act(() => { useGameStore.getState().setWorldTier(2) })
     expect(screen.getByText('WT2')).toBeTruthy()
-    expect(screen.getByText('+9')).toBeTruthy()
-    expect(screen.getByText('+4')).toBeTruthy()
+    expect(screen.getByText('+12')).toBeTruthy()
+    expect(screen.getByText('+6')).toBeTruthy()
   })
 
   it('shows an explicit empty state for an enemy without Resonance', () => {

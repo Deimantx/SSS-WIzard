@@ -9,6 +9,28 @@ export type ElementId = SchoolId
 export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'completed' | 'locked' | 'recovering'
 
+export type ChronicleChapterId = 'first-frontier' | 'shattered-frontier'
+export type ChronicleTrack = 'main' | 'combat' | 'magic' | 'tower'
+export type ChronicleObjectiveId =
+  | 'm1-choose-school' | 'm2-first-blood' | 'm3-heart-of-the-woods' | 'm4-break-the-den' | 'm5-fallen-archmage'
+  | 'c1-enter-whispering-woods' | 'c2-auto-cast'
+  | 'mg1-strengthen-artifact' | 'mg2-expand-spellbook' | 'mg3-four-spell-arsenal'
+  | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle'
+  | 'sf-bind-guardian' | 'sf-fight-together' | 'sf-socket-first-crystal' | 'sf-step-into-harder-world'
+export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill'
+export type GuildRankId = 'outsider' | 'initiate' | 'apprentice' | 'adept' | 'magister' | 'circle-master'
+export type GuildRequestKind = 'donation' | 'dungeon-kills' | 'monster-kills' | 'boss-kill'
+export type GuildSkillNodeId =
+  | 'hunter-arcane-quarry' | 'hunter-resonant-pursuit' | 'hunter-trophy-hunter'
+  | 'quartermaster-careful-harvest' | 'quartermaster-relic-appraisal' | 'quartermaster-cache-appraisal'
+  | 'tower-leyline-assistance' | 'tower-efficient-arrays' | 'tower-expanded-quarters'
+
+export interface ChronicleProgressState {
+  completedObjectiveIds: ChronicleObjectiveId[]
+  grantedUnlockRewardIds: ChronicleObjectiveId[]
+  eventFlags: Partial<Record<ChronicleEventId, boolean>>
+}
+
 /**
  * Canonical item IDs grouped by authored ownership. Keep this list aligned
  * with src/game/content/items/shared, act0, and act1.
@@ -193,14 +215,14 @@ export type ArcaneCoreBranchId = 'power' | 'vitality' | 'mana' | 'control'
 export type ArcaneCoreModifierKey = Exclude<keyof EquipmentStats, 'resistances'>
 export type ArcaneCoreRingIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 export type ArcaneCoreNodeType = 'minor' | 'perk' | 'major'
-export type ArcaneCoreV6ImplementationCategory = 'STATIC_STAT' | 'STATIC_MODIFIER' | 'CAST_MODIFIER' | 'CAST_COMMIT' | 'COMBAT_EVENT' | 'STATUS_EVENT' | 'BARRIER_EVENT' | 'HEAL_EVENT' | 'KILL_EVENT' | 'SURVIVAL' | 'RESOURCE_CONVERSION' | 'TIMELINE' | 'LOADOUT' | 'MANUAL_QUEUE' | 'ENCOUNTER_LIFECYCLE'
+export type ArcaneCoreMechanicCategory = 'STATIC_STAT' | 'STATIC_MODIFIER' | 'CAST_MODIFIER' | 'CAST_COMMIT' | 'COMBAT_EVENT' | 'STATUS_EVENT' | 'BARRIER_EVENT' | 'HEAL_EVENT' | 'KILL_EVENT' | 'SURVIVAL' | 'RESOURCE_CONVERSION' | 'TIMELINE' | 'LOADOUT' | 'MANUAL_QUEUE' | 'ENCOUNTER_LIFECYCLE'
 export type ArcaneCoreSpecialEffect =
   | { type: 'nth-damaging-spell-bonus'; every: number; damageMultiplier: number }
   | { type: 'lethal-survival'; leaveAtHealth: number; oncePerDungeonRun: boolean }
   | { type: 'mana-overflow-to-barrier'; conversion: number; maxHealthPercentPerSecondCap: number }
   | { type: 'nth-spell-free'; every: number }
   | { type: 'nth-spell-cooldown-pulse'; every: number; cooldownReductionMs: number }
-  | { type: 'v6-mechanic'; mechanicId: string; displayName: string; rank: number; category: ArcaneCoreV6ImplementationCategory }
+  | { type: 'arcane-core-mechanic'; mechanicId: string; displayName: string; rank: number; category: ArcaneCoreMechanicCategory }
 export interface ArcaneCoreResolvedEffects {
   stats?: EquipmentStats
   modifiers?: import('./systems/combat/combatTypes').CombatModifier[]
@@ -451,7 +473,7 @@ export interface CombatState {
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
   /** Deterministic transient counters for Arcane Core combat specials. */
   arcaneCoreRuntime: {
-    /** Monotonic simulated milliseconds for V6 timestamps and windows. */
+    /** Monotonic simulated milliseconds for Arcane Core timestamps and windows. */
     elapsedMs: number
     /** Run-global clock anchor for the current enemy; elapsedMs is never reset here. */
     encounterStartedAtMs?: number
@@ -459,18 +481,17 @@ export interface CombatState {
     spellCastCount: number
     cooldownPulseSpellCount: number
     survivalInstinctUsed: boolean
-    /** Runtime metadata used by V6 AUTO/MANUAL and sequence primitives. */
+    /** Runtime metadata used by Arcane Core AUTO/MANUAL and sequence primitives. */
     autoCastCount?: number
-    lastCastOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
+    lastCastOrigin?: 'auto' | 'manual-direct' | 'manual-queued' | null
     dualMindPreparedOrigin?: 'auto' | 'manual'
     dualMindPreparedUntilMs?: number
     lastSpellId?: CanonicalSpellId | null
     lastLoadoutSlotIndex?: number | null
-    differentSpellStreak?: number
-    /** Independent no-repeat sequences used by the V7 Power branch. */
-    spellSequenceStreak?: number
-    aggressiveRotationStreak?: number
-    sovereignSequenceStreak?: number
+    /** Successful casts since the last repeated spell/slot, used by sequence mechanics. */
+    recentSpellSequence?: CanonicalSpellId[]
+    recentDamagingSpellSequence?: CanonicalSpellId[]
+    recentLoadoutSlotSequence?: number[]
     alternatingCastStreak?: number
     enemyDamagingSpellCount?: number
     nextDamageMultiplier?: number
@@ -499,14 +520,17 @@ export interface CombatState {
     cataclysmUsed?: boolean
     limitBreakUsed?: boolean
     singularityUntilMs?: number
-    recentManaSpend?: Array<{ atMs: number; amount: number }>
+    recentManaSpend?: Array<{ atMs: number; amount: number; sequence?: number }>
+    manaSpendSequence?: number
+    reservoirCycleTriggeredAtMs?: number
+    reservoirCycleTriggeredSpendSequence?: number
     reservoirCycleReady?: boolean
     manaCollapseReady?: boolean
     manaCollapseLastAtMs?: number
     emergencyConversionReady?: boolean
     nextManaRestoreFlat?: number
     renewalLastAtMs?: number
-    v7EventLastAtMs?: Record<string, number>
+    arcaneCoreEventLastAtMs?: Record<string, number>
     refuseDeathUsed?: boolean
     lastSurvivalToken?: 'refuse-death' | 'immortal-guard' | 'undying'
     barrierMemoryMultiplier?: number
@@ -533,10 +557,13 @@ export interface CombatState {
     ruinTransferMultiplier?: number
     apotheosisUntilMs?: number
     overchannelUntilMs?: number
+    overchannelTriggeredAtMs?: number
+    overchannelTriggeredSpendSequence?: number
+    overchannelSpendFloorSequence?: number
     manaRegenDisabledUntilMs?: number
     nextHealingActionSpeedMultiplier?: number
     nextSelfTargetActionSpeedMultiplier?: number
-    /** V7 one-shot and timed combat windows. */
+    /** Arcane Core one-shot and timed combat windows. */
     recoveryWindowUntilMs?: number
     recoveryWindowMultiplier?: number
     reinforcedRecoveryUntilMs?: number
@@ -546,12 +573,9 @@ export interface CombatState {
     echoCharges?: number
     manualCharges?: number
     manualCastCount?: number
-    differentLoadoutSlotStreak?: number
     consecutiveAutoCasts?: number
     consecutiveManualCasts?: number
-    lastCastAtFullMana?: boolean
     nextAutoRefundPercent?: number
-    lastManaBand?: number
     nextControlStatusDurationMultiplier?: number
     controlStatusApplications?: number
     lastDamageTakenAtMs?: number
@@ -560,7 +584,8 @@ export interface CombatState {
     artifactLastSpellAtMs?: number
     artifactAfterHealWaterReady?: boolean
     artifactNextIdleDamageMultiplier?: number
-    artifactManaBandSnapshot?: number
+    artifactManaShiftReady?: boolean
+    artifactManaShiftLastAtMs?: number
   }
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]
@@ -583,6 +608,7 @@ export interface PendingPlayerSpellCast {
   remainingWorkMs: number
   castWorkMs: number
   manaCostSnapshot: number
+  manaWasFullAtStart?: boolean
   arcaneCoreFree: boolean
   castWorkMultiplier: number
   castOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
@@ -613,10 +639,13 @@ export interface ProgressState {
   emberStaffUnlocked: boolean
   forestHeartUnlocked: boolean
   autoHuntBossUnlocked: boolean
-  guildRank: 'outsider' | 'initiate' | 'apprentice'
+  guildRank: GuildRankId
   requestProgress: Record<string, number>
   guildReputation: number
   requestClaims: Record<string, boolean>
+  guildPointsEarned: number
+  guildSkillNodeRanks: Partial<Record<GuildSkillNodeId, number>>
+  chronicle: ChronicleProgressState
   permanentManaBonuses: Record<string, number>
   startingSchoolId: SchoolId | null
   tutorialStage: TutorialStage

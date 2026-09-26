@@ -4,6 +4,9 @@ import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
 import { DUNGEONS, DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
 import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
+import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
+import { CHRONICLE_OBJECTIVES } from '../game/content/chronicles/chronicles'
+import { GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { TRANSMUTATION_RECIPES as RECIPES } from '../game/content/recipes/recipes'
@@ -15,7 +18,7 @@ import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { ArtifactId, CanonicalSpellId, DungeonId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { ArtifactId, CanonicalSpellId, ChronicleEventId, DungeonId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -99,7 +102,7 @@ const itemIds = Object.keys(ITEMS)
 const monsterIds = Object.keys(MONSTERS)
 const bossIds = [...monsterIds, SUMMONING_UNLOCK_BOSS_ID]
 const dungeonIds = Object.keys(DUNGEONS)
-const requestIds = Object.keys(GUILD_REQUESTS)
+const requestIds = [...Object.keys(GUILD_REQUESTS), 'arcane-supply', 'clear-the-woods', 'sentinel-breaker']
 const spellIds = Object.keys(SPELLS) as CanonicalSpellId[]
 const normalizeSpellId = (value: unknown): CanonicalSpellId | undefined => {
   if (typeof value !== 'string') return undefined
@@ -258,6 +261,22 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
   migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
   migrated.progress.permanentManaBonuses = normalizeDynamicRecord(fresh.progress.permanentManaBonuses, rawProgress.permanentManaBonuses ?? rawProgress.permanentFocusBonuses, permanentManaIds, nonNegativeNumber)
+  migrated.progress.guildPointsEarned = nonNegativeInteger(rawProgress.guildPointsEarned) ?? fresh.progress.guildPointsEarned
+  const rawSkillRanks = isRecord(rawProgress.guildSkillNodeRanks) ? rawProgress.guildSkillNodeRanks : {}
+  migrated.progress.guildSkillNodeRanks = Object.fromEntries(GUILD_SKILL_NODE_IDS.flatMap((nodeId) => {
+    const rank = nonNegativeInteger(rawSkillRanks[nodeId])
+    return rank && rank > 0 ? [[nodeId, Math.min(1, rank)]] : []
+  })) as GameState['progress']['guildSkillNodeRanks']
+  const rawChronicle = isRecord(rawProgress.chronicle) ? rawProgress.chronicle : {}
+  const rawCompleted = Array.isArray(rawChronicle.completedObjectiveIds) ? rawChronicle.completedObjectiveIds : []
+  const rawGranted = Array.isArray(rawChronicle.grantedUnlockRewardIds) ? rawChronicle.grantedUnlockRewardIds : []
+  const chronicleEventIds: ChronicleEventId[] = ['first-fragment-transmuted', 'first-research-batch-completed', 'first-guardian-combat-completed', 'first-wt2-kill']
+  const validChronicleIds = CHRONICLE_OBJECTIVES.map((objective) => objective.id)
+  migrated.progress.chronicle = {
+    completedObjectiveIds: rawCompleted.filter((id): id is GameState['progress']['chronicle']['completedObjectiveIds'][number] => typeof id === 'string' && validChronicleIds.includes(id as typeof validChronicleIds[number])),
+    grantedUnlockRewardIds: rawGranted.filter((id): id is GameState['progress']['chronicle']['grantedUnlockRewardIds'][number] => typeof id === 'string' && validChronicleIds.includes(id as typeof validChronicleIds[number])),
+    eventFlags: Object.fromEntries(Object.entries(isRecord(rawChronicle.eventFlags) ? rawChronicle.eventFlags : {}).filter(([id, value]) => chronicleEventIds.includes(id as ChronicleEventId) && value === true)) as GameState['progress']['chronicle']['eventFlags'],
+  }
   migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
   // Keep historical boss counters for monsters that were later demoted to a
   // normal encounter (notably Grove Sentinel). They remain useful migration
@@ -933,6 +952,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellPresets(migrated, raw, sourceVersion)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
+  reconcileChronicleProgress(migrated, { notify: false })
   if (sourceVersion < SAVE_VERSION && migrated.combat.active) {
     const dungeonId = migrated.combat.dungeonId
     const location = getCombatLocationByDungeonId(dungeonId)

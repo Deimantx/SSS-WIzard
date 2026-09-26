@@ -83,6 +83,7 @@ import type {
   DungeonId,
   EquipmentPosition,
   GameState,
+  ChronicleEventId,
   GuardianId,
   ItemId,
   ManaPillarId,
@@ -122,7 +123,14 @@ import {
   donateGuildRequestAction,
   claimGuildRewardAction,
   promoteGuildAction,
+  purchaseGuildSkillNodeAction,
+  resetGuildSkillTreeAction,
+  resetGuildRequestsAction,
+  setGuildRankAction,
+  grantGuildPointAction,
 } from "./actions/guildActions";
+import { reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
+import type { GuildSkillNodeId, GuildRankId } from "../game/types";
 import {
   debugLockSpellAction,
   debugUnlockSpellRankOneAction,
@@ -767,6 +775,13 @@ export interface GameActions {
   donateGuildRequest: (requestId: string, amount: number | "max") => void;
   claimGuildReward: (requestId: string) => void;
   promoteGuild: () => void;
+  purchaseGuildSkillNode: (nodeId: GuildSkillNodeId, free?: boolean) => boolean;
+  resetGuildSkillTree: () => boolean;
+  resetGuildRequests: () => void;
+  debugSetGuildRank: (rank: GuildRankId) => void;
+  debugGrantGuildPoint: (amount: number) => void;
+  debugReconcileChronicles: () => void;
+  debugSetChronicleEvent: (eventId: ChronicleEventId, enabled: boolean) => void;
   setGuildReputation: (amount: number) => void;
   setBossKills: (bossId: MonsterId, amount: number) => void;
   creditOfflineAbsence: (elapsedMs: number, notify?: boolean) => void;
@@ -899,6 +914,8 @@ export const useGameStore = create<GameStore>()(
           alerts: combatAlertsObserver,
           statistics: dungeonStatisticsObserver,
           onCombatCompleted: () => endActiveDungeonRun("complete"),
+          onResearchComplete: () => reconcileChronicleProgress(state),
+          onTransmutationComplete: () => reconcileChronicleProgress(state),
           onArtificingComplete: (completion) => {
             emitActionFeel("craft-complete", ".artificing-craft-button");
             unpinArtificingRecipe(completion.recipeId);
@@ -926,7 +943,10 @@ export const useGameStore = create<GameStore>()(
       let chosen = false;
       set((state) => {
         chosen = chooseStartingSchoolAction(state, schoolId);
-        if (chosen) recalculateDerivedStats(state);
+        if (chosen) {
+          recalculateDerivedStats(state);
+          reconcileChronicleProgress(state);
+        }
         return state;
       });
       return chosen;
@@ -957,19 +977,22 @@ export const useGameStore = create<GameStore>()(
       set((state) => {
         if (!isSummoningUnlocked(state) || !GUARDIANS[guardianId]) return state;
         state.guardians.selectedGuardianId = guardianId;
+        reconcileChronicleProgress(state);
         return state;
       }),
     setChannelingAcolytes: (amount) =>
       set((state) => {
         setChannelingAcolytesAction(state, amount);
+        reconcileChronicleProgress(state);
         return state;
       }),
-    assignChannelingAcolyte: () => set((state) => { assignChannelingAcolyteAction(state); return state }),
-    removeChannelingAcolyte: () => set((state) => { removeChannelingAcolyteAction(state); return state }),
+    assignChannelingAcolyte: () => set((state) => { assignChannelingAcolyteAction(state); reconcileChronicleProgress(state); return state }),
+    removeChannelingAcolyte: () => set((state) => { removeChannelingAcolyteAction(state); reconcileChronicleProgress(state); return state }),
     setChannelingAcolytesDebug: (amount) => set((state) => { setChannelingAcolytesDebugAction(state, sanitizeDebugNumber(amount)); return state }),
     forceSetChannelingAcolytes: (amount) =>
       set((state) => {
         setChannelingAcolytesAction(state, sanitizeDebugNumber(amount), true);
+        reconcileChronicleProgress(state);
         return state;
       }),
     upgradeManaPillar: (pillarId) =>
@@ -1185,7 +1208,7 @@ export const useGameStore = create<GameStore>()(
       }),
     forceResearchCycle: (slotId) =>
       set((state) => {
-        forceCompleteResearchCycle(state, slotId, { mode: "live" });
+        forceCompleteResearchCycle(state, slotId, { mode: "live", onResearchComplete: () => reconcileChronicleProgress(state) });
         return state;
       }),
     assignTransmutationAcolyte: (recipeId) => set((state) => { assignTransmutationAcolyteAction(state, recipeId); return state }),
@@ -1213,7 +1236,7 @@ export const useGameStore = create<GameStore>()(
       }),
     completeTransmutationCycle: (recipeId) =>
       set((state) => {
-        forceCompleteTransmutationCycle(state, recipeId, { mode: "live" });
+        forceCompleteTransmutationCycle(state, recipeId, { mode: "live", onTransmutationComplete: (completedRecipeId) => { if (completedRecipeId.endsWith("-fragment")) reconcileChronicleProgress(state); } });
         return state;
       }),
     grantTransmutationIngredients: (recipeId, cycles = 1) =>
@@ -1256,7 +1279,10 @@ export const useGameStore = create<GameStore>()(
       set((state) => {
         const result = purchaseArtifactMinorRank(state, artifactId, nodeId);
         ok = result.ok;
-        if (result.ok) recalculateDerivedStats(state);
+        if (result.ok) {
+          recalculateDerivedStats(state);
+          reconcileChronicleProgress(state);
+        }
         else
           pushNotification(state, result.reason, "warning", {
             key: "artifact-rank-purchase-failed",
@@ -1278,7 +1304,10 @@ export const useGameStore = create<GameStore>()(
       set((state) => {
         const result = purchaseArtifactMinorRank(state, artifactId, nodeId, { free });
         ok = result.ok;
-        if (result.ok) recalculateDerivedStats(state);
+        if (result.ok) {
+          recalculateDerivedStats(state);
+          reconcileChronicleProgress(state);
+        }
         else pushNotification(state, result.reason, "warning", { key: "artifact-rank-purchase-failed", cooldownMs: 1200 });
         return state;
       });
@@ -1627,6 +1656,7 @@ export const useGameStore = create<GameStore>()(
       let changed = false;
       set((state) => {
         changed = toggleAutoCastState(state, spellId);
+        if (changed) reconcileChronicleProgress(state);
         return state;
       });
       if (changed)
@@ -1824,6 +1854,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => {
         initializeDungeonRun(state, dungeonId, switching);
         state.ui.lastEnteredCombatDungeonId = dungeonId;
+        reconcileChronicleProgress(state);
         return state;
       });
     },
@@ -2601,7 +2632,10 @@ export const useGameStore = create<GameStore>()(
             key: "crystal-equip",
             cooldownMs: 700,
           });
-        if (result.ok) recalculateDerivedStats(state);
+        if (result.ok) {
+          recalculateDerivedStats(state);
+          reconcileChronicleProgress(state);
+        }
         return state;
       });
       return result.ok;
@@ -2883,8 +2917,32 @@ export const useGameStore = create<GameStore>()(
     promoteGuild: () =>
       set((state) => {
         promoteGuildAction(state);
+        reconcileChronicleProgress(state);
         return state;
       }),
+    purchaseGuildSkillNode: (nodeId, free = false) => {
+      let ok = false;
+      set((state) => {
+        ok = purchaseGuildSkillNodeAction(state, nodeId, free);
+        return state;
+      });
+      return ok;
+    },
+    resetGuildSkillTree: () => {
+      let ok = false;
+      set((state) => {
+        const result = resetGuildSkillTreeAction(state);
+        ok = result.ok;
+        if (!result.ok) pushNotification(state, result.reason, "warning", { key: "guild-skill-reset", cooldownMs: 1000 });
+        return state;
+      });
+      return ok;
+    },
+    resetGuildRequests: () => set((state) => { resetGuildRequestsAction(state); return state; }),
+    debugSetGuildRank: (rank) => set((state) => { setGuildRankAction(state, rank); return state; }),
+    debugGrantGuildPoint: (amount) => set((state) => { grantGuildPointAction(state, amount); return state; }),
+    debugReconcileChronicles: () => set((state) => { reconcileChronicleProgress(state); return state; }),
+    debugSetChronicleEvent: (eventId, enabled) => set((state) => { state.progress.chronicle.eventFlags[eventId] = enabled; reconcileChronicleProgress(state); return state; }),
     setGuildReputation: (amount) =>
       set((state) => {
         state.progress.guildReputation = Math.max(0, amount);

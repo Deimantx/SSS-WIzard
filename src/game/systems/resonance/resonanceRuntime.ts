@@ -74,18 +74,18 @@ export const aggregateResonanceBundle = (bundle: ResonanceYield, count: unknown)
   return multiplyResonanceBundle(bundle, safeCount)
 }
 
-export const resolveEnemyResonanceReward = (enemyId: MonsterId, worldTier: WorldTierId = 1): ResonanceRewardResolution => {
+export const resolveEnemyResonanceReward = (enemyId: MonsterId, worldTier: WorldTierId = 1, guildRewardMultiplier = 1): ResonanceRewardResolution => {
   const tier = getWorldTierDefinition(worldTier)
   const baseYield = normalizeResonanceState(MONSTERS[enemyId]?.resonanceYield) as ResonanceYield
   const worldTierRewardMultiplier = tier.resonanceRewardMultiplier
   const globalRewardMultiplier = RESONANCE_REWARD_GLOBAL_MULTIPLIER
-  const rewardMultiplier = worldTierRewardMultiplier * globalRewardMultiplier
+  const rewardMultiplier = worldTierRewardMultiplier * globalRewardMultiplier * Math.max(0, Number.isFinite(guildRewardMultiplier) ? guildRewardMultiplier : 1)
   const finalYield = multiplyResonanceBundle(baseYield, rewardMultiplier)
   return { enemyId, worldTier: tier.id, worldTierRewardMultiplier, globalRewardMultiplier, rewardMultiplier, baseYield, finalYield }
 }
 
-export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId, worldTier: WorldTierId = 1): ResonanceRewardEventPayload => {
-  const resolution = resolveEnemyResonanceReward(enemyId, worldTier)
+export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId, worldTier: WorldTierId = 1, guildRewardMultiplier = 1): ResonanceRewardEventPayload => {
+  const resolution = resolveEnemyResonanceReward(enemyId, worldTier, guildRewardMultiplier)
   return { ...resolution, grantedYield: grantResonanceBundleWithDelta(state, resolution.finalYield) }
 }
 

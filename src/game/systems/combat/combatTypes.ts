@@ -225,7 +225,7 @@ export interface CombatSource {
   statusId?: StatusId
   /** Event source retained for rule effects that target the source spell. */
   eventSource?: CombatSource
-  /** V6 gameplay origin captured when the Spell cast was committed. */
+  /** Arcane Core gameplay origin captured when the Spell cast was committed. */
   castOrigin?: 'auto' | 'manual-direct' | 'manual-queued'
   loadoutSlotIndex?: number | null
   school?: SchoolId

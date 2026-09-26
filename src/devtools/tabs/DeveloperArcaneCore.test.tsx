@@ -7,9 +7,9 @@ import { DeveloperArcaneCore } from './DeveloperArcaneCore'
 describe('Developer Arcane Core tab', () => {
   beforeEach(() => useGameStore.getState().resetSave())
 
-  it('exposes V6 point, Ring, Core, and diagnostics controls that update the real state', () => {
+  it('exposes Arcane Point, Ring, Core, and diagnostics controls that update the real state', () => {
     render(<DeveloperArcaneCore />)
-    expect(screen.getByText(/Arcane Core .* V6 tester controls/)).toBeTruthy()
+    expect(screen.getByText(/Arcane Core .* tester controls/)).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Set selected Arcane Core node rank' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'MAX RING 1' })).toBeTruthy()
     expect(screen.getByText('Ring diagnostics')).toBeTruthy()
@@ -18,7 +18,7 @@ describe('Developer Arcane Core tab', () => {
     expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(212)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'MAX CORE' })[0]!)
-    expect(getArcaneCorePointsSpent(useGameStore.getState().arcaneCore)).toBe(25748)
+    expect(getArcaneCorePointsSpent(useGameStore.getState().arcaneCore)).toBe(1_879_796)
 
     fireEvent.click(screen.getAllByRole('button', { name: 'RESET CORE' })[0]!)
     expect(getArcaneCoreRingPointsSpent(useGameStore.getState().arcaneCore, 'power', 1)).toBe(0)

@@ -163,7 +163,7 @@ describe('manual Spell queue and interrupt control', () => {
 
     expect(state.combat.pendingPlayerSpellCast).toBeNull()
     expect(state.player.health).toBeGreaterThan(25)
-    expect(state.player.mana).toBe(50)
+    expect(state.player.mana).toBe(95)
     expect(state.combat.spellCooldowns['mending-waters']).toBe(10_000)
   })
 

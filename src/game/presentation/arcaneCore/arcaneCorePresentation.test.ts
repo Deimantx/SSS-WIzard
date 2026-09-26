@@ -20,7 +20,7 @@ import {
 } from "./arcaneCorePresentation";
 import { createInitialState } from "../../../store/initialState";
 
-describe("Arcane Core V6 presentation", () => {
+describe("Arcane Core Arcane Core presentation", () => {
   it("uses exact alternating 40-degree socket sets in every Core", () => {
     expect(ARCANE_CORE_NODE_ANGLE_STEP).toBe(40);
     expect(ARCANE_CORE_RING_OFFSETS).toEqual({
@@ -108,7 +108,7 @@ describe("Arcane Core V6 presentation", () => {
     }
   });
 
-  it("formats V7 percentage stats and authored ranked effects in player-readable units", () => {
+  it("formats Arcane Core percentage stats and authored ranked effects in player-readable units", () => {
     expect(formatArcaneCoreModifierValue("spellPowerPct", 0.005)).toBe(
       "+0.50%",
     );
@@ -120,7 +120,7 @@ describe("Arcane Core V6 presentation", () => {
     expect(formatArcaneCoreNodeEffect(node, 5)).toContain("+2.50%");
   });
 
-  it("formats exact V7 descriptions and inactive Major state", () => {
+  it("formats exact Arcane Core descriptions and inactive Major state", () => {
     const cycle = ARCANE_CORE_NODES.find(
       (candidate) => candidate.name === "Arcane Momentum",
     )!;

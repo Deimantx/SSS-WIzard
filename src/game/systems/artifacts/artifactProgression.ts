@@ -75,11 +75,30 @@ export const getArtifactPreCastDamageMultiplier = (state: GameState, school: str
 }
 export const getArtifactPreCastManaMultiplier = (state: GameState) => {
   const runtime = state.combat.arcaneCoreRuntime
-  const currentBand = Math.floor((state.player.mana / Math.max(1, state.player.maxMana)) * 4)
-  const changed = runtime.artifactManaBandSnapshot !== undefined && runtime.artifactManaBandSnapshot !== currentBand
-  runtime.artifactManaBandSnapshot = currentBand
-  if (!changed) return 1
-  return getActiveArtifactSpecialEffects(state).reduce((multiplier, { special }) => special.type === 'mana-band-shift' ? multiplier * (1 - special.manaReduction) : multiplier, 1)
+  return runtime.artifactManaShiftReady
+    ? getActiveArtifactSpecialEffects(state).reduce((multiplier, { special }) => special.type === 'mana-band-shift' ? multiplier * (1 - special.manaReduction) : multiplier, 1)
+    : 1
+}
+
+/** Consumes a prepared Mana Shift only after a spell has passed start validation. */
+export const consumeArtifactPreCastManaShift = (state: GameState) => {
+  const runtime = state.combat.arcaneCoreRuntime
+  if (!runtime.artifactManaShiftReady) return false
+  runtime.artifactManaShiftReady = false
+  return true
+}
+
+/** Prepares Mana Shift from an actual downward Mana boundary crossing. */
+export const recordArtifactManaPayment = (state: GameState, manaBeforeCost: number, manaAfterCost: number, paidMana: number) => {
+  if (paidMana <= 0) return
+  const special = getActiveArtifactSpecialEffects(state).map(({ special }) => special).find((entry) => entry.type === 'mana-band-shift')
+  if (!special || special.type !== 'mana-band-shift') return
+  const maxMana = Math.max(1, state.player.maxMana)
+  const crossedBoundary = [0.25, 0.5, 0.75].some((boundary) => manaBeforeCost / maxMana >= boundary && manaAfterCost / maxMana < boundary)
+  const runtime = state.combat.arcaneCoreRuntime
+  if (!crossedBoundary || runtime.artifactManaShiftReady || (runtime.artifactManaShiftLastAtMs ?? -Infinity) + special.cooldownMs > runtime.elapsedMs) return
+  runtime.artifactManaShiftReady = true
+  runtime.artifactManaShiftLastAtMs = runtime.elapsedMs
 }
 
 const artifactRuntime = (state: GameState) => state.combat.arcaneCoreRuntime
@@ -99,7 +118,7 @@ export const processArtifactSpecialCombatEvent = (state: GameState, actor: 'play
     runtime.artifactSpellCount = (runtime.artifactSpellCount ?? 0) + 1
     if (context.source.school === 'air') runtime.artifactAirSpellCount = (runtime.artifactAirSpellCount ?? 0) + 1
     active.forEach(({ name, special }) => {
-      if (special.type === 'nth-spell-mana-refund' && (runtime.artifactSpellCount ?? 0) % special.every === 0) executeArtifactEffects(state, [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'source-max-mana-percent', value: special.manaPercent } }], artifactEffectSource(name), executeEffects, depth, uiEvents, resolution)
+      if (special.type === 'nth-spell-mana-refund' && (runtime.artifactSpellCount ?? 0) % special.every === 0 && (context.amount ?? 0) > 0) executeArtifactEffects(state, [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'flat', value: (context.amount ?? 0) * special.finalManaCostPercent } }], artifactEffectSource(name), executeEffects, depth, uiEvents, resolution)
       if (special.type === 'air-spell-repeat' && context.source?.school === 'air' && (runtime.artifactAirSpellCount ?? 0) % special.every === 0) {
         const spell = SPELLS[context.source.sourceId as import('../../types').SpellId]
         if (spell) executeArtifactEffects(state, spell.effects.map((effect) => scaleArtifactEffect(effect, special.effectiveness)), context.source, executeEffects, depth, uiEvents, resolution)

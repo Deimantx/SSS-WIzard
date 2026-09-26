@@ -8,7 +8,7 @@ const ACT1_MINOR_POSITIONS = [[0.50, 0.08], [0.20, 0.25], [0.50, 0.25], [0.80, 0
 export const MAJOR_ROW_Y_OFFSET_PX = 100
 const position = (width: number, height: number, normalized: readonly [number, number]) => ({ x: normalized[0] * width, y: normalized[1] * height })
 
-/** Symmetric V6 board layout: circles are authored nodes and milestones form a clean bottom rail. */
+/** Symmetric Arcane Core board layout: circles are authored nodes and milestones form a clean bottom rail. */
 export const getArtifactRankGraph = (definition: ArtifactDefinition): ArtifactRankGraph => {
   const width = 860; const height = 500; const minorPositions = definition.minorNodes.length === 5 ? ACT0_MINOR_POSITIONS : ACT1_MINOR_POSITIONS
   const minorNodes = definition.minorNodes.map((minor, index) => ({ id: minor.id, kind: 'minor' as const, minor, ...position(width, height, minorPositions[index] ?? [0.5, 0.1]) }))

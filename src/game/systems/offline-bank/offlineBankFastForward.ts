@@ -304,7 +304,7 @@ const runReferenceBanked = async (state: GameState, durationMs: number, context:
     }),
     onAutoCastSelection: () => { metrics.combatSelections += 1; context.onAutoCastSelection?.() },
     onResearchComplete: () => { metrics.researchCompletions += 1; context.onResearchComplete?.() },
-    onTransmutationComplete: () => { metrics.transmutationCompletions += 1; context.onTransmutationComplete?.() },
+    onTransmutationComplete: (recipeId) => { metrics.transmutationCompletions += 1; context.onTransmutationComplete?.(recipeId) },
     onArtificingComplete: (completion) => { metrics.artificingCompletions += 1; context.onArtificingComplete?.(completion) },
   }
 
@@ -379,7 +379,7 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
     }),
     onAutoCastSelection: () => { metrics.combatSelections += 1; context.onAutoCastSelection?.() },
     onResearchComplete: () => { metrics.researchCompletions += 1; epochDirty = true; context.onResearchComplete?.() },
-    onTransmutationComplete: () => { metrics.transmutationCompletions += 1; epochDirty = true; context.onTransmutationComplete?.() },
+    onTransmutationComplete: (recipeId) => { metrics.transmutationCompletions += 1; epochDirty = true; context.onTransmutationComplete?.(recipeId) },
     onArtificingComplete: (completion) => { metrics.artificingCompletions += 1; context.onArtificingComplete?.(completion) },
     onItemAcquired: (itemId, quantity) => {
       if (itemCanChangePassiveWork(state, itemId)) epochDirty = true

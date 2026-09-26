@@ -3,12 +3,10 @@ import { SCHOOLS } from '../../content/schools/schools'
 import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
-import { manaRegenPerSecond } from '../../engine/channelingEngine'
 import type { GameState, ItemId, ResearchJobState, ResearchJobStatus, ResearchSlotId, SchoolId } from '../../types'
 import { clamp } from '../../utils'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
 import { getSchoolProgressInfo } from '../schools'
-import { CONTINUOUS_MANA_EPSILON, continuousManaPerSecond, estimateContinuousFundingRatio, getContinuousManaDemandPerSecond } from '../simulation/continuousManaScheduler'
 import { getArcaneFluxProductionPerSecond } from '../channeling/channelingRuntime'
 import { estimateTowerFluxFundingRatio } from '../simulation/towerFluxScheduler'
 import { selectFreeAcolytes, selectTotalAcolytes } from '../acolytes'
@@ -99,8 +97,6 @@ export const getResearchEffectiveDuration = (job: Pick<ResearchJobState, 'acolyt
 export const getResearchItemsPerHour = (job: Pick<ResearchJobState, 'acolyteAssigned'>) => (job.acolyteAssigned ? 1 : 0) * 3_600_000 / BALANCE.research.durationPerItemMs
 export const getResearchXpPerHour = (job: Pick<ResearchJobState, 'itemId' | 'targetSchoolId' | 'acolyteAssigned'>) => getResearchItemsPerHour(job) * getResearchXp(job.itemId, job.targetSchoolId)
 export const getResearchFluxPerSecond = (job: Pick<ResearchJobState, 'acolyteAssigned'>) => (job.acolyteAssigned ? BALANCE.research.arcaneFluxPerItem * 1000 / BALANCE.research.durationPerItemMs : 0)
-export const getResearchManaPerSecond = getResearchFluxPerSecond
-
 export const getResearchBatchEtaMs = (job: Pick<ResearchJobState, 'remainingQuantity' | 'progressMs' | 'acolyteAssigned'>) => {
   const acolytes = job.acolyteAssigned ? 1 : 0
   const remaining = finiteQuantity(job.remainingQuantity)

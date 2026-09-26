@@ -2,6 +2,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { MANA_PILLARS } from '../../content/channeling/manaPillars'
 import type { GameState, ManaPillarId } from '../../types'
 import { clamp } from '../../utils'
+import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 
 export interface ArcaneFluxProductionBreakdown {
   assignedAcolytes: number
@@ -43,8 +44,9 @@ export const getArcaneFluxProductionBreakdown = (state: Pick<GameState, 'activit
   const acolyteAttunementMultiplier = 1 + level(state, 'echo-attunement') * 0.02
   const fluxResonanceMultiplier = 1 + level(state, 'mana-resonance') * 0.03
   const discoveryMultiplier = (state.progress.channeling.discoveries['stable-leyline'] ? 1.05 : 1) * (state.progress.channeling.discoveries['echo-resonance'] ? 1.1 : 1)
-  const total = assignedAcolytes * (basePerAcolyte + leylineConduit) * acolyteAttunementMultiplier * fluxResonanceMultiplier * discoveryMultiplier
-  return { assignedAcolytes, basePerAcolyte, leylineConduit, acolyteAttunementMultiplier, fluxResonanceMultiplier, discoveryMultiplier, total }
+  const guildFluxMultiplier = getGuildProgressionBonuses(state).arcaneFluxMultiplier
+  const total = assignedAcolytes * (basePerAcolyte + leylineConduit) * acolyteAttunementMultiplier * fluxResonanceMultiplier * discoveryMultiplier * guildFluxMultiplier
+  return { assignedAcolytes, basePerAcolyte, leylineConduit, acolyteAttunementMultiplier, fluxResonanceMultiplier, discoveryMultiplier: discoveryMultiplier * guildFluxMultiplier, total }
 }
 
 export const getArcaneFluxProductionPerSecond = getArcaneFluxProductionBreakdown

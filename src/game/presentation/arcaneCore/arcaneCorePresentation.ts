@@ -15,7 +15,7 @@ import type {
   Magnitude,
 } from "../../systems/combat/combatTypes";
 import { ARCANE_CORE_NODES } from "../../content/arcaneCore/arcaneCoreBranches";
-import { ARCANE_CORE_V7_MECHANIC_REGISTRY } from "../../content/arcaneCore/arcaneCoreV7Mechanics";
+import { ARCANE_CORE_MECHANIC_REGISTRY } from "../../content/arcaneCore/arcaneCoreMechanics";
 import {
   getArcaneCoreNodeRank,
   getArcaneCoreResolvedEffects,
@@ -193,12 +193,12 @@ const conditionKey = (condition: NonNullable<CombatModifier["condition"]>) =>
   JSON.stringify(condition);
 const isAlwaysOn = (condition: CombatModifier["condition"]) =>
   !condition || condition.type === "always";
-const isV6Mechanic = (
+const isArcaneCoreMechanic = (
   effect: NonNullable<ArcaneCoreResolvedEffects["special"]>[number],
 ): effect is Extract<
   NonNullable<ArcaneCoreResolvedEffects["special"]>[number],
-  { type: "v6-mechanic" }
-> => effect.type === "v6-mechanic";
+  { type: "arcane-core-mechanic" }
+> => effect.type === "arcane-core-mechanic";
 
 /**
  * Arcane Core's player-facing summary deliberately aggregates both EquipmentStats
@@ -303,7 +303,7 @@ const buildArcaneCoreEffectSummary = (
         conditional.set(id, current);
       }
     });
-    (effects.special ?? []).filter(isV6Mechanic).forEach((effect) => {
+    (effects.special ?? []).filter(isArcaneCoreMechanic).forEach((effect) => {
       if (
         effect.category === "STATIC_STAT" ||
         effect.category === "STATIC_MODIFIER"
@@ -442,9 +442,9 @@ export const getArcaneCoreNodeEffectTexts = (
   if (rank <= 0) return ["Inactive"];
   const resolvedRank = Math.max(1, Math.min(node.maxRank, rank));
   const effects = node.resolveEffects(resolvedRank);
-  const mechanic = effects.special?.find((value) => value.type === "v6-mechanic");
-  if (mechanic?.type === "v6-mechanic") {
-    const definition = ARCANE_CORE_V7_MECHANIC_REGISTRY[mechanic.mechanicId];
+  const mechanic = effects.special?.find((value) => value.type === "arcane-core-mechanic");
+  if (mechanic?.type === "arcane-core-mechanic") {
+    const definition = ARCANE_CORE_MECHANIC_REGISTRY[mechanic.mechanicId];
     if (definition) return definition.describeRank(resolvedRank);
   }
   const stats = Object.entries(effects.stats ?? {}).map(

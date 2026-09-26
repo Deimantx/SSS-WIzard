@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { ARCANE_CORE_BRANCHES } from '../../content/arcaneCore/arcaneCoreBranches'
-import { ARCANE_CORE_V7_MECHANICS } from '../../content/arcaneCore/arcaneCoreV7Mechanics'
+import { ARCANE_CORE_MECHANICS } from '../../content/arcaneCore/arcaneCoreMechanics'
 import { createInitialState } from '../../../store/initialState'
-import { commitArcaneCoreV6SpellCast, getArcaneCoreV6CastModifiers, recordArcaneCoreV6CriticalResult, recordArcaneCoreV7CooldownCompletion } from './arcaneCoreV7Runtime'
+import { commitArcaneCoreSpellCast, getArcaneCoreCastModifiers, recordArcaneCoreCriticalResult, recordArcaneCoreCooldownCompletion } from './arcaneCoreMechanicRuntime'
 import { executeCombatEffects } from '../combat/effectResolver'
 import { applyStatus } from '../combat/statusRuntime'
 
-describe('Arcane Core V7 mechanic safety', () => {
+describe('Arcane Core Arcane Core mechanic safety', () => {
   it('provides exact rank-aware, non-vague text for every dynamic node', () => {
     const forbidden = /\b(small|moderate|meaningful|bounded|slightly|brief bonus|resource benefit|payoff|benefit)\b/i
-    expect(ARCANE_CORE_V7_MECHANICS).toHaveLength(160)
-    for (const definition of ARCANE_CORE_V7_MECHANICS) {
+    expect(ARCANE_CORE_MECHANICS).toHaveLength(160)
+    for (const definition of ARCANE_CORE_MECHANICS) {
       const rankOne = definition.describeRank(1).join(' ')
       const maximum = definition.describeRank(definition.nodeType === 'major' ? 1 : 5).join(' ')
       expect(rankOne).not.toMatch(forbidden)
@@ -33,31 +33,31 @@ describe('Arcane Core V7 mechanic safety', () => {
     const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!.nodes.find((entry) => entry.name === 'Perfect Precision')!
     state.arcaneCore.nodes[node.id] = { rank: 1 }
     state.combat.arcaneCoreRuntime.failedCritStreak = 2
-    const modifiers = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
+    const modifiers = getArcaneCoreCastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, nominalManaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
     expect(modifiers.critChanceBonus).toBeCloseTo(0.15)
     expect(modifiers.guaranteedCrit).toBe(false)
-    recordArcaneCoreV6CriticalResult(state, false)
+    recordArcaneCoreCriticalResult(state, false)
     expect(state.combat.arcaneCoreRuntime.failedCritStreak).toBe(0)
   })
 
-  it('keeps the audited V7 cast curves exact and prevents Limit Break from being inert', () => {
+  it('keeps the audited Arcane Core cast curves exact and prevents Limit Break from being inert', () => {
     const state = createInitialState()
     const power = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!
     const openingVolley = power.nodes.find((entry) => entry.name === 'Opening Volley')!
     const limitBreak = power.nodes.find((entry) => entry.name === 'Limit Break')!
     state.arcaneCore.nodes[openingVolley.id] = { rank: 5 }
     state.arcaneCore.nodes[limitBreak.id] = { rank: 1 }
-    const opening = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 10, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
+    const opening = getArcaneCoreCastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, nominalManaCost: 10, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
     expect(opening.damageMultiplier).toBeCloseTo(1.05)
-    const limit = getArcaneCoreV6CastModifiers(state, { origin: 'manual-direct', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
+    const limit = getArcaneCoreCastModifiers(state, { origin: 'manual-direct', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, nominalManaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }, true)
     expect(limit.manaRefundPercent).toBeCloseTo(0.25)
   })
 
-  it('evaluates Deep Breathing at projected post-cost Mana', () => {
+  it('evaluates Deep Breathing only on an actual 25% Mana crossing', () => {
     const state = createInitialState()
     const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'mana')!.nodes.find((entry) => entry.name === 'Deep Breathing')!
     state.arcaneCore.nodes[node.id] = { rank: 1 }
-    const modifiers = getArcaneCoreV6CastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, manaCost: 2, maxMana: 100, playerMana: 26, enemyHealthPercent: 100 }, true)
+    const modifiers = getArcaneCoreCastModifiers(state, { origin: 'auto', spellId: 'fire-bolt', loadoutSlotIndex: 0, damaging: true, nominalManaCost: 2, paidMana: 2, manaBeforeCost: 26, manaAfterCost: 24, maxMana: 100, playerMana: 26, enemyHealthPercent: 100 }, true)
     expect(modifiers.manaRestoreFlat).toBeCloseTo(10)
   })
 
@@ -70,43 +70,43 @@ describe('Arcane Core V7 mechanic safety', () => {
     state.arcaneCore.nodes[node('Astral Cascade').id] = { rank: 1 }
     state.arcaneCore.nodes[node('Emergency Conversion').id] = { rank: 1 }
 
-    const autoContext = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
-    commitArcaneCoreV6SpellCast(state, autoContext)
-    const manual = commitArcaneCoreV6SpellCast(state, { ...autoContext, origin: 'manual-direct', playerMana: 80 })
+    const autoContext = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, nominalManaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    commitArcaneCoreSpellCast(state, autoContext)
+    const manual = commitArcaneCoreSpellCast(state, { ...autoContext, origin: 'manual-direct', playerMana: 80 })
     expect(manual.manaRestoreFlat).toBeCloseTo(1)
 
     state.combat.arcaneCoreRuntime.elapsedMs = 1_000
-    const preparedAuto = getArcaneCoreV6CastModifiers(state, { ...autoContext, playerMana: 80 }, true)
+    const preparedAuto = getArcaneCoreCastModifiers(state, { ...autoContext, playerMana: 80 }, true)
     expect(preparedAuto.manaCostMultiplier).toBeCloseTo(0.92)
     expect(preparedAuto.actionSpeedMultiplier).toBeCloseTo(1.05)
     state.combat.arcaneCoreRuntime.elapsedMs = 6_001
-    expect(getArcaneCoreV6CastModifiers(state, { ...autoContext, playerMana: 80 }, true).manaCostMultiplier).toBeCloseTo(1)
+    expect(getArcaneCoreCastModifiers(state, { ...autoContext, playerMana: 80 }, true).manaCostMultiplier).toBeCloseTo(1)
     delete state.arcaneCore.nodes[node('Dual Mind').id]
 
-    commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 80 })
-    commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 60 })
-    commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 40 })
-    const cascade = commitArcaneCoreV6SpellCast(state, { ...autoContext, origin: 'manual-direct', playerMana: 20 })
+    commitArcaneCoreSpellCast(state, { ...autoContext, playerMana: 80 })
+    commitArcaneCoreSpellCast(state, { ...autoContext, playerMana: 60 })
+    commitArcaneCoreSpellCast(state, { ...autoContext, playerMana: 40 })
+    const cascade = commitArcaneCoreSpellCast(state, { ...autoContext, origin: 'manual-direct', playerMana: 20 })
     expect(cascade.actionSpeedMultiplier).toBeCloseTo(1.02)
 
     state.combat.arcaneCoreRuntime.emergencyConversionReady = false
-    const lowMana = commitArcaneCoreV6SpellCast(state, { ...autoContext, playerMana: 15, manaCost: 2 })
+    const lowMana = commitArcaneCoreSpellCast(state, { ...autoContext, playerMana: 15, nominalManaCost: 2 })
     expect(lowMana.manaRestoreFlat).toBe(0)
     expect(state.combat.arcaneCoreRuntime.emergencyConversionReady).toBe(true)
-    expect(getArcaneCoreV6CastModifiers(state, { ...autoContext, playerMana: 13 }, true).manaRestoreFlat).toBeCloseTo(1)
+    expect(getArcaneCoreCastModifiers(state, { ...autoContext, playerMana: 13 }, true).manaRestoreFlat).toBeCloseTo(1)
   })
 
   it('prepares Burst Window only when a positive cooldown crosses to zero', () => {
     const state = createInitialState()
     const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!.nodes.find((entry) => entry.name === 'Burst Window')!
     state.arcaneCore.nodes[node.id] = { rank: 1 }
-    recordArcaneCoreV7CooldownCompletion(state, 0, 0)
+    recordArcaneCoreCooldownCompletion(state, 0, 0)
     expect(state.combat.arcaneCoreRuntime.burstWindowReady ?? false).toBe(false)
-    recordArcaneCoreV7CooldownCompletion(state, 100, 0)
+    recordArcaneCoreCooldownCompletion(state, 100, 0)
     expect(state.combat.arcaneCoreRuntime.burstWindowReady).toBe(true)
-    const context = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
-    expect(getArcaneCoreV6CastModifiers(state, context, true).damageMultiplier).toBeCloseTo(1.02)
-    const committed = getArcaneCoreV6CastModifiers(state, context)
+    const context = { origin: 'auto' as const, spellId: 'fire-bolt' as const, loadoutSlotIndex: 0, damaging: true, nominalManaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    expect(getArcaneCoreCastModifiers(state, context, true).damageMultiplier).toBeCloseTo(1.02)
+    const committed = getArcaneCoreCastModifiers(state, context)
     expect(committed.damageMultiplier).toBeCloseTo(1.02)
     expect(state.combat.arcaneCoreRuntime.burstWindowReady).toBe(false)
   })
@@ -115,12 +115,12 @@ describe('Arcane Core V7 mechanic safety', () => {
     const state = createInitialState()
     const node = ARCANE_CORE_BRANCHES.find((branch) => branch.id === 'power')!.nodes.find((entry) => entry.name === 'Spell Sequence')!
     state.arcaneCore.nodes[node.id] = { rank: 1 }
-    const cast = (spellId: 'fire-bolt' | 'water-bolt' | 'wind-blade') => commitArcaneCoreV6SpellCast(state, { origin: 'auto', spellId, loadoutSlotIndex: 0, damaging: true, manaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 })
+    const cast = (spellId: 'fire-bolt' | 'water-bolt' | 'wind-blade') => commitArcaneCoreSpellCast(state, { origin: 'auto', spellId, loadoutSlotIndex: 0, damaging: true, nominalManaCost: 20, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 })
     cast('fire-bolt')
     cast('water-bolt')
     const third = cast('wind-blade')
     expect(third.damageMultiplier).toBeCloseTo(1.03)
-    expect(state.combat.arcaneCoreRuntime.spellSequenceStreak).toBe(0)
+    expect(state.combat.arcaneCoreRuntime.recentDamagingSpellSequence?.length).toBe(0)
   })
 
   it('applies Recovery Window and Reinforced Recovery additively to direct healing', () => {
@@ -161,27 +161,27 @@ describe('Arcane Core V7 mechanic safety', () => {
       state.arcaneCore.nodes[node.id] = { rank: 1 }
       return state
     }
-    const context = { origin: 'manual-direct' as const, spellId: 'combustion' as const, loadoutSlotIndex: 0, damaging: true, manaCost: 75, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
+    const context = { origin: 'manual-direct' as const, spellId: 'combustion' as const, loadoutSlotIndex: 0, damaging: true, nominalManaCost: 75, maxMana: 100, playerMana: 100, enemyHealthPercent: 100 }
     const playerSpell = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'fireball' }
     const enemySpell = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'enemy-burn' }
 
     const active = makeState()
     applyStatus(active, 'enemy', 'burning', playerSpell, { durationMs: 5_000 })
-    expect(getArcaneCoreV6CastModifiers(active, context, true).damageMultiplier).toBeCloseTo(1.03)
-    expect(getArcaneCoreV6CastModifiers(active, context).damageMultiplier).toBeCloseTo(1.03)
+    expect(getArcaneCoreCastModifiers(active, context, true).damageMultiplier).toBeCloseTo(1.03)
+    expect(getArcaneCoreCastModifiers(active, context).damageMultiplier).toBeCloseTo(1.03)
 
     const absent = makeState()
-    expect(getArcaneCoreV6CastModifiers(absent, context, true).damageMultiplier).toBeCloseTo(1)
+    expect(getArcaneCoreCastModifiers(absent, context, true).damageMultiplier).toBeCloseTo(1)
 
     const enemyOwned = makeState()
     applyStatus(enemyOwned, 'enemy', 'burning', enemySpell, { durationMs: 5_000 })
-    expect(getArcaneCoreV6CastModifiers(enemyOwned, context, true).damageMultiplier).toBeCloseTo(1)
+    expect(getArcaneCoreCastModifiers(enemyOwned, context, true).damageMultiplier).toBeCloseTo(1)
 
     const nonDamaging = makeState()
     applyStatus(nonDamaging, 'enemy', 'burning', playerSpell, {
       durationMs: 5_000,
       periodicEffects: [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 1 } }],
     })
-    expect(getArcaneCoreV6CastModifiers(nonDamaging, context, true).damageMultiplier).toBeCloseTo(1)
+    expect(getArcaneCoreCastModifiers(nonDamaging, context, true).damageMultiplier).toBeCloseTo(1)
   })
 })

@@ -16,15 +16,15 @@ export const linearStat = (key: keyof EquipmentStats, perRank: number): ArcaneCo
 export const fixedEffects = (effects: ArcaneCoreResolvedEffects): ArcaneCoreEffectResolver => () => effects
 export const rankedModifier = (key: CombatModifier['key'], perRank: number, condition?: CombatCondition, actor: CombatModifier['actor'] = 'player'): ArcaneCoreEffectResolver => (rank) => ({ modifiers: [modifier(key, perRank * rank, condition, actor)] })
 /**
- * V7 mechanic marker. The stable branch/ring/slot key is intentionally kept
+ * Arcane Core mechanic marker. The stable branch/ring/slot key is intentionally kept
  * separate from the presentation name so authored names can evolve without
  * invalidating purchased Arcane Core ranks.
  */
-export const v7Mechanic = (branch: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, slot: `S${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}` | 'M', displayName: string): ArcaneCoreEffectResolver => (rank) => ({
-  special: [{ type: 'v6-mechanic', mechanicId: `${branch}:r${ring}:${slot}`, displayName, rank, category: 'COMBAT_EVENT' }],
+export const arcaneCoreMechanic = (branch: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, slot: `S${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}` | 'M', displayName: string): ArcaneCoreEffectResolver => (rank) => ({
+  special: [{ type: 'arcane-core-mechanic', mechanicId: `${branch}:r${ring}:${slot}`, displayName, rank, category: 'COMBAT_EVENT' }],
 })
-export const v7MechanicWith = (branch: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, slot: `S${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}` | 'M', displayName: string, extras: ArcaneCoreEffectResolver): ArcaneCoreEffectResolver => (rank) => {
-  const base = v7Mechanic(branch, ring, slot, displayName)(rank)
+export const arcaneCoreMechanicWith = (branch: ArcaneCoreBranchId, ring: ArcaneCoreRingIndex, slot: `S${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}` | 'M', displayName: string, extras: ArcaneCoreEffectResolver): ArcaneCoreEffectResolver => (rank) => {
+  const base = arcaneCoreMechanic(branch, ring, slot, displayName)(rank)
   const additional = extras(rank)
   return { ...base, ...additional, special: [...(base.special ?? []), ...(additional.special ?? [])] }
 }

@@ -298,11 +298,12 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   guild: screen({
     'guild-banner': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 174, label: 'Guild banner' }),
-    'guild-request-1': panel({ order: 2, columnStart: 1, columnSpan: 4, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request one' }),
-    'guild-request-2': panel({ order: 3, columnStart: 5, columnSpan: 4, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request two' }),
-    'guild-request-3': panel({ order: 4, columnStart: 9, columnSpan: 4, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request three' }),
-    'guild-rank': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 210, label: 'Guild rank' }),
-  }, ['guild-banner', 'guild-request-1', 'guild-request-2', 'guild-request-3', 'guild-rank']),
+    'guild-request-1': panel({ order: 2, columnStart: 1, columnSpan: 3, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request one' }),
+    'guild-request-2': panel({ order: 3, columnStart: 4, columnSpan: 3, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request two' }),
+    'guild-request-3': panel({ order: 4, columnStart: 7, columnSpan: 3, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request three' }),
+    'guild-request-4': panel({ order: 5, columnStart: 10, columnSpan: 3, rowStart: 2, minHeight: 0, preferredHeight: 390, label: 'Request four' }),
+    'guild-rank': panel({ order: 6, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 610, label: 'Guild rank and skill tree' }),
+  }, ['guild-banner', 'guild-request-1', 'guild-request-2', 'guild-request-3', 'guild-request-4', 'guild-rank']),
 
   // ============================================================
   // SETTINGS / INFO

@@ -22,14 +22,16 @@ describe('Arcane Core rewards', () => {
     normal.combat.active = true
     normal.combat.dungeonId = 'whispering-woods'
     normal.combat.enemyId = 'forest-wisp'
+    normal.combat.enemyWorldTier = 5
     finishEnemy(normal)
-    expect(normal.arcaneCore.totalPointsEarned).toBe(1)
+    expect(normal.arcaneCore.totalPointsEarned).toBe(9)
 
     const boss = createInitialState()
     boss.combat.active = true
     boss.combat.dungeonId = 'whispering-woods'
     boss.combat.enemyId = 'forest-heart'
+    boss.combat.enemyWorldTier = 2
     finishEnemy(boss)
-    expect(boss.arcaneCore.totalPointsEarned).toBe(8)
+    expect(boss.arcaneCore.totalPointsEarned).toBe(20)
   })
 })

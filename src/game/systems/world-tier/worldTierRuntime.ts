@@ -28,6 +28,13 @@ export const resolveWorldTierLootQuantity = (baseQuantity: number, tier: WorldTi
   return Math.max(0, Math.round(base * getWorldTierDefinition(tier).itemLootQuantityMultiplier))
 }
 
+/** Resolves the final Arcane Point reward from the authored base reward and encounter tier. */
+export const resolveWorldTierArcanePointReward = (basePoints: number, tier: WorldTierId): number => {
+  const base = Number.isFinite(basePoints) ? Math.max(0, Math.floor(basePoints)) : 0
+  if (base <= 0) return 0
+  return Math.max(1, Math.round(base * getWorldTierDefinition(tier).arcanePointRewardMultiplier))
+}
+
 export const unlockWorldTier = (state: Pick<GameState, 'worldTier'>, tier: WorldTierId): boolean => {
   if (!isWorldTierId(tier) || tier <= state.worldTier.highestUnlocked) return false
   state.worldTier.highestUnlocked = tier

@@ -94,7 +94,7 @@ describe('spell automation evaluator', () => {
       slots: [{ spellId: 'fire-bolt', autoCast: true, automation: { conditions: [{ type: 'always' }], targetRule: 'current-enemy' } }],
     }
 
-    expect(getNextAutoCastEligibilityBoundaryMs(state, 1, 10)).toBe(3_000)
+    expect(getNextAutoCastEligibilityBoundaryMs(state, 1, 10)).toBe(1_500)
   })
 
   it('hard-blocks AUTO evaluation while a manual spell is queued', () => {

@@ -1,6 +1,7 @@
 import { TRANSMUTATION_ARRAYS, TRANSMUTATION_ARRAY_IDS } from '../../content/transmutation/transmutationArrays'
 import type { GameState, TransmutationArrayId } from '../../types'
 import type { RecipeDefinition } from '../../content/recipes/recipes'
+import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 
 export interface TransmutationArrayBonuses {
   craftSpeedPct: number
@@ -28,9 +29,10 @@ export const getTransmutationArrayBonuses = (state: Pick<GameState, 'progress'>)
     result[id] = getTransmutationArrayLevel(state, id)
     return result
   }, {} as Record<TransmutationArrayId, number>)
+  const craftSpeedMultiplier = (1 + getTransmutationArrayEffectValue('temporal-array', levels['temporal-array'])) * getGuildProgressionBonuses(state).transmutationSpeedMultiplier
   return {
-    craftSpeedPct: getTransmutationArrayEffectValue('temporal-array', levels['temporal-array']),
-    craftSpeedMultiplier: 1 + getTransmutationArrayEffectValue('temporal-array', levels['temporal-array']),
+    craftSpeedPct: Math.round((craftSpeedMultiplier - 1) * 100) / 100,
+    craftSpeedMultiplier,
     preservationChance: getTransmutationArrayEffectValue('conservation-array', levels['conservation-array']),
     replicationChance: getTransmutationArrayEffectValue('replication-array', levels['replication-array']),
     fluxCostReductionPct: getTransmutationArrayEffectValue('flux-refinement-array', levels['flux-refinement-array']),

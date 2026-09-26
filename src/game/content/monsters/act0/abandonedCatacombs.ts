@@ -243,6 +243,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       "archmage-edrin-arcane-remnant",
       "archmage-edrin-unbound-spirit",
     ],
+    resonanceYield: { fire: 40, water: 40, earth: 40, air: 40 },
     resistances: { fire: 0.15, water: 0.15, earth: 0.15, air: 0.15 },
     actions: {
       gravefire: {

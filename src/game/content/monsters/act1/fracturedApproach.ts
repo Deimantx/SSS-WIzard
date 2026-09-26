@@ -45,7 +45,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
   },
   'corrupted-elemental-gatekeeper': {
     id: 'corrupted-elemental-gatekeeper', bestiaryCategory: 'boss', name: 'Corrupted Elemental Gatekeeper', subtitle: "The shattered frontier's last ward, poisoned by elemental instability",
-    maxHealth: 10500, basicAttackDamage: 85, basicAttackTimeMs: 2450, defense: 55, resistances: { physical: 0.10, fire: 0.10, water: 0.10, earth: 0.10, air: 0.10 }, color: '#d276a3', ui: { portraitIcon: 'boss' }, traitIds: [],
+    maxHealth: 10500, basicAttackDamage: 85, basicAttackTimeMs: 2450, defense: 55, resistances: { physical: 0.10, fire: 0.10, water: 0.10, earth: 0.10, air: 0.10 }, color: '#d276a3', ui: { portraitIcon: 'boss' }, traitIds: [], resonanceYield: { fire: 50, water: 50, earth: 50, air: 50 },
     actions: {
       'flame-surge': { id: 'flame-surge', name: 'Flame Surge', actionTimeMs: 1900, description: 'Corrupted fire surges through the target.', effects: [scaledDirectDamage('fire', 1.25)], tags: ['special', 'fire', 'magic', 'direct'] },
       'tidal-break': { id: 'tidal-break', name: 'Tidal Break', actionTimeMs: 2100, description: 'A violent wave of corrupted water breaks across the target.', effects: [scaledDirectDamage('water', 1.20)], tags: ['special', 'water', 'magic', 'direct'] },

@@ -207,6 +207,14 @@ describe("Crystal System V1", () => {
     expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
   });
 
+  it("scales cache chance from the encounter World Tier without changing the base constant", () => {
+    const state = createInitialState();
+    state.progress.bossKillsByBoss["meridian-splitter"] = 1;
+    expect(resolveCrystalCacheDrop(state, "meridian-splitter", 1, () => 0.011)).toBe(false);
+    expect(resolveCrystalCacheDrop(state, "meridian-splitter", 5, () => 0.089)).toBe(true);
+    expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
+  });
+
   it("migrates a v46 save to an empty, valid current Crystal state without retroactive cache grants", () => {
     const migrated = migrateSave({
       saveVersion: 46,

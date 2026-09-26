@@ -46,7 +46,7 @@ describe('Developer content browsers', () => {
     expect(screen.getAllByText('Fire Bolt').length).toBeGreaterThan(0)
     expect(screen.queryByText('Water Ward')).toBeNull()
     fireEvent.click(screen.getByRole('option', { name: /Fire Bolt/ }))
-    expect(screen.getByText('30')).toBeTruthy()
+    expect(screen.getByText('15')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Cast selected' })).toBeTruthy()
     expect(rendered.container.querySelector('pre')).toBeNull()
     expect(rendered.container.textContent).toContain('3.5 s')

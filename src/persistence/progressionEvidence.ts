@@ -32,7 +32,7 @@ export interface ProgressionEvidence {
 
 const finite = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
 const booleanRecord = (keys: readonly string[], values: readonly string[]) => Object.fromEntries(keys.map((key) => [key, values.includes(key)])) as Record<string, boolean>
-const guildRanks = { outsider: 0, initiate: 1, apprentice: 2 } as const
+const guildRanks: Record<GameState['progress']['guildRank'], number> = { outsider: 0, initiate: 1, apprentice: 2, adept: 3, magister: 4, 'circle-master': 5 }
 
 export const getProgressionEvidence = (state: Pick<GameState, 'schools' | 'progress' | 'darkPortal'>): ProgressionEvidence => {
   const schoolIds = Object.keys(SCHOOLS) as SchoolId[]

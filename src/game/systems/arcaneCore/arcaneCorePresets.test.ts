@@ -7,7 +7,7 @@ import type { ArcaneCoreState } from '../../types'
 const stateWithStarter = (totalPointsEarned = 100): ArcaneCoreState => ({ totalPointsEarned, nodes: { 'power-r1-arcane-force': { rank: 1 } } })
 const create = (name: string, state = createInitialArcaneCoreState()) => useArcaneCorePresetStore.getState().create(name, state)
 
-describe('Arcane Core V7 runtime presets', () => {
+describe('Arcane Core Arcane Core runtime presets', () => {
   beforeEach(() => useArcaneCorePresetStore.getState().reset())
   it('creates named presets with stable IDs and a rank map', () => { const first = create(' Power route '); const second = create('Defensive route'); expect(first).toMatchObject({ ok: true }); expect(second).toMatchObject({ ok: true }); if (first.ok) expect(getArcaneCorePreset(first.presetId)?.name).toBe('Power route') })
   it('rejects invalid names and enforces the maximum length', () => { expect(create('   ')).toEqual({ ok: false, reason: 'invalid-name' }); const longName = create('x'.repeat(40)); expect(longName).toMatchObject({ ok: true }); for (let index = useArcaneCorePresetStore.getState().presets.length; index < MAX_RUNTIME_PRESETS; index += 1) expect(create(`Preset ${index}`)).toMatchObject({ ok: true }); expect(create('One too many')).toEqual({ ok: false, reason: 'limit-reached' }) })

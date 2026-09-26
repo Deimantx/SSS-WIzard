@@ -5,6 +5,7 @@ import { grantItem } from '../../game/systems/inventory/itemAcquisition'
 import { equipItemAction } from './equipmentActions'
 import { getDefaultSpellAutomationConfig, getNextSpellPresetId, syncAutoCastRuntimeForLoadout } from '../../game/systems/spells'
 import { getSpellsForSchool, syncSpellUnlocksForSchool } from '../../game/systems/spells/spellProgression'
+import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
 import type { GameState, SchoolId, TutorialStage } from '../../game/types'
 
 /** Commits the authored fresh-profile opening in one state mutation. */
@@ -36,6 +37,7 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   state.ui.screen = 'combat'
   state.ui.lastEnteredCombatDungeonId = 'whispering-woods'
   state.combat.targetEnemyId = starterConfig.firstTargetMonsterId
+  reconcileChronicleProgress(state)
   return true
 }
 

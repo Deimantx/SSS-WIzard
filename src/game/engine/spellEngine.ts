@@ -10,10 +10,10 @@ import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getCombatModifiers } from '../systems/combat/modifiers'
 import { getSpellCombatSource } from '../systems/spells/spellSource'
 import { getSpellCastTimeMultiplier } from '../systems/spells/spellCastTiming'
-import { getArtifactPreCastDamageMultiplier, getArtifactPreCastManaMultiplier, getArtifactSpellCritDamageBonus } from '../systems/artifacts/artifactProgression'
+import { consumeArtifactPreCastManaShift, getArtifactPreCastDamageMultiplier, getArtifactSpellCritDamageBonus, recordArtifactManaPayment } from '../systems/artifacts/artifactProgression'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
 import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
-import { getArcaneCoreV6CastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreV6CastModifiers } from '../systems/arcaneCore/arcaneCoreV7Runtime'
+import { getArcaneCoreCastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreCastModifiers } from '../systems/arcaneCore/arcaneCoreMechanicRuntime'
 import { getArcaneCoreCooldownPulseReduction } from '../systems/arcaneCore/arcaneCoreRuntime'
 import { runCombatTriggers } from '../systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../systems/combat/combatTypes'
@@ -103,11 +103,13 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
   const loadoutSlotIndex = state.combat.activeSpellLoadout?.slots.findIndex((slot) => slot.spellId === spell.id) ?? -1
   const manaPreview = getSpellManaPreview(state, spell.id, castOrigin)
   const baseManaCost = manaPreview?.baseManaCost ?? getEffectiveManaCost(state, spell.manaCost)
-  const v6Preview = manaPreview?.modifiers ?? getArcaneCoreV6CastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
-  const free = manaPreview?.free ?? (isArcaneCoreSpellFree(state) || v6Preview.free)
-  const manaCost = Math.max(1, Math.ceil((manaPreview?.manaCost ?? baseManaCost * v6Preview.manaCostMultiplier) * getArtifactPreCastManaMultiplier(state)))
+  const corePreview = manaPreview?.modifiers ?? getArcaneCoreCastModifiers(state, { origin: castOrigin, spellId: spell.id, loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), nominalManaCost: baseManaCost, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 }, true)
+  const free = manaPreview?.free ?? (isArcaneCoreSpellFree(state) || corePreview.free)
+  const manaCost = manaPreview?.manaCost ?? Math.max(1, Math.ceil(baseManaCost * corePreview.manaCostMultiplier))
+  const manaWasFullAtStart = state.player.mana >= state.player.maxMana
+  consumeArtifactPreCastManaShift(state)
   const gustMultiplier = getCastWorkMultiplier(state, spell.id)
-  const multiplier = gustMultiplier / Math.max(0.1, v6Preview.actionSpeedMultiplier)
+  const multiplier = gustMultiplier / Math.max(0.1, corePreview.actionSpeedMultiplier)
   const castWorkMs = spell.castTimeMs * multiplier
   state.combat.pendingPlayerSpellCast = {
     spellId: canonicalId,
@@ -115,16 +117,17 @@ const startSpellCast = (state: GameState, spellId: SpellId, quiet: boolean, uiEv
     remainingWorkMs: castWorkMs,
     castWorkMs,
     manaCostSnapshot: manaCost,
+    manaWasFullAtStart,
     arcaneCoreFree: free,
     castWorkMultiplier: multiplier,
     castOrigin,
     loadoutSlotIndex: loadoutSlotIndex >= 0 ? loadoutSlotIndex : null,
-    arcaneCoreActionSpeedMultiplier: v6Preview.actionSpeedMultiplier,
-    arcaneCoreManaCostMultiplier: v6Preview.manaCostMultiplier,
-    arcaneCoreEffectivenessMultiplier: v6Preview.effectivenessMultiplier,
-    arcaneCoreCritChanceBonus: v6Preview.critChanceBonus,
-    arcaneCoreCritDamageBonus: v6Preview.critDamageBonus,
-    arcaneCoreGuaranteedCrit: v6Preview.guaranteedCrit,
+    arcaneCoreActionSpeedMultiplier: corePreview.actionSpeedMultiplier,
+    arcaneCoreManaCostMultiplier: corePreview.manaCostMultiplier,
+    arcaneCoreEffectivenessMultiplier: corePreview.effectivenessMultiplier,
+    arcaneCoreCritChanceBonus: corePreview.critChanceBonus,
+    arcaneCoreCritDamageBonus: corePreview.critDamageBonus,
+    arcaneCoreGuaranteedCrit: corePreview.guaranteedCrit,
     castWasGust: gustMultiplier < 1,
   }
   if (!quiet) pushNotification(state, `${spell.name} casting`, 'info')
@@ -183,7 +186,7 @@ export const requestManualSpell = (state: GameState, spellId: SpellId, uiEvents?
   return { ok: false, reason: failure }
 }
 
-const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast, staticDamageBonus = 0, arcaneCoreCast?: Pick<ArcaneCoreV6CastModifiers, 'critChanceBonus' | 'critDamageBonus' | 'guaranteedCrit'>): CombatSource => {
+const buildCompletionSource = (state: GameState, pending: PendingPlayerSpellCast, staticDamageBonus = 0, arcaneCoreCast?: Pick<ArcaneCoreCastModifiers, 'critChanceBonus' | 'critDamageBonus' | 'guaranteedCrit'>): CombatSource => {
   const spell = SPELLS[pending.spellId]
   const targetHas = (statusId: string) => state.combat.enemyStatuses.some((status) => status.statusId === statusId)
   let spellDamageMultiplier = 1
@@ -218,15 +221,17 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
   const spell = SPELLS[pending.spellId]
   if (!spell) return false
   if (spellRequiresEnemyTarget(spell) && (!state.combat.enemyId || pending.targetInstanceKey !== state.combat.enemyInstanceKey)) return false
-  const freeAtCompletion = isArcaneCoreSpellFree(state) || Boolean(pending.arcaneCoreFree)
+  const freeAtCompletion = Boolean(pending.arcaneCoreFree)
   if (!state.debug.infiniteMana && !freeAtCompletion && !hasEnoughResource(state.player.mana, pending.manaCostSnapshot)) {
     reportSpellFailure(state, pending.spellId, 'mana', uiEvents)
     return false
   }
-  const arcaneCoreCast = beginArcaneCoreSpellCast(state, spell.effects.some((effect) => effect.type === 'deal-damage'), { origin: pending.castOrigin ?? 'auto', spellId: pending.spellId, loadoutSlotIndex: pending.loadoutSlotIndex ?? null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), manaCost: pending.manaCostSnapshot, maxMana: state.player.maxMana, playerMana: state.player.mana, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 })
-  const castIsFree = freeAtCompletion || arcaneCoreCast.free
-  const paidMana = castIsFree ? 0 : pending.manaCostSnapshot
-  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(Math.max(0, state.player.mana - paidMana))
+  const manaBeforeCost = state.player.mana
+  const paidMana = state.debug.infiniteMana || freeAtCompletion ? 0 : pending.manaCostSnapshot
+  const manaAfterCost = Math.max(0, manaBeforeCost - paidMana)
+  if (!state.debug.infiniteMana) state.player.mana = stabilizeResourceValue(manaAfterCost)
+  recordArtifactManaPayment(state, manaBeforeCost, manaAfterCost, paidMana)
+  const arcaneCoreCast = beginArcaneCoreSpellCast(state, spell.effects.some((effect) => effect.type === 'deal-damage'), { origin: pending.castOrigin ?? 'auto', spellId: pending.spellId, loadoutSlotIndex: pending.loadoutSlotIndex ?? null, damaging: spell.effects.some((effect) => effect.type === 'deal-damage'), nominalManaCost: pending.manaCostSnapshot, paidMana, manaBeforeCost, manaAfterCost, manaWasFullAtStart: pending.manaWasFullAtStart, maxMana: state.player.maxMana, playerMana: manaBeforeCost, enemyHealthPercent: state.combat.enemyHp / Math.max(1, state.combat.enemyMaxHp) * 100 })
   state.combat.spellCooldowns[pending.spellId] = state.debug.ignoreSpellCooldowns ? 0 : spell.cooldownMs
   const hadGust = pending.castWasGust ?? pending.castWorkMultiplier < 1
   const hadStatic = spell.school === 'air' && spell.effects.some((effect) => effect.type === 'deal-damage') && state.combat.playerStatuses.some((status) => status.statusId === 'static')

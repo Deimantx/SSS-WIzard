@@ -81,7 +81,7 @@ const formatSpecialEffect = (special: ArtifactSpecialEffect) => {
     case 'barrier-break': return `When Barrier breaks, gain a Barrier equal to ${percentLabel(special.barrierMaxHealthPercent)} of Max Health. Cooldown ${secondsLabel(special.cooldownMs)}.`
     case 'barrier-gain-mana': return `When you gain Barrier, restore ${percentLabel(special.maxHealthPercent)} of Max Health as Mana. Cooldown ${secondsLabel(special.cooldownMs)}.`
     case 'hp-threshold-barrier-status-immunity': return `Below ${percentLabel(special.threshold)} Health, gain a ${percentLabel(special.barrierMaxHealthPercent)} Max Health Barrier and Status immunity for ${secondsLabel(special.durationMs)}.`
-    case 'nth-spell-mana-refund': return `Every ${special.every}th Spell refunds ${percentLabel(special.manaPercent)} of its final Mana cost.`
+    case 'nth-spell-mana-refund': return `Every ${special.every}th Spell refunds ${percentLabel(special.finalManaCostPercent)} of its final Mana cost.`
     case 'mana-band-shift': return `When Mana crosses a 25%, 50%, or 75% boundary, the next Spell costs ${percentLabel(special.manaReduction)} less Mana. One prepared bonus at a time. Internal cooldown: ${secondsLabel(special.cooldownMs)}.`
     case 'first-spell-after-idle': return `After ${secondsLabel(special.idleMs)} without casting, your next Spell deals ${percentLabel(special.damageIncrease)} more damage.`
     case 'air-spell-repeat': return `Every ${special.every}th Air Spell repeats at ${percentLabel(special.effectiveness)} effectiveness.`

@@ -1,36 +1,24 @@
-import { GUILD_REQUESTS } from '../../game/content/guild/guildRequests'
-import { BALANCE } from '../../game/core/balance/balance'
-import { pushNotification, recalculateDerivedStats } from '../../game/engine'
-import { isProtectedItem } from './inventoryActions'
-import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
-import type { GameState } from '../../game/types'
+import { GUILD_REQUESTS, GUILD_REQUEST_IDS } from '../../game/content/guild/guildRequests'
+import { claimGuildRequest, donateGuildRequest, promoteGuild, purchaseGuildSkillNode, resetGuildRequests, resetGuildSkillTree, setGuildRank, grantGuildPoint } from '../../game/systems/guild/guildRuntime'
+import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
+import type { GameState, GuildRankId, GuildSkillNodeId } from '../../game/types'
 
-export const donateGuildRequestAction = (state: GameState, requestId: string, amount: number | 'max') => {
-  const request = GUILD_REQUESTS[requestId as keyof typeof GUILD_REQUESTS]
-  if (!request || request.kind !== 'donation' || !state.progress.guildUnlocked) return
-  const current = state.progress.requestProgress[requestId] ?? 0
-  const remaining = request.target - current
-  const available = getConsumableQuantity(state, request.itemId)
-  const quantity = amount === 'max' ? Math.min(remaining, available) : Math.min(remaining, Math.min(amount, available))
-  if (quantity <= 0 || isProtectedItem(state, request.itemId)) { pushNotification(state, 'Protected or missing Fire Fragments.', 'warning'); return }
-  state.inventory[request.itemId] = (state.inventory[request.itemId] ?? 0) - quantity
-  state.progress.requestProgress[requestId] = current + quantity
-}
+const LEGACY_REQUEST_IDS = ['arcane-supply', 'clear-the-woods', 'sentinel-breaker'] as const
+const validRequestId = (requestId: string): requestId is keyof typeof GUILD_REQUESTS => GUILD_REQUEST_IDS.includes(requestId as keyof typeof GUILD_REQUESTS) || LEGACY_REQUEST_IDS.includes(requestId as typeof LEGACY_REQUEST_IDS[number])
 
+export const donateGuildRequestAction = (state: GameState, requestId: string, amount: number | 'max') => validRequestId(requestId) && donateGuildRequest(state, requestId, amount)
 export const claimGuildRewardAction = (state: GameState, requestId: string) => {
-  const request = GUILD_REQUESTS[requestId as keyof typeof GUILD_REQUESTS]
-  if (!request || state.progress.requestClaims[requestId] || (state.progress.requestProgress[requestId] ?? 0) < request.target) return
-  state.progress.requestClaims[requestId] = true
-  state.progress.guildReputation += request.reputation
-  pushNotification(state, `${request.name} reward claimed - +${request.reputation} Reputation`, 'success')
+  const claimed = validRequestId(requestId) && claimGuildRequest(state, requestId)
+  if (claimed) reconcileChronicleProgress(state)
+  return claimed
 }
-
 export const promoteGuildAction = (state: GameState) => {
-  const complete = Object.values(GUILD_REQUESTS).every((request) => (state.progress.requestProgress[request.id] ?? 0) >= request.target)
-  if (state.progress.guildRank === 'initiate' && complete && state.progress.guildReputation >= 175) {
-    state.progress.guildRank = 'apprentice'
-    if (!state.progress.permanentManaBonuses['guild-apprentice']) state.progress.permanentManaBonuses['guild-apprentice'] = 10
-    recalculateDerivedStats(state)
-    pushNotification(state, 'Guild rank increased to Apprentice - +10 permanent Max Mana', 'success')
-  }
+  const promoted = promoteGuild(state)
+  if (promoted) reconcileChronicleProgress(state)
+  return promoted
 }
+export const purchaseGuildSkillNodeAction = (state: GameState, nodeId: GuildSkillNodeId, free = false) => purchaseGuildSkillNode(state, nodeId, free)
+export const resetGuildSkillTreeAction = (state: GameState) => resetGuildSkillTree(state)
+export const resetGuildRequestsAction = (state: GameState) => resetGuildRequests(state)
+export const setGuildRankAction = (state: GameState, rank: GuildRankId) => setGuildRank(state, rank)
+export const grantGuildPointAction = (state: GameState, amount: number) => grantGuildPoint(state, amount)

@@ -23,9 +23,12 @@ import { activateSelectedSpellPresetForBattle, clearCombatSpellRuntime, getComba
 import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
-import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
+import { getWorldTierDefinition, resolveWorldTierArcanePointReward, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
 import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combatThreat'
 import { resolveCrystalCacheDrop } from '../crystals/crystalRuntime'
+import { getGuildProgressionBonuses } from '../guild/guildSelectors'
+import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
+import { recordGuildEnemyKill } from '../guild/guildRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -198,7 +201,8 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'crystal-cache-drop', itemId, amount: quantity })
   }
   if (resolvedDrops.length) onLootResolved?.(state, enemyId, resolvedDrops)
-  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier)
+  const guildBonuses = getGuildProgressionBonuses(state)
+  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier, guildBonuses.combatResonanceMultiplier)
   const resonanceGained = resonanceReward.grantedYield
   report?.recordResonance(resonanceGained)
   const resonanceText = formatResonanceBundle(resonanceGained)
@@ -207,6 +211,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'resonance', sourceId: 'resonance-reward', worldTier: encounterWorldTier, resonanceReward })
   }
   report?.recordKill(enemyId)
+  const guardianWasActive = Boolean(state.combat.guardian.activeGuardianId)
   clearGuardianRuntime(state)
   state.combat.enemyId = null
   state.combat.enemyWorldTier = null
@@ -223,7 +228,8 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const sequenceDungeon = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.length)
   const arcaneReward = getArcaneCoreReward(state.combat.dungeonId)
   const bossDefeated = isBossMonster(monster)
-  const arcanePoints = arcaneReward ? (bossDefeated ? arcaneReward.bossKillPoints : arcaneReward.normalKillPoints) : 0
+  const baseArcanePoints = arcaneReward ? (bossDefeated ? arcaneReward.bossKillPoints : arcaneReward.normalKillPoints) : 0
+  const arcanePoints = Math.max(0, Math.round(resolveWorldTierArcanePointReward(baseArcanePoints, encounterWorldTier) * guildBonuses.combatArcanePointMultiplier))
   if (arcanePoints > 0) {
     const pointsResult = grantArcanePoints(state.arcaneCore, arcanePoints)
     state.arcaneCore = pointsResult.state
@@ -303,6 +309,10 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       pushNotification(state, `Auto Hunt Boss queued ${MONSTERS[dungeon.boss].name}`, 'info')
     }
   }
+  if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
+  if (encounterWorldTier === 2 && state.worldTier.highestUnlocked >= 2) state.progress.chronicle.eventFlags['first-wt2-kill'] = true
+  recordGuildEnemyKill(state, enemyId, state.combat.dungeonId ?? 'whispering-woods', bossDefeated)
+  reconcileChronicleProgress(state)
 }
 
 export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void; onCombatCompleted?: (state: GameState, dungeonId: DungeonId) => void }

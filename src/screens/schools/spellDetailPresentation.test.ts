@@ -18,7 +18,7 @@ describe('spell detail presentation', () => {
     const cardRows = getSpellbookTooltipRows(damage)
     const inlineRows = getInspectorInlineEffectRows(damage)
 
-    expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 30, cooldownLabel: '3.5s', autoCastActive: false })
+    expect(detail).toMatchObject({ spellId: 'fire-bolt', spellName: 'Fire Bolt', school: 'fire', rankLabel: 'Rank I', description: expect.any(String), manaCost: 15, cooldownLabel: '3.5s', autoCastActive: false })
     expect(detail.spellPower).toBeGreaterThan(BALANCE.player.baseSpellPower)
     expect(detail.effects).toHaveLength(1)
     expect(row(cardRows, 'Damage')?.value).toBe('48.8')

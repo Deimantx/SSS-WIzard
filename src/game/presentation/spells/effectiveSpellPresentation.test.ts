@@ -4,7 +4,7 @@ import { createInitialState } from '../../../store/initialState'
 import { getEffectiveSpellCooldown, getEffectiveSpellDirectDamagePreview, getEffectiveSpellStatusDurationPreview } from './effectiveSpellPresentation'
 import type { CombatEffect } from '../../systems/combat/combatTypes'
 
-describe('effective Spell presentation with V6 Artifacts', () => {
+describe('effective Spell presentation with Artifacts', () => {
   it('uses Rank 0 baseline stats only while an Artifact is equipped', () => {
     const state = createInitialState()
     state.equipment.weapon = 'ember-staff'

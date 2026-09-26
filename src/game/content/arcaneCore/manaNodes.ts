@@ -1,6 +1,6 @@
-import { createRing, linearStat, major, minor, perk, rankedModifier, v7Mechanic } from './arcaneCoreNodeFactory'
+import { createRing, linearStat, major, minor, perk, rankedModifier, arcaneCoreMechanic } from './arcaneCoreNodeFactory'
 
-const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => v7Mechanic('mana', ring, slot, name)
+const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => arcaneCoreMechanic('mana', ring, slot, name)
 const manaRegen = (perRank: number) => rankedModifier('mana-regen-percent', perRank)
 
 const ring1 = createRing('mana', 1, [

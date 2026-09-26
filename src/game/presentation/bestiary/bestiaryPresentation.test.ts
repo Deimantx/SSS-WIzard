@@ -40,10 +40,10 @@ describe('Bestiary combat presentation', () => {
 
   it('presents current World Tier resonance in canonical order and omits zero values', () => {
     const presentation = getBestiaryResonancePresentation(MONSTERS['graveglass-shade'], 2)
-    expect(presentation).toMatchObject({ worldTier: 2, worldTierRewardMultiplier: 2, globalRewardMultiplier: 0.2, rewardMultiplier: 0.4 })
+    expect(presentation).toMatchObject({ worldTier: 2, worldTierRewardMultiplier: 2.5, globalRewardMultiplier: 0.2, rewardMultiplier: 0.5 })
     expect(presentation.entries.map((entry) => [entry.label, entry.baseAmount, entry.finalAmount])).toEqual([
-      ['Water Resonance', 24, 9],
-      ['Earth Resonance', 12, 4],
+      ['Water Resonance', 24, 12],
+      ['Earth Resonance', 12, 6],
     ])
   })
 

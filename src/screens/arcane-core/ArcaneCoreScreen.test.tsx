@@ -28,7 +28,7 @@ describe("Arcane Core screen", () => {
       </TooltipProvider>,
     );
     expect(screen.getByRole("heading", { name: "Arcane Core" })).toBeTruthy();
-    expect(screen.getByText("0 / 102992 Arcane Points invested")).toBeTruthy();
+    expect(screen.getByText("0 / 7519184 Arcane Points invested")).toBeTruthy();
     for (const name of [
       "Power Core",
       "Vitality Core",

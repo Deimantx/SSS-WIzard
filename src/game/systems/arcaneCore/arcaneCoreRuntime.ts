@@ -1,6 +1,6 @@
 import type { ArcaneCoreState, GameState } from '../../types'
 import { getArcaneCoreSpecialEffects } from './arcaneCoreProgression'
-import { commitArcaneCoreV6SpellCast, getArcaneCoreManaRegenMultiplier as getCoreManaRegenMultiplier, getArcaneCoreV7HealingReceivedBonusPct, tryConsumeArcaneCoreV6Survival, type ArcaneCoreSpellCastContext } from './arcaneCoreV7Runtime'
+import { commitArcaneCoreSpellCast, getArcaneCoreManaRegenMultiplier as getCoreManaRegenMultiplier, getArcaneCoreHealingReceivedBonusPct as getCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvivalMechanic, type ArcaneCoreSpellCastContext } from './arcaneCoreMechanicRuntime'
 
 const special = (state: Pick<ArcaneCoreState, 'nodes'>, type: import('../../types').ArcaneCoreSpecialEffect['type']) => getArcaneCoreSpecialEffects(state).filter((effect) => effect.type === type)
 
@@ -11,15 +11,15 @@ export const isArcaneCoreSpellFree = (state: Pick<GameState, 'arcaneCore' | 'com
 
 export const getArcaneCoreManaRegenMultiplier = (state: Pick<GameState, 'arcaneCore' | 'player'>) => getCoreManaRegenMultiplier(state)
 
-export const getArcaneCoreHealingReceivedBonusPct = (state: Pick<GameState, 'combat'>) => getArcaneCoreV7HealingReceivedBonusPct(state as never)
+export const getArcaneCoreHealingReceivedBonusPct = (state: Pick<GameState, 'combat'>) => getCoreHealingReceivedBonusPct(state as never)
 
 export const beginArcaneCoreSpellCast = (state: GameState, damaging: boolean, context?: ArcaneCoreSpellCastContext) => {
   if (context) {
-    const v6 = commitArcaneCoreV6SpellCast(state, context)
+    const mechanicCast = commitArcaneCoreSpellCast(state, context)
     const runtime = state.combat.arcaneCoreRuntime
     const cooldownPulse = special(state.arcaneCore, 'nth-spell-cooldown-pulse').some((effect) => effect.type === 'nth-spell-cooldown-pulse' && runtime.spellCastCount % effect.every === 0)
     if (cooldownPulse) runtime.cooldownPulseSpellCount += 1
-    return { ...v6, cooldownPulse }
+    return { ...mechanicCast, cooldownPulse }
   }
   const runtime = state.combat.arcaneCoreRuntime
   runtime.spellCastCount += 1
@@ -37,7 +37,7 @@ export const getArcaneCoreCooldownPulseReduction = (state: Pick<GameState, 'arca
 }
 
 export const tryConsumeArcaneCoreSurvival = (state: GameState) => {
-  if (tryConsumeArcaneCoreV6Survival(state)) return true
+  if (tryConsumeArcaneCoreSurvivalMechanic(state)) return true
   const effect = special(state.arcaneCore, 'lethal-survival')[0]
   if (!effect || effect.type !== 'lethal-survival' || !effect.oncePerDungeonRun || state.combat.arcaneCoreRuntime.survivalInstinctUsed) return false
   state.combat.arcaneCoreRuntime.survivalInstinctUsed = true
@@ -52,13 +52,12 @@ const createArcaneCoreRuntime = () => ({
   spellCastCount: 0,
   cooldownPulseSpellCount: 0,
   survivalInstinctUsed: false,
-  lastCastOrigin: 'auto' as const,
+  lastCastOrigin: null,
   lastSpellId: null,
   lastLoadoutSlotIndex: null,
-  differentSpellStreak: 0,
-  spellSequenceStreak: 0,
-  aggressiveRotationStreak: 0,
-  sovereignSequenceStreak: 0,
+  recentSpellSequence: [],
+  recentDamagingSpellSequence: [],
+  recentLoadoutSlotSequence: [],
   alternatingCastStreak: 0,
   enemyDamagingSpellCount: 0,
   nextDamageMultiplier: 1,
@@ -80,7 +79,6 @@ const createArcaneCoreRuntime = () => ({
   echoCharges: 0,
   manualCharges: 0,
   manualCastCount: 0,
-  differentLoadoutSlotStreak: 0,
   consecutiveAutoCasts: 0,
   consecutiveManualCasts: 0,
   sovereigntyCharges: 0,
@@ -96,14 +94,22 @@ const createArcaneCoreRuntime = () => ({
   cataclysmUsed: false,
   limitBreakUsed: false,
   recentManaSpend: [],
+  manaSpendSequence: 0,
+  reservoirCycleTriggeredAtMs: undefined,
+  reservoirCycleTriggeredSpendSequence: 0,
   reservoirCycleReady: false,
   manaCollapseReady: false,
   manaCollapseLastAtMs: undefined,
   emergencyConversionReady: false,
   dualMindPreparedOrigin: undefined,
   dualMindPreparedUntilMs: undefined,
+  overchannelTriggeredAtMs: undefined,
+  overchannelTriggeredSpendSequence: 0,
+  overchannelSpendFloorSequence: 0,
+  artifactManaShiftReady: false,
+  artifactManaShiftLastAtMs: undefined,
   nextManaRestoreFlat: 0,
-  v7EventLastAtMs: {},
+  arcaneCoreEventLastAtMs: {},
   refuseDeathUsed: false,
   secondWindUsed: false,
   refuseDeathThresholdUsed: false,
@@ -121,13 +127,13 @@ const createArcaneCoreRuntime = () => ({
 
 export const resetArcaneCoreCombatRuntime = (state: GameState) => { state.combat.arcaneCoreRuntime = createArcaneCoreRuntime() }
 
-/** Advances the monotonic V6 clock exactly once for each simulated combat slice. */
-export const advanceArcaneCoreV6RuntimeTime = (state: GameState, deltaMs: number) => {
+/** Advances the monotonic Arcane Core clock exactly once for each simulated combat slice. */
+export const advanceArcaneCoreRuntimeTime = (state: GameState, deltaMs: number) => {
   const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
   state.combat.arcaneCoreRuntime.elapsedMs = Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs + delta)
 }
 
-/** Encounter-scoped V6 counters reset between enemies without touching the saved profile. */
+/** Encounter-scoped Arcane Core counters reset between enemies without touching the saved profile. */
 export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   const runtime = state.combat.arcaneCoreRuntime
   runtime.encounterStartedAtMs = runtime.elapsedMs
@@ -136,13 +142,12 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.spellCastCount = 0
   runtime.cooldownPulseSpellCount = 0
   runtime.survivalInstinctUsed = false
-  runtime.lastCastOrigin = 'auto'
+  runtime.lastCastOrigin = null
   runtime.lastSpellId = null
   runtime.lastLoadoutSlotIndex = null
-  runtime.differentSpellStreak = 0
-  runtime.spellSequenceStreak = 0
-  runtime.aggressiveRotationStreak = 0
-  runtime.sovereignSequenceStreak = 0
+  runtime.recentSpellSequence = []
+  runtime.recentDamagingSpellSequence = []
+  runtime.recentLoadoutSlotSequence = []
   runtime.alternatingCastStreak = 0
   runtime.enemyDamagingSpellCount = 0
   runtime.nextDamageMultiplier = 1
@@ -162,7 +167,7 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.nextLowCostDamageMultiplier = undefined
   runtime.costBandHistory = []
   runtime.lastWordUsed = false
-  runtime.sovereigntyCharges = getArcaneCoreSpecialEffects(state.arcaneCore).some((effect) => effect.type === 'v6-mechanic' && effect.displayName === 'Sovereign Casting') ? 3 : 0
+  runtime.sovereigntyCharges = getArcaneCoreSpecialEffects(state.arcaneCore).some((effect) => effect.type === 'arcane-core-mechanic' && effect.displayName === 'Sovereign Casting') ? 3 : 0
   runtime.nextNonCritDamageMultiplier = undefined
   runtime.criticalFeedbackLastAtMs = undefined
   runtime.criticalRecoveryLastAtMs = undefined
@@ -174,6 +179,9 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.cataclysmUsed = false
   runtime.limitBreakUsed = false
   runtime.recentManaSpend = []
+  runtime.manaSpendSequence = 0
+  runtime.reservoirCycleTriggeredAtMs = undefined
+  runtime.reservoirCycleTriggeredSpendSequence = 0
   runtime.reservoirCycleReady = false
   runtime.manaCollapseReady = false
   runtime.manaCollapseLastAtMs = undefined
@@ -181,7 +189,7 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.dualMindPreparedOrigin = undefined
   runtime.dualMindPreparedUntilMs = undefined
   runtime.nextManaRestoreFlat = 0
-  runtime.v7EventLastAtMs = {}
+  runtime.arcaneCoreEventLastAtMs = {}
   runtime.refuseDeathUsed = false
   runtime.secondWindUsed = false
   runtime.refuseDeathThresholdUsed = false
@@ -205,6 +213,11 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   // Victory Momentum and the next-enemy damage tokens intentionally survive.
   runtime.apotheosisUntilMs = undefined
   runtime.overchannelUntilMs = undefined
+  runtime.overchannelTriggeredAtMs = undefined
+  runtime.overchannelTriggeredSpendSequence = 0
+  runtime.overchannelSpendFloorSequence = 0
+  runtime.artifactManaShiftReady = false
+  runtime.artifactManaShiftLastAtMs = undefined
   runtime.manaRegenDisabledUntilMs = undefined
   runtime.nextHealingActionSpeedMultiplier = undefined
   runtime.nextSelfTargetActionSpeedMultiplier = undefined
@@ -212,15 +225,12 @@ export const resetArcaneCoreEncounterRuntime = (state: GameState) => {
   runtime.echoCharges = 0
   runtime.manualCharges = 0
   runtime.manualCastCount = 0
-  runtime.differentLoadoutSlotStreak = 0
   runtime.consecutiveAutoCasts = 0
   runtime.consecutiveManualCasts = 0
-  runtime.lastCastAtFullMana = false
   runtime.nextAutoRefundPercent = undefined
-  runtime.lastManaBand = undefined
   runtime.nextControlStatusDurationMultiplier = undefined
   runtime.controlStatusApplications = 0
   runtime.lastDamageTakenAtMs = undefined
   runtime.renewalLastAtMs = undefined
-  runtime.v7EventLastAtMs = {}
+  runtime.arcaneCoreEventLastAtMs = {}
 }

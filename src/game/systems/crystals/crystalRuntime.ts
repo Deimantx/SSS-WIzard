@@ -3,6 +3,8 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { CRYSTAL_CACHE_DUST, CRYSTAL_CACHE_ITEM_ID, CRYSTAL_CACHE_POWER_THRESHOLD, CRYSTAL_CACHE_DROP_CHANCE, CRYSTAL_CRUSH_DUST, CRYSTAL_FAMILY_ORDER, CRYSTAL_GROUP_CAP, CRYSTAL_SLOT_COUNT, CRYSTAL_STARTING_UNLOCKED_SLOTS, CRYSTAL_UPGRADE_COSTS, CRYSTAL_VARIANT_IDS, getCrystalFamily, getCrystalTier, getNextCrystalVariant } from '../../content/crystals/crystals'
 import type { CrystalPreset, CrystalPresetId, CrystalState, CrystalTier, CrystalVariantId, GameState, ItemId } from '../../types'
+import { getWorldTierDefinition } from '../world-tier/worldTierRuntime'
+import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 
 export const CRYSTAL_RNG_DEFAULT_SEED = 0xC12A5EED
 const PRESET_IDS: readonly CrystalPresetId[] = ['crystal-preset-1', 'crystal-preset-2', 'crystal-preset-3']
@@ -225,7 +227,8 @@ export const openCrystalCaches = (state: GameState, requestedQuantity: number, r
 export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, rng: () => number) => {
   if (!isCrystalSystemUnlocked(state)) return false
   if (!isCrystalCacheEligiblePower(resolveEnemyPowerRating(enemyId, enemyWorldTier))) return false
-  if (rng() >= CRYSTAL_CACHE_DROP_CHANCE) return false
+  const chance = Math.min(1, CRYSTAL_CACHE_DROP_CHANCE * getWorldTierDefinition(enemyWorldTier).crystalCacheDropChanceMultiplier * getGuildProgressionBonuses(state).crystalCacheChanceMultiplier)
+  if (rng() >= chance) return false
   grantItem(state, CRYSTAL_CACHE_ITEM_ID, 1)
   return true
 }

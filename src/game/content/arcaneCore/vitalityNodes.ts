@@ -1,7 +1,7 @@
-import { createRing, linearStat, major, minor, modifier, rankedModifier, perk, v7Mechanic, v7MechanicWith } from './arcaneCoreNodeFactory'
+import { createRing, linearStat, major, minor, modifier, rankedModifier, perk, arcaneCoreMechanic, arcaneCoreMechanicWith } from './arcaneCoreNodeFactory'
 import { aboveHp, belowHp } from './arcaneCoreContentHelpers'
 
-const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => v7Mechanic('vitality', ring, slot, name)
+const mechanic = (ring: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, slot: `S${5 | 6 | 7 | 8}` | 'M', name: string) => arcaneCoreMechanic('vitality', ring, slot, name)
 const damageTaken = (perRank: number) => rankedModifier('damage-taken-percent', perRank)
 const healingReceived = (perRank: number) => rankedModifier('healing-received-percent', perRank)
 
@@ -10,7 +10,7 @@ const ring1 = createRing('vitality', 1, [
   minor('vitality-r1-natural-recovery', 'Steady Guard', '+1 Defense per rank. Rank 5: +5.', linearStat('defense', 1)),
   minor('vitality-r1-arcane-defense', 'Natural Recovery', '+0.1 Health Regen per rank. Rank 5: +0.5/sec.', linearStat('healthRegen', 0.1)),
   minor('vitality-r1-guard', 'Reinforced Ward', '+0.6% Barrier Power per rank. Rank 5: +3%.', linearStat('barrierPowerPct', 0.006)),
-  perk('vitality-r1-barrier-power', 'Second Skin', 'While above 80% Health, gain +2/4/6/8/10 Defense.', v7MechanicWith('vitality', 1, 'S5', 'Second Skin', (rank) => ({ modifiers: [modifier('defense-flat', rank * 2, aboveHp(80))] }))),
+  perk('vitality-r1-barrier-power', 'Second Skin', 'While above 80% Health, gain +2/4/6/8/10 Defense.', arcaneCoreMechanicWith('vitality', 1, 'S5', 'Second Skin', (rank) => ({ modifiers: [modifier('defense-flat', rank * 2, aboveHp(80))] }))),
   perk('vitality-r1-healing-mastery', 'Emergency Pulse', 'When Barrier breaks below 50% Health, heal 1/1.5/2/2.5/3% Max Health. Internal cooldown: 8 seconds.', mechanic(1, 'S6', 'Emergency Pulse')),
   perk('vitality-r1-fortified-body', 'Recovery Window', 'Healing received shortly after taking damage is slightly improved.', mechanic(1, 'S7', 'Recovery Window')),
   perk('vitality-r1-victory-recovery', 'Victory Recovery', 'A defeated enemy restores a small amount of Health.', mechanic(1, 'S8', 'Victory Recovery')),
@@ -22,11 +22,11 @@ const ring2 = createRing('vitality', 2, [
   minor('vitality-r2-steady-guard', 'Fortified Guard', '+1.2 Defense per rank. Rank 5: +6.', linearStat('defense', 1.2)),
   minor('vitality-r2-stonewall', 'Fortified Body', '-0.1% Damage Taken per rank. Rank 5: -0.5%.', damageTaken(-0.001)),
   minor('vitality-r2-ward-reinforcement', 'Restoration', '+0.4% Healing Received per rank. Rank 5: +2%.', healingReceived(0.004)),
-  perk('vitality-r2-reinforced-ward', 'Stonewall', 'While Barrier is active, gain +2/4/6/8/10 Defense.', v7MechanicWith('vitality', 2, 'S5', 'Stonewall', (rank) => ({ modifiers: [modifier('defense-flat', rank * 2, { type: 'self-has-barrier' })] }))),
+  perk('vitality-r2-reinforced-ward', 'Stonewall', 'While Barrier is active, gain +2/4/6/8/10 Defense.', arcaneCoreMechanicWith('vitality', 2, 'S5', 'Stonewall', (rank) => ({ modifiers: [modifier('defense-flat', rank * 2, { type: 'self-has-barrier' })] }))),
   perk('vitality-r2-ward-recovery', 'Barrier Recovery', 'When Barrier breaks, heal 1/1.5/2/2.5/3% Max Health.', mechanic(2, 'S6', 'Barrier Recovery')),
   perk('vitality-r2-resilient-flow', 'Guarded Recovery', 'Taking Health damage restores 1/2/3/4/5% Max Mana. Internal cooldown: 3 seconds.', mechanic(2, 'S7', 'Guarded Recovery')),
   perk('vitality-r2-emergency-recovery', 'Low Health Guard', 'Below 25% Health, Healing effectiveness is increased by 1/2/3/4/5%.', mechanic(2, 'S8', 'Low Health Guard')),
-  major('vitality-r2-unyielding', 'Unyielding', 'While below 50% Health, take 5% less Health damage. It does not reduce damage already absorbed by Barrier.', v7MechanicWith('vitality', 2, 'M', 'Unyielding', () => ({ modifiers: [modifier('damage-taken-percent', -0.05, belowHp(50))] }))),
+  major('vitality-r2-unyielding', 'Unyielding', 'While below 50% Health, take 5% less Health damage. It does not reduce damage already absorbed by Barrier.', arcaneCoreMechanicWith('vitality', 2, 'M', 'Unyielding', () => ({ modifiers: [modifier('damage-taken-percent', -0.05, belowHp(50))] }))),
 ])
 
 const ring3 = createRing('vitality', 3, [

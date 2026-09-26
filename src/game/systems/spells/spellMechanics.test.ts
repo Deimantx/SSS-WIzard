@@ -32,7 +32,7 @@ describe('Rank-I spell mechanics', () => {
     expect(castSpellAction(state, 'searing-touch')).toBe(true)
     expect(resolvePlayerSpellCast(state)).toBe(true)
     expect(state.combat.enemyHp).toBeCloseTo(1000 - BALANCE.player.baseSpellPower * 0.25 * 1.5 * (1 - getDefenseReductionFromRating(8)))
-    expect(state.player.mana).toBe(255)
+    expect(state.player.mana).toBe(290)
     expect(state.combat.spellCooldowns['searing-touch']).toBe(10000)
     expect(state.combat.enemyStatuses).toMatchObject([{ statusId: 'burning', instanceKey: 'player:spell:searing-touch', remainingMs: 6000 }])
   })

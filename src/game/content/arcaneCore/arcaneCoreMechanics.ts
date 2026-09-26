@@ -1,9 +1,9 @@
 import type { ArcaneCoreBranchId, ArcaneCoreNodeDefinition, ArcaneCoreNodeType, ArcaneCoreRingIndex, ArcaneCoreSpecialEffect } from '../../types'
 import { ARCANE_CORE_BRANCHES, ARCANE_CORE_NODES } from './arcaneCoreBranches'
 
-export type ArcaneCoreV7RuntimeKind = 'cast-modifier' | 'combat-event' | 'timeline' | 'resource' | 'survival' | 'static-extra'
+export type ArcaneCoreMechanicRuntimeKind = 'cast-modifier' | 'combat-event' | 'timeline' | 'resource' | 'survival' | 'static-extra'
 
-export interface ArcaneCoreV7MechanicDefinition {
+export interface ArcaneCoreMechanicDefinition {
   mechanicId: string
   branch: ArcaneCoreBranchId
   ring: ArcaneCoreRingIndex
@@ -11,13 +11,13 @@ export interface ArcaneCoreV7MechanicDefinition {
   name: string
   nodeId: string
   nodeType: ArcaneCoreNodeType
-  runtime: { kind: ArcaneCoreV7RuntimeKind; handler: string }
+  runtime: { kind: ArcaneCoreMechanicRuntimeKind; handler: string }
   describeRank: (rank: number) => string[]
 }
 
-const getMarker = (node: ArcaneCoreNodeDefinition): Extract<ArcaneCoreSpecialEffect, { type: 'v6-mechanic' }> | undefined => {
-  const effect = node.resolveEffects(1).special?.find((entry) => entry.type === 'v6-mechanic')
-  return effect?.type === 'v6-mechanic' ? effect : undefined
+const getMarker = (node: ArcaneCoreNodeDefinition): Extract<ArcaneCoreSpecialEffect, { type: 'arcane-core-mechanic' }> | undefined => {
+  const effect = node.resolveEffects(1).special?.find((entry) => entry.type === 'arcane-core-mechanic')
+  return effect?.type === 'arcane-core-mechanic' ? effect : undefined
 }
 const lastPart = (value: string) => value.split(':').pop() ?? value
 const rankIndex = (rank: number, length: number) => Math.max(0, Math.min(length - 1, Math.floor(rank) - 1))
@@ -29,10 +29,10 @@ const pp = (values: readonly number[], rank: number) => {
   return `${value} percentage point${value === 1 ? '' : 's'}`
 }
 
-type V7Descriptor = (rank: number) => string[]
-type DescriptorMap = Partial<Record<string, V7Descriptor>>
+type ArcaneCoreMechanicDescriptor = (rank: number) => string[]
+type ArcaneCoreMechanicDescriptorMap = Partial<Record<string, ArcaneCoreMechanicDescriptor>>
 
-const power: DescriptorMap = {
+const power: ArcaneCoreMechanicDescriptorMap = {
   Opportunist: r => [`After you apply a Negative Status, the next damaging Spell deals +${pct([1,2,3,4,5],r)} Damage. Consumed by that damaging Spell; does not stack.`],
   Finisher: r => [`Damaging Spells deal +${pct([1,2,3,4,5],r)} Damage while the enemy is below 25% Health.`],
   'Opening Volley': r => [`The first damaging Spell of each encounter deals +${pct([1,2,3,4,5],r)} Damage.`],
@@ -75,7 +75,7 @@ const power: DescriptorMap = {
   'Arcane Apotheosis': () => ['After 8 successful damaging Spells in one encounter, enter Apotheosis for 6 seconds: +20% Damage, -15% Mana Cost, and +10% Action Speed. Once per encounter.'],
 }
 
-const vitality: DescriptorMap = {
+const vitality: ArcaneCoreMechanicDescriptorMap = {
   'Second Skin': r => [`While above 80% Health, gain +${atRank([2,4,6,8,10],r)} Defense.`],
   'Emergency Pulse': r => [`When Barrier breaks while you are below 50% Health, heal ${pct([1,1.5,2,2.5,3],r)} Max Health. Internal cooldown: 8 seconds.`],
   'Recovery Window': r => [`After taking Health damage, gain +${pct([1,2,3,4,5],r)} Healing Received for 3 seconds. Reapplying refreshes the duration; it does not stack.`],
@@ -118,7 +118,7 @@ const vitality: DescriptorMap = {
   'Eternal Aegis': () => ['15% of effective Healing grants Barrier and 15% of effective Barrier gained heals you. Each conversion is capped at 3% Max Health per event. Conversion-generated effects cannot recursively trigger the opposite conversion.'],
 }
 
-const mana: DescriptorMap = {
+const mana: ArcaneCoreMechanicDescriptorMap = {
   Conservation: r => [`Every 6th successful Spell restores ${manaValue([1,2,3,4,5],r)} after completion.`],
   'Emergency Flow': r => [`While below 25% Mana, gain +${pct([5,10,15,20,25],r)} Mana Regen.`],
   'Full Reservoir': r => [`While above 90% Mana, if you have not completed a Spell for 3 seconds, your next Spell costs ${pct([2,4,6,8,10],r)} less Mana. Consumed on use.`],
@@ -161,7 +161,7 @@ const mana: DescriptorMap = {
   'Arcane Singularity': () => ['Once per encounter, when a Spell would leave Mana below 10%, set Mana to 50% Max Mana and enter Singularity for 5 seconds. During Singularity, Mana Costs are reduced by 40% and Mana Regen is disabled.'],
 }
 
-const control: DescriptorMap = {
+const control: ArcaneCoreMechanicDescriptorMap = {
   'Opening Control': r => [`The first Control-tagged Status applied each encounter delays the enemy current action by ${atRank([50,100,150,200,250],r)} ms.`],
   'Controlled Strike': r => [`Damaging Spells deal +${pct([1,2,3,4,5],r)} Damage against a Controlled enemy.`],
   'Recovery Window': r => [`When a Control Status expires naturally, reduce your longest remaining Spell cooldown by ${atRank([40,80,120,160,200],r)} ms.`],
@@ -204,13 +204,13 @@ const control: DescriptorMap = {
   'Absolute Stasis': () => ['Once per encounter, after your effects accumulate 3 total seconds of enemy action delay, stop enemy action progress for 3 seconds. During Stasis, player Spells gain +15% Action Speed. Status ticking and cooldown recovery continue normally.'],
 }
 
-const describeV7Mechanic = (branch: ArcaneCoreBranchId, name: string, nodeType: ArcaneCoreNodeType, rank: number): string[] => {
+const describeArcaneCoreMechanic = (branch: ArcaneCoreBranchId, name: string, nodeType: ArcaneCoreNodeType, rank: number): string[] => {
   const descriptor = branch === 'power' ? power[name] : branch === 'vitality' ? vitality[name] : branch === 'mana' ? mana[`${name}:${nodeType}`] ?? mana[name] : control[name]
-  if (!descriptor) throw new Error(`Missing Arcane Core V7 presentation descriptor: ${branch}/${name}/${nodeType}`)
+  if (!descriptor) throw new Error(`Missing Arcane Core presentation descriptor: ${branch}/${name}/${nodeType}`)
   return descriptor(Math.max(1, Math.floor(rank)))
 }
 
-const inferRuntimeKind = (node: ArcaneCoreNodeDefinition): ArcaneCoreV7RuntimeKind => {
+const inferRuntimeKind = (node: ArcaneCoreNodeDefinition): ArcaneCoreMechanicRuntimeKind => {
   if (node.nodeType === 'major') return 'combat-event'
   if (node.branchId === 'control') return 'timeline'
   if (node.branchId === 'mana') return 'resource'
@@ -221,7 +221,7 @@ const inferRuntimeKind = (node: ArcaneCoreNodeDefinition): ArcaneCoreV7RuntimeKi
 const definitions = ARCANE_CORE_NODES.flatMap((node) => {
   const marker = getMarker(node)
   if (!marker) return []
-  const definition: ArcaneCoreV7MechanicDefinition = {
+  const definition: ArcaneCoreMechanicDefinition = {
     mechanicId: marker.mechanicId,
     branch: node.branchId,
     ring: node.ring,
@@ -231,33 +231,33 @@ const definitions = ARCANE_CORE_NODES.flatMap((node) => {
     nodeType: node.nodeType,
     // Executable coverage is validated against the system's real runtime
     // registrations, never against this metadata string or board geometry.
-    runtime: { kind: inferRuntimeKind(node), handler: 'arcane-core-v7-runtime-adapter' },
-    describeRank: (rank) => describeV7Mechanic(node.branchId, node.name, node.nodeType, rank),
+    runtime: { kind: inferRuntimeKind(node), handler: 'arcane-core-mechanic-adapter' },
+    describeRank: (rank) => describeArcaneCoreMechanic(node.branchId, node.name, node.nodeType, rank),
   }
   return [definition]
 })
 
-export const ARCANE_CORE_V7_MECHANICS = definitions
-export const ARCANE_CORE_V7_MECHANIC_REGISTRY = Object.fromEntries(definitions.map((definition) => [definition.mechanicId, definition])) as Record<string, ArcaneCoreV7MechanicDefinition>
-export const ARCANE_CORE_V7_MECHANIC_NAMES = new Set(definitions.map((definition) => definition.name))
+export const ARCANE_CORE_MECHANICS = definitions
+export const ARCANE_CORE_MECHANIC_REGISTRY = Object.fromEntries(definitions.map((definition) => [definition.mechanicId, definition])) as Record<string, ArcaneCoreMechanicDefinition>
+export const ARCANE_CORE_MECHANIC_NAMES = new Set(definitions.map((definition) => definition.name))
 
-export const validateArcaneCoreV7MechanicCoverage = () => {
+export const validateArcaneCoreMechanicCoverage = () => {
   const errors: string[] = []
   const currentIds = new Set<string>()
   ARCANE_CORE_BRANCHES.forEach((branch) => branch.nodes.forEach((node) => {
     const marker = getMarker(node)
     if (!marker) return
     currentIds.add(marker.mechanicId)
-    const definition = ARCANE_CORE_V7_MECHANIC_REGISTRY[marker.mechanicId]
-    if (!definition) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has no V7 runtime registry entry`)
+    const definition = ARCANE_CORE_MECHANIC_REGISTRY[marker.mechanicId]
+    if (!definition) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has no Arcane Core runtime registry entry`)
     else {
-      if (definition.nodeId !== node.id || definition.name !== node.name || !definition.runtime.handler) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has a mismatched V7 runtime registry entry`)
+      if (definition.nodeId !== node.id || definition.name !== node.name || !definition.runtime.handler) errors.push(`${branch.id}/Ring ${node.ring}/${lastPart(marker.mechanicId)} ${node.name} has a mismatched Arcane Core runtime registry entry`)
       for (const rank of [1, node.maxRank]) {
         try { if (!definition.describeRank(rank).some(Boolean)) errors.push(`${marker.mechanicId} has empty Rank ${rank} presentation`) }
         catch (error) { errors.push(`${marker.mechanicId} presentation failed: ${error instanceof Error ? error.message : String(error)}`) }
       }
     }
   }))
-  Object.keys(ARCANE_CORE_V7_MECHANIC_REGISTRY).filter((id) => !currentIds.has(id)).forEach((id) => errors.push(`orphan V7 mechanic implementation ${id}`))
+  Object.keys(ARCANE_CORE_MECHANIC_REGISTRY).filter((id) => !currentIds.has(id)).forEach((id) => errors.push(`orphan Arcane Core mechanic implementation ${id}`))
   return errors
 }

@@ -88,9 +88,9 @@ describe('canonical Combat Resonance rewards', () => {
     const result = await advanceWithOfflineBank(1_000, () => state, (recipe) => recipe(state), vi.fn(), undefined, { uiEvents: { push: (event) => events.push(event) } })
 
     expect(result.ok).toBe(true)
-    expect(state.resonance.air).toBe(4)
+    expect(state.resonance.air).toBe(5)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
-    expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield).toMatchObject({ air: 4 })
+    expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield).toMatchObject({ air: 5 })
   })
 
   it('snapshots World Tier at spawn and uses that tier for health, loot, and Resonance', () => {
@@ -111,9 +111,9 @@ describe('canonical Combat Resonance rewards', () => {
     const wt4Range = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 4)
     expect(wt4LifeEssence).toBeGreaterThanOrEqual(wt4Range.finalMin)
     expect(wt4LifeEssence).toBeLessThanOrEqual(wt4Range.finalMax)
-    expect(state.resonance.air).toBe(8)
+    expect(state.resonance.air).toBe(13)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
-    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ worldTier: 4, resonanceReward: { rewardMultiplier: 0.8, finalYield: { air: 8 }, grantedYield: { air: 8 } } })
+    expect(events.find((event) => event.category === 'resonance')).toMatchObject({ worldTier: 4, resonanceReward: { rewardMultiplier: 1.3, finalYield: { air: 13 }, grantedYield: { air: 13 } } })
     random.mockRestore()
   })
 

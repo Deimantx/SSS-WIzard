@@ -87,9 +87,9 @@ describe('Whispering Woods targeted farming', () => {
     expect(resolveEnemyResonanceReward('dewbound-sprite', 1).finalYield).toMatchObject({ water: 3 })
     expect(resolveEnemyResonanceReward('cinder-moth', 1).finalYield).toMatchObject({ fire: 4 })
     expect(resolveEnemyResonanceReward('tempest-stag', 1).finalYield).toMatchObject({ air: 10, earth: 3 })
-    expect(resolveEnemyResonanceReward('dewbound-sprite', 2).finalYield).toMatchObject({ water: 7 })
-    expect(resolveEnemyResonanceReward('cinder-moth', 2).finalYield).toMatchObject({ fire: 8 })
-    expect(resolveEnemyResonanceReward('tempest-stag', 2).finalYield).toMatchObject({ air: 20, earth: 6 })
+    expect(resolveEnemyResonanceReward('dewbound-sprite', 2).finalYield).toMatchObject({ water: 9 })
+    expect(resolveEnemyResonanceReward('cinder-moth', 2).finalYield).toMatchObject({ fire: 10 })
+    expect(resolveEnemyResonanceReward('tempest-stag', 2).finalYield).toMatchObject({ air: 25, earth: 7 })
   })
 
   it('honors target selection in every targeted zone and Fast Resolve', () => {

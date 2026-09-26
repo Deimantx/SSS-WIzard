@@ -4,7 +4,7 @@ import { ARTIFACTS, ACT1_ARTIFACT_IDS, validateArtifactDefinitions } from './art
 import { createInitialState } from '../../../store/initialState'
 import { getActiveArtifactCombatProviders, getArtifactEffectiveStats, getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks, mergeArtifactResolvedEffects, purchaseArtifactMinorRank } from '../../systems/artifacts/artifactProgression'
 
-describe('V6 Artifact roster', () => {
+describe('Artifact roster', () => {
   it('contains the six Act 0 and six Act 1 definitions in the canonical schema', () => {
     expect(Object.keys(ARTIFACTS)).toHaveLength(12)
     expect(ACT1_ARTIFACT_IDS).toHaveLength(6)

@@ -28,8 +28,9 @@ import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelem
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
-import { advanceArcaneCoreV6RuntimeTime } from '../arcaneCore/arcaneCoreRuntime'
-import { recordArcaneCoreV7CooldownCompletion } from '../arcaneCore/arcaneCoreV7Runtime'
+import { advanceArcaneCoreRuntimeTime } from '../arcaneCore/arcaneCoreRuntime'
+import { recordArcaneCoreCooldownCompletion } from '../arcaneCore/arcaneCoreMechanicRuntime'
+import { recordChronicleEvent } from '../chronicles/chronicleRuntime'
 
 export interface AdvanceContext {
   mode: 'live' | 'banked'
@@ -45,7 +46,7 @@ export interface AdvanceContext {
   statistics?: DungeonStatisticsObserver
   onAutoCastSelection?: () => void
   onResearchComplete?: () => void
-  onTransmutationComplete?: () => void
+  onTransmutationComplete?: (recipeId: import('../../types').TransmutationRecipeId) => void
   onAutoCastCheck?: (elapsedMs: number) => void
   onContinuousManaAllocation?: () => void
   autoCastRuntime?: PreparedAutoCastRuntime
@@ -113,7 +114,7 @@ const tickSpellCooldowns = (state: GameState, deltaMs: number, cooldownRecovery:
     const previous = state.combat.spellCooldowns[spellId] ?? 0
     const next = Math.max(0, previous - delta)
     state.combat.spellCooldowns[spellId] = next
-    recordArcaneCoreV7CooldownCompletion(state, previous, next)
+    recordArcaneCoreCooldownCompletion(state, previous, next)
   })
 }
 
@@ -286,7 +287,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
     context.onCombatElapsed?.(elapsed)
-    advanceArcaneCoreV6RuntimeTime(state, elapsed)
+    advanceArcaneCoreRuntimeTime(state, elapsed)
 
     if (!playerBlockedAtSegmentStart && playerRate > 0 && state.combat.pendingPlayerSpellCast) state.combat.pendingPlayerSpellCast.remainingWorkMs = Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs - elapsed * playerRate)
     if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId && enemyRate > 0) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed * enemyRate)
@@ -375,7 +376,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     const untilEvent = boundaries.length ? Math.min(...boundaries) : remaining
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
     context.onCombatElapsed?.(elapsed)
-    advanceArcaneCoreV6RuntimeTime(state, elapsed)
+    advanceArcaneCoreRuntimeTime(state, elapsed)
 
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player'], { deferExpiry: true })
     tickBarriers(state, elapsed, ['player'])
@@ -463,8 +464,19 @@ export const advanceGameStateContinuous = (state: GameState, delta: number, cont
   if (continuousRequests.length > 0) {
     const funding = allocateTowerFlux(state, continuousRequests)
     context.onContinuousManaAllocation?.()
-    applyResearchAllocations(state, researchRequests, funding.allocations, context)
-    applyTransmutationAllocations(state, transmutationRequests, funding.allocations, context)
+    const workContext: AdvanceContext = {
+      ...context,
+      onResearchComplete: () => {
+        recordChronicleEvent(state, 'first-research-batch-completed')
+        context.onResearchComplete?.()
+      },
+      onTransmutationComplete: (recipeId) => {
+        if (recipeId.endsWith('-fragment')) recordChronicleEvent(state, 'first-fragment-transmuted')
+        context.onTransmutationComplete?.(recipeId)
+      },
+    }
+    applyResearchAllocations(state, researchRequests, funding.allocations, workContext)
+    applyTransmutationAllocations(state, transmutationRequests, funding.allocations, workContext)
   }
   return state
 }

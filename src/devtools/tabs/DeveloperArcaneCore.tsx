@@ -27,7 +27,7 @@ export function DeveloperArcaneCore() {
   const selectedRingRanks = selectedBranch ? getArcaneCoreRingStandardRanksInvested(state.arcaneCore, selectedBranch.id, selectedRing) : 0
 
   return <div className="developer-tab-stack developer-arcane-core-tab">
-    <Card title="Arcane Core · V6 tester controls" action={<Status tone="warning">DEV SESSION ONLY</Status>}>
+    <Card title="Arcane Core · tester controls" action={<Status tone="warning">DEV SESSION ONLY</Status>}>
       <div className="developer-summary-grid"><Summary label="Points earned" value={wallet.totalPointsEarned} /><Summary label="Points spent" value={wallet.pointsSpent} /><Summary label="Points available" value={wallet.pointsAvailable} /><Summary label="Tree cost" value={ARCANE_CORE_TOTAL_TREE_COST} /><Summary label="State entries" value={Object.keys(state.arcaneCore.nodes).length} /></div>
       <div className="developer-form-grid"><NumberField label="Set Total Arcane Points Earned" value={wallet.totalPointsEarned} onChange={state.setArcanePoints} min={0} max={ARCANE_CORE_TOTAL_TREE_COST} /></div>
       <div className="button-row"><Button onClick={() => state.grantArcanePoints(10)}>+10 POINTS</Button><Button onClick={() => state.grantArcanePoints(100)}>+100 POINTS</Button><Button onClick={() => state.grantArcanePoints(1000)}>+1,000 POINTS</Button><Button variant="secondary" onClick={() => state.setArcanePoints(ARCANE_CORE_TOTAL_TREE_COST)}>MAX POINTS</Button><Button variant="primary" onClick={state.maxArcanePointsAndPurchaseAll}>MAX POINTS + PURCHASE ALL</Button><Button variant="ghost" onClick={state.resetArcaneCore}>RESET POINTS + ALL</Button></div>

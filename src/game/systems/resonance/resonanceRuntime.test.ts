@@ -37,15 +37,15 @@ describe('Resonance runtime', () => {
     const wt1 = resolveEnemyResonanceReward('forest-wisp', 1)
     const wt5 = resolveEnemyResonanceReward('forest-wisp', 5)
     expect(wt1.rewardMultiplier).toBe(0.2)
-    expect(wt5.rewardMultiplier).toBe(1)
-    expect(wt5.finalYield).toEqual({ air: 10 })
+    expect(wt5.rewardMultiplier).toBe(1.8)
+    expect(wt5.finalYield).toEqual({ air: 18 })
   })
 
   it('preserves small yields when combined scaling resolves to exactly one', () => {
     const original = MONSTERS['forest-wisp'].resonanceYield
     MONSTERS['forest-wisp'].resonanceYield = { air: 7 }
     try {
-      expect(resolveEnemyResonanceReward('forest-wisp', 5).finalYield).toEqual({ air: 7 })
+      expect(resolveEnemyResonanceReward('forest-wisp', 5).finalYield).toEqual({ air: 12 })
     } finally {
       MONSTERS['forest-wisp'].resonanceYield = original
     }

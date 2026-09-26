@@ -72,7 +72,7 @@ describe('combat farming benchmark', () => {
     expect(wt1.kills).toBeGreaterThan(0)
     expect(wt2.kills).toBeGreaterThan(0)
     expect(wt1.resonanceTotal.air / wt1.kills).toBe(2)
-    expect(wt2.resonanceTotal.air / wt2.kills).toBe(4)
+    expect(wt2.resonanceTotal.air / wt2.kills).toBe(5)
   })
 
   it('stops early when the cloned player dies', () => {

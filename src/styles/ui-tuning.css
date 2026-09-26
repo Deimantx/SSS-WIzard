@@ -166,31 +166,11 @@
 .starting-school-content { position: relative; width: min(1100px, 100%); text-align: center; }
 .starting-school-content h1 { margin: 8px 0 12px; font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 4.5rem); letter-spacing: .02em; }
 .starting-school-lede { max-width: 680px; margin: 0 auto 32px; color: var(--ui-text-muted); line-height: 1.65; }
-.starting-school-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; text-align: left; }
+.starting-school-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; text-align: left; }
 .starting-school-card { min-height: 250px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 22px; background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel) 92%, transparent), color-mix(in srgb, var(--ui-secondary) 8%, var(--ui-panel))); }
 .starting-school-card-icon { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid currentColor; border-radius: 14px; background: color-mix(in srgb, currentColor 11%, transparent); }
 .starting-school-card h2 { margin: 0; font-size: 1.1rem; }
 .starting-school-card p { flex: 1; margin: 0; color: var(--ui-text-muted); font-size: .88rem; line-height: 1.5; }
 .starting-school-note { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 24px; padding: 12px 18px; color: var(--ui-text-muted); border: 1px solid var(--ui-border); border-radius: 999px; background: color-mix(in srgb, var(--ui-panel) 80%, transparent); }
 .starting-school-note strong { color: var(--ui-text); }
-@media (max-width: 850px) { .starting-school-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .starting-school-screen { padding: 32px 14px 48px; } .starting-school-grid { grid-template-columns: 1fr; } .starting-school-card { min-height: 0; } .starting-school-note { border-radius: 16px; } }
-.acolyte-roster-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.acolyte-metric { padding: 14px; border: 1px solid var(--ui-border); border-radius: 12px; background: color-mix(in srgb, var(--ui-panel) 80%, transparent); }
-.acolyte-metric span, .acolyte-source-row span { display: block; color: var(--ui-text-muted); font-size: .7rem; letter-spacing: .12em; }
-.acolyte-metric strong { display: block; margin-top: 4px; font-size: 1.45rem; }
-.acolyte-roster-progress { margin-top: 18px; }
-.acolyte-roster-progress > div, .acolyte-channeling-step, .acolyte-source-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.acolyte-roster-progress > div { margin-bottom: 7px; color: var(--ui-text-muted); font-size: .76rem; letter-spacing: .08em; }
-.acolyte-channeling-step { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ui-border); }
-.acolyte-channeling-step strong { display: block; margin-top: 4px; }
-.acolyte-assignment-list { display: grid; gap: 8px; }
-.acolyte-assignment-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 13px 14px; color: var(--ui-text); text-align: left; border: 1px solid var(--ui-border); border-radius: 11px; background: color-mix(in srgb, var(--ui-panel) 80%, transparent); cursor: pointer; }
-.acolyte-assignment-row:hover, .acolyte-assignment-row:focus-visible { border-color: var(--ui-secondary); background: color-mix(in srgb, var(--ui-secondary) 9%, var(--ui-panel)); }
-.acolyte-assignment-source { color: var(--ui-secondary); font-size: .68rem; letter-spacing: .14em; }
-.acolyte-assignment-status { color: var(--ui-text-muted); font-size: .78rem; }
-.acolyte-empty { padding: 22px; color: var(--ui-text-muted); text-align: center; }
-.acolyte-source-row { padding: 11px 0; border-bottom: 1px solid var(--ui-border); }
-.acolyte-source-row strong { color: var(--ui-secondary); }
-.acolyte-source-note { margin: 16px 0 0; color: var(--ui-text-muted); font-size: .82rem; line-height: 1.5; }
-@media (max-width: 600px) { .acolyte-roster-grid { grid-template-columns: 1fr; } .acolyte-assignment-row { grid-template-columns: 1fr auto; } .acolyte-assignment-source { grid-column: 1 / -1; } }

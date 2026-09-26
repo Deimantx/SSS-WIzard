@@ -7,7 +7,7 @@ import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { ScreenGrid, type ScreenGridPanel } from '../../../components/layout/ScreenGrid'
 import { TowerFrame } from '../TowerFrame'
-import { FocusAssignment } from './FocusAssignment'
+import { AcolyteAssignment } from './AcolyteAssignment'
 import { RecipeDetail } from './RecipeDetail'
 import { RecipeLibrary } from './RecipeLibrary'
 import { clearAttention } from '../../../ui/attention/attentionStore'
@@ -40,7 +40,7 @@ export function TransmutationScreen() {
   const recipe = RECIPES[selectedRecipeId]
   const panels: ScreenGridPanel[] = [
     { id: 'transmutation-recipes', content: <RecipeLibrary selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
-    { id: 'transmutation-focus', content: <FocusAssignment selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
+    { id: 'transmutation-acolytes', content: <AcolyteAssignment selectedRecipeId={selectedRecipeId} onSelect={setSelectedRecipeId} /> },
     { id: 'transmutation-detail', content: <InspectorTransition identity={selectedRecipeId} accent={ITEMS[recipe.output.itemId].color} fill><RecipeDetail recipe={recipe} onSelectRecipe={setSelectedRecipeId} /></InspectorTransition> },
     { id: 'transmutation-arrays', content: <TransmutationArraysPanel /> },
   ]

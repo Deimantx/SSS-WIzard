@@ -84,7 +84,7 @@ export const checkChannelingDiscoveries = (state: GameState): ChannelingDiscover
   const newlyCompleted: ChannelingDiscoveryId[] = []
   const conditions: Record<ChannelingDiscoveryId, boolean> = {
     'stable-leyline': (channeling.totalFluxGenerated ?? 0) >= BALANCE.channeling.stableLeylineThreshold,
-    'echo-resonance': (state.activities.channeling.acolytesAssigned ?? state.activities.channeling.echoesAssigned ?? 0) >= BALANCE.channeling.harmonicWorkforceAcolytes && channeling.fiveEchoSustainMs >= BALANCE.channeling.echoResonanceDurationMs,
+    'echo-resonance': (state.activities.channeling.acolytesAssigned ?? 0) >= BALANCE.channeling.harmonicWorkforceAcolytes && channeling.fiveEchoSustainMs >= BALANCE.channeling.echoResonanceDurationMs,
     'deep-reservoir': getArcaneFluxCapacityBreakdown(state).total >= 1500,
   }
   CHANNELING_DISCOVERIES.forEach(({ id }) => {
@@ -116,7 +116,7 @@ export const advanceChanneling = (state: GameState, deltaMs: number, manaRateOve
   const gained = state.player.mana - before
   state.progress.channeling.totalManaGenerated += gained
   if (!state.progress.channeling.discoveries['echo-resonance']) {
-    const acolytes = state.activities.channeling.acolytesAssigned ?? state.activities.channeling.echoesAssigned ?? 0
+    const acolytes = state.activities.channeling.acolytesAssigned ?? 0
     state.progress.channeling.fiveEchoSustainMs = acolytes >= BALANCE.channeling.harmonicWorkforceAcolytes
       ? state.progress.channeling.fiveEchoSustainMs + delta
       : 0

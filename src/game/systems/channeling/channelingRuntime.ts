@@ -24,7 +24,7 @@ export interface ArcaneFluxCapacityBreakdown {
 }
 
 const level = (state: Pick<GameState, 'progress'>, id: ManaPillarId) => Math.max(0, Math.min(10, state.progress.channeling.pillars[id]?.level ?? 0))
-const channelingAcolytes = (state: Pick<GameState, 'activities'>) => Math.max(0, Math.floor(state.activities.channeling.acolytesAssigned ?? state.activities.channeling.echoesAssigned ?? 0))
+const channelingAcolytes = (state: Pick<GameState, 'activities'>) => Math.max(0, Math.floor(state.activities.channeling.acolytesAssigned ?? 0))
 
 export const getArcaneFluxCapacityBreakdown = (state: Pick<GameState, 'progress' | 'tower'> & Partial<Pick<GameState, 'debug'>>): ArcaneFluxCapacityBreakdown => {
   const base = BALANCE.channeling.baseArcaneFluxCapacity

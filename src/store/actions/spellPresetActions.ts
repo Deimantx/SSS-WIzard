@@ -1,4 +1,4 @@
-import { canonicalSpellId, getDefaultSpellAutomationConfig, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetFocusProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellAutomationConfig, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
+import { canonicalSpellId, getDefaultSpellAutomationConfig, getNextSpellPresetId, getSelectedSpellPreset, getSpellPresetProjection, isSpellUnlocked, MAX_COMBAT_SPELLS, moveSpellToIndex, normalizeSpellAutomationConfig, normalizeSpellPresetName, normalizeSpellPresetSlots, swapSpellSlots, syncSelectedSpellPresetRuntime as syncSelectedSpellPresetRuntimeForState } from '../../game/systems/spells'
 import type { CanonicalSpellId, GameState, SpellAutomationConfig, SpellId, SpellPreset, SpellPresetId } from '../../game/types'
 
 export interface ApplySpellPresetResult {
@@ -118,7 +118,7 @@ export const saveSpellPresetAction = (state: GameState, preset: Pick<SpellPreset
   const shouldAutoSelect = state.spellPresets.selectedPresetId === null
   stored.name = normalizeSpellPresetName(preset.name, stored.name)
   stored.slots = normalizeSpellPresetSlots(preset.slots)
-  const projection = getSpellPresetFocusProjection(state, stored)
+  const projection = getSpellPresetProjection(state, stored)
   if (shouldAutoSelect && projection.validSlots.length) state.spellPresets.selectedPresetId = stored.id
   if (!state.combat.active) syncSelectedSpellPresetRuntimeForState(state)
   return true
@@ -170,7 +170,7 @@ export const deleteSpellPresetAction = (state: GameState, id: SpellPresetId) => 
 export const selectSpellPresetAction = (state: GameState, id: SpellPresetId): ApplySpellPresetResult => {
   const preset = state.spellPresets.presets.find((entry) => entry.id === id)
   if (!preset) return { ok: false, reason: 'missing-preset', unavailableSpellIds: [] }
-  const projection = getSpellPresetFocusProjection(state, preset)
+  const projection = getSpellPresetProjection(state, preset)
   if (!projection.validSlots.length) {
     pushPresetNotification(state, `Cannot select ${preset.name}; add at least one available Spell.`, 'warning')
     return { ok: false, reason: 'empty', unavailableSpellIds: projection.unavailableSpellIds }

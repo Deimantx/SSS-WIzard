@@ -137,7 +137,7 @@ describe('RecipeLibrary screen preferences', () => {
 
   it('keeps selected, assigned, tier, and locked card semantics distinct', () => {
     render(<RecipeLibrary selectedRecipeId="fire-fragment" onSelect={vi.fn()} />)
-    act(() => { useGameStore.getState().setTransmutationEchoes('water-fragment', 1) })
+    act(() => { useGameStore.getState().setTransmutationAcolytes('water-fragment', 1) })
 
     const selectedTile = screen.getByRole('button', { name: /Fire Fragment/ })
     const activeTile = screen.getByRole('button', { name: /Water Fragment/ })

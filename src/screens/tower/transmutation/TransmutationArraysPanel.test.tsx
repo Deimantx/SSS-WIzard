@@ -26,7 +26,7 @@ describe('Transmutation Arrays upgrade presentation', () => {
       const selector = screen.getByRole('button', { name: new RegExp(definition.name) })
       expect(selector.querySelector('.transmutation-array-selector-mark')).toBeTruthy()
       expect(selector.querySelectorAll('.transmutation-array-selector-levelbar i')).toHaveLength(10)
-      expect(selector.textContent).toContain(`${id === 'temporal-array' || id === 'mana-refinement-array' ? 'PROCESS' : id === 'echo-stabilization-array' ? 'CONTROL' : 'YIELD'} · Lv 0 / 10`)
+      expect(selector.textContent).toContain(`${id === 'temporal-array' || id === 'flux-refinement-array' ? 'PROCESS' : id === 'resonance-stability-array' ? 'CONTROL' : 'YIELD'} · Lv 0 / 10`)
     })
   })
 
@@ -63,7 +63,7 @@ describe('Transmutation Arrays upgrade presentation', () => {
     expect(screen.getByText('+0 Acolyte capacity')).toBeTruthy()
     expect(screen.queryByText('+1 Acolyte capacity')).toBeNull()
 
-    act(() => { useGameStore.getState().forceSetTransmutationArrayLevel('echo-stabilization-array', 5) })
+    act(() => { useGameStore.getState().forceSetTransmutationArrayLevel('resonance-stability-array', 5) })
     expect(screen.getByText('NEXT MILESTONE · Lv10')).toBeTruthy()
     expect(screen.getByText('+1 Acolyte capacity')).toBeTruthy()
   })

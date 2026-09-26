@@ -10,7 +10,7 @@ describe('effective Spell presentation with V6 Artifacts', () => {
     state.equipment.weapon = 'ember-staff'
     const effect = SPELLS.ignite.effects[1] as Extract<CombatEffect, { type: 'apply-status' }>
     expect(getEffectiveSpellStatusDurationPreview(state, 'ignite', effect).changed).toBe(false)
-    expect(getEffectiveSpellCooldown(state, 'fire-bolt').effective).toBe(6_000)
+    expect(getEffectiveSpellCooldown(state, 'fire-bolt').effective).toBe(3_500)
   })
 
   it('applies an authored Minor rank to the equipped Artifact read model', () => {

@@ -3,7 +3,7 @@ import { createInitialState } from '../initialState'
 import { chooseStartingSchoolAction } from './onboardingActions'
 
 describe('starting-school onboarding', () => {
-  it('establishes the Level 10 school, starter artifact, and two-spell combat preset', () => {
+  it('establishes the Level 10 school, starter artifact, and three-spell combat preset', () => {
     const state = createInitialState()
     expect(chooseStartingSchoolAction(state, 'fire')).toBe(true)
     expect(state.progress.startingSchoolId).toBe('fire')
@@ -13,7 +13,8 @@ describe('starting-school onboarding', () => {
     expect(state.inventory['ember-staff']).toBe(1)
     expect(state.equipment.weapon).toBe('ember-staff')
     expect(state.player.mana).toBe(state.player.maxMana)
-    expect(state.spellPresets.presets[0]?.slots).toHaveLength(2)
+    expect(state.spellPresets.presets[0]?.slots).toHaveLength(3)
+    expect(state.combat.targetEnemyId).toBe('cinder-moth')
     expect(state.ui.screen).toBe('combat')
     expect(chooseStartingSchoolAction(state, 'water')).toBe(false)
   })

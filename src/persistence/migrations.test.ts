@@ -81,7 +81,7 @@ describe('save navigation migration', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 28, progress: { ...initial.progress, transmutation: { arrays: { 'temporal-array': { rank: 9, level: 999 }, 'unknown-array': { rank: 7, level: 7 } } } } } as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(Object.keys(migrated.progress.transmutation.arrays)).toEqual(['temporal-array', 'conservation-array', 'replication-array', 'mana-refinement-array', 'echo-stabilization-array'])
+    expect(Object.keys(migrated.progress.transmutation.arrays)).toEqual(['temporal-array', 'conservation-array', 'replication-array', 'flux-refinement-array', 'resonance-stability-array'])
     expect(migrated.progress.transmutation.arrays['temporal-array']).toEqual({ rank: 1, level: 10 })
     expect(Object.values(migrated.progress.transmutation.arrays).filter((array) => array.level === 0)).toHaveLength(4)
   })
@@ -332,7 +332,7 @@ describe('save navigation migration', () => {
     } as any)
 
     expect(migrated.activities.transmutation.jobs).toEqual({})
-    expect(migrated.activities.channeling.echoesAssigned).toBe(0)
+    expect(migrated.activities.channeling.acolytesAssigned).toBe(0)
   })
 
   it('migrates an active V8 Research queue into research-1 with one Echo', () => {

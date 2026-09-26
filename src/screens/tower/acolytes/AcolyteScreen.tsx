@@ -1,19 +1,30 @@
-import { Minus, Plus } from 'lucide-react'
 import { useGameStore } from '../../../store/gameStore'
 import { getAcolyteAssignments, getAcolyteCapacityBreakdown, selectFreeAcolytes, selectUsedAcolytes } from '../../../game/systems/acolytes'
 import { Card, Button, Progress, Status } from '../../../components/ui'
-import { GameTooltip, TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { ScreenGrid } from '../../../components/layout/ScreenGrid'
 import { TowerFrame } from '../TowerFrame'
 
-export function AcolyteScreen() { return <TowerFrame className="acolyte-screen" eyebrow="WIZARD TOWER · ACOLYTES" title="Tower Acolytes" description="Assign your apprentices to Tower work while the Wizard continues fighting."><ScreenGrid screen="tower-acolytes" panels={[{ id: 'focus-summary', content: <AcolyteRosterPanel /> }, { id: 'focus-reservations', content: <AcolyteAssignmentsPanel /> }, { id: 'focus-improvement', content: <AcolyteSourcesPanel /> }]} /></TowerFrame> }
-
-function AcolyteRosterPanel() {
-  const state = useGameStore(); const breakdown = getAcolyteCapacityBreakdown(state); const used = selectUsedAcolytes(state); const free = selectFreeAcolytes(state); const channeling = state.activities.channeling.acolytesAssigned ?? 0; const addDescription = free > 0 ? 'Assign one free Acolyte to Arcane Flux production.' : 'No free Acolytes. Unassign an Acolyte from another Tower job.'
-  return <Card className="acolyte-roster-panel" title="ACOLYTE ROSTER"><div className="acolyte-roster-grid"><Metric label="TOTAL" value={breakdown.total} /><Metric label="ASSIGNED" value={used} /><Metric label="AVAILABLE" value={free} /></div><div className="acolyte-roster-progress"><div><span>ACTIVE TOWER STAFFING</span><strong>{used} / {breakdown.total}</strong></div><Progress value={breakdown.total ? used / breakdown.total * 100 : 0} tone="gold" /></div><div className="acolyte-channeling-step"><div><span className="eyebrow">CHANNELING</span><strong>{channeling} Acolytes drawing from the leyline</strong></div><div className="button-row"><GameTooltip content={<TooltipContent title="Remove Channeling Acolyte" description="Release one Tower worker. Flux production updates immediately." />}><Button variant="ghost" icon ariaLabel="Remove Channeling Acolyte" onClick={state.removeChannelingAcolyte} disabled={channeling <= 0}><Minus size={14} /></Button></GameTooltip><strong className="acolyte-channeling-count">{channeling}</strong><GameTooltip content={<TooltipContent title="Assign Channeling Acolyte" description={addDescription} />}><Button variant="secondary" icon ariaLabel="Assign Channeling Acolyte" onClick={state.assignChannelingAcolyte} disabled={free <= 0}><Plus size={14} /></Button></GameTooltip></div></div></Card>
+export function AcolyteScreen() {
+  return <TowerFrame className="acolyte-screen" eyebrow="WIZARD TOWER · ACOLYTES" title="Tower Acolytes" description="Assign your apprentices to Tower work while the Wizard continues fighting."><ScreenGrid screen="tower-acolytes" panels={[{ id: 'acolyte-roster', content: <AcolyteRosterPanel /> }, { id: 'acolyte-assignments', content: <AcolyteAssignmentsPanel /> }, { id: 'acolyte-sources', content: <AcolyteSourcesPanel /> }]} /></TowerFrame>
 }
 
-function AcolyteAssignmentsPanel() { const assignments = getAcolyteAssignments(useGameStore()); const setScreen = useGameStore((state) => state.setScreen); return <Card className="acolyte-assignments-panel" title="ACTIVE ACOLYTE ASSIGNMENTS"><div className="acolyte-assignment-list">{assignments.length === 0 ? <div className="acolyte-empty"><Status tone="neutral">NO ACTIVE TOWER STAFFING</Status><p>Assign apprentices to Channeling, Research, or Transmutation while Combat remains independent.</p></div> : assignments.map((assignment) => <button className="acolyte-assignment-row" key={assignment.id} onClick={() => setScreen(assignment.sourceType === 'channeling' ? 'tower-channeling' : assignment.sourceType === 'research' ? 'tower-research' : 'tower-transmutation')}><span className="acolyte-assignment-source">{assignment.sourceType.toUpperCase()}</span><strong>{assignment.label}</strong><span className="acolyte-assignment-status">1 Acolyte</span></button>)}</div></Card> }
+function AcolyteRosterPanel() {
+  const state = useGameStore()
+  const breakdown = getAcolyteCapacityBreakdown(state)
+  const used = selectUsedAcolytes(state)
+  const free = selectFreeAcolytes(state)
+  return <Card className="acolyte-roster-panel" title="ACOLYTE ROSTER" action={<Button variant="ghost" onClick={() => state.setScreen('tower-channeling')}>OPEN CHANNELING</Button>}><div className="acolyte-worker-markers" aria-label={`${used} of ${breakdown.total} Acolytes assigned`}>{Array.from({ length: breakdown.total }, (_, index) => <span key={index} className={index < used ? 'is-assigned' : ''} />)}</div><div className="acolyte-roster-progress"><div><span>ACTIVE TOWER STAFFING</span><strong>{used} / {breakdown.total}</strong></div><Progress value={breakdown.total ? used / breakdown.total * 100 : 0} tone="gold" /></div><div className="acolyte-roster-grid"><Metric label="TOTAL" value={breakdown.total} /><Metric label="ASSIGNED" value={used} /><Metric label="AVAILABLE" value={free} /></div></Card>
+}
 
-function AcolyteSourcesPanel() { const breakdown = getAcolyteCapacityBreakdown(useGameStore()); return <Card className="acolyte-sources-panel" title="ACOLYTE SOURCES"><div className="acolyte-source-row"><span>Base Tower Roster</span><strong>+{breakdown.base}</strong></div><div className="acolyte-source-row"><span>Permanent Recruits</span><strong>+{breakdown.permanentBonuses}</strong></div>{breakdown.developerBonus > 0 && <div className="acolyte-source-row"><span>Developer Bonus</span><strong>+{breakdown.developerBonus}</strong></div>}<p className="acolyte-source-note">Additional Acolytes will come from future progression.</p></Card> }
+function AcolyteAssignmentsPanel() {
+  const assignments = getAcolyteAssignments(useGameStore())
+  const setScreen = useGameStore((state) => state.setScreen)
+  return <Card className="acolyte-assignments-panel" title="ACTIVE ACOLYTE ASSIGNMENTS"><div className="acolyte-assignment-list">{assignments.length === 0 ? <div className="acolyte-empty"><Status tone="neutral">NO ACTIVE TOWER STAFFING</Status><p>Assign apprentices to Channeling, Research, or Transmutation while Combat remains independent.</p></div> : assignments.map((assignment) => <button className={`acolyte-assignment-row is-${assignment.sourceType}`} key={assignment.id} onClick={() => setScreen(assignment.sourceType === 'channeling' ? 'tower-channeling' : assignment.sourceType === 'research' ? 'tower-research' : 'tower-transmutation')}><span className="acolyte-assignment-source">{assignment.sourceType.toUpperCase()}</span><strong>{assignment.label}</strong><span className="acolyte-assignment-status">1 ACOLYTE <span aria-hidden="true">›</span></span></button>)}</div></Card>
+}
+
+function AcolyteSourcesPanel() {
+  const breakdown = getAcolyteCapacityBreakdown(useGameStore())
+  return <Card className="acolyte-sources-panel" title="ACOLYTE SOURCES"><div className="acolyte-source-row"><span>Base Tower Roster</span><strong>+{breakdown.base}</strong></div><div className="acolyte-source-row"><span>Permanent Recruits</span><strong>+{breakdown.permanentBonuses}</strong></div>{breakdown.developerBonus > 0 && <div className="acolyte-source-row"><span>Developer Bonus</span><strong>+{breakdown.developerBonus}</strong></div>}<p className="acolyte-source-note">Additional Acolytes will come from future progression.</p></Card>
+}
+
 function Metric({ label, value }: { label: string; value: number }) { return <div className="acolyte-metric"><span>{label}</span><strong>{value}</strong></div> }

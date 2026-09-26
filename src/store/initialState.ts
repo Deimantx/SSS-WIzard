@@ -33,7 +33,7 @@ export const createInitialState = (): GameState => ({
   artifactProgress: {},
   guardians: createInitialGuardiansState(),
   activities: {
-    channeling: { acolytesAssigned: 0, echoesAssigned: 0 },
+    channeling: { acolytesAssigned: 0 },
     research: { slots: { 'research-1': null, 'research-2': null, 'research-3': null, 'research-4': null } },
     transmutation: { jobs: {} },
     artificing: { activeJob: null, activeRecipeId: null, progressMs: 0 },
@@ -48,5 +48,5 @@ export const createInitialState = (): GameState => ({
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],
-  debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, ignoreEchoLimit: false, transmutationEchoCapacityOverride: null, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactFreeRankPurchase: false, artifactIgnoreOwnership: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false, bonusAcolytes: 0, acolyteTotalOverride: null, ignoreAcolyteLimit: false, arcaneFluxCapacityOverride: null },
+    debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, bonusMaxFocusFlat: 0, allowManaOverCap: false, allowFocusOverCap: false, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactFreeRankPurchase: false, artifactIgnoreOwnership: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false, bonusAcolytes: 0, acolyteTotalOverride: null, ignoreAcolyteLimit: false, arcaneFluxCapacityOverride: null },
 })

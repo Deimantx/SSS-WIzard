@@ -34,7 +34,6 @@ export const ensureResearchActivity = (state: GameState): ResearchActivity => {
       remainingQuantity: finiteQuantity(research.remainingQuantity),
       progressMs: finiteProgress(research.progressMs),
       acolyteAssigned: true,
-      echoesAssigned: 1,
       status: research.status === 'waiting-mana' ? 'waiting-flux' : research.status === 'level-cap' ? 'level-cap' : 'running',
     }
   }
@@ -53,7 +52,6 @@ const stopBlocked = (job: ResearchJobState, status: ResearchJobState['status'], 
   const changed = job.status !== status
   job.status = status
   job.acolyteAssigned = false
-  job.echoesAssigned = 0
   const progress = finiteProgress(job.progressMs)
   // A blocked full bar belongs to the old completion-burst model and cannot
   // be carried into continuous funding as a free completed item.
@@ -84,8 +82,7 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
     if (!job) continue
     job.requestedQuantity = finiteQuantity(job.requestedQuantity)
     job.remainingQuantity = finiteQuantity(job.remainingQuantity)
-    job.echoesAssigned = finiteQuantity(job.echoesAssigned)
-    job.acolyteAssigned = job.acolyteAssigned ?? job.echoesAssigned > 0
+    job.acolyteAssigned = Boolean(job.acolyteAssigned)
     const progress = normalizeJobProgress(job)
     if (job.remainingQuantity <= 0) { research.slots[slotId] = null; continue }
     const item = ITEMS[job.itemId]

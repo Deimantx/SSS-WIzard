@@ -73,7 +73,7 @@ const LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS: Partial<Record<DungeonId, n
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'crystals', 'collection', 'bestiary', 'tower-channeling', 'tower-focus', 'tower-acolytes', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'crystals', 'collection', 'bestiary', 'tower-channeling', 'tower-acolytes', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -338,7 +338,13 @@ const normalizeSpellPresets = (migrated: GameState, raw: Record<string, any>, so
       .map(normalizeSpellId)
       .filter((spellId): spellId is CanonicalSpellId => Boolean(spellId))
       .filter((spellId, index, ids) => ids.indexOf(spellId) === index)
-    const unlocked = spellIds.filter((spellId) => isSpellRankValue(migrated.progress.spellRanks[spellId]))
+    const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+    const rawRanks = isRecord(rawProgress.spellRanks) ? rawProgress.spellRanks : {}
+    const rawUnlocked = Array.isArray(rawProgress.unlockedSpells) ? rawProgress.unlockedSpells : []
+    const unlocked = [...Object.keys(rawRanks), ...rawUnlocked]
+      .map(normalizeSpellId)
+      .filter((spellId): spellId is CanonicalSpellId => Boolean(spellId))
+      .filter((spellId, index, ids) => ids.indexOf(spellId) === index)
     const ordered = [...priority, ...unlocked.filter((spellId) => !priority.includes(spellId))].slice(0, MAX_COMBAT_SPELLS)
     const autoIds = new Set(priority)
     normalized.presets = [{
@@ -763,6 +769,9 @@ const normalizeResearch = (migrated: GameState, raw: Record<string, any>, source
     const progressMs = status === 'waiting-mana' && rawProgress >= BALANCE.research.durationPerItemMs
       ? 0
       : Math.min(BALANCE.research.durationPerItemMs, rawProgress)
+    const legacyEchoesAssigned = oldQueue || Object.prototype.hasOwnProperty.call(source, 'echoesAssigned')
+      ? Math.min(BALANCE.research.maxEchoes, Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? (oldQueue && source.running === true && !blocked ? 1 : 0))))
+      : undefined
     return {
       itemId: itemId as ItemId,
       targetSchoolId: targetSchoolId as SchoolId,
@@ -770,7 +779,7 @@ const normalizeResearch = (migrated: GameState, raw: Record<string, any>, source
       remainingQuantity: remaining,
       progressMs,
       acolyteAssigned: typeof source.acolyteAssigned === 'boolean' ? source.acolyteAssigned : oldQueue ? source.running === true && !blocked : Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? 0)) > 0,
-      echoesAssigned: oldQueue ? source.running === true && !blocked ? 1 : 0 : Math.min(BALANCE.research.maxEchoes, Math.max(0, Math.floor(nonNegativeNumber(source.echoesAssigned) ?? 0))),
+      ...(legacyEchoesAssigned !== undefined ? { echoesAssigned: legacyEchoesAssigned } : {}),
       status: oldQueue ? blocked ? status : source.running === true ? 'running' : 'prepared' : status,
     }
   }
@@ -859,7 +868,14 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
     const progress = nonNegativeNumber(rawJob.progressMs) ?? 0
     // Legacy Transmutation pinned unfunded work at 100%; that work was never
     // paid for and must not become an instant free output after hydration.
-    jobs[recipeId] = { acolyteAssigned: typeof rawJob.acolyteAssigned === 'boolean' ? rawJob.acolyteAssigned : Math.max(0, Math.floor(nonNegativeNumber(rawJob.echoesAssigned) ?? 0)) > 0, echoesAssigned: Math.max(0, Math.floor(nonNegativeNumber(rawJob.echoesAssigned) ?? 0)), progressMs: progress >= recipe.baseDurationMs ? 0 : Math.min(recipe.baseDurationMs, progress) }
+    const legacyEchoesAssigned = Object.prototype.hasOwnProperty.call(rawJob, 'echoesAssigned')
+      ? Math.max(0, Math.floor(nonNegativeNumber(rawJob.echoesAssigned) ?? 0))
+      : undefined
+    jobs[recipeId] = {
+      acolyteAssigned: typeof rawJob.acolyteAssigned === 'boolean' ? rawJob.acolyteAssigned : (legacyEchoesAssigned ?? 0) > 0,
+      ...(legacyEchoesAssigned !== undefined ? { echoesAssigned: legacyEchoesAssigned } : {}),
+      progressMs: progress >= recipe.baseDurationMs ? 0 : Math.min(recipe.baseDurationMs, progress),
+    }
   })
 
   if (rawTransmutation.running === true && validContentId(rawTransmutation.recipeId, recipeIds)) {
@@ -878,31 +894,35 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
 
   // Preserve work while ensuring the migration cannot create Focus overflow.
   const researchEchoFocus = RESEARCH_SLOT_ORDER.reduce((sum, slotId) => sum + Math.max(0, Math.floor(migrated.activities.research.slots[slotId]?.echoesAssigned ?? 0)) * BALANCE.research.echoFocusCost, 0)
-  const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
+  const nonTransmutationFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned ?? 0)) * BALANCE.channeling.echoFocusCost
     + researchEchoFocus
-  const effectiveTransmutationCapacity = BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(migrated).echoCapacityBonus
+  const effectiveTransmutationCapacity = BALANCE.transmutation.maxEchoes + getTransmutationArrayBonuses(migrated).acolyteCapacityBonus
   const focusCapacity = Math.floor((migrated.player.maxFocus - nonTransmutationFocus) / BALANCE.transmutation.echoFocusCost)
   let remaining = Math.max(0, Math.min(effectiveTransmutationCapacity, focusCapacity))
   const normalized: Partial<Record<TransmutationRecipeId, TransmutationJobState>> = {}
   RECIPE_ORDER.forEach((recipeId) => {
     const job = jobs[recipeId]
     if (!job) return
-    const echoes = Math.min(job.echoesAssigned, remaining)
-    normalized[recipeId] = { acolyteAssigned: job.acolyteAssigned ?? echoes > 0, echoesAssigned: echoes, progressMs: job.progressMs }
+    const echoes = Math.min(job.echoesAssigned ?? 0, remaining)
+    normalized[recipeId] = {
+      acolyteAssigned: job.acolyteAssigned ?? echoes > 0,
+      ...(Object.prototype.hasOwnProperty.call(job, 'echoesAssigned') ? { echoesAssigned: echoes } : {}),
+      progressMs: job.progressMs,
+    }
     remaining -= echoes
   })
   migrated.activities.transmutation = { jobs: normalized }
 }
 
 const normalizeResearchFocus = (migrated: GameState) => {
-  const nonResearchFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned)) * BALANCE.channeling.echoFocusCost
+  const nonResearchFocus = Math.max(0, Math.floor(migrated.activities.channeling.echoesAssigned ?? 0)) * BALANCE.channeling.echoFocusCost
     + Object.entries(migrated.activities.transmutation.jobs).reduce((sum, [, job]) => sum + Math.max(0, Math.floor(job?.echoesAssigned ?? 0)) * BALANCE.transmutation.echoFocusCost, 0)
   let remaining = Math.max(0, Math.floor((migrated.player.maxFocus - nonResearchFocus) / BALANCE.research.echoFocusCost))
   RESEARCH_SLOT_ORDER.forEach((slotId) => {
     const job = migrated.activities.research.slots[slotId]
     if (!job) return
     if (job.acolyteAssigned) return
-    const echoes = Math.min(Math.max(0, Math.floor(job.echoesAssigned)), remaining)
+    const echoes = Math.min(Math.max(0, Math.floor(job.echoesAssigned ?? 0)), remaining)
     job.echoesAssigned = echoes
     if (echoes === 0 && job.status === 'running') job.status = 'prepared'
     remaining -= echoes

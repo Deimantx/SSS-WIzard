@@ -173,8 +173,8 @@ describe('profile storage and session lifecycle', () => {
     useGameStore.getState().setSchoolXpDebug('earth', getSchoolLevelStartXp(3) + 5)
     useGameStore.getState().setSchoolXpDebug('air', getSchoolLevelStartXp(2) + 5)
     useGameStore.getState().prepareResearch('fire-fragment', 'fire', 30)
-    useGameStore.getState().setResearchEchoes('research-1', 1)
-    useGameStore.getState().assignTransmutationEcho('fire-fragment')
+    useGameStore.getState().setResearchAcolytes('research-1', 1)
+    useGameStore.getState().assignTransmutationAcolyte('fire-fragment')
     useGameStore.setState((state) => {
       state.currencies.gold = 321
       state.progress.channeling.pillars['leyline-conduit'] = { rank: 1, level: 3 }
@@ -194,8 +194,8 @@ describe('profile storage and session lifecycle', () => {
     expect(useGameStore.getState().currencies.gold).toBe(321)
     expect(useGameStore.getState().equipment.weapon).toBeNull()
     expect(useGameStore.getState().progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
-    expect(useGameStore.getState().activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, acolyteAssigned: true, echoesAssigned: 0 })
-    expect(useGameStore.getState().activities.transmutation.jobs['fire-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 0, progressMs: 0 })
+    expect(useGameStore.getState().activities.research.slots['research-1']).toMatchObject({ itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, acolyteAssigned: true })
+    expect(useGameStore.getState().activities.transmutation.jobs['fire-fragment']).toEqual({ acolyteAssigned: true, progressMs: 0 })
 
     useGameStore.getState().addItem('fire-fragment', 7)
     expect(useGameStore.getState().saveGame('manual').ok).toBe(true)

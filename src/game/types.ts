@@ -6,7 +6,7 @@ export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-focus' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
 export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'waiting-focus' | 'completed' | 'locked' | 'recovering'
 
 /**
@@ -136,7 +136,7 @@ export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff' | 'debuff
 import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
 export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
-export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 'replication-array' | 'mana-refinement-array' | 'echo-stabilization-array'
+export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 'replication-array' | 'flux-refinement-array' | 'resonance-stability-array'
 export type ChannelingDiscoveryId = 'stable-leyline' | 'echo-resonance' | 'deep-reservoir'
 export type RecipeId = TransmutationRecipeId | ArtificingRecipeId
 export type TransmutationRecipeId = 'fire-fragment' | 'water-fragment' | 'earth-fragment' | 'air-fragment' | 'prismatic-fragment'
@@ -309,8 +309,8 @@ export interface PlayerState {
 }
 export interface ChannelingActivity {
   acolytesAssigned?: number
-  /** @deprecated Compatibility-only input for pre-Acolyte callers. */
-  echoesAssigned: number
+  /** Historical save field; fresh runtime state uses acolytesAssigned. */
+  echoesAssigned?: number
 }
 export type ResearchSlotId = 'research-1' | 'research-2' | 'research-3' | 'research-4'
 export type ResearchJobStatus = 'prepared' | 'running' | 'flux-limited' | 'waiting-flux' | 'mana-limited' | 'waiting-mana' | 'level-cap' | 'protected' | 'missing-item'
@@ -322,8 +322,8 @@ export interface ResearchJobState {
   remainingQuantity: number
   progressMs: number
   acolyteAssigned?: boolean
-  /** @deprecated Compatibility-only input for pre-Acolyte callers. */
-  echoesAssigned: number
+  /** Historical save field; fresh runtime state uses acolyteAssigned. */
+  echoesAssigned?: number
   status: ResearchJobStatus
 }
 /**
@@ -359,8 +359,8 @@ export interface ResearchActivity {
 export interface TransmutationJobState {
   acolyteAssigned?: boolean
   progressMs: number
-  /** @deprecated Compatibility-only input for pre-Acolyte callers. */
-  echoesAssigned: number
+  /** Historical save field; fresh runtime state uses acolyteAssigned. */
+  echoesAssigned?: number
 }
 export interface TransmutationActivity { jobs: Partial<Record<TransmutationRecipeId, TransmutationJobState>> }
 export type ArtificingJob =
@@ -715,8 +715,6 @@ export interface DebugOverrides {
   bonusMaxFocusFlat: number
   allowManaOverCap: boolean
   allowFocusOverCap: boolean
-  ignoreEchoLimit: boolean
-  transmutationEchoCapacityOverride: number | null
   showLockedTransmutationRecipes: boolean
   showLockedArtificingRecipes: boolean
   playerImmortal: boolean

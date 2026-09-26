@@ -13,7 +13,7 @@ import { clamp, formatCompactDuration, formatNumber, formatRatePerHour, formatSi
 
 const metric = (label: string, value: string, tone?: ActivityMetric['tone']): ActivityMetric => ({ label, value, tone })
 const percent = (value: number, max: number) => Math.round(clamp(value / Math.max(1, max) * 100, 0, 100))
-const hasAcolyte = (job: { acolyteAssigned?: boolean; echoesAssigned?: number } | undefined) => Boolean(job?.acolyteAssigned ?? (job?.echoesAssigned ?? 0) > 0)
+const hasAcolyte = (job: { acolyteAssigned?: boolean } | undefined) => Boolean(job?.acolyteAssigned)
 
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []

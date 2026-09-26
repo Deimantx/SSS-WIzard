@@ -10,7 +10,7 @@ import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
-import { TowerChannelingScreen, TowerFocusScreen, TowerAcolyteScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen, TowerSummoningScreen } from './tower/TowerScreens'
+import { TowerChannelingScreen, TowerAcolyteScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen, TowerSummoningScreen } from './tower/TowerScreens'
 import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
 import { isScreenUnlocked } from '../game/systems/story/storyProgression'
 import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
@@ -23,7 +23,6 @@ import { StartingSchoolScreen } from './onboarding/StartingSchoolScreen'
 function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'home') return <HomeScreenV2 />
   if (screen === 'tower-channeling') return <TowerChannelingScreen />
-  if (screen === 'tower-focus') return <TowerAcolyteScreen />
   if (screen === 'tower-acolytes') return <TowerAcolyteScreen />
   if (screen === 'tower-research') return <TowerResearchScreen />
   if (screen === 'tower-transmutation') return <TowerTransmutationScreen />

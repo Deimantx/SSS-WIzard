@@ -17,7 +17,7 @@ export function CurrentArcaneWork() {
   const setScreen = state.setScreen
   const researchJobs = getPreparedResearchJobs(state)
   const researchAcolytes = getResearchAcolytesAssigned(state)
-  const transmutationJobs = RECIPE_ORDER.filter((recipeId) => { const recipe = RECIPES[recipeId]; const job = state.activities.transmutation.jobs[recipeId]; return Boolean(job && (job.acolyteAssigned ?? job.echoesAssigned > 0) && isRecipeUnlocked({ progress: state.progress }, recipe)) })
+  const transmutationJobs = RECIPE_ORDER.filter((recipeId) => { const recipe = RECIPES[recipeId]; const job = state.activities.transmutation.jobs[recipeId]; return Boolean(job?.acolyteAssigned && isRecipeUnlocked({ progress: state.progress }, recipe)) })
   const transmutationAcolytes = getTransmutationAcolytesAssigned(state)
   const channelingAcolytes = Math.max(0, Math.floor(state.activities.channeling.acolytesAssigned ?? 0))
   const fluxRate = getArcaneFluxProductionPerSecond(state).total

@@ -10,8 +10,6 @@ export const createDefaultDebugOverrides = (): DebugOverrides => ({
   bonusMaxFocusFlat: 0,
   allowManaOverCap: false,
   allowFocusOverCap: false,
-  ignoreEchoLimit: false,
-  transmutationEchoCapacityOverride: null,
   showLockedTransmutationRecipes: false,
   showLockedArtificingRecipes: false,
   playerImmortal: false,

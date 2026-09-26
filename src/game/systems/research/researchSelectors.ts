@@ -4,7 +4,6 @@ import { BALANCE } from '../../core/balance/balance'
 import { getEquippedReservedQuantity } from '../../core/equipment/equipmentRules'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
-import { selectFreeFocus } from '../../engine'
 import type { GameState, ItemId, ResearchJobState, ResearchJobStatus, ResearchSlotId, SchoolId } from '../../types'
 import { clamp } from '../../utils'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
@@ -36,20 +35,18 @@ export const getPreparedResearchJobs = (state: Pick<GameState, 'activities'>): P
 }
 
 export const getPreparedResearchCount = (state: Pick<GameState, 'activities'>) => getPreparedResearchJobs(state).length
-export const getResearchAcolytesAssigned = (state: Pick<GameState, 'activities'>) => getPreparedResearchJobs(state).reduce((total, job) => total + ((job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0) ? 1 : 0), 0)
-export const getResearchEchoesAssigned = getResearchAcolytesAssigned
-export const getResearchEchoCapacity = (state: Pick<GameState, 'activities'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => state.debug?.ignoreAcolyteLimit || state.debug?.ignoreEchoLimit ? Number.MAX_SAFE_INTEGER : state.tower ? selectTotalAcolytes(state as GameState) : BALANCE.research.maxEchoes
-export const getResearchEchoFocusCost = () => BALANCE.research.echoFocusCost
-export const getResearchFocusReserved = (state: Pick<GameState, 'activities'>) => getResearchEchoesAssigned(state) * getResearchEchoFocusCost()
+export const getResearchAcolytesAssigned = (state: Pick<GameState, 'activities'>) => getPreparedResearchJobs(state).reduce((total, job) => total + (job.acolyteAssigned ? 1 : 0), 0)
+export const getResearchAcolyteCapacity = (state: Pick<GameState, 'activities'> & Partial<Pick<GameState, 'debug' | 'tower'>>) => state.debug?.ignoreAcolyteLimit ? Number.MAX_SAFE_INTEGER : state.tower ? selectTotalAcolytes(state as GameState) : 0
+export const getResearchAcolyteFocusReserved = (_acolytesAssigned: number) => 0
 
 export interface ResearchAssignOneEachState {
   targetSlotIds: ResearchSlotId[]
   targetCount: number
   requiredFocus: number
   freeFocus: number
-  freeEchoSlots: number
+  freeAcolyteSlots: number
   canAssign: boolean
-  blockedReason: 'no-targets' | 'echo-capacity' | 'focus' | null
+  blockedReason: 'no-targets' | 'acolyte-capacity' | 'focus' | null
 }
 
 export const getResearchAssignOneEachState = (state: GameState): ResearchAssignOneEachState => {
@@ -63,8 +60,8 @@ export const getResearchAssignOneEachState = (state: GameState): ResearchAssignO
   const requiredFocus = 0
   const freeEchoSlots = selectFreeAcolytes(state)
   const freeFocus = 0
-  const blockedReason = targetCount === 0 ? 'no-targets' : freeEchoSlots < targetCount ? 'echo-capacity' : null
-  return { targetSlotIds, targetCount, requiredFocus, freeFocus, freeEchoSlots, canAssign: blockedReason === null, blockedReason }
+  const blockedReason = targetCount === 0 ? 'no-targets' : freeEchoSlots < targetCount ? 'acolyte-capacity' : null
+  return { targetSlotIds, targetCount, requiredFocus, freeFocus, freeAcolyteSlots: freeEchoSlots, canAssign: blockedReason === null, blockedReason }
 }
 
 export function getResearchAvailableQuantity(state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment'>, itemId: ItemId) {
@@ -87,7 +84,7 @@ export function getResearchJobStatus(state: Pick<GameState, 'activities' | 'inve
   if (isProtected(state, job.itemId)) return 'protected'
   if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) return 'level-cap'
   if (rawOwned(state, job.itemId) < 1) return 'missing-item'
-  if (!(job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0)) return 'prepared'
+  if (!job.acolyteAssigned) return 'prepared'
   const demand = BALANCE.research.arcaneFluxPerItem * 1000 / BALANCE.research.durationPerItemMs
   const ratio = estimateTowerFluxFundingRatio(state.tower.resources.arcaneFlux, getArcaneFluxProductionPerSecond(state).total, demand, BALANCE.tickMs)
   if (ratio <= 1e-9) return 'waiting-flux'
@@ -100,22 +97,22 @@ export const getResearchJobProgressPercent = (state: Pick<GameState, 'activities
   return job ? clamp(finiteProgress(job.progressMs) / BALANCE.research.durationPerItemMs * 100, 0, 100) : 0
 }
 
-export const getResearchEffectiveDuration = (job: Pick<ResearchJobState, 'echoesAssigned' | 'acolyteAssigned'>) => {
-  const acolytes = (job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0) ? 1 : 0
+export const getResearchEffectiveDuration = (job: Pick<ResearchJobState, 'acolyteAssigned'>) => {
+  const acolytes = job.acolyteAssigned ? 1 : 0
   return acolytes > 0 ? BALANCE.research.durationPerItemMs : null
 }
 
-export const getResearchItemsPerHour = (job: Pick<ResearchJobState, 'echoesAssigned' | 'acolyteAssigned'>) => ((job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0) ? 1 : 0) * 3_600_000 / BALANCE.research.durationPerItemMs
-export const getResearchXpPerHour = (job: Pick<ResearchJobState, 'itemId' | 'targetSchoolId' | 'echoesAssigned' | 'acolyteAssigned'>) => getResearchItemsPerHour(job) * getResearchXp(job.itemId, job.targetSchoolId)
-export const getResearchFluxPerSecond = (job: Pick<ResearchJobState, 'echoesAssigned' | 'acolyteAssigned'>) => ((job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0) ? BALANCE.research.arcaneFluxPerItem * 1000 / BALANCE.research.durationPerItemMs : 0)
+export const getResearchItemsPerHour = (job: Pick<ResearchJobState, 'acolyteAssigned'>) => (job.acolyteAssigned ? 1 : 0) * 3_600_000 / BALANCE.research.durationPerItemMs
+export const getResearchXpPerHour = (job: Pick<ResearchJobState, 'itemId' | 'targetSchoolId' | 'acolyteAssigned'>) => getResearchItemsPerHour(job) * getResearchXp(job.itemId, job.targetSchoolId)
+export const getResearchFluxPerSecond = (job: Pick<ResearchJobState, 'acolyteAssigned'>) => (job.acolyteAssigned ? BALANCE.research.arcaneFluxPerItem * 1000 / BALANCE.research.durationPerItemMs : 0)
 export const getResearchManaPerSecond = getResearchFluxPerSecond
 
-export const getResearchBatchEtaMs = (job: Pick<ResearchJobState, 'remainingQuantity' | 'progressMs' | 'echoesAssigned' | 'acolyteAssigned'>) => {
-  const echoes = (job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0) ? 1 : 0
+export const getResearchBatchEtaMs = (job: Pick<ResearchJobState, 'remainingQuantity' | 'progressMs' | 'acolyteAssigned'>) => {
+  const acolytes = job.acolyteAssigned ? 1 : 0
   const remaining = finiteQuantity(job.remainingQuantity)
-  if (!echoes || !remaining) return null
-  const current = Math.max(0, BALANCE.research.durationPerItemMs - finiteProgress(job.progressMs)) / echoes
-  return current + Math.max(0, remaining - 1) * BALANCE.research.durationPerItemMs / echoes
+  if (!acolytes || !remaining) return null
+  const current = Math.max(0, BALANCE.research.durationPerItemMs - finiteProgress(job.progressMs)) / acolytes
+  return current + Math.max(0, remaining - 1) * BALANCE.research.durationPerItemMs / acolytes
 }
 
 export const getResearchJobXpPerItem = (job: Pick<ResearchJobState, 'itemId' | 'targetSchoolId'>) => getResearchXp(job.itemId, job.targetSchoolId)
@@ -129,7 +126,7 @@ export interface ResearchNextLevelEta {
 /** Estimate when this prepared batch alone reaches its target school's next level. */
 export const getResearchNextLevelEtaMs = (state: Pick<GameState, 'activities' | 'inventory' | 'protectedItems' | 'equipment' | 'artifactProgress' | 'schools' | 'progress' | 'player' | 'tower'>, slotId: ResearchSlotId): ResearchNextLevelEta => {
   const job = getResearchJob(state, slotId)
-  if (!job || finiteQuantity(job.remainingQuantity) <= 0 || !(job.acolyteAssigned ?? finiteQuantity(job.echoesAssigned) > 0)) return { etaMs: null, beyondBatch: false }
+  if (!job || finiteQuantity(job.remainingQuantity) <= 0 || !job.acolyteAssigned) return { etaMs: null, beyondBatch: false }
   const status = getResearchJobStatus(state, slotId)
   if (status !== 'running') return { etaMs: null, beyondBatch: false }
   const school = getSchoolProgressInfo(state, job.targetSchoolId)

@@ -7,7 +7,7 @@ export interface TransmutationArrayDefinition {
   id: TransmutationArrayId
   name: string
   description: string
-  effect: 'craft-speed-percent' | 'preservation-chance' | 'replication-chance' | 'mana-cost-reduction-percent' | 'echo-capacity'
+  effect: 'craft-speed-percent' | 'preservation-chance' | 'replication-chance' | 'flux-cost-reduction-percent' | 'acolyte-capacity'
   effectLabel: string
   valuePerLevel: number
   maxLevel: 10
@@ -24,8 +24,8 @@ export const TRANSMUTATION_ARRAY_IDS: readonly TransmutationArrayId[] = [
   'temporal-array',
   'conservation-array',
   'replication-array',
-  'mana-refinement-array',
-  'echo-stabilization-array',
+  'flux-refinement-array',
+  'resonance-stability-array',
 ]
 
 export const TRANSMUTATION_ARRAYS: Record<TransmutationArrayId, TransmutationArrayDefinition> = {
@@ -62,22 +62,22 @@ export const TRANSMUTATION_ARRAYS: Record<TransmutationArrayId, TransmutationArr
     fragmentWeights: { fire: 1.6, water: 0.6, earth: 1, air: 0.8 },
     dominantElement: 'fire',
   },
-  'mana-refinement-array': {
-    id: 'mana-refinement-array',
+  'flux-refinement-array': {
+    id: 'flux-refinement-array',
     name: 'Flux Refinement Array',
     description: 'Refines the Arcane Flux pattern used by Transmutation, reducing the Flux required to complete each cycle.',
-    effect: 'mana-cost-reduction-percent',
+    effect: 'flux-cost-reduction-percent',
     effectLabel: 'TRANSMUTATION FLUX COST',
     valuePerLevel: 0.02,
     maxLevel: 10,
     fragmentWeights: { fire: 0.8, water: 1.6, earth: 0.6, air: 1 },
     dominantElement: 'water',
   },
-  'echo-stabilization-array': {
-    id: 'echo-stabilization-array',
+  'resonance-stability-array': {
+    id: 'resonance-stability-array',
     name: 'Resonance Stabilization Array',
     description: 'Strengthens the Transmutation lattice, reducing Resonance costs for stable cycles.',
-    effect: 'echo-capacity',
+    effect: 'acolyte-capacity',
     effectLabel: 'TRANSMUTATION RESONANCE STABILITY',
     valuePerLevel: 1,
     maxLevel: 10,

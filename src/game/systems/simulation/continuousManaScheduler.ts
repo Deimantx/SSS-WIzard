@@ -91,24 +91,24 @@ export const getContinuousManaDemandPerSecond = (state: ContinuousManaDemandStat
   RECIPE_ORDER.forEach((recipeId) => {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    const echoes = Math.max(0, Math.floor(finiteNonNegative(job?.echoesAssigned)))
+    const acolytes = job?.acolyteAssigned ? 1 : 0
     const unlocked = isRecipeUnlocked(state, recipe)
     const hasMaterials = recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
-    if (echoes > 0 && unlocked && (recipe.manaCost ?? 0) > 0 && hasMaterials) demand += continuousManaPerSecond(getEffectiveTransmutationManaCost(state, recipe), recipe.baseDurationMs, getEffectiveTransmutationWorkMultiplier(state, echoes))
+    if (acolytes > 0 && unlocked && (recipe.manaCost ?? 0) > 0 && hasMaterials) demand += continuousManaPerSecond(getEffectiveTransmutationManaCost(state, recipe), recipe.baseDurationMs, getEffectiveTransmutationWorkMultiplier(state, acolytes))
   })
 
   const research = state.activities.research
   const researchSlots = research.slots && typeof research.slots === 'object'
     ? Object.values(research.slots)
     : research.running && research.itemId && research.targetSchoolId
-      ? [{ itemId: research.itemId, targetSchoolId: research.targetSchoolId, remainingQuantity: research.remainingQuantity, echoesAssigned: 1 }]
+      ? [{ itemId: research.itemId, targetSchoolId: research.targetSchoolId, remainingQuantity: research.remainingQuantity, acolyteAssigned: true }]
       : []
   researchSlots.forEach((job) => {
     if (!job || !ITEMS[job.itemId]?.researchSchool || !SCHOOLS[job.targetSchoolId]) return
-    const echoes = Math.max(0, Math.floor(finiteNonNegative(job.echoesAssigned)))
+    const acolytes = job.acolyteAssigned ? 1 : 0
     const available = Math.max(0, Math.floor(finiteNonNegative(state.inventory[job.itemId])) - getEquippedReservedQuantity(state, job.itemId))
     const blocked = Boolean(state.protectedItems[job.itemId]) || Object.values(state.equipment).includes(job.itemId) || state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap
-    if (echoes > 0 && finiteNonNegative(job.remainingQuantity) > 0 && available > 0 && !blocked) demand += continuousManaPerSecond(BALANCE.research.manaCostPerItem, BALANCE.research.durationPerItemMs, echoes)
+    if (acolytes > 0 && finiteNonNegative(job.remainingQuantity) > 0 && available > 0 && !blocked) demand += continuousManaPerSecond(BALANCE.research.manaCostPerItem, BALANCE.research.durationPerItemMs, acolytes)
   })
   return demand
 }

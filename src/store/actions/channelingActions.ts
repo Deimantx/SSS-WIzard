@@ -13,7 +13,7 @@ export { assignChannelingAcolyteAction, removeChannelingAcolyteAction, setChanne
 const isProtected = (state: GameState, itemId: keyof GameState['inventory']) => Boolean(state.protectedItems[itemId])
 const announceDiscoveries = (state: GameState, ids: ChannelingDiscoveryId[]) => ids.forEach((id) => { const discovery = CHANNELING_DISCOVERIES.find((entry) => entry.id === id); if (discovery) pushNotification(state, `Arcane Discovery: ${discovery.name}`, 'success') })
 
-export const setChannelingEchoesAction = (state: GameState, amount: number, force = false) => {
+export const setChannelingAcolytesAction = (state: GameState, amount: number, force = false) => {
   if (force) state.debug.ignoreAcolyteLimit = true
   setChannelingAcolytesDebugAction(state, amount)
 }
@@ -63,7 +63,7 @@ export const setChannelingFluxGeneratedAction = (state: GameState, amount: numbe
   if (discoveries.includes('deep-reservoir')) recalculateDerivedStats(state)
 }
 
-export const setChannelingSustainAction = (state: GameState, amount: number) => {
+export const setChannelingAcolyteSustainAction = (state: GameState, amount: number) => {
   state.progress.channeling.fiveEchoSustainMs = Math.max(0, amount)
   announceDiscoveries(state, checkChannelingDiscoveries(state))
 }

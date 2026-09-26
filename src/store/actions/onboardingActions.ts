@@ -1,18 +1,11 @@
 import { SCHOOLS } from '../../game/content/schools/schools'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { STARTING_SCHOOL_CONFIG } from '../../game/content/onboarding/startingSchool'
 import { getSchoolTotalXpForLevel } from '../../game/core/balance/schoolXpCurve'
 import { grantItem } from '../../game/systems/inventory/itemAcquisition'
 import { equipItemAction } from './equipmentActions'
 import { getDefaultSpellAutomationConfig, getNextSpellPresetId, syncAutoCastRuntimeForLoadout } from '../../game/systems/spells'
 import { getSpellsForSchool, syncSpellUnlocksForSchool } from '../../game/systems/spells/spellProgression'
 import type { GameState, SchoolId, TutorialStage } from '../../game/types'
-
-const STARTER_ARTIFACTS: Record<SchoolId, 'ember-staff' | 'tideglass-wand' | 'stoneheart-scepter' | 'windthread-wand'> = {
-  fire: 'ember-staff',
-  water: 'tideglass-wand',
-  earth: 'stoneheart-scepter',
-  air: 'windthread-wand',
-}
 
 /** Commits the authored fresh-profile opening in one state mutation. */
 export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId) => {
@@ -24,12 +17,13 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
     syncSpellUnlocksForSchool(state, id)
   })
 
-  const artifactId = STARTER_ARTIFACTS[schoolId]
+  const starterConfig = STARTING_SCHOOL_CONFIG[schoolId]
+  const artifactId = starterConfig.artifactId
   grantItem(state, artifactId, 1)
   const equipmentResult = equipItemAction(state, artifactId, 'weapon')
   if (!equipmentResult.ok) state.equipment.weapon = artifactId
 
-  const starterSpells = getSpellsForSchool(schoolId).filter((spell) => state.progress.spellRanks[spell.id] !== undefined).slice(0, 2)
+  const starterSpells = getSpellsForSchool(schoolId).filter((spell) => state.progress.spellRanks[spell.id] !== undefined).slice(0, 3)
   const presetId = getNextSpellPresetId(state.spellPresets.presets)
   const slots = starterSpells.map((spell) => ({ spellId: spell.id, autoCast: true, automation: getDefaultSpellAutomationConfig(spell.id, true, false) }))
   state.spellPresets.presets.push({ id: presetId, name: `${SCHOOLS[schoolId].name} Initiate`, slots })
@@ -41,7 +35,7 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   state.player.mana = state.player.maxMana
   state.ui.screen = 'combat'
   state.ui.lastEnteredCombatDungeonId = 'whispering-woods'
-  state.combat.targetEnemyId = DUNGEONS['whispering-woods'].monsterPool[0] ?? null
+  state.combat.targetEnemyId = starterConfig.firstTargetMonsterId
   return true
 }
 
@@ -70,5 +64,5 @@ export const skipTutorialAction = (state: GameState) => {
 }
 
 export const grantStarterArtifactAction = (state: GameState, schoolId: SchoolId) => {
-  grantItem(state, STARTER_ARTIFACTS[schoolId], 1)
+  grantItem(state, STARTING_SCHOOL_CONFIG[schoolId].artifactId, 1)
 }

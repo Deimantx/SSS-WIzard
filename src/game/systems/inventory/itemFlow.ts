@@ -40,20 +40,20 @@ export function getItemFlow(itemId: ItemId, state: Pick<GameState, 'inventory' |
   const production: ItemFlowSource[] = []
   const consumption: ItemFlowSource[] = []
   const researchRate = getPreparedResearchJobs(state)
-    .filter((job) => job.itemId === itemId && job.echoesAssigned > 0)
+    .filter((job) => job.itemId === itemId && Boolean(job.acolyteAssigned))
     .reduce((total, job) => total + getResearchItemsPerHour(job), 0)
   const researchSource = flowSource('Research', researchRate, 'tower-research')
   if (researchSource) consumption.push(researchSource)
 
   Object.values(RECIPES).forEach((recipe) => {
-    const echoes = Math.max(0, Math.floor(state.activities.transmutation.jobs[recipe.id]?.echoesAssigned ?? 0))
-    if (!echoes || !isRecipeUnlocked(state, recipe)) return
+    const acolytes = state.activities.transmutation.jobs[recipe.id]?.acolyteAssigned ? 1 : 0
+    if (!acolytes || !isRecipeUnlocked(state, recipe)) return
     const ingredient = recipe.ingredients.find((candidate) => candidate.itemId === itemId)
     if (ingredient) {
-      const source = flowSource(recipe.name, getExpectedTransmutationIngredientConsumptionPerHour(state, recipe, echoes, ingredient.quantity), 'tower-transmutation')
+      const source = flowSource(recipe.name, getExpectedTransmutationIngredientConsumptionPerHour(state, recipe, acolytes, ingredient.quantity), 'tower-transmutation')
       if (source) consumption.push(source)
     }
-    const output = recipe.output.itemId === itemId ? flowSource(recipe.name, getRecipeOutputPerHour(recipe, echoes, state), 'tower-transmutation') : null
+    const output = recipe.output.itemId === itemId ? flowSource(recipe.name, getRecipeOutputPerHour(recipe, acolytes, state), 'tower-transmutation') : null
     if (output) production.push(output)
   })
 

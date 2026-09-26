@@ -62,7 +62,7 @@ describe('ResearchInspector', () => {
 
     const saved = useGameStore.getState()
     expect(saved.inventory['fire-fragment']).toBe(100)
-    expect(saved.activities.research.slots['research-1']).toMatchObject({ requestedQuantity: 100, remainingQuantity: 100, echoesAssigned: 0 })
+    expect(saved.activities.research.slots['research-1']).toMatchObject({ requestedQuantity: 100, remainingQuantity: 100, acolyteAssigned: false })
   })
 
   it('allows preparing a target at cap while keeping Echo assignment blocked by status', () => {

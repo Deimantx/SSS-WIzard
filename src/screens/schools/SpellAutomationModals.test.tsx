@@ -94,7 +94,7 @@ describe('Spell automation editor audit fixes', () => {
     useGameStore.getState().saveSpellPreset({ id, name: 'Tooltip Preset', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
 
-    render(<TooltipProvider><SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} /></SpellLoadoutDndProvider></TooltipProvider>)
+    render(<TooltipProvider><SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout projectionState={focusState()} /></SpellLoadoutDndProvider></TooltipProvider>)
 
     const iconTarget = document.querySelector('.loadout-spell-icon-tooltip-target') as HTMLElement
     expect(iconTarget.dataset.noDrag).toBe('true')
@@ -157,7 +157,7 @@ describe('Spell automation editor audit fixes', () => {
     const id = useGameStore.getState().createSpellPreset('Audit Preset')
     useGameStore.getState().saveSpellPreset({ id, name: 'Audit Preset', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
-    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} /></SpellLoadoutDndProvider>)
+    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout projectionState={focusState()} /></SpellLoadoutDndProvider>)
 
     fireEvent.click(screen.getByRole('button', { name: 'Open combat automation overview' }))
     expect(screen.getByRole('dialog', { name: 'Combat Automation Overview' })).toBeTruthy()
@@ -175,7 +175,7 @@ describe('Spell automation editor audit fixes', () => {
     const id = useGameStore.getState().createSpellPreset('Direct Preset')
     useGameStore.getState().saveSpellPreset({ id, name: 'Direct Preset', slots: [{ spellId: 'fire-bolt', autoCast: true }] })
     useGameStore.getState().selectSpellPreset(id)
-    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout focusState={focusState()} /></SpellLoadoutDndProvider>)
+    render(<SpellLoadoutDndProvider onCommit={() => {}}><CombatSpellLoadout projectionState={focusState()} /></SpellLoadoutDndProvider>)
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure Fire Bolt automation' }))
     expect(screen.getByRole('dialog', { name: 'Fire Bolt Automation' })).toBeTruthy()

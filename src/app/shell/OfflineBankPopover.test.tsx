@@ -11,7 +11,7 @@ describe('OfflineBankPopover', () => {
   it('shows live simulated progress and finalizing state while advancing', async () => {
     const state = createInitialState()
     state.offlineBankMs = 3_600_000
-    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
+    state.activities.transmutation.jobs['fire-fragment'] = { acolyteAssigned: true, progressMs: 0 }
     useGameStore.getState().hydrateState(state)
 
     let progressCallback: ((progress: OfflineBankProgress) => void) | undefined

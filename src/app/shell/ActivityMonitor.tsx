@@ -57,7 +57,7 @@ export function ActivityMonitor() {
 function PinnedTransmutationTracker() {
   const pinnedId = useUiPreferences().screenState.transmutation.pinnedRecipeId
   const setScreen = useGameStore((state) => state.setScreen)
-  const acolytes = useGameStore((state) => pinnedId ? (getTransmutationJob(state, pinnedId)?.acolyteAssigned ?? ((getTransmutationJob(state, pinnedId)?.echoesAssigned ?? 0) > 0) ? 1 : 0) : 0)
+  const acolytes = useGameStore((state) => pinnedId && getTransmutationJob(state, pinnedId)?.acolyteAssigned ? 1 : 0)
   if (!pinnedId) return null
   const recipe = TRANSMUTATION_RECIPES[pinnedId]
   return <aside className="transmutation-pinned-tracker" aria-label="Pinned Transmutation recipe"><button type="button" onClick={() => { setNavigationIntent({ transmutationRecipeId: pinnedId }); setScreen('tower-transmutation') }}><strong>PINNED · {recipe.name}</strong><span>{acolytes > 0 ? '1 ACOLYTE ASSIGNED' : 'READY TO START'}</span></button></aside>

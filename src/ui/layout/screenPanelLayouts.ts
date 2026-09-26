@@ -230,24 +230,16 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   'tower-channeling': screen({
     'channeling-mana-core': panel({ order: 1, columnStart: 1, columnSpan: 6, rowStart: 1, minHeight: 0, preferredHeight: 354, label: 'Arcane Flux Core' }),
-    'channeling-echoes': panel({ order: 2, columnStart: 7, columnSpan: 6, rowStart: 1, minHeight: 354, preferredHeight: 354, label: 'Acolyte Channeling' }),
+    'channeling-acolytes': panel({ order: 2, columnStart: 7, columnSpan: 6, rowStart: 1, minHeight: 354, preferredHeight: 354, label: 'Acolyte Channeling' }),
     'channeling-breakdown': panel({ order: 3, columnStart: 1, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Channeling Breakdown' }),
     'channeling-pillars': panel({ order: 4, columnStart: 7, columnSpan: 6, rowStart: 2, minHeight: 354, preferredHeight: 650, label: 'Leyline Pillars' }),
-  }, ['channeling-mana-core', 'channeling-echoes', 'channeling-breakdown', 'channeling-pillars']),
+  }, ['channeling-mana-core', 'channeling-acolytes', 'channeling-breakdown', 'channeling-pillars']),
 
-  // ============================================================
-  // FOCUS
-  // ============================================================
-  'tower-focus': screen({
-    'focus-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 282, preferredHeight: 498, label: 'Focus overview' }),
-    'focus-reservations': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 354, preferredHeight: 570, label: 'Active Focus usage' }),
-    'focus-improvement': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 390, preferredHeight: 570, label: 'Focus improvement' }),
-  }, ['focus-summary', 'focus-reservations', 'focus-improvement']),
   'tower-acolytes': screen({
-    'focus-summary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 282, preferredHeight: 498, label: 'Acolyte roster' }),
-    'focus-reservations': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 354, preferredHeight: 570, label: 'Active Acolyte assignments' }),
-    'focus-improvement': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 390, preferredHeight: 570, label: 'Acolyte sources' }),
-  }, ['focus-summary', 'focus-reservations', 'focus-improvement']),
+    'acolyte-roster': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 282, preferredHeight: 498, label: 'Acolyte roster' }),
+    'acolyte-assignments': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 354, preferredHeight: 570, label: 'Active Acolyte assignments' }),
+    'acolyte-sources': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 390, preferredHeight: 570, label: 'Acolyte sources' }),
+  }, ['acolyte-roster', 'acolyte-assignments', 'acolyte-sources']),
 
   // ============================================================
   // RESEARCH
@@ -264,10 +256,10 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   'tower-transmutation': screen({
     'transmutation-recipes': panel({ order: 1, columnStart: 1, columnSpan: 7, rowStart: 1, minHeight: 354, preferredHeight: 600, label: 'Recipe library' }),
-    'transmutation-focus': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 282, preferredHeight: 600, label: 'Focus assignment' }),
+    'transmutation-acolytes': panel({ order: 2, columnStart: 1, columnSpan: 7, rowStart: 2, minHeight: 282, preferredHeight: 600, label: 'Acolyte assignment' }),
     'transmutation-detail': panel({ order: 3, columnStart: 8, columnSpan: 5, rowStart: 1, minHeight: 282, preferredHeight: 600, label: 'Recipe detail' }),
     'transmutation-arrays': panel({ order: 4, columnStart: 8, columnSpan: 5, rowStart: 2, minHeight: 426, preferredHeight: 600, label: 'Transmutation Arrays' }),
-  }, ['transmutation-recipes', 'transmutation-focus', 'transmutation-detail', 'transmutation-arrays']),
+  }, ['transmutation-recipes', 'transmutation-acolytes', 'transmutation-detail', 'transmutation-arrays']),
 
   // ============================================================
   // ARTIFICING

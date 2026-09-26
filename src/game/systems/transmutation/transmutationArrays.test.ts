@@ -10,12 +10,12 @@ describe('Transmutation Arrays', () => {
     expect(TRANSMUTATION_ARRAY_IDS).toHaveLength(5)
     expect(Object.values(state.progress.transmutation.arrays).every((array) => array.rank === 1 && array.level === 0)).toBe(true)
     TRANSMUTATION_ARRAY_IDS.forEach((id) => { state.progress.transmutation.arrays[id].level = 10 })
-    expect(getTransmutationArrayBonuses(state)).toEqual({ craftSpeedPct: 0.3, craftSpeedMultiplier: 1.3, preservationChance: 0.05, replicationChance: 0.2, manaCostReductionPct: 0.2, fluxCostReductionPct: 0.2, resonanceCostReductionPct: 0.1, echoCapacityBonus: 2 })
+    expect(getTransmutationArrayBonuses(state)).toEqual({ craftSpeedPct: 0.3, craftSpeedMultiplier: 1.3, preservationChance: 0.05, replicationChance: 0.2, fluxCostReductionPct: 0.2, resonanceCostReductionPct: 0.1, acolyteCapacityBonus: 2 })
   })
 
   it('uses weighted Channeling-equivalent costs', () => {
     expect(getTransmutationArrayLevelCost('temporal-array', 1)).toEqual({ fragments: { fire: 20, water: 12, earth: 16, air: 32 }, lifeEssence: 50 })
-    expect(getTransmutationArrayLevelCost('echo-stabilization-array', 10)).toEqual({ fragments: { fire: 800, water: 1200, earth: 600, air: 1400 }, lifeEssence: 2500 })
+    expect(getTransmutationArrayLevelCost('resonance-stability-array', 10)).toEqual({ fragments: { fire: 800, water: 1200, earth: 600, air: 1400 }, lifeEssence: 2500 })
     const totals = TRANSMUTATION_ARRAY_IDS.reduce((total, id) => {
       for (let level = 1; level <= 10; level += 1) {
         const cost = getTransmutationArrayLevelCost(id, level)!
@@ -31,7 +31,7 @@ describe('Transmutation Arrays', () => {
   it('shares effective recipe speed and Mana calculations', () => {
     const state = createInitialState()
     state.progress.transmutation.arrays['temporal-array'].level = 10
-    state.progress.transmutation.arrays['mana-refinement-array'].level = 10
+    state.progress.transmutation.arrays['flux-refinement-array'].level = 10
     const recipe = TRANSMUTATION_RECIPES['prismatic-fragment']
     expect(getEffectiveTransmutationDuration(state, recipe, 1)).toBeCloseTo(9_230.769, 2)
     expect(getEffectiveTransmutationManaCost(state, recipe)).toBe(0)

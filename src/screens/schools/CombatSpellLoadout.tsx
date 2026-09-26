@@ -5,7 +5,7 @@ import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { LiveSpellCardTooltip } from '../../components/spells/LiveSpellCardTooltip'
 import { SPELLS } from '../../game/content/spells/spells'
 import { SCHOOLS } from '../../game/content/schools/schools'
-import { formatAutomationCondition, formatSpellAutomationSummary, getSpellAutomationConfig, type SpellPresetFocusState } from '../../game/systems/spells'
+import { formatAutomationCondition, formatSpellAutomationSummary, getSpellAutomationConfig, type SpellPresetRuntimeState } from '../../game/systems/spells'
 import type { SpellAutomationConfig, SpellId, SpellPresetSlot } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { SpellIcon } from './SpellIcon'
@@ -15,7 +15,7 @@ import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvide
 
 type AutomationEditorOrigin = 'overview' | 'direct'
 
-export function CombatSpellLoadout({ focusState, onSelectSpell, automationSpellId = null, onAutomationRequestHandled }: { focusState: SpellPresetFocusState; onSelectSpell?: (spellId: SpellId) => void; automationSpellId?: SpellId | null; onAutomationRequestHandled?: () => void }) {
+export function CombatSpellLoadout({ projectionState: _projectionState, onSelectSpell, automationSpellId = null, onAutomationRequestHandled }: { projectionState?: SpellPresetRuntimeState; onSelectSpell?: (spellId: SpellId) => void; automationSpellId?: SpellId | null; onAutomationRequestHandled?: () => void }) {
   const presets = useGameStore((state) => state.spellPresets)
   const combatActive = useGameStore((state) => state.combat.active)
   const activeSpellLoadout = useGameStore((state) => state.combat.activeSpellLoadout)

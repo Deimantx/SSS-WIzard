@@ -37,7 +37,6 @@ export const assignResearchAcolyteAction = (state: GameState, slotId: ResearchSl
   if (status === 'level-cap' || status === 'protected' || status === 'missing-item') return false
   if (!canAssignAcolyte(state)) { noFreeAcolytes(state); return false }
   job.acolyteAssigned = true
-  job.echoesAssigned = 0
   job.status = 'running'
   if (state.progress.tutorialStage === 'first-kill' || state.progress.tutorialStage === 'tower-work') state.progress.tutorialStage = 'research'
   return true
@@ -47,7 +46,6 @@ export const removeResearchAcolyteAction = (state: GameState, slotId: ResearchSl
   const job = state.activities.research.slots[slotId]
   if (!job?.acolyteAssigned) return false
   job.acolyteAssigned = false
-  job.echoesAssigned = 0
   if (job.status === 'running' || job.status === 'flux-limited' || job.status === 'waiting-flux') job.status = 'prepared'
   return true
 }
@@ -59,7 +57,7 @@ export const assignOneResearchAcolyteEachAction = (state: GameState) => {
 }
 
 export const clearResearchAcolytesAction = (state: GameState) => {
-  for (const job of Object.values(state.activities.research.slots)) if (job) { job.acolyteAssigned = false; job.echoesAssigned = 0; if (job.status === 'running' || job.status === 'flux-limited' || job.status === 'waiting-flux') job.status = 'prepared' }
+  for (const job of Object.values(state.activities.research.slots)) if (job) { job.acolyteAssigned = false; if (job.status === 'running' || job.status === 'flux-limited' || job.status === 'waiting-flux') job.status = 'prepared' }
 }
 
 export const assignTransmutationAcolyteAction = (state: GameState, recipeId: TransmutationRecipeId) => {
@@ -67,7 +65,7 @@ export const assignTransmutationAcolyteAction = (state: GameState, recipeId: Tra
   const job = getTransmutationJob(state, recipeId)
   if (!recipe || job?.acolyteAssigned) return false
   if (!canAssignAcolyte(state)) { noFreeAcolytes(state); return false }
-  state.activities.transmutation.jobs[recipeId] = { ...(job ?? { progressMs: 0 }), acolyteAssigned: true, echoesAssigned: 0 }
+  state.activities.transmutation.jobs[recipeId] = { ...(job ?? { progressMs: 0 }), acolyteAssigned: true }
   if (state.progress.tutorialStage === 'first-kill' || state.progress.tutorialStage === 'tower-work') state.progress.tutorialStage = 'transmutation'
   return true
 }
@@ -76,11 +74,10 @@ export const removeTransmutationAcolyteAction = (state: GameState, recipeId: Tra
   const job = state.activities.transmutation.jobs[recipeId]
   if (!job?.acolyteAssigned) return false
   job.acolyteAssigned = false
-  job.echoesAssigned = 0
   return true
 }
 
-export const clearTransmutationAcolytesAction = (state: GameState) => Object.values(state.activities.transmutation.jobs).forEach((job) => { if (job) { job.acolyteAssigned = false; job.echoesAssigned = 0 } })
+export const clearTransmutationAcolytesAction = (state: GameState) => Object.values(state.activities.transmutation.jobs).forEach((job) => { if (job) job.acolyteAssigned = false })
 
 export const getAcolyteDebugSummary = (state: GameState) => ({ total: state.debug.acolyteTotalOverride ?? state.tower.acolytes.base + Object.values(state.tower.acolytes.permanentBonuses).reduce((sum, value) => sum + value, 0) + state.debug.bonusAcolytes, used: selectUsedAcolytes(state), free: selectFreeAcolytes(state) })
 

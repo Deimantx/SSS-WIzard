@@ -88,7 +88,7 @@ const getNextResearchBoundaryMs = (state: GameState) => {
   const research = ensureResearchActivity(state)
   let next: number | null = null
   Object.values(research.slots).forEach((job) => {
-    if (!job || job.remainingQuantity <= 0 || !(job.acolyteAssigned ?? job.echoesAssigned > 0)) return
+    if (!job || job.remainingQuantity <= 0 || !job.acolyteAssigned) return
     const remaining = Math.max(0, BALANCE.research.durationPerItemMs - Math.max(0, job.progressMs))
     next = minBoundary([next, positiveRateBoundary(remaining, 1)])
   })
@@ -100,7 +100,7 @@ const getNextTransmutationBoundaryMs = (state: GameState) => {
   TRANSMUTATION_RECIPE_ORDER.forEach((recipeId) => {
     const recipe = TRANSMUTATION_RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    if (!job || !(job.acolyteAssigned ?? job.echoesAssigned > 0) || !isRecipeUnlocked(state, recipe)) return
+    if (!job || !job.acolyteAssigned || !isRecipeUnlocked(state, recipe)) return
     const hasMaterials = recipe.ingredients.every((ingredient) => getConsumableQuantity(state, ingredient.itemId) >= ingredient.quantity)
     if (!hasMaterials) return
     const remaining = Math.max(0, recipe.baseDurationMs - Math.max(0, job.progressMs))
@@ -241,11 +241,11 @@ const prepareEpochWork = (epoch: OfflineContinuousEpoch, deltaMs: number) => {
 }
 
 const itemCanChangePassiveWork = (state: GameState, itemId: ItemId) => {
-  const researchUsesItem = Object.values(ensureResearchActivity(state).slots).some((job) => Boolean(job && (job.acolyteAssigned ?? job.echoesAssigned > 0) && job.itemId === itemId))
+  const researchUsesItem = Object.values(ensureResearchActivity(state).slots).some((job) => Boolean(job?.acolyteAssigned && job.itemId === itemId))
   if (researchUsesItem) return true
   return TRANSMUTATION_RECIPE_ORDER.some((recipeId) => {
     const job = state.activities.transmutation.jobs[recipeId]
-    if (!job || !(job.acolyteAssigned ?? job.echoesAssigned > 0)) return false
+    if (!job || !job.acolyteAssigned) return false
     return TRANSMUTATION_RECIPES[recipeId].ingredients.some((ingredient) => ingredient.itemId === itemId)
   })
 }

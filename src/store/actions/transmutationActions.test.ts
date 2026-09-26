@@ -24,7 +24,7 @@ describe('transmutation developer ingredient grants', () => {
     grantTransmutationMissingIngredientsAction(state, 'prismatic-fragment', 10)
 
     expect(getConsumableQuantity(state, 'life-essence')).toBe(100)
-    expect(getConsumableQuantity(state, 'fire-fragment')).toBe(60)
-    expect(getConsumableQuantity(state, 'water-fragment')).toBe(60)
+    expect(getConsumableQuantity(state, 'fire-fragment')).toBe(20)
+    expect(getConsumableQuantity(state, 'water-fragment')).toBe(20)
   })
 })

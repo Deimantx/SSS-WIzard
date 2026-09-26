@@ -5,14 +5,12 @@ import { pushNotification } from '../../game/engine'
 import { getResearchAvailableQuantity } from '../../game/systems/research/researchSelectors'
 import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReservations'
 import type { GameState, ItemId, ResearchJobState, ResearchSlotId, SchoolId } from '../../game/types'
-import { assignResearchAcolyteAction, removeResearchAcolyteAction, assignOneResearchAcolyteEachAction, clearResearchAcolytesAction } from './acolyteActions'
-
-export { assignResearchAcolyteAction, removeResearchAcolyteAction, assignOneResearchAcolyteEachAction, clearResearchAcolytesAction }
+import { assignResearchAcolyteAction as assignResearchAcolyteRuntimeAction, removeResearchAcolyteAction as removeResearchAcolyteRuntimeAction, assignOneResearchAcolyteEachAction as assignOneResearchAcolyteEachRuntimeAction, clearResearchAcolytesAction as clearResearchAcolytesRuntimeAction } from './acolyteActions'
 
 const validSchool = (schoolId: SchoolId) => Boolean(SCHOOLS[schoolId])
 const finiteQuantity = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : 0
 const isProtected = (state: GameState, itemId: ItemId) => Boolean(state.protectedItems[itemId]) || Object.values(state.equipment).includes(itemId)
-const makeJob = (itemId: ItemId, targetSchoolId: SchoolId, quantity: number): ResearchJobState => ({ itemId, targetSchoolId, requestedQuantity: quantity, remainingQuantity: quantity, progressMs: 0, acolyteAssigned: false, echoesAssigned: 0, status: 'prepared' })
+const makeJob = (itemId: ItemId, targetSchoolId: SchoolId, quantity: number): ResearchJobState => ({ itemId, targetSchoolId, requestedQuantity: quantity, remainingQuantity: quantity, progressMs: 0, acolyteAssigned: false, status: 'prepared' })
 
 const notify = (state: GameState, text: string) => pushNotification(state, text, 'warning', { key: 'research-action', cooldownMs: 1200 })
 
@@ -35,7 +33,7 @@ export const prepareResearchAction = (state: GameState, itemId: ItemId, targetSc
   if (existing) {
     existing.requestedQuantity += quantity
     existing.remainingQuantity += quantity
-    if (existing.echoesAssigned <= 0) existing.status = 'prepared'
+    if (!existing.acolyteAssigned) existing.status = 'prepared'
   } else {
     state.activities.research.slots[slotId] = makeJob(itemId, targetSchoolId, quantity)
   }
@@ -49,33 +47,33 @@ export const removePreparedResearchAction = (state: GameState, slotId: ResearchS
   return true
 }
 
-export const assignResearchEchoAction = (state: GameState, slotId: ResearchSlotId) => {
-  return assignResearchAcolyteAction(state, slotId)
+export const assignResearchAcolyteAction = (state: GameState, slotId: ResearchSlotId) => {
+  return assignResearchAcolyteRuntimeAction(state, slotId)
 }
 
-export const assignOneResearchEchoEachAction = (state: GameState) => {
-  return assignOneResearchAcolyteEachAction(state) > 0
+export const assignOneResearchAcolyteEachAction = (state: GameState) => {
+  return assignOneResearchAcolyteEachRuntimeAction(state) > 0
 }
 
-export const removeResearchEchoAction = (state: GameState, slotId: ResearchSlotId) => {
-  return removeResearchAcolyteAction(state, slotId)
+export const removeResearchAcolyteAction = (state: GameState, slotId: ResearchSlotId) => {
+  return removeResearchAcolyteRuntimeAction(state, slotId)
 }
 
-export const assignMaxResearchEchoesAction = (state: GameState, slotId: ResearchSlotId) => {
-  return assignResearchAcolyteAction(state, slotId) ? 1 : 0
+export const assignMaxResearchAcolytesAction = (state: GameState, slotId: ResearchSlotId) => {
+  return assignResearchAcolyteRuntimeAction(state, slotId) ? 1 : 0
 }
 
 export const pauseResearchAction = (state: GameState, slotId: ResearchSlotId) => {
-  return removeResearchAcolyteAction(state, slotId)
+  return removeResearchAcolyteRuntimeAction(state, slotId)
 }
 
-export const setResearchEchoesAction = (state: GameState, slotId: ResearchSlotId, amount: number, force = false) => {
-  if (amount > 0) return assignResearchAcolyteAction(state, slotId)
-  return removeResearchAcolyteAction(state, slotId)
+export const setResearchAcolytesAction = (state: GameState, slotId: ResearchSlotId, amount: number, force = false) => {
+  if (amount > 0) return assignResearchAcolyteRuntimeAction(state, slotId)
+  return removeResearchAcolyteRuntimeAction(state, slotId)
 }
 
-export const clearResearchEchoesAction = (state: GameState) => {
-  clearResearchAcolytesAction(state)
+export const clearResearchAcolytesAction = (state: GameState) => {
+  clearResearchAcolytesRuntimeAction(state)
 }
 
 export const clearPreparedResearchAction = (state: GameState) => {

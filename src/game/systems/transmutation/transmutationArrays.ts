@@ -7,10 +7,9 @@ export interface TransmutationArrayBonuses {
   craftSpeedMultiplier: number
   preservationChance: number
   replicationChance: number
-  manaCostReductionPct: number
   fluxCostReductionPct: number
   resonanceCostReductionPct: number
-  echoCapacityBonus: number
+  acolyteCapacityBonus: number
 }
 
 const finiteLevel = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(10, Math.floor(value))) : 0
@@ -19,7 +18,7 @@ export const getTransmutationArrayEffectValue = (arrayId: TransmutationArrayId, 
   const definition = TRANSMUTATION_ARRAYS[arrayId]
   const safeLevel = finiteLevel(level)
   if (!definition) return 0
-  return definition.effect === 'echo-capacity' ? Math.floor(safeLevel / 5) : safeLevel * definition.valuePerLevel
+  return definition.effect === 'acolyte-capacity' ? Math.floor(safeLevel / 5) : safeLevel * definition.valuePerLevel
 }
 
 export const getTransmutationArrayLevel = (state: Pick<GameState, 'progress'>, arrayId: TransmutationArrayId) => finiteLevel(state.progress.transmutation?.arrays?.[arrayId]?.level)
@@ -34,14 +33,13 @@ export const getTransmutationArrayBonuses = (state: Pick<GameState, 'progress'>)
     craftSpeedMultiplier: 1 + getTransmutationArrayEffectValue('temporal-array', levels['temporal-array']),
     preservationChance: getTransmutationArrayEffectValue('conservation-array', levels['conservation-array']),
     replicationChance: getTransmutationArrayEffectValue('replication-array', levels['replication-array']),
-    manaCostReductionPct: getTransmutationArrayEffectValue('mana-refinement-array', levels['mana-refinement-array']),
-    fluxCostReductionPct: getTransmutationArrayEffectValue('mana-refinement-array', levels['mana-refinement-array']),
-    resonanceCostReductionPct: levels['echo-stabilization-array'] >= 5 ? levels['echo-stabilization-array'] * 0.01 : 0,
-    echoCapacityBonus: getTransmutationArrayEffectValue('echo-stabilization-array', levels['echo-stabilization-array']),
+    fluxCostReductionPct: getTransmutationArrayEffectValue('flux-refinement-array', levels['flux-refinement-array']),
+    resonanceCostReductionPct: levels['resonance-stability-array'] >= 5 ? levels['resonance-stability-array'] * 0.01 : 0,
+    acolyteCapacityBonus: getTransmutationArrayEffectValue('resonance-stability-array', levels['resonance-stability-array']),
   }
 }
 
-export const getEffectiveTransmutationManaCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(0, (recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).manaCostReductionPct))
+export const getEffectiveTransmutationManaCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(0, (recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).fluxCostReductionPct))
 
 export const getEffectiveTransmutationFluxCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(1, Math.ceil((recipe.arcaneFluxCost ?? recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).fluxCostReductionPct)))
 export const getEffectiveTransmutationResonanceCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Object.fromEntries(Object.entries(recipe.resonanceCost ?? {}).map(([type, amount]) => [type, Math.max(1, Math.ceil((amount ?? 0) * (1 - getTransmutationArrayBonuses(state).resonanceCostReductionPct)))])) as NonNullable<RecipeDefinition['resonanceCost']>

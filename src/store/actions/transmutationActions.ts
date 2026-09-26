@@ -7,36 +7,28 @@ import { grantItem } from '../../game/systems/inventory/itemAcquisition'
 import { TRANSMUTATION_ARRAYS, getTransmutationArrayLevelCost, getTransmutationArrayFragmentItemId } from '../../game/content/transmutation/transmutationArrays'
 import type { GameState, TransmutationArrayId, TransmutationRecipeId } from '../../game/types'
 import { clamp } from '../../game/utils'
-import { assignTransmutationAcolyteAction, removeTransmutationAcolyteAction, clearTransmutationAcolytesAction } from './acolyteActions'
+import { assignTransmutationAcolyteAction as assignTransmutationAcolyteRuntimeAction, removeTransmutationAcolyteAction as removeTransmutationAcolyteRuntimeAction, clearTransmutationAcolytesAction as clearTransmutationAcolytesRuntimeAction } from './acolyteActions'
 
-export { assignTransmutationAcolyteAction, removeTransmutationAcolyteAction, clearTransmutationAcolytesAction }
+export const assignTransmutationAcolyteAction = (state: GameState, recipeId: TransmutationRecipeId) => assignTransmutationAcolyteRuntimeAction(state, recipeId)
+export const removeTransmutationAcolyteAction = (state: GameState, recipeId: TransmutationRecipeId) => removeTransmutationAcolyteRuntimeAction(state, recipeId)
+export const clearTransmutationAcolytesAction = (state: GameState) => clearTransmutationAcolytesRuntimeAction(state)
 
-export const assignTransmutationEchoAction = (state: GameState, recipeId: TransmutationRecipeId) => {
-  return assignTransmutationAcolyteAction(state, recipeId)
+export const assignMaxTransmutationAcolytesAction = (state: GameState, recipeId: TransmutationRecipeId) => {
+  return assignTransmutationAcolyteRuntimeAction(state, recipeId)
 }
 
-export const removeTransmutationEchoAction = (state: GameState, recipeId: TransmutationRecipeId) => {
-  return removeTransmutationAcolyteAction(state, recipeId)
-}
-
-export const assignMaxTransmutationEchoesAction = (state: GameState, recipeId: TransmutationRecipeId) => {
-  return assignTransmutationAcolyteAction(state, recipeId) ? 1 : 0
-}
-
-export const clearTransmutationRecipeEchoesAction = (state: GameState, recipeId: TransmutationRecipeId) => {
+export const clearTransmutationRecipeAcolytesAction = (state: GameState, recipeId: TransmutationRecipeId) => {
   const job = state.activities.transmutation.jobs[recipeId]
-  if (job) { job.acolyteAssigned = false; job.echoesAssigned = 0 }
+  if (job) job.acolyteAssigned = false
 }
 
-export const setTransmutationEchoesAction = (state: GameState, recipeId: TransmutationRecipeId, amount: number, force = false) => {
+export const setTransmutationAcolytesAction = (state: GameState, recipeId: TransmutationRecipeId, amount: number, force = false) => {
   if (!RECIPES[recipeId]) return false
-  if (amount > 0) return assignTransmutationAcolyteAction(state, recipeId)
-  return removeTransmutationAcolyteAction(state, recipeId)
+  if (amount > 0) return assignTransmutationAcolyteRuntimeAction(state, recipeId)
+  return removeTransmutationAcolyteRuntimeAction(state, recipeId)
 }
 
-export const clearTransmutationAssignmentsAction = (state: GameState) => clearTransmutationAcolytesAction(state)
-export const setTransmutationEchoCapacityOverrideAction = (state: GameState, amount: number | null) => { state.debug.transmutationEchoCapacityOverride = amount === null || !Number.isFinite(amount) ? null : Math.max(0, Math.floor(amount)) }
-
+export const clearTransmutationAssignmentsAction = (state: GameState) => clearTransmutationAcolytesRuntimeAction(state)
 /** Grants only the missing consumable ingredients for one or more test cycles. */
 export const grantTransmutationMissingIngredientsAction = (state: GameState, recipeId: TransmutationRecipeId, cycles = 1) => {
   const recipe = RECIPES[recipeId]

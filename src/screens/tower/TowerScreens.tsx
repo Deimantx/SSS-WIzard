@@ -1,5 +1,4 @@
 export { ChannelingScreen as TowerChannelingScreen } from './channeling/ChannelingScreen'
-export { FocusScreen as TowerFocusScreen } from './focus/FocusScreen'
 export { AcolyteScreen as TowerAcolyteScreen } from './acolytes/AcolyteScreen'
 export { ResearchScreen as TowerResearchScreen } from './research/ResearchScreen'
 export { TransmutationScreen as TowerTransmutationScreen } from './transmutation/TransmutationScreen'

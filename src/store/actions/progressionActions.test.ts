@@ -81,7 +81,7 @@ describe('school progression debug controls', () => {
     grantSchoolXp(state, 'fire', 2100)
     expect(state.schools.fire).toEqual({ xp: 2100, level: 8 })
     expect(state.progress.spellRanks).toMatchObject({ 'fire-bolt': 1, 'searing-touch': 1 })
-    expect(state.progress.spellRanks['flame-burst']).toBeUndefined()
+    expect(state.progress.spellRanks['flame-burst']).toBe(1)
 
     grantSchoolXp(state, 'fire', 15120 - 2100 - 1)
     expect(state.schools.fire.level).toBe(15)

@@ -115,19 +115,16 @@ describe("Crystal System V1", () => {
     }
   });
 
-  it("rejects removing a Focus-capacity Crystal when reservations would become illegal", () => {
+  it("keeps combat loadout independence outside Crystal capacity checks", () => {
     const state = createInitialState();
     state.player.baseMaxFocus = 69;
-    state.activities.channeling.echoesAssigned = 5;
-    state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 2, progressMs: 0 };
+    state.activities.channeling.acolytesAssigned = 5;
+    state.activities.transmutation.jobs['fire-fragment'] = { acolyteAssigned: true, progressMs: 0 };
     state.crystals.owned["concentration-t1"] = 1;
 
     expect(equipCrystal(state, "concentration-t1").ok).toBe(true);
-    expect(unequipCrystal(state, 0)).toMatchObject({
-      ok: false,
-      reason: "Not enough Focus capacity for the current reservations.",
-    });
-    expect(state.crystals.equippedSlots[0]).toBe("concentration-t1");
+    expect(unequipCrystal(state, 0)).toMatchObject({ ok: true });
+    expect(state.crystals.equippedSlots[0]).toBeNull();
   });
 
   it("protects equipped copies from crushing and upgrades deterministically", () => {

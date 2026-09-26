@@ -5,7 +5,7 @@ import { Card, Progress, SearchInput, Status } from '../../../components/ui'
 import { ItemIcon, ItemTooltip } from '../../../components/ui/item'
 import { ITEMS } from '../../../game/content/items/items'
 import { isTransmutationRecipeId, type RecipeDefinition } from '../../../game/content/recipes/recipes'
-import { canAssignTransmutationEcho, getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
+import { getRecipeProgressPercent, getRecipeStatus, getRecipeUnlockReason, getTransmutationJob, getTransmutationRecipeEntries, getTransmutationRecipeFilterCounts, getTransmutationTierOptions, getVisibleTransmutationRecipes, type TransmutationRecipeFilters, type TransmutationStatus } from '../../../game/systems/transmutation/transmutationSelectors'
 import { getEffectiveTransmutationFluxCost, getEffectiveTransmutationResonanceCost } from '../../../game/systems/transmutation/transmutationArrays'
 import type { RecipeCategory, TransmutationRecipeId } from '../../../game/types'
 import { setUiPreferences, useUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
@@ -101,7 +101,7 @@ function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe:
   const preferences = useUiPreferences()
   const item = ITEMS[recipe.output.itemId]
   const owned = state.inventory[recipe.output.itemId] ?? 0
-  const acolytes = (getTransmutationJob(state, recipe.id)?.acolyteAssigned ?? ((getTransmutationJob(state, recipe.id)?.echoesAssigned ?? 0) > 0)) ? 1 : 0
+  const acolytes = getTransmutationJob(state, recipe.id)?.acolyteAssigned ? 1 : 0
   const progress = getTransmutationJob(state, recipe.id)?.progressMs ?? 0
   const status = getRecipeStatus(state, recipe)
   const locked = status === 'locked'
@@ -110,7 +110,7 @@ function RecipeTile({ recipe, selected, newRecipe = false, onSelect }: { recipe:
   const uses = getVisibleItemUsesForTransmutation(state, recipe.output.itemId)
   return <><ItemTooltip itemId={recipe.output.itemId} owned={owned} recipeContext={{ status: statusText(status), baseDurationMs: recipe.baseDurationMs, arcaneFluxCost: getEffectiveTransmutationFluxCost(state, recipe), resonanceCost: getEffectiveTransmutationResonanceCost(state, recipe), acolytesAssigned: acolytes, outputQuantity: recipe.output.quantity, ingredients: recipe.ingredients.map((ingredient) => ({ itemId: ingredient.itemId, quantity: ingredient.quantity })), unlockReason: locked ? getRecipeUnlockReason(recipe) ?? undefined : undefined }}>
       <button type="button" data-recipe-id={recipe.id} aria-pressed={selected} className={`transmutation-recipe-tile ${selected ? 'selected' : ''} ${locked ? 'locked' : ''} ${acolytes > 0 ? 'assigned' : ''}`} style={{ '--recipe-accent': item.color } as CSSProperties} onClick={() => onSelect(recipe.id)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: recipe.name, meta: `${item.name} · ${statusText(status)}` }, sections: [{ id: 'acolytes', actions: [{ id: 'start', label: acolytes ? 'Keep Acolyte Assigned' : 'Assign Acolyte', disabled: locked || acolytes > 0, disabledReason: locked ? getRecipeUnlockReason(recipe) ?? 'Recipe locked' : acolytes > 0 ? 'Already staffed' : undefined, onSelect: () => { onSelect(recipe.id); state.assignTransmutationAcolyte(recipe.id) } }, { id: 'remove', label: 'Remove Acolyte', disabled: acolytes <= 0, onSelect: () => { onSelect(recipe.id); state.removeTransmutationAcolyte(recipe.id) } }, { id: 'stop', label: 'Stop Production', icon: Square, disabled: acolytes <= 0, onSelect: () => { onSelect(recipe.id); state.clearTransmutationAcolytes() } }] }, { id: 'recipe', actions: [{ id: 'pin', label: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? 'Unpin Recipe' : 'Pin Recipe', icon: Pin, onSelect: () => setUiPreferences({ screenState: { transmutation: { pinnedRecipeId: preferences.screenState.transmutation.pinnedRecipeId === recipe.id ? null : recipe.id } } }) }, { id: 'output', label: 'Open in Inventory', icon: ShoppingBag, onSelect: () => { setNavigationIntent({ inventoryItemId: recipe.output.itemId }); state.setScreen('inventory') } }, ...(uses.length > 0 ? [{ id: 'uses', label: 'Used In...', icon: Library, onSelect: () => setUsesOpen(true) }] : [])] }] }) }}>
-      <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{acolytes > 0 && <span className="transmutation-echo-badge">{acolytes}A</span>}</span>
+      <span className="transmutation-tile-top">{locked ? <LockKeyhole size={13} aria-label="Locked" /> : <span aria-hidden="true" />}{acolytes > 0 && <span className="transmutation-acolyte-badge">{acolytes}A</span>}</span>
       <span className="transmutation-tile-icon"><ItemIcon itemId={recipe.output.itemId} size="tile" /></span>
       <strong>{recipe.name}</strong>
       {newRecipe && <span className="archive-new-badge recipe-new-badge">NEW</span>}

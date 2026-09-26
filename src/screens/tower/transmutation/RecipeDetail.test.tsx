@@ -31,7 +31,7 @@ describe('RecipeDetail Used In summary', () => {
   })
 
   it('keeps production metrics without a duplicate live Current Cycle block', () => {
-    useGameStore.getState().setTransmutationEchoes('fire-fragment', 1)
+    useGameStore.getState().setTransmutationAcolytes('fire-fragment', 1)
     render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
 
     expect(screen.getByText('EFFECTIVE TIME')).toBeTruthy()
@@ -48,11 +48,13 @@ describe('RecipeDetail Used In summary', () => {
   })
 
 
-  it('omits the empty material section while keeping the Mana requirement', () => {
+  it('shows elemental and Flux requirements even when the recipe has no items', () => {
     render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
 
-    expect(screen.queryByText('MATERIAL REQUIREMENTS')).toBeNull()
-    expect(document.querySelector('.transmutation-mana-requirement')).toBeTruthy()
+    expect(screen.getByText('RECIPE REQUIREMENTS')).toBeTruthy()
+    expect(screen.getByText('Fire Resonance')).toBeTruthy()
+    expect(screen.getByText('Arcane Flux')).toBeTruthy()
+    expect(document.querySelector('.transmutation-mana-requirement')).toBeNull()
   })
 
 

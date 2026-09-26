@@ -16,7 +16,6 @@ export interface TransmutationAdvanceContext {
 }
 
 const finiteNonNegative = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0
-const finiteEchoes = (value: unknown) => Math.max(0, Math.floor(finiteNonNegative(value)))
 const isUnlocked = isRecipeUnlocked
 const requestKey = (recipeId: TransmutationRecipeId) => `transmutation-${recipeId}`
 
@@ -48,9 +47,7 @@ export const buildTransmutationWorkRequests = (state: GameState, deltaMs: number
   for (const recipeId of RECIPE_ORDER) {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    const echoes = finiteEchoes(job?.echoesAssigned)
-    if (!job || !(job.acolyteAssigned ?? echoes > 0) || !isUnlocked(state, recipe)) continue
-    job.acolyteAssigned = job.acolyteAssigned ?? echoes > 0
+    if (!job?.acolyteAssigned || !isUnlocked(state, recipe)) continue
     const progress = normalizeProgress(job, recipe.baseDurationMs)
     const availableCrafts = getAvailableCrafts(state, recipe)
     if (availableCrafts <= 0) continue
@@ -78,8 +75,7 @@ export const applyTransmutationAllocations = (state: GameState, _requests: reado
   for (const recipeId of RECIPE_ORDER) {
     const recipe = RECIPES[recipeId]
     const job = state.activities.transmutation.jobs[recipeId]
-    const echoes = finiteEchoes(job?.echoesAssigned)
-    if (!job || !(job.acolyteAssigned ?? echoes > 0) || !isUnlocked(state, recipe)) continue
+    if (!job?.acolyteAssigned || !isUnlocked(state, recipe)) continue
     const allocation = allocations[requestKey(recipeId)]
     const fundedProgressMs = allocation?.fundedProgressMs ?? 0
     const before = normalizeProgress(job, recipe.baseDurationMs)
@@ -98,7 +94,7 @@ export const applyTransmutationAllocations = (state: GameState, _requests: reado
     job.progressMs = Math.min(recipe.baseDurationMs - TOWER_FLUX_EPSILON, Math.max(0, job.progressMs))
 
     // The selector derives ACTIVE/MANA LIMITED/WAITING MANA from current
-    // eligibility, Mana production, and the assigned Echoes.
+    // eligibility, Flux production, and the assigned Acolytes.
   }
   return state
 }
@@ -116,7 +112,7 @@ export const forceCompleteTransmutationCycle = (state: GameState, recipeId: Tran
   const recipe = RECIPES[recipeId]
   if (!recipe) return false
   if (!isUnlocked(state, recipe)) return false
-  const job = state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { acolyteAssigned: true, echoesAssigned: 1, progressMs: 0 })
+  const job = state.activities.transmutation.jobs[recipeId] ?? (state.activities.transmutation.jobs[recipeId] = { acolyteAssigned: true, progressMs: 0 })
   if (!hasMaterialsForCycle(state, recipe)) {
     job.progressMs = 0
     return false

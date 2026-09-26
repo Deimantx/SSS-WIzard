@@ -31,9 +31,9 @@ export function MagicSchoolsScreenV2() {
     equipment: state.equipment,
     artifactProgress: state.artifactProgress,
     arcaneCore: state.arcaneCore,
-    channelingEchoes: state.activities.channeling.echoesAssigned,
-    researchReservations: Object.entries(state.activities.research.slots).map(([slotId, job]) => `${slotId}:${job?.itemId ?? ''}:${job?.targetSchoolId ?? ''}:${job?.echoesAssigned ?? 0}`).sort().join('|'),
-    transmutationReservations: Object.entries(state.activities.transmutation.jobs).filter(([, job]) => Boolean(job?.echoesAssigned)).map(([recipeId, job]) => `${recipeId}:${job?.echoesAssigned ?? 0}`).sort().join('|'),
+    channelingAcolytes: state.activities.channeling.acolytesAssigned,
+    researchReservations: Object.entries(state.activities.research.slots).map(([slotId, job]) => `${slotId}:${job?.itemId ?? ''}:${job?.targetSchoolId ?? ''}:${job?.acolyteAssigned ? 1 : 0}`).sort().join('|'),
+    transmutationReservations: Object.entries(state.activities.transmutation.jobs).filter(([, job]) => Boolean(job?.acolyteAssigned)).map(([recipeId, job]) => `${recipeId}:1`).sort().join('|'),
     autoCast: state.activities.autoCast,
     playerHealth: state.player.health,
     playerMaxHealth: state.player.maxHealth,
@@ -57,17 +57,17 @@ export function MagicSchoolsScreenV2() {
   const research = useMemo(() => {
     const slots = { 'research-1': null, 'research-2': null, 'research-3': null, 'research-4': null } as GameState['activities']['research']['slots']
     selectedState.researchReservations.split('|').filter(Boolean).forEach((entry) => {
-      const [slotId, itemId, targetSchoolId, echoesAssigned] = entry.split(':')
-      if (!slotId || !itemId || !targetSchoolId || Number(echoesAssigned) <= 0) return
-      slots[slotId as ResearchSlotId] = { itemId: itemId as ItemId, targetSchoolId: targetSchoolId as SchoolId, requestedQuantity: 0, remainingQuantity: 0, progressMs: 0, echoesAssigned: Number(echoesAssigned), status: 'prepared' }
+      const [slotId, itemId, targetSchoolId, acolyteAssigned] = entry.split(':')
+      if (!slotId || !itemId || !targetSchoolId || Number(acolyteAssigned) <= 0) return
+      slots[slotId as ResearchSlotId] = { itemId: itemId as ItemId, targetSchoolId: targetSchoolId as SchoolId, requestedQuantity: 0, remainingQuantity: 0, progressMs: 0, acolyteAssigned: true, status: 'prepared' }
     })
     return { slots }
   }, [selectedState.researchReservations])
   const transmutation = useMemo(() => ({ jobs: Object.fromEntries(selectedState.transmutationReservations.split('|').filter(Boolean).map((entry) => {
-    const [recipeId, echoesAssigned] = entry.split(':')
-    return [recipeId as TransmutationRecipeId, { echoesAssigned: Number(echoesAssigned), progressMs: 0 }]
+    const [recipeId, acolyteAssigned] = entry.split(':')
+    return [recipeId as TransmutationRecipeId, { acolyteAssigned: Number(acolyteAssigned) > 0, progressMs: 0 }]
   })) }) as GameState['activities']['transmutation'], [selectedState.transmutationReservations])
-  const activities = useMemo(() => ({ channeling: { echoesAssigned: selectedState.channelingEchoes }, research, transmutation, autoCast: selectedState.autoCast }), [selectedState.channelingEchoes, research, transmutation, selectedState.autoCast])
+  const activities = useMemo(() => ({ channeling: { acolytesAssigned: selectedState.channelingAcolytes }, research, transmutation, autoCast: selectedState.autoCast }), [selectedState.channelingAcolytes, research, transmutation, selectedState.autoCast])
   const player = useMemo(() => ({ health: selectedState.playerHealth, maxHealth: selectedState.playerMaxHealth, mana: selectedState.playerMana, maxMana: selectedState.playerMaxMana, maxFocus: selectedState.playerMaxFocus }), [selectedState.playerHealth, selectedState.playerMaxHealth, selectedState.playerMana, selectedState.playerMaxMana, selectedState.playerMaxFocus])
   const combat = useMemo(() => ({ active: selectedState.combatActive, activeSpellLoadout: selectedState.activeSpellLoadout, enemyId: selectedState.combatEnemyId, enemyHp: selectedState.combatEnemyHp, enemyMaxHp: selectedState.combatEnemyMaxHp, enemyBarrier: selectedState.combatEnemyBarrier, playerBarrier: selectedState.combatPlayerBarrier, enemyInstanceKey: selectedState.combatEnemyInstanceKey, playerStatuses: selectedState.combatPlayerStatuses, enemyStatuses: selectedState.combatEnemyStatuses }), [selectedState.combatActive, selectedState.activeSpellLoadout, selectedState.combatEnemyId, selectedState.combatEnemyHp, selectedState.combatEnemyMaxHp, selectedState.combatEnemyBarrier, selectedState.combatPlayerBarrier, selectedState.combatEnemyInstanceKey, selectedState.combatPlayerStatuses, selectedState.combatEnemyStatuses])
   const addSpell = useGameStore((state) => state.addSpellToSelectedPreset)
@@ -88,7 +88,6 @@ export function MagicSchoolsScreenV2() {
   const activeLoadout = combatActive && activeSpellLoadout ? activeSpellLoadout.slots : selectedPreset?.slots ?? []
   const equippedSpellIds = useMemo(() => new Set(activeLoadout.map((slot) => slot.spellId)), [activeLoadout])
   const unseenSpellIds = useMemo(() => new Set(attention.unseenSpells), [attention.unseenSpells])
-  const focusState = useMemo(() => ({ activities, progress, equipment, artifactProgress, arcaneCore, player: { maxFocus: player.maxFocus }, combat: { active: combatActive, activeSpellLoadout } }), [activities, progress, equipment, artifactProgress, arcaneCore, player.maxFocus, combatActive, activeSpellLoadout])
 
   useEffect(() => {
     if (navigationIntent.schoolId && navigationIntent.schoolId !== filters.school) setFilters((current) => ({ ...current, school: navigationIntent.schoolId! }))
@@ -142,7 +141,7 @@ export function MagicSchoolsScreenV2() {
     <SpellLoadoutDndProvider onCommit={commitSpellDrop}><ScreenGrid screen="schools" panels={[
       { id: 'schools-library', content: <SpellLibrary state={browserState} school={selectedSchool} entries={schoolEntries} filters={filters} selectedEntryId={selectedEntryId} newSpells={unseenSpellIds} equippedSpellIds={equippedSpellIds} canEdit={!combatActive} onFiltersChange={setFilters} onSelect={selectSpell} onEquip={equipSpell} onRemove={removeSpell} onConfigureAutomation={(spellId) => { selectLoadoutSpell(spellId); setAutomationRequest(spellId) }} /> },
       { id: 'schools-inspector', content: <InspectorTransition identity={selectedEntry?.id} accent={selectedEntry ? SCHOOLS[selectedEntry.school].color : undefined} fill><SpellInspector entry={selectedEntry} state={browserState} rankPathOpen={rankPathOpen} equippedSlotIndex={selectedEntry?.kind === 'spell' ? activeLoadout.findIndex((slot) => slot.spellId === selectedEntry.spellId) : null} canEdit={!combatActive} onEquip={equipSpell} onRemove={removeSpell} onToggleRankPath={() => { dismissGameTooltips(); setRankPathOpen((open) => !open) }} /></InspectorTransition> },
-      { id: 'schools-loadout', content: <CombatSpellLoadout focusState={focusState} onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
+      { id: 'schools-loadout', content: <CombatSpellLoadout onSelectSpell={selectLoadoutSpell} automationSpellId={automationRequest} onAutomationRequestHandled={() => setAutomationRequest(null)} /> },
     ]} /></SpellLoadoutDndProvider>
   </div>
 }

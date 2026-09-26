@@ -28,6 +28,8 @@ export interface ChronicleChapterDefinition {
   id: ChronicleChapterId
   name: string
   description: string
+  order: number
+  unlockCondition?: ChronicleCondition
 }
 
 export interface ChronicleObjectiveDefinition {
@@ -47,8 +49,8 @@ export interface ChronicleObjectiveDefinition {
 }
 
 export const CHRONICLE_CHAPTERS: readonly ChronicleChapterDefinition[] = [
-  { id: 'first-frontier', name: 'First Frontier', description: 'Establish the Tower, master the first schools, and answer the call of the Verdant Circle.' },
-  { id: 'shattered-frontier', name: 'Shattered Frontier', description: 'Push beyond the first gate, bind a Guardian, and survive a world that no longer stays still.' },
+  { id: 'first-frontier', name: 'First Frontier', description: 'Establish the Tower, master the first schools, and answer the call of the Verdant Circle.', order: 1 },
+  { id: 'shattered-frontier', name: 'Shattered Frontier', description: 'Push beyond the first gate, bind a Guardian, and survive a world that no longer stays still.', order: 2, unlockCondition: { type: 'boss-kill', bossId: 'archmage-edrin-shade', count: 1 } },
 ]
 
 export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
@@ -70,10 +72,21 @@ export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 't3-study-the-fragment', chapterId: 'first-frontier', track: 'tower', title: 'Study the Fragment', description: 'Complete your first Research batch.', prerequisiteIds: ['t2-shape-resonance'], condition: { type: 'chronicle-event', eventId: 'first-research-batch-completed' }, navigateTo: 'tower-research' },
   { id: 't4-answer-verdant-circle', chapterId: 'first-frontier', track: 'tower', title: 'Answer the Verdant Circle', description: 'Claim your first Guild Request.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-request-claimed', count: 1 }, navigateTo: 'guild' },
 
-  { id: 'sf-bind-guardian', chapterId: 'shattered-frontier', track: 'magic', title: 'Bind a Guardian', description: 'Choose one elemental Guardian.', unlockCondition: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper', count: 1 }, condition: { type: 'guardian-selected' }, navigateTo: 'tower-summoning' },
+  { id: 'g1-join-verdant-circle', chapterId: 'first-frontier', track: 'guild', title: 'Join the Verdant Circle', description: 'Unlock the Guild and receive the Initiate rank.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-rank', rank: 'initiate' }, navigateTo: 'guild' },
+  { id: 'g2-first-guild-contract', chapterId: 'first-frontier', track: 'guild', title: 'Sign Your First Contract', description: 'Claim your first Guild contract.', prerequisiteIds: ['g1-join-verdant-circle'], condition: { type: 'guild-request-claimed', count: 1 }, navigateTo: 'guild' },
+  { id: 'g3-guild-apprentice', chapterId: 'first-frontier', track: 'guild', title: 'Earn Your Apprentice Sigil', description: 'Advance from Initiate to Apprentice.', prerequisiteIds: ['g2-first-guild-contract'], condition: { type: 'guild-rank', rank: 'apprentice' }, navigateTo: 'guild' },
+
+  { id: 'sf-m1-cross-fractured-approach', chapterId: 'shattered-frontier', track: 'main', title: 'Cross the Fractured Approach', description: 'Enter the first dungeon beyond the fallen Archmage.', prerequisiteIds: ['m5-fallen-archmage'], condition: { type: 'dungeon-entered', dungeonId: 'fractured-approach' }, navigateTo: 'combat' },
+  { id: 'sf-m2-elemental-gatekeeper', chapterId: 'shattered-frontier', track: 'main', title: 'Break the Elemental Gatekeeper', description: 'Defeat the corrupted gatekeeper guarding the next frontier.', prerequisiteIds: ['sf-m1-cross-fractured-approach'], condition: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper', count: 1 }, navigateTo: 'combat' },
+  { id: 'sf-m3-bind-guardian', chapterId: 'shattered-frontier', track: 'main', title: 'Bind a Guardian', description: 'Choose one elemental Guardian to accompany the Tower.', prerequisiteIds: ['sf-m2-elemental-gatekeeper'], condition: { type: 'guardian-selected' }, navigateTo: 'tower-summoning' },
+  { id: 'sf-m4-reach-meridian', chapterId: 'shattered-frontier', track: 'main', title: 'Reach the Broken Meridian', description: 'Enter the Broken Meridian and find the source of the fracture.', prerequisiteIds: ['sf-m3-bind-guardian'], condition: { type: 'dungeon-entered', dungeonId: 'broken-meridian' }, navigateTo: 'combat' },
+  { id: 'sf-m5-meridian-splitter', chapterId: 'shattered-frontier', track: 'main', title: 'Defeat the Meridian Splitter', description: 'Defeat the boss tearing the frontier apart.', prerequisiteIds: ['sf-m4-reach-meridian'], condition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, navigateTo: 'combat' },
+  { id: 'sf-m6-world-tier-two', chapterId: 'shattered-frontier', track: 'main', title: 'Enter World Tier II', description: 'Defeat an enemy after the frontier hardens into World Tier II.', prerequisiteIds: ['sf-m5-meridian-splitter'], condition: { type: 'world-tier-kill', tier: 2, count: 1 }, navigateTo: 'combat' },
+
+  { id: 'sf-bind-guardian', chapterId: 'shattered-frontier', track: 'magic', title: 'Guardian Bond', description: 'Choose one elemental Guardian.', unlockCondition: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper', count: 1 }, condition: { type: 'guardian-selected' }, navigateTo: 'tower-summoning', optional: true },
   { id: 'sf-fight-together', chapterId: 'shattered-frontier', track: 'magic', title: 'Fight Together', description: 'Complete one valid encounter with an active Guardian.', prerequisiteIds: ['sf-bind-guardian'], condition: { type: 'guardian-combat-completed' }, navigateTo: 'combat', onCompleteReward: [{ type: 'arcane-points', amount: 250 }] },
   { id: 'sf-socket-first-crystal', chapterId: 'shattered-frontier', track: 'magic', title: 'Socket Your First Crystal', description: 'Equip at least one Crystal.', unlockCondition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, condition: { type: 'crystal-equipped', count: 1 }, navigateTo: 'crystals', onUnlockReward: [{ type: 'crystal', variantId: 'force-t1', quantity: 1 }] },
-  { id: 'sf-step-into-harder-world', chapterId: 'shattered-frontier', track: 'combat', title: 'Step Into a Harder World', description: 'Defeat one enemy in World Tier 2.', unlockCondition: { type: 'boss-kill', bossId: 'archmage-edrin-shade', count: 1 }, condition: { type: 'chronicle-event', eventId: 'first-wt2-kill' }, navigateTo: 'combat', onCompleteReward: [{ type: 'arcane-points', amount: 250 }] },
+  { id: 'sf-step-into-harder-world', chapterId: 'shattered-frontier', track: 'combat', title: 'Step Into a Harder World', description: 'Defeat one enemy in World Tier 2.', unlockCondition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, condition: { type: 'world-tier-kill', tier: 2, count: 1 }, navigateTo: 'combat', onCompleteReward: [{ type: 'arcane-points', amount: 250 }], optional: true },
 ]
 
 export const CHRONICLE_OBJECTIVE_BY_ID = Object.fromEntries(CHRONICLE_OBJECTIVES.map((objective) => [objective.id, objective])) as Record<ChronicleObjectiveId, ChronicleObjectiveDefinition>

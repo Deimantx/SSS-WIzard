@@ -131,7 +131,7 @@ import {
   setGuildRankAction,
   grantGuildPointAction,
 } from "./actions/guildActions";
-import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, debugResetAllChronicles, debugResetChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
+import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
 import type { GuildSkillNodeId, GuildRankId } from "../game/types";
 import {
   debugLockSpellAction,
@@ -787,6 +787,11 @@ export interface GameActions {
   debugCompleteChronicleObjective: (objectiveId: ChronicleObjectiveId) => void;
   debugCompleteChroniclePrerequisites: (objectiveId: ChronicleObjectiveId) => void;
   debugCompleteChronicleChapter: (chapterId: ChronicleChapterId) => void;
+  debugUnlockChronicleChapter: (chapterId: ChronicleChapterId) => void;
+  debugCompleteChronicleRequiredObjectives: (chapterId: ChronicleChapterId) => void;
+  debugCompleteChronicleOptionalObjectives: (chapterId: ChronicleChapterId) => void;
+  debugCompleteChronicleTrack: (chapterId: ChronicleChapterId, track: import("../game/types").ChronicleTrack) => void;
+  debugResetChronicleTrack: (chapterId: ChronicleChapterId, track: import("../game/types").ChronicleTrack) => void;
   debugResetChronicleChapter: (chapterId: ChronicleChapterId) => void;
   debugResetAllChronicles: () => void;
   debugSkipCurrentChronicleObjective: () => void;
@@ -2954,6 +2959,11 @@ export const useGameStore = create<GameStore>()(
     debugCompleteChronicleObjective: (objectiveId) => set((state) => { debugCompleteChronicleObjective(state, objectiveId); reconcileChronicleProgress(state); return state; }),
     debugCompleteChroniclePrerequisites: (objectiveId) => set((state) => { debugCompleteChroniclePrerequisites(state, objectiveId); reconcileChronicleProgress(state); return state; }),
     debugCompleteChronicleChapter: (chapterId) => set((state) => { debugCompleteChronicleChapter(state, chapterId); reconcileChronicleProgress(state); return state; }),
+    debugUnlockChronicleChapter: (chapterId) => set((state) => { debugUnlockChronicleChapter(state, chapterId); reconcileChronicleProgress(state); return state; }),
+    debugCompleteChronicleRequiredObjectives: (chapterId) => set((state) => { debugCompleteChronicleRequiredObjectives(state, chapterId); reconcileChronicleProgress(state); return state; }),
+    debugCompleteChronicleOptionalObjectives: (chapterId) => set((state) => { debugCompleteChronicleOptionalObjectives(state, chapterId); reconcileChronicleProgress(state); return state; }),
+    debugCompleteChronicleTrack: (chapterId, track) => set((state) => { debugCompleteChronicleTrack(state, chapterId, track); reconcileChronicleProgress(state); return state; }),
+    debugResetChronicleTrack: (chapterId, track) => set((state) => { debugResetChronicleTrack(state, chapterId, track); return state; }),
     debugResetChronicleChapter: (chapterId) => set((state) => { debugResetChronicleChapter(state, chapterId); return state; }),
     debugResetAllChronicles: () => set((state) => { debugResetAllChronicles(state); return state; }),
     debugSkipCurrentChronicleObjective: () => set((state) => { const objective = getChronicleMainObjective(state); if (objective) debugCompleteChronicleObjective(state, objective.id); reconcileChronicleProgress(state); return state; }),

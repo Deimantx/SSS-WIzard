@@ -10,7 +10,7 @@ import { ModalPortal } from '../../components/ui/ModalPortal'
 
 type ChronicleFilter = 'all' | ChronicleTrack
 
-const trackLabels: Record<ChronicleFilter, string> = { all: 'All', main: 'Main', combat: 'Combat', magic: 'Magic', tower: 'Tower' }
+const trackLabels: Record<ChronicleFilter, string> = { all: 'All', main: 'Main', combat: 'Combat', magic: 'Magic', tower: 'Tower', guild: 'Guild', region: 'Region' }
 const statusLabels: Record<ChronicleObjectiveStatus, string> = { completed: 'Complete', current: 'Current', available: 'Available', locked: 'Locked' }
 
 export function ChroniclesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -46,15 +46,15 @@ export function ChroniclesModal({ open, onClose }: { open: boolean; onClose: () 
       </header>
 
       <div className="chronicles-chapter-switcher" role="tablist" aria-label="Chronicle chapters">
-        {CHRONICLE_CHAPTERS.map((entry) => { const available = isChronicleChapterAvailable(state, entry.id); const progress = getChronicleChapterProgress(state, entry.id); return <button key={entry.id} type="button" role="tab" aria-selected={chapter.id === entry.id} disabled={!available} className={`chronicles-chapter-tab${chapter.id === entry.id ? ' active' : ''}${!available ? ' locked' : ''}`} onClick={() => { setChapterId(entry.id); setSelectedId(null); setFilter('all') }}><span>{available ? <BookOpen size={14} /> : <LockKeyhole size={14} />}{entry.name}</span><small>{progress.completed}/{progress.total}</small></button> })}
+        {CHRONICLE_CHAPTERS.map((entry) => { const available = isChronicleChapterAvailable(state, entry.id); const progress = getChronicleChapterProgress(state, entry.id); return <button key={entry.id} type="button" role="tab" aria-selected={chapter.id === entry.id} disabled={!available} className={`chronicles-chapter-tab${chapter.id === entry.id ? ' active' : ''}${!available ? ' locked' : ''}`} onClick={() => { setChapterId(entry.id); setSelectedId(null); setFilter('all') }}><span>{available ? <BookOpen size={14} /> : <LockKeyhole size={14} />}{entry.name}</span><small>{progress.requiredCompleted}/{progress.requiredTotal}</small></button> })}
       </div>
 
       <div className="chronicles-modal-body">
         <section className="chronicles-modal-main">
-          <div className="chronicles-chapter-heading"><div><span className="eyebrow">CURRENT CHAPTER</span><h3>{chapter.name}</h3><p>{chapter.description}</p></div><div className="chronicles-progress-readout"><strong>{chapterProgress.percent}%</strong><span>{chapterProgress.completed} / {chapterProgress.total} complete</span></div></div>
-          <div className="chronicles-progress-track" aria-label={`${chapterProgress.percent}% chapter progress`}><i style={{ width: `${chapterProgress.percent}%` }} /></div>
+          <div className="chronicles-chapter-heading"><div><span className="eyebrow">CURRENT CHAPTER</span><h3>{chapter.name}</h3><p>{chapter.description}</p></div><div className="chronicles-progress-readout"><strong>{chapterProgress.requiredPercent}%</strong><span>{chapterProgress.requiredCompleted} / {chapterProgress.requiredTotal} required</span></div></div>
+          <div className="chronicles-progress-track" aria-label={`${chapterProgress.requiredPercent}% required chapter progress`}><i style={{ width: `${chapterProgress.requiredPercent}%` }} /></div>
 
-          <nav className="chronicles-track-tabs" aria-label="Chronicle tracks">{(['all', 'main', 'combat', 'magic', 'tower'] as const).map((track) => { const progress = track === 'all' ? chapterProgress : getChronicleTrackProgress(state, chapter.id, track); return <button key={track} type="button" className={filter === track ? 'active' : ''} aria-pressed={filter === track} onClick={() => { setFilter(track); setSelectedId(null) }}>{trackLabels[track]} <span>{progress.completed}/{progress.total}</span></button> })}</nav>
+          <nav className="chronicles-track-tabs" aria-label="Chronicle tracks">{(['all', 'main', 'combat', 'magic', 'tower', 'guild', 'region'] as const).filter((track) => track === 'all' || getChronicleTrackProgress(state, chapter.id, track).total > 0).map((track) => { const progress = track === 'all' ? chapterProgress : getChronicleTrackProgress(state, chapter.id, track); return <button key={track} type="button" className={filter === track ? 'active' : ''} aria-pressed={filter === track} onClick={() => { setFilter(track); setSelectedId(null) }}>{trackLabels[track]} <span>{progress.completed}/{progress.total}</span></button> })}</nav>
 
           <div className="chronicles-objective-list">{chapterObjectives.map((objective) => { const status = getChronicleObjectiveStatus(state, objective); const condition = getChronicleConditionProgress(state, objective); return <button type="button" key={objective.id} className={`chronicles-objective-card status-${status}${selected?.id === objective.id ? ' selected' : ''}`} onClick={() => setSelectedId(objective.id)}><span className="chronicles-objective-icon">{status === 'completed' ? <Check size={15} /> : status === 'locked' ? <LockKeyhole size={14} /> : <i />}</span><span className="chronicles-objective-copy"><span className="chronicles-objective-meta"><strong>{trackLabels[objective.track]}</strong>{objective.optional && <em>Optional</em>}</span><b>{objective.title}</b><small>{objective.description}</small></span><span className="chronicles-objective-state"><Status tone={status === 'completed' ? 'success' : status === 'current' ? 'active' : status === 'locked' ? 'locked' : 'neutral'}>{statusLabels[status]}</Status><small>{getChronicleConditionValueLabel(condition)}</small></span><ChevronRight size={15} /></button> })}</div>
         </section>

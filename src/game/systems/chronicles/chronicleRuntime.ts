@@ -1,10 +1,10 @@
-import { CHRONICLE_OBJECTIVES, CHRONICLE_OBJECTIVE_BY_ID, type ChronicleCondition, type ChronicleReward } from '../../content/chronicles/chronicles'
+import { CHRONICLE_CHAPTERS, CHRONICLE_OBJECTIVES, CHRONICLE_OBJECTIVE_BY_ID, type ChronicleCondition, type ChronicleReward } from '../../content/chronicles/chronicles'
 import { STARTING_SCHOOL_CONFIG } from '../../content/onboarding/startingSchool'
 import { grantItem } from '../inventory/itemAcquisition'
 import { grantArcanePoints } from '../arcaneCore/arcaneCoreProgression'
 import { getArtifactTotalInvestedRanks } from '../artifacts/artifactProgression'
 import { pushNotification } from '../../engine'
-import type { ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, GameState, GuildRankId } from '../../types'
+import type { ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, GameState, GuildRankId } from '../../types'
 
 export const createInitialChronicleProgress = () => ({ completedObjectiveIds: [], grantedUnlockRewardIds: [], eventFlags: {} }) satisfies GameState['progress']['chronicle']
 
@@ -45,7 +45,7 @@ export const getChronicleConditionValue = (state: GameState, condition: Chronicl
     case 'crystal-equipped': return { current: state.crystals.equippedSlots.filter(Boolean).length, target: condition.count }
     case 'arcane-core-invested-nodes': return { current: Object.values(state.arcaneCore.nodes).filter((node) => node && safeCount(node.rank) > 0).length, target: condition.count }
     case 'spell-loadout-slots': return { current: activeSpellSlotCount(state), target: condition.count }
-    case 'world-tier-kill': return { current: state.progress.chronicle.eventFlags['first-wt2-kill'] ? 1 : 0, target: condition.count }
+    case 'world-tier-kill': return { current: state.progress.chronicle.eventFlags['first-wt2-kill'] || state.worldTier.highestUnlocked >= condition.tier ? 1 : 0, target: condition.count }
   }
 }
 
@@ -70,11 +70,14 @@ export const evaluateChronicleCondition = (state: GameState, condition: Chronicl
     case 'crystal-equipped': return state.crystals.equippedSlots.filter(Boolean).length >= condition.count
     case 'arcane-core-invested-nodes': return Object.values(state.arcaneCore.nodes).filter((node) => node && safeCount(node.rank) > 0).length >= condition.count
     case 'spell-loadout-slots': return activeSpellSlotCount(state) >= condition.count
-    case 'world-tier-kill': return condition.tier === 2 && condition.count <= 1 && state.progress.chronicle.eventFlags['first-wt2-kill'] === true
+    case 'world-tier-kill': return state.progress.chronicle.eventFlags['first-wt2-kill'] === true || state.worldTier.highestUnlocked >= condition.tier
   }
 }
 
 export const isChronicleObjectiveUnlocked = (state: GameState, objective: (typeof CHRONICLE_OBJECTIVES)[number]) => {
+  // Main-path objectives respect chapter gates. Side tracks retain their
+  // authored evidence behavior for legacy saves and early tester workflows.
+  if (objective.track === 'main' && !isChronicleChapterAvailable(state, objective.chapterId)) return false
   const completed = new Set(state.progress.chronicle.completedObjectiveIds)
   const all = objective.prerequisiteIds?.every((id) => completed.has(id)) ?? true
   const any = objective.unlockAnyPrerequisiteIds ? objective.unlockAnyPrerequisiteIds.some((id) => completed.has(id)) : true
@@ -130,11 +133,17 @@ export const recordChronicleEvent = (state: GameState, eventId: ChronicleEventId
 }
 
 export const isChronicleObjectiveComplete = (state: GameState, objectiveId: ChronicleObjectiveId) => state.progress.chronicle.completedObjectiveIds.includes(objectiveId)
-export const isChronicleChapterComplete = (state: GameState, chapterId: 'first-frontier' | 'shattered-frontier') => CHRONICLE_OBJECTIVES.filter((objective) => objective.chapterId === chapterId && objective.track === 'main').every((objective) => isChronicleObjectiveComplete(state, objective.id))
+export const isChronicleChapterComplete = (state: GameState, chapterId: ChronicleChapterId) => {
+  const required = CHRONICLE_OBJECTIVES.filter((objective) => objective.chapterId === chapterId && objective.track === 'main' && !objective.optional)
+  return required.length > 0 && required.every((objective) => isChronicleObjectiveComplete(state, objective.id))
+}
 
 export type ChronicleObjectiveStatus = 'completed' | 'current' | 'available' | 'locked'
 
-export const getChronicleMainObjective = (state: GameState, chapterId?: 'first-frontier' | 'shattered-frontier') => CHRONICLE_OBJECTIVES.find((objective) => objective.track === 'main' && (!chapterId || objective.chapterId === chapterId) && !isChronicleObjectiveComplete(state, objective.id)) ?? null
+export const getChronicleMainObjective = (state: GameState, chapterId?: ChronicleChapterId) => {
+  const activeChapterId = chapterId ?? getChronicleActiveChapter(state)
+  return CHRONICLE_OBJECTIVES.find((objective) => objective.track === 'main' && objective.chapterId === activeChapterId && !isChronicleObjectiveComplete(state, objective.id)) ?? null
+}
 
 export const getChronicleObjectiveStatus = (state: GameState, objective: (typeof CHRONICLE_OBJECTIVES)[number]): ChronicleObjectiveStatus => {
   if (isChronicleObjectiveComplete(state, objective.id)) return 'completed'
@@ -143,17 +152,28 @@ export const getChronicleObjectiveStatus = (state: GameState, objective: (typeof
   return objective.track === 'main' && main?.id === objective.id ? 'current' : 'available'
 }
 
-export const getChronicleActiveChapter = (state: GameState) => getChronicleMainObjective(state)?.chapterId ?? 'first-frontier'
-
-export const isChronicleChapterAvailable = (state: GameState, chapterId: 'first-frontier' | 'shattered-frontier') => chapterId === 'first-frontier' || CHRONICLE_OBJECTIVES.some((objective) => objective.chapterId === chapterId && (isChronicleObjectiveComplete(state, objective.id) || isChronicleObjectiveUnlocked(state, objective)))
-
-export const getChronicleChapterProgress = (state: GameState, chapterId: 'first-frontier' | 'shattered-frontier') => {
-  const objectives = CHRONICLE_OBJECTIVES.filter((objective) => objective.chapterId === chapterId)
-  const completed = objectives.filter((objective) => isChronicleObjectiveComplete(state, objective.id)).length
-  return { completed, total: objectives.length, percent: objectives.length ? Math.round(completed / objectives.length * 100) : 0 }
+export const getChronicleActiveChapter = (state: GameState): ChronicleChapterId => {
+  const available = [...CHRONICLE_CHAPTERS].sort((a, b) => a.order - b.order).filter((chapter) => isChronicleChapterAvailable(state, chapter.id))
+  return available.find((chapter) => !isChronicleChapterComplete(state, chapter.id))?.id ?? available[available.length - 1]?.id ?? 'first-frontier'
 }
 
-export const getChronicleTrackProgress = (state: GameState, chapterId: 'first-frontier' | 'shattered-frontier', track: 'main' | 'combat' | 'magic' | 'tower') => {
+export const isChronicleChapterAvailable = (state: GameState, chapterId: ChronicleChapterId) => {
+  const chapter = CHRONICLE_CHAPTERS.find((entry) => entry.id === chapterId)
+  const previous = chapter && CHRONICLE_CHAPTERS.find((entry) => entry.order === chapter.order - 1)
+  return Boolean(chapter && (!chapter.unlockCondition || evaluateChronicleCondition(state, chapter.unlockCondition) || Boolean(previous && isChronicleChapterComplete(state, previous.id))))
+}
+
+export const getChronicleChapterProgress = (state: GameState, chapterId: ChronicleChapterId) => {
+  const objectives = CHRONICLE_OBJECTIVES.filter((objective) => objective.chapterId === chapterId)
+  const completed = objectives.filter((objective) => isChronicleObjectiveComplete(state, objective.id)).length
+  const required = objectives.filter((objective) => objective.track === 'main' && !objective.optional)
+  const optional = objectives.filter((objective) => !required.includes(objective))
+  const requiredCompleted = required.filter((objective) => isChronicleObjectiveComplete(state, objective.id)).length
+  const optionalCompleted = optional.filter((objective) => isChronicleObjectiveComplete(state, objective.id)).length
+  return { completed, total: objectives.length, percent: objectives.length ? Math.round(completed / objectives.length * 100) : 0, requiredCompleted, requiredTotal: required.length, requiredPercent: required.length ? Math.round(requiredCompleted / required.length * 100) : 0, optionalCompleted, optionalTotal: optional.length, optionalPercent: optional.length ? Math.round(optionalCompleted / optional.length * 100) : 0 }
+}
+
+export const getChronicleTrackProgress = (state: GameState, chapterId: ChronicleChapterId, track: ChronicleTrack) => {
   const objectives = CHRONICLE_OBJECTIVES.filter((objective) => objective.chapterId === chapterId && objective.track === track)
   const completed = objectives.filter((objective) => isChronicleObjectiveComplete(state, objective.id)).length
   return { completed, total: objectives.length, percent: objectives.length ? Math.round(completed / objectives.length * 100) : 0 }
@@ -208,6 +228,37 @@ export const debugCompleteChronicleChapter = (state: GameState, chapterId: Chron
   const changed: ChronicleObjectiveId[] = []
   for (const objective of CHRONICLE_OBJECTIVES.filter((entry) => entry.chapterId === chapterId)) changed.push(...debugCompleteChronicleObjective(state, objective.id))
   return [...new Set(changed)]
+}
+
+export const debugCompleteChronicleRequiredObjectives = (state: GameState, chapterId: ChronicleChapterId) => {
+  const changed: ChronicleObjectiveId[] = []
+  for (const objective of CHRONICLE_OBJECTIVES.filter((entry) => entry.chapterId === chapterId && entry.track === 'main' && !entry.optional)) changed.push(...debugCompleteChronicleObjective(state, objective.id))
+  return [...new Set(changed)]
+}
+
+export const debugCompleteChronicleOptionalObjectives = (state: GameState, chapterId: ChronicleChapterId) => {
+  const changed: ChronicleObjectiveId[] = []
+  for (const objective of CHRONICLE_OBJECTIVES.filter((entry) => entry.chapterId === chapterId && !(entry.track === 'main' && !entry.optional))) changed.push(...debugCompleteChronicleObjective(state, objective.id))
+  return [...new Set(changed)]
+}
+
+export const debugCompleteChronicleTrack = (state: GameState, chapterId: ChronicleChapterId, track: ChronicleTrack) => {
+  const changed: ChronicleObjectiveId[] = []
+  for (const objective of CHRONICLE_OBJECTIVES.filter((entry) => entry.chapterId === chapterId && entry.track === track)) changed.push(...debugCompleteChronicleObjective(state, objective.id))
+  return [...new Set(changed)]
+}
+
+export const debugUnlockChronicleChapter = (state: GameState, chapterId: ChronicleChapterId) => {
+  const chapter = CHRONICLE_CHAPTERS.find((entry) => entry.id === chapterId)
+  if (!chapter) return []
+  const changed: ChronicleObjectiveId[] = []
+  for (const previous of CHRONICLE_CHAPTERS.filter((entry) => entry.order < chapter.order)) changed.push(...debugCompleteChronicleRequiredObjectives(state, previous.id))
+  return [...new Set(changed)]
+}
+
+export const debugResetChronicleTrack = (state: GameState, chapterId: ChronicleChapterId, track: ChronicleTrack) => {
+  const objectiveIds = new Set(CHRONICLE_OBJECTIVES.filter((objective) => objective.chapterId === chapterId && objective.track === track).map((objective) => objective.id))
+  state.progress.chronicle.completedObjectiveIds = state.progress.chronicle.completedObjectiveIds.filter((id) => !objectiveIds.has(id))
 }
 
 const resetEventFlagsForChapter = (state: GameState, chapterId: ChronicleChapterId) => {

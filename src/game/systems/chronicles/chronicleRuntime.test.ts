@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
+import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
 
 describe('Chronicle runtime', () => {
   it('latches objectives and does not duplicate one-time rewards', () => {
@@ -55,5 +55,23 @@ describe('Chronicle runtime', () => {
     expect(state.progress.chronicle.completedObjectiveIds).toEqual([])
     expect(state.progress.chronicle.eventFlags).toEqual({})
     expect(state.progress.chronicle.grantedUnlockRewardIds).toContain('sf-socket-first-crystal')
+  })
+
+  it('uses only required Main objectives for chapter completion and advances into Shattered Frontier', () => {
+    const state = createInitialState()
+    expect(getChronicleActiveChapter(state)).toBe('first-frontier')
+    expect(isChronicleChapterComplete(state, 'shattered-frontier')).toBe(false)
+
+    debugCompleteChronicleChapter(state, 'first-frontier')
+    expect(isChronicleChapterComplete(state, 'first-frontier')).toBe(true)
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
+    reconcileChronicleProgress(state, { notify: false })
+
+    expect(getChronicleActiveChapter(state)).toBe('shattered-frontier')
+    expect(getChronicleMainObjective(state)?.id).toBe('sf-m1-cross-fractured-approach')
+    const progress = getChronicleChapterProgress(state, 'shattered-frontier')
+    expect(progress.requiredTotal).toBe(6)
+    expect(progress.optionalTotal).toBeGreaterThan(0)
+    expect(isChronicleChapterComplete(state, 'shattered-frontier')).toBe(false)
   })
 })

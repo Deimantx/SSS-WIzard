@@ -1,17 +1,12 @@
-import { GUILD_REQUESTS, type GuildRequestId } from '../../content/guild/guildRequests'
+import { GUILD_REQUESTS, LEGACY_GUILD_REQUESTS, type GuildRequestId } from '../../content/guild/guildRequests'
 import { GUILD_SKILL_NODES } from '../../content/guild/guildSkills'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { pushNotification } from '../../engine'
-import { canPurchaseGuildSkillNode } from './guildSelectors'
+import { canPurchaseGuildSkillNode, getGuildPromotionProgress } from './guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import type { DungeonId, GameState, GuildRankId, GuildSkillNodeId, MonsterId } from '../../types'
 
 const safeAmount = (value: number) => Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
-const LEGACY_GUILD_REQUESTS = {
-  'arcane-supply': { id: 'arcane-supply', kind: 'donation' as const, itemId: 'fire-fragment' as const, target: 20, reputation: 50, guildPoints: 0 },
-  'clear-the-woods': { id: 'clear-the-woods', kind: 'dungeon-kills' as const, target: 30, reputation: 50, guildPoints: 0 },
-  'sentinel-breaker': { id: 'sentinel-breaker', kind: 'monster-kills' as const, target: 2, reputation: 75, guildPoints: 0 },
-}
 type LegacyGuildRequestId = keyof typeof LEGACY_GUILD_REQUESTS
 const getRequest = (requestId: string) => GUILD_REQUESTS[requestId as GuildRequestId] ?? LEGACY_GUILD_REQUESTS[requestId as LegacyGuildRequestId]
 
@@ -51,16 +46,18 @@ export const claimGuildRequest = (state: GameState, requestId: string) => {
   return true
 }
 
-const promotionRequestCount = (state: GameState) => Object.values(GUILD_REQUESTS).filter((request) => state.progress.requestClaims[request.id]).length + Object.values(LEGACY_GUILD_REQUESTS).filter((request) => state.progress.requestClaims[request.id] || (state.progress.requestProgress[request.id] ?? 0) >= request.target).length
-export const canPromoteGuild = (state: GameState) => state.progress.guildRank === 'initiate' && promotionRequestCount(state) >= 3 && safeAmount(state.progress.guildReputation) >= 175
+export const canPromoteGuild = (state: GameState) => getGuildPromotionProgress(state).eligible
 
 export const promoteGuild = (state: GameState) => {
   if (!canPromoteGuild(state)) return false
-  state.progress.guildRank = 'apprentice'
-  state.progress.guildPointsEarned = safeAmount(state.progress.guildPointsEarned) + 1
+  const promotion = getGuildPromotionProgress(state)
+  if (!promotion.nextRank) return false
+  state.progress.guildRank = promotion.nextRank.id
+  const reward = promotion.nextRank.promotionGuildPointReward ?? 0
+  state.progress.guildPointsEarned = safeAmount(state.progress.guildPointsEarned) + reward
   const legacyPromotion = state.progress.requestClaims['arcane-supply'] || state.progress.requestClaims['clear-the-woods'] || state.progress.requestClaims['sentinel-breaker'] || Object.values(LEGACY_GUILD_REQUESTS).some((request) => (state.progress.requestProgress[request.id] ?? 0) >= request.target)
-  if (legacyPromotion) state.progress.permanentManaBonuses['guild-apprentice'] = Math.max(10, state.progress.permanentManaBonuses['guild-apprentice'] ?? 0)
-  pushNotification(state, 'Guild rank increased to Apprentice · +1 Guild Point', 'success')
+  if (promotion.nextRank.id === 'apprentice' && legacyPromotion) state.progress.permanentManaBonuses['guild-apprentice'] = Math.max(10, state.progress.permanentManaBonuses['guild-apprentice'] ?? 0)
+  pushNotification(state, `Guild rank increased to ${promotion.nextRank.name}${reward ? ` · +${reward} Guild Point${reward === 1 ? '' : 's'}` : ''}`, 'success')
   reconcileChronicleProgress(state)
   return true
 }

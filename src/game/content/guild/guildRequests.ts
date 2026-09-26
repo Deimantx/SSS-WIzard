@@ -23,3 +23,14 @@ export const GUILD_REQUESTS = {
 
 export type GuildRequestId = keyof typeof GUILD_REQUESTS
 export const GUILD_REQUEST_IDS = Object.keys(GUILD_REQUESTS) as GuildRequestId[]
+
+/**
+ * Compatibility-only requests from the pre-V2 Guild. They remain readable so
+ * old saves can contribute promotion evidence, but never appear in the new
+ * active contract board.
+ */
+export const LEGACY_GUILD_REQUESTS = {
+  'arcane-supply': { id: 'arcane-supply', kind: 'donation' as const, itemId: 'fire-fragment' as const, target: 20, reputation: 50, guildPoints: 0 },
+  'clear-the-woods': { id: 'clear-the-woods', kind: 'dungeon-kills' as const, target: 30, reputation: 50, guildPoints: 0 },
+  'sentinel-breaker': { id: 'sentinel-breaker', kind: 'monster-kills' as const, target: 2, reputation: 75, guildPoints: 0 },
+} as const

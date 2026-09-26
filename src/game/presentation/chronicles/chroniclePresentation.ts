@@ -39,10 +39,12 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
   }
 }
 
-export const getChronicleConditionProgress = (state: GameState, objective: ChronicleObjectiveDefinition): ChronicleConditionProgress => {
-  const { current, target } = getChronicleConditionValue(state, objective.condition)
-  return { label: formatChronicleCondition(objective.condition), current, target, complete: current >= target }
+export const getChronicleConditionProgressForCondition = (state: GameState, condition: ChronicleCondition): ChronicleConditionProgress => {
+  const { current, target } = getChronicleConditionValue(state, condition)
+  return { label: formatChronicleCondition(condition), current, target, complete: current >= target }
 }
+
+export const getChronicleConditionProgress = (state: GameState, objective: ChronicleObjectiveDefinition): ChronicleConditionProgress => getChronicleConditionProgressForCondition(state, objective.condition)
 
 export const formatChronicleReward = (reward: ChronicleReward): string => {
   if (reward.type === 'arcane-points') return `${reward.amount.toLocaleString()} Arcane Points`

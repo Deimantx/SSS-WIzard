@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { applyUiPreferences } from '../theme/themeManager'
 import { defaultUiPreferences, loadUiPreferences, normalizeUiPreferences, resetUiPreferences, saveUiPreferences } from './uiPreferencesStorage'
-import { MAX_ARTIFICING_RECIPE_PINS } from './uiPreferencesTypes'
-import type { ArtificingRecipeId } from '../../game/types'
+import { MAX_ARTIFICING_RECIPE_PINS, MAX_CHRONICLE_TRACKED_OBJECTIVES } from './uiPreferencesTypes'
+import type { ArtificingRecipeId, ChronicleObjectiveId } from '../../game/types'
 import type { CustomThemeColors, ScreenPreferences, UiPreferences } from './uiPreferencesTypes'
 import { ARTIFICING_RECIPE_ORDER } from '../../game/content/recipes/artificingRecipes'
 
@@ -14,7 +14,7 @@ const subscribe = (listener: () => void) => { listeners.add(listener); return ()
 export const getUiPreferences = () => current
 type LegacyRecipeFilter = 'all' | 'elemental' | 'material' | 'equipment' | 'special' | 'craftable' | 'active'
 type TransmutationPreferenceChanges = Partial<Omit<ScreenPreferences['transmutation'], 'collapsedCategories'>> & { collapsedCategories?: Partial<ScreenPreferences['transmutation']['collapsedCategories']>; /** @deprecated Loaded and normalized only for pre-V2 preference compatibility. */ recipeFilter?: LegacyRecipeFilter }
-type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges; artificing?: Partial<NonNullable<ScreenPreferences['artificing']>>; research?: Partial<ScreenPreferences['research']>; combat?: Partial<ScreenPreferences['combat']> } }
+type UiPreferenceChanges = Omit<Partial<UiPreferences>, 'screenState'> & { screenState?: { inventory?: Partial<ScreenPreferences['inventory']>; transmutation?: TransmutationPreferenceChanges; artificing?: Partial<NonNullable<ScreenPreferences['artificing']>>; research?: Partial<ScreenPreferences['research']>; combat?: Partial<ScreenPreferences['combat']>; chronicles?: Partial<ScreenPreferences['chronicles']> } }
 
 export const setUiPreferences = (changes: UiPreferenceChanges) => {
   const screenState = changes.screenState
@@ -22,7 +22,7 @@ export const setUiPreferences = (changes: UiPreferenceChanges) => {
     ...current,
     ...changes,
     customTheme: changes.customTheme ? { ...current.customTheme, ...changes.customTheme } : current.customTheme,
-    screenState: screenState ? { ...current.screenState, ...screenState, inventory: { ...current.screenState.inventory, ...screenState.inventory }, transmutation: { ...current.screenState.transmutation, ...screenState.transmutation, collapsedCategories: { ...current.screenState.transmutation.collapsedCategories, ...screenState.transmutation?.collapsedCategories } }, artificing: { ...current.screenState.artificing, ...screenState.artificing }, research: { ...current.screenState.research, ...screenState.research }, combat: { ...current.screenState.combat, ...screenState.combat } } : current.screenState,
+    screenState: screenState ? { ...current.screenState, ...screenState, inventory: { ...current.screenState.inventory, ...screenState.inventory }, transmutation: { ...current.screenState.transmutation, ...screenState.transmutation, collapsedCategories: { ...current.screenState.transmutation.collapsedCategories, ...screenState.transmutation?.collapsedCategories } }, artificing: { ...current.screenState.artificing, ...screenState.artificing }, research: { ...current.screenState.research, ...screenState.research }, combat: { ...current.screenState.combat, ...screenState.combat }, chronicles: { ...current.screenState.chronicles, ...screenState.chronicles } } : current.screenState,
   })
   saveUiPreferences(current)
   applyUiPreferences(current)
@@ -42,6 +42,16 @@ export const unpinArtificingRecipe = (recipeId: ArtificingRecipeId) => {
   return true
 }
 export const toggleArtificingRecipePin = (recipeId: ArtificingRecipeId) => isArtificingRecipePinned(recipeId) ? unpinArtificingRecipe(recipeId) : pinArtificingRecipe(recipeId)
+export const toggleChronicleObjectiveTracking = (objectiveId: ChronicleObjectiveId) => {
+  const tracked = current.screenState.chronicles.trackedObjectiveIds
+  if (tracked.includes(objectiveId)) {
+    setUiPreferences({ screenState: { chronicles: { trackedObjectiveIds: tracked.filter((id) => id !== objectiveId) } } })
+    return true
+  }
+  if (tracked.length >= MAX_CHRONICLE_TRACKED_OBJECTIVES) return false
+  setUiPreferences({ screenState: { chronicles: { trackedObjectiveIds: [...tracked, objectiveId] } } })
+  return true
+}
 export const setCustomThemeColor = (key: keyof CustomThemeColors, value: string) => setUiPreferences({ customTheme: { ...current.customTheme, [key]: value } })
 export const resetAppearance = () => {
   const defaults = defaultUiPreferences()

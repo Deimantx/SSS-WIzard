@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { defaultUiPreferences, loadUiPreferences, normalizeUiPreferences } from './uiPreferencesStorage'
-import { getUiPreferences, resetAllUiPreferences, resetAppearance, setCustomThemeColor, setUiPreferences } from './uiPreferencesStore'
+import { getUiPreferences, resetAllUiPreferences, resetAppearance, setCustomThemeColor, setUiPreferences, toggleChronicleObjectiveTracking } from './uiPreferencesStore'
 
 describe('screen UI preferences', () => {
   beforeEach(() => { window.localStorage.clear(); resetAllUiPreferences() })
@@ -116,5 +116,15 @@ describe('screen UI preferences', () => {
     expect(preferences.navigationGroups.tower).toBe(true)
     expect(preferences.screenState.inventory.researchValueOpen).toBe(false)
     expect(preferences.screenState.artificing).toMatchObject({ selectedRecipeId: 'ember-staff', slotFilter: 'weapon' })
+  })
+
+  it('persists Chronicle view preferences and caps tracked objectives at three', () => {
+    setUiPreferences({ screenState: { chronicles: { hideCompleted: false, sort: 'progress', group: 'none', view: 'detailed', trackFilters: ['combat', 'guild'] } } })
+    expect(loadUiPreferences().screenState.chronicles).toMatchObject({ hideCompleted: false, sort: 'progress', group: 'none', view: 'detailed', trackFilters: ['combat', 'guild'] })
+    expect(toggleChronicleObjectiveTracking('m1-choose-school')).toBe(true)
+    expect(toggleChronicleObjectiveTracking('m2-first-blood')).toBe(true)
+    expect(toggleChronicleObjectiveTracking('m3-heart-of-the-woods')).toBe(true)
+    expect(toggleChronicleObjectiveTracking('m4-break-the-den')).toBe(false)
+    expect(loadUiPreferences().screenState.chronicles.trackedObjectiveIds).toHaveLength(3)
   })
 })

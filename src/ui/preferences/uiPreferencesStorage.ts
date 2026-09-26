@@ -7,7 +7,7 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import { COMBAT_DETAILS_MODE_ORDER } from '../../game/presentation/combat/combatDetailsPresentation'
 import { DUNGEON_STATISTICS_MODE_ORDER } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 import { EQUIPMENT_ITEM_SLOTS } from '../../game/core/equipment'
-import { MAX_ARTIFICING_RECIPE_PINS, type CombatLogFontSize, type ScreenPreferences, type TransmutationCategoryFilter, type TransmutationTierFilter, type UiPreferences } from './uiPreferencesTypes'
+import { MAX_ARTIFICING_RECIPE_PINS, MAX_CHRONICLE_TRACKED_OBJECTIVES, type ChronicleGroupMode, type ChronicleSortMode, type ChronicleStatusFilter, type ChronicleViewMode, type CombatLogFontSize, type ScreenPreferences, type TransmutationCategoryFilter, type TransmutationTierFilter, type UiPreferences } from './uiPreferencesTypes'
 
 export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
@@ -16,6 +16,7 @@ export const defaultScreenPreferences = (): ScreenPreferences => ({
   artificing: { selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
+  chronicles: { hideCompleted: true, showLocked: true, showOptional: true, statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'region'], sort: 'recommended', group: 'track', view: 'compact', trackedObjectiveIds: [], collapsedGroups: [] },
 })
 
 export const defaultUiPreferences = (): UiPreferences => ({ theme: 'default', textSize: 'default', backgroundEffects: true, reducedMotion: false, customCursor: true, showFpsCounter: true, uiSounds: true, uiSoundVolume: 0.35, customTheme: customFromPreset(THEME_PRESETS.default), navigationGroups: { combat: false, hero: false, tower: false, world: false, system: false }, trackedItemId: null, screenState: defaultScreenPreferences() })
@@ -35,6 +36,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const transmutation = (screenState.transmutation && typeof screenState.transmutation === 'object' ? screenState.transmutation : {}) as Partial<ScreenPreferences['transmutation']>
   const research = (screenState.research && typeof screenState.research === 'object' ? screenState.research : {}) as Partial<ScreenPreferences['research']>
   const combat = (screenState.combat && typeof screenState.combat === 'object' ? screenState.combat : {}) as Partial<ScreenPreferences['combat']>
+  const chronicles = (screenState.chronicles && typeof screenState.chronicles === 'object' ? screenState.chronicles : {}) as Partial<ScreenPreferences['chronicles']>
   const collapsedCategories = (transmutation.collapsedCategories && typeof transmutation.collapsedCategories === 'object' ? transmutation.collapsedCategories : {}) as Partial<ScreenPreferences['transmutation']['collapsedCategories']>
   const legacyFilters = ['all', 'elemental', 'material', 'equipment', 'special', 'craftable', 'active'] as const
   const legacyFilter = legacyFilters.includes((transmutation as { recipeFilter?: unknown }).recipeFilter as typeof legacyFilters[number]) ? (transmutation as { recipeFilter: typeof legacyFilters[number] }).recipeFilter : undefined
@@ -56,6 +58,15 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const combatDetailsMode = COMBAT_DETAILS_MODE_ORDER.includes(combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number]) ? combat.combatDetailsMode as typeof COMBAT_DETAILS_MODE_ORDER[number] : defaults.screenState.combat.combatDetailsMode
   const storedDungeonStatisticsMode = (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode === 'loot' ? 'drops' : (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode
   const dungeonStatisticsMode = DUNGEON_STATISTICS_MODE_ORDER.includes(storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number]) ? storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number] : defaults.screenState.combat.dungeonStatisticsMode
+  const statusFilterOptions: ChronicleStatusFilter[] = ['current', 'available', 'locked', 'completed']
+  const trackFilterOptions = ['main', 'combat', 'magic', 'tower', 'guild', 'region'] as const
+  const statusFilters = Array.isArray(chronicles.statusFilters) ? Array.from(new Set(chronicles.statusFilters.filter((value): value is ChronicleStatusFilter => statusFilterOptions.includes(value as ChronicleStatusFilter)))) : defaults.screenState.chronicles.statusFilters
+  const trackFilters = Array.isArray(chronicles.trackFilters) ? Array.from(new Set(chronicles.trackFilters.filter((value): value is typeof trackFilterOptions[number] => trackFilterOptions.includes(value as typeof trackFilterOptions[number])))) : defaults.screenState.chronicles.trackFilters
+  const trackedObjectiveIds = Array.isArray(chronicles.trackedObjectiveIds) ? Array.from(new Set(chronicles.trackedObjectiveIds.filter((value): value is ScreenPreferences['chronicles']['trackedObjectiveIds'][number] => typeof value === 'string'))).slice(0, MAX_CHRONICLE_TRACKED_OBJECTIVES) : defaults.screenState.chronicles.trackedObjectiveIds
+  const collapsedGroups = Array.isArray(chronicles.collapsedGroups) ? chronicles.collapsedGroups.filter((value): value is string => typeof value === 'string') : defaults.screenState.chronicles.collapsedGroups
+  const chronicleSort: ChronicleSortMode = chronicles.sort === 'progress' || chronicles.sort === 'track' || chronicles.sort === 'reward' || chronicles.sort === 'authored' ? chronicles.sort : 'recommended'
+  const chronicleGroup: ChronicleGroupMode = chronicles.group === 'none' || chronicles.group === 'status' ? chronicles.group : 'track'
+  const chronicleView: ChronicleViewMode = chronicles.view === 'detailed' ? 'detailed' : 'compact'
   const rawArtificing = screenState.artificing && typeof screenState.artificing === 'object' ? screenState.artificing : {}
   const a = rawArtificing as Partial<ScreenPreferences['artificing']>
   const oneOf = <T extends string | number>(value: unknown, options: readonly T[], fallback: T): T => options.includes(value as T) ? value as T : fallback
@@ -74,7 +85,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
     ownershipFilter: oneOf(a.ownershipFilter, ['all', 'owned', 'unowned'] as const, 'all'),
   }
   const trackedItemId = typeof input.trackedItemId === 'string' && Boolean(ITEMS[input.trackedItemId as keyof typeof ITEMS]) ? input.trackedItemId as keyof typeof ITEMS : null
-  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customCursor: input.customCursor !== false, showFpsCounter: input.showFpsCounter !== false, uiSounds: input.uiSounds !== false, uiSoundVolume: validVolume(input.uiSoundVolume, defaults.uiSoundVolume), customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, trackedItemId, screenState: { artificing, inventory: { sourceOpen: inventory.sourceOpen === true, researchValueOpen: inventory.researchValueOpen === true }, transmutation: { selectedRecipeId, pinnedRecipeId, categoryFilter, tierFilter, craftableOnly, activeOnly , collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode } } }
+  return { theme: input.theme === 'dark' || input.theme === 'light' || input.theme === 'custom' ? input.theme : 'default', textSize: input.textSize === 'large' || input.textSize === 'extra-large' ? input.textSize : 'default', backgroundEffects: input.backgroundEffects !== false, reducedMotion: input.reducedMotion === true, customCursor: input.customCursor !== false, showFpsCounter: input.showFpsCounter !== false, uiSounds: input.uiSounds !== false, uiSoundVolume: validVolume(input.uiSoundVolume, defaults.uiSoundVolume), customTheme: custom, navigationGroups: { combat: groups.combat === true, hero: groups.hero === true, tower: groups.tower === true, world: groups.world === true, system: groups.system === true }, trackedItemId, screenState: { artificing, inventory: { sourceOpen: inventory.sourceOpen === true, researchValueOpen: inventory.researchValueOpen === true }, transmutation: { selectedRecipeId, pinnedRecipeId, categoryFilter, tierFilter, craftableOnly, activeOnly , collapsedCategories: { elemental: collapsedCategories.elemental === true, material: collapsedCategories.material === true } }, research: { selectedItemId, affinityFilter, targetSchoolId }, combat: { combatLogFontSize, combatDetailsMode, dungeonStatisticsMode }, chronicles: { hideCompleted: chronicles.hideCompleted !== false, showLocked: chronicles.showLocked !== false, showOptional: chronicles.showOptional !== false, statusFilters, trackFilters, sort: chronicleSort, group: chronicleGroup, view: chronicleView, trackedObjectiveIds, collapsedGroups } } }
 }
 
 export const loadUiPreferences = (): UiPreferences => { try { const raw = window.localStorage.getItem(UI_PREFERENCES_KEY); return raw ? normalizeUiPreferences(JSON.parse(raw)) : defaultUiPreferences() } catch { return defaultUiPreferences() } }

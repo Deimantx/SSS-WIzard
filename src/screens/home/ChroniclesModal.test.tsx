@@ -22,14 +22,16 @@ describe('Chronicles Overview and modal', () => {
     const user = userEvent.setup()
     render(<GameShell />)
 
-    expect(screen.getByText('Complete First Frontier')).toBeTruthy()
+    expect(screen.getByText(/Required progress drives chapter completion/)).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /Open Chronicles/ }).length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: /Open Chronicles/ }))
 
     const dialog = screen.getByRole('dialog', { name: 'Chronicles' })
     expect(dialog).toBeTruthy()
-    expect(within(dialog).getByRole('tab', { name: /First Frontier/ })).toBeTruthy()
-    expect(within(dialog).getByRole('navigation', { name: 'Chronicle tracks' })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: /First Frontier/ })).toBeTruthy()
+    expect(within(dialog).getByLabelText('Search objectives')).toBeTruthy()
+    expect(within(dialog).getByText(/Showing .* objectives/)).toBeTruthy()
+    expect(within(dialog).getByRole('checkbox', { name: 'Hide Completed' })).toBeTruthy()
     expect(within(dialog).getByText('First Blood')).toBeTruthy()
     expect(within(dialog).getByText('REQUIREMENT')).toBeTruthy()
 

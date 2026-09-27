@@ -24,7 +24,10 @@ export const recalculateDerivedStats = (state: GameState) => {
   state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana))
 }
 
-export const manaRegenPerSecond = playerManaRegenPerSecond
+// Keep this bridge lazy. The mana/equipment/combat modules form a valid runtime
+// dependency cycle, so eagerly copying the imported function can hit the TDZ in
+// native ESM before playerMana has finished initializing.
+export const manaRegenPerSecond = (state: Parameters<typeof playerManaRegenPerSecond>[0]) => playerManaRegenPerSecond(state)
 export const schoolProgress = (state: GameState, school: SchoolId) => {
   return getSchoolProgressInfo(state, school).progress
 }

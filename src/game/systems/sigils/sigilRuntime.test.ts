@@ -219,11 +219,17 @@ describe('Arcane Sigils', () => {
     expect(salvageSigil(state, sigil.instanceId)).toMatchObject({ ok: false })
   })
 
-  it('guarantees the first eligible drop and preserves discovery through auto-salvage', () => {
+  it('uses normal first-drop odds for four kills and guarantees the fifth', () => {
     const state = createInitialState()
     state.sigils.autoSalvage.refined = true
+    for (let kill = 1; kill <= 4; kill += 1) {
+      resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0.8)
+      expect(state.sigils.lifetimeDrops).toBe(0)
+      expect(state.sigils.firstDropPityKills).toBe(kill)
+    }
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0.8)
     expect(state.sigils.lifetimeDrops).toBe(1)
+    expect(state.sigils.firstDropPityKills).toBe(0)
     expect(Object.keys(state.sigils.storage)).toHaveLength(0)
     expect(Object.keys(state.sigils.discovery.discoveredSets)).toHaveLength(1)
     expect(state.sigils.dust).toBeGreaterThan(0)
@@ -232,19 +238,20 @@ describe('Arcane Sigils', () => {
     expect(state.sigils.lifetimeDrops).toBe(1)
   })
 
-  it('guarantees the first Sigil in Offline Bank combat and reports it before auto-salvage', async () => {
+  it('honors first-Sigil pity in Offline Bank combat and reports it before auto-salvage', async () => {
     const state = createInitialState()
     state.progress.spellRanks['fire-bolt'] = 1
     state.spellPresets.presets = [{ id: 'offline-sigil-test', name: 'Offline Sigil Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
     state.spellPresets.selectedPresetId = 'offline-sigil-test'
     state.sigils.autoSalvage.refined = true
+    state.sigils.firstDropPityKills = 4
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
-    state.offlineBankMs = 6_000
+    state.offlineBankMs = 60_000
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
     state.combat.enemyHp = 0
 
-    const result = await advanceWithOfflineBank(6_000, () => state, (recipe) => recipe(state), () => {}, undefined, {})
+    const result = await advanceWithOfflineBank(60_000, () => state, (recipe) => recipe(state), () => {}, undefined, {})
     expect(result.ok).toBe(true)
     expect(result.report?.combat.sigilsFound).toBeGreaterThanOrEqual(1)
     expect(state.sigils.lifetimeDrops).toBeGreaterThanOrEqual(1)

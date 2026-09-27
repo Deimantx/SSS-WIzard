@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Activity, Archive, Beaker, BookOpen, Boxes, Bug, Castle, CircleGauge, Compass, Cpu, Crosshair, Database, Gem, Globe2, Hammer, Hexagon, LayoutDashboard, Library, ListChecks, Package, PersonStanding, Save, ScrollText, Settings2, Shield, Sparkles, Swords, Telescope, TowerControl, Wrench, Zap } from 'lucide-react'
+import { Activity, Beaker, BookOpen, Boxes, Bug, Castle, CircleGauge, Compass, Crosshair, Gem, Globe2, Hammer, Hexagon, Library, ListChecks, Package, PersonStanding, Save, ScrollText, Sparkles, Swords, Telescope, TowerControl, Wrench, Zap } from 'lucide-react'
 import { DeveloperArtificing } from './tabs/DeveloperArtificing'
 import { DeveloperArtifacts } from './tabs/DeveloperArtifacts'
 import { DeveloperArcaneCore } from './tabs/DeveloperArcaneCore'
@@ -8,12 +8,16 @@ import { DeveloperChanneling } from './tabs/DeveloperChanneling'
 import { DeveloperCharacter } from './tabs/DeveloperCharacter'
 import { DeveloperChronicles } from './tabs/DeveloperChronicles'
 import { DeveloperCombat } from './tabs/DeveloperCombat'
+import { DeveloperCombatActions } from './tabs/combat/DeveloperCombatActions'
+import { DeveloperCombatBoss } from './tabs/combat/DeveloperCombatBoss'
+import { DeveloperCombatEncounter } from './tabs/combat/DeveloperCombatEncounter'
+import { DeveloperCombatBalance } from './tabs/combat/DeveloperCombatBalance'
+import { DeveloperCombatTelemetry } from './tabs/combat/DeveloperCombatTelemetry'
 import { DeveloperCrystals } from './tabs/DeveloperCrystals'
 import { DeveloperDiagnostics } from './tabs/DeveloperDiagnostics'
 import { DeveloperInventory } from './tabs/DeveloperInventory'
 import { DeveloperMonsters } from './tabs/DeveloperMonsters'
 import { DeveloperProgression } from './tabs/DeveloperProgression'
-import { DeveloperQuickSetup } from './tabs/DeveloperQuickSetup'
 import { DeveloperResearch } from './tabs/DeveloperResearch'
 import { DeveloperResonance } from './tabs/DeveloperResonance'
 import { DeveloperSaveState } from './tabs/DeveloperSaveState'
@@ -24,7 +28,7 @@ import { DeveloperStatuses } from './tabs/DeveloperStatuses'
 import { DeveloperTransmutation } from './tabs/DeveloperTransmutation'
 import { DeveloperUITuning } from './tabs/DeveloperUITuning'
 import { DeveloperWorldTier } from './tabs/DeveloperWorldTier'
-import { DeveloperDashboardOverview, DeveloperOfflineBank, DeveloperScenarios, DeveloperSettings, DeveloperV4TesterPlaceholder } from './tabs/DeveloperV4SupportTabs'
+import { DeveloperDashboardOverview, DeveloperOfflineBank, DeveloperScenarios } from './tabs/DeveloperV4SupportTabs'
 import { DEVELOPER_TOOL_METADATA, DEVELOPER_WORKSPACES, type DeveloperToolMetadata, type DeveloperWorkspaceDefinition, type DeveloperWorkspaceId } from './developerToolRegistryModel'
 import type { DeveloperToolsTab } from './developerToolIds'
 
@@ -33,31 +37,26 @@ export type DeveloperToolIcon = ComponentType<{ size?: number; strokeWidth?: num
 export interface DeveloperToolDefinition extends DeveloperToolMetadata { icon: DeveloperToolIcon; component: ComponentType<DeveloperToolProps> }
 
 const noProps = (Component: ComponentType<any>): ComponentType<DeveloperToolProps> => function RegisteredDeveloperTool(props) { return <Component {...props} /> }
-const placeholder = (title: string, description: string, systems: string[]) => function Placeholder() { return <DeveloperV4TesterPlaceholder title={title} description={description} systems={systems} /> }
 const emptyCopy = async () => undefined
 const diagnosticsTool: ComponentType<DeveloperToolProps> = function DiagnosticsTool(props) { return <DeveloperDiagnostics copy={props.copy ?? emptyCopy} /> }
 const uiTuningTool: ComponentType<DeveloperToolProps> = function UiTuningTool(props) { return <DeveloperUITuning copy={props.copy ?? emptyCopy} /> }
 
 const icons: Record<DeveloperToolsTab, DeveloperToolIcon> = {
   quick: Zap, scenarios: Compass, 'offline-bank': Activity, character: PersonStanding, 'arcane-core': CircleGauge,
-  spells: Sparkles, schools: BookOpen, resonance: Gem, acolytes: PersonStanding, channeling: TowerControl, research: Telescope,
-  transmutation: Beaker, artificing: Hammer, summoning: Shield, inventory: Package, artifacts: Boxes, crystals: Gem, sigils: Hexagon,
-  combat: Swords, 'world-tier': Globe2, monsters: Crosshair, statuses: ListChecks, progression: Castle, chronicles: ScrollText,
-  guild: Library, archive: Archive, 'story-portal': Globe2, save: Save, diagnostics: Bug, 'ui-tuning': Wrench, settings: Settings2,
+  spells: Sparkles, 'magic-schools': BookOpen, resonance: Gem, acolytes: PersonStanding, channeling: TowerControl, research: Telescope,
+  transmutation: Beaker, artificing: Hammer, inventory: Package, artifacts: Boxes, crystals: Gem, sigils: Hexagon,
+  combat: Swords, 'combat-encounter': Crosshair, 'combat-boss': Swords, 'combat-actions': ListChecks, 'combat-balance': CircleGauge, 'combat-telemetry': Activity, 'world-tier': Globe2, monsters: Crosshair, statuses: ListChecks, progression: Castle, chronicles: ScrollText,
+  save: Save, diagnostics: Bug, 'ui-tuning': Wrench,
 }
 
 const components: Record<DeveloperToolsTab, ComponentType<DeveloperToolProps>> = {
-  quick: noProps(DeveloperQuickSetup), scenarios: noProps(DeveloperScenarios), 'offline-bank': noProps(DeveloperOfflineBank),
-  character: noProps(DeveloperCharacter), 'arcane-core': noProps(DeveloperArcaneCore), spells: noProps(DeveloperSpells), schools: noProps(DeveloperSchools), resonance: noProps(DeveloperResonance),
+  quick: noProps(DeveloperDashboardOverview), scenarios: noProps(DeveloperScenarios), 'offline-bank': noProps(DeveloperOfflineBank),
+  character: noProps(DeveloperCharacter), 'arcane-core': noProps(DeveloperArcaneCore), spells: noProps(DeveloperSpells), 'magic-schools': noProps(DeveloperSchools), resonance: noProps(DeveloperResonance),
   acolytes: noProps(DeveloperAcolytes), channeling: noProps(DeveloperChanneling), research: noProps(DeveloperResearch), transmutation: noProps(DeveloperTransmutation), artificing: noProps(DeveloperArtificing),
-  summoning: noProps(placeholder('Summoning / Guardians', 'Inspect Guardian unlock, activation, suppression, Mana demand, and combat runtime state.', ['Guardian browser', 'Unlock evidence', 'Combat fixture'])),
   inventory: noProps(DeveloperInventory), artifacts: noProps(DeveloperArtifacts), crystals: noProps(DeveloperCrystals), sigils: noProps(DeveloperSigils),
-  combat: noProps(DeveloperCombat), 'world-tier': noProps(DeveloperWorldTier), monsters: noProps(DeveloperMonsters), statuses: noProps(DeveloperStatuses),
+  combat: noProps(DeveloperCombat), 'combat-encounter': noProps(DeveloperCombatEncounter), 'combat-boss': noProps(DeveloperCombatBoss), 'combat-actions': noProps(DeveloperCombatActions), 'combat-balance': noProps(DeveloperCombatBalance), 'combat-telemetry': noProps(DeveloperCombatTelemetry), 'world-tier': noProps(DeveloperWorldTier), monsters: noProps(DeveloperMonsters), statuses: noProps(DeveloperStatuses),
   progression: noProps(DeveloperProgression), chronicles: noProps(DeveloperChronicles),
-  guild: noProps(placeholder('Guild tester', 'Exercise Guild rank, reputation, contracts, Guild Points, and skill-tree actions through canonical production paths.', ['Ranks and reputation', 'Contracts', 'Skill tree'])),
-  archive: noProps(placeholder('Archive discovery', 'Manipulate discovery evidence only; content inspection remains in the owning Inventory, Enemies, and Sigils tools.', ['Items', 'Bestiary', 'Sigils'])),
-  'story-portal': noProps(placeholder('Story / Dark Portal', 'Inspect story event state, portal shards, progression, and unlock evidence through canonical APIs.', ['Story events', 'Portal shards', 'Progression'])),
-  save: noProps(DeveloperSaveState), diagnostics: diagnosticsTool, 'ui-tuning': uiTuningTool, settings: noProps(DeveloperSettings),
+  save: noProps(DeveloperSaveState), diagnostics: diagnosticsTool, 'ui-tuning': uiTuningTool,
 }
 
 export const DEVELOPER_TOOL_REGISTRY: readonly DeveloperToolDefinition[] = DEVELOPER_TOOL_METADATA.map((metadata) => ({ ...metadata, icon: icons[metadata.id], component: components[metadata.id] }))

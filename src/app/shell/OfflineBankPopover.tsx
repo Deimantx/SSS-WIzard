@@ -22,6 +22,7 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
   const [progress, setProgress] = useState<OfflineBankProgress | null>(null)
   const [advancingDurationMs, setAdvancingDurationMs] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [errorKind, setErrorKind] = useState<import('../../persistence/saveDiagnosticsStore').SaveFailureKind | undefined>(undefined)
   const [position, setPosition] = useState({ top: 0, right: 16 })
   const bankMs = useGameStore((state) => state.offlineBankMs)
   const advance = useGameStore((state) => state.advanceWithOfflineBank)
@@ -54,13 +55,14 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
 
   const spend = async (durationMs: number) => {
     setError(null)
+    setErrorKind(undefined)
     setAdvancing(true)
     setProgress({ phase: 'simulating', simulatedMs: 0, totalMs: durationMs, percent: 0, realElapsedMs: 0 })
     setAdvancingDurationMs(durationMs)
     await waitForPaint()
     try {
       const result = await advance(durationMs, (nextProgress) => setProgress(nextProgress))
-      if (!result.ok) setError(result.error ?? 'Unable to advance Offline Bank.')
+      if (!result.ok) { setError(result.error ?? 'Unable to advance Offline Bank.'); setErrorKind(result.saveKind) }
       else { setProgress(null); setAdvancingDurationMs(0) }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to advance Offline Bank.')
@@ -72,7 +74,7 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
     <div className="offline-bank-hero"><span className="offline-bank-section-label">BANKED TIME</span><strong>{formatOfflineBank(bankMs)}</strong><small>Available for simulation</small><div className="offline-bank-meter" aria-hidden="true"><i /></div></div>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ACTIVE SYSTEMS</span><small>{activities.length ? `${activities.length} running` : 'Standby'}</small></div>{activities.length ? <div className="offline-active-list">{activities.map((activity) => <div className={`offline-active-row accent-${activity.accent}`} key={activity.id}><span className="offline-activity-icon"><ActivityIcon activity={activity.label} /></span><span className="offline-active-copy"><strong>{activity.label}</strong><small>{activity.subtitle ?? activity.status}</small></span><em>{activity.status === 'running' ? 'ACTIVE' : activity.status.replace('-', ' ').toUpperCase()}</em></div>)}</div> : <div className="offline-empty-state"><strong>No active timed systems.</strong><span>Start an activity before spending Offline Bank time.</span></div>}</section>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ADVANCE TIME</span><small>Spend deliberately</small></div>{!canAdvance && <div className="offline-no-work">Start an activity before spending Offline Bank time.</div>}<div className="offline-presets">{presets.map((preset) => { const disabled = advancing || bankMs < preset.ms || !canAdvance; const reason = !canAdvance ? 'Start an activity before spending Offline Bank time.' : 'Not enough Offline Bank time.'; const button = <button key={preset.ms} className="offline-preset" disabled={disabled} onClick={() => spend(preset.ms)} aria-label={`Advance ${preset.short}`}><strong>+{preset.label}</strong><small>Advance active systems</small></button>; return disabled && !advancing ? <GameTooltip key={preset.ms} block content={reason} accent="warning">{button}</GameTooltip> : button })}</div>{advancing && progress && <OfflineProgress progress={progress} durationMs={advancingDurationMs} />}</section>
-    {error && <div className="offline-bank-error" role="alert"><strong>OFFLINE ADVANCE NOT COMMITTED</strong><span>{error}</span><small>No Offline Bank time was spent. The live profile was rolled back.</small></div>}
+    {error && <div className="offline-bank-error" role="alert"><strong>{errorKind === 'validation' ? 'OFFLINE ADVANCE BLOCKED BY SAVE VALIDATION' : 'OFFLINE ADVANCE NOT COMMITTED'}</strong><span>{error}</span><small>{errorKind === 'validation' ? 'No banked time or simulated progress was committed. Review Save Diagnostics before retrying.' : 'No Offline Bank time was spent. The live profile was rolled back.'}</small></div>}
     <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span>{lastOfflineBankReport && <button type="button" className="offline-last-results" onClick={onViewLastResults}>View Last Results</button>}</div>
   </div>
 }

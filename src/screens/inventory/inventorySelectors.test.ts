@@ -63,7 +63,7 @@ describe('Inventory V3 selectors and display rules', () => {
   it('searches authored metadata and derives real uses', () => {
     expect(getInventorySearchText('ember-staff')).toContain('fire')
     expect(getInventorySearchText('fire-fragment')).toContain('research')
-    expect(getItemUses('fire-fragment').map((use) => use.destination)).toEqual(expect.arrayContaining(['tower-transmutation', 'tower-channeling', 'tower-research', 'guild']))
+    expect(getItemUses('fire-fragment').map((use) => use.destination)).toEqual(expect.arrayContaining(['tower-transmutation', 'tower-artificing', 'tower-channeling', 'tower-research']))
   })
 
 })

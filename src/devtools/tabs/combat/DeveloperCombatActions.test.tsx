@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useGameStore } from '../../../store/gameStore'
 import { setDeveloperCombatTab } from '../../developerToolsStore'
 import { DeveloperCombat } from '../DeveloperCombat'
+import { DeveloperCombatActions } from './DeveloperCombatActions'
 
 describe('DeveloperCombat ACTIONS tab', () => {
   const enableDebugCombatSpawn = () => {
@@ -44,14 +45,8 @@ describe('DeveloperCombat ACTIONS tab', () => {
     expect(screen.getByText('Action inspector')).toBeTruthy()
   })
 
-  it('survives switching LIVE to ACTIONS to STATUS and back', () => {
-    setDeveloperCombatTab('live')
-    render(<DeveloperCombat copy={async () => undefined} />)
-
-    fireEvent.click(screen.getByRole('tab', { name: 'ACTIONS' }))
-    fireEvent.click(screen.getByRole('tab', { name: 'STATUS' }))
-    fireEvent.click(screen.getByRole('tab', { name: 'ACTIONS' }))
-
+  it('renders as a direct root navigation surface', () => {
+    render(<DeveloperCombatActions />)
     expect(screen.getByText('Action inspector')).toBeTruthy()
   })
 })

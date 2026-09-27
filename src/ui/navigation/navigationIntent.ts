@@ -22,6 +22,7 @@ export interface NavigationIntent {
   schoolId: SchoolId | null;
   combatDungeonId: DungeonId | null;
   combatMonsterId: MonsterId | null;
+  sigilSetId: import('../../game/types').SigilSetId | null;
   openCrystalInventory: boolean;
 }
 
@@ -37,6 +38,7 @@ const emptyIntent: NavigationIntent = {
   schoolId: null,
   combatDungeonId: null,
   combatMonsterId: null,
+  sigilSetId: null,
   openCrystalInventory: false,
 };
 

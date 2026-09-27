@@ -10,7 +10,7 @@ import {
   profileSaveSuspectKey,
 } from '../profiles/profileKeys'
 import type { ProfileSlotId } from '../profiles/profileTypes'
-import { attemptLegacySaveRecovery, validateSerializedSave, validateStoredSave } from './saveIntegrity'
+import { attemptLegacySaveRecovery, validateSerializedSave, validateStoredSave, type SaveValidationReport } from './saveIntegrity'
 import { detectCatastrophicProgressRegression, getProgressionEvidence, summarizeProgressionEvidence, type ProgressionEvidenceSummary, type ProgressionRegressionResult } from './progressionEvidence'
 import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave, type SaveFailureKind } from './saveDiagnosticsStore'
 
@@ -20,6 +20,7 @@ export interface ProfileSaveResult {
   kind?: SaveFailureKind
   detail?: string
   serializedBytes?: number
+  validationReport?: SaveValidationReport
 }
 
 export const serializeGameState = (state: GameState, savedAt = state.lastSavedAt) => {
@@ -236,7 +237,9 @@ export const validateProfileCandidate = (slotId: ProfileSlotId | null, state: Ga
     const encoded = JSON.stringify(serializeGameState(state, state.lastSavedAt))
     const serializedBytes = typeof Blob !== 'undefined' ? new Blob([encoded]).size : encoded.length * 2
     const result = validateSerializedSave(encoded, state)
-    return result.ok ? { ok: true, error: null, serializedBytes } : { ok: false, error: result.error ?? 'Profile validation failed.', kind: 'validation', detail: result.error ?? 'Profile validation failed.', serializedBytes }
+    return result.ok
+      ? { ok: true, error: null, serializedBytes, validationReport: result.report }
+      : { ok: false, error: result.error ?? 'Profile validation failed.', kind: 'validation', detail: result.error ?? 'Profile validation failed.', serializedBytes, validationReport: result.report }
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Profile could not be serialized.', kind: 'serialization', detail: error instanceof Error ? error.message : 'Profile could not be serialized.' }
   }
@@ -303,7 +306,7 @@ const logProgressionRegression = (slotId: ProfileSlotId, source: CandidateSource
 }
 
 const isQuotaError = (error: unknown) => typeof DOMException !== 'undefined' && error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')
-const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, source?: CandidateSource, regressionResult?: ProgressionRegressionResult, kind: SaveFailureKind = regression ? 'regression' : 'unknown', serializedBytes?: number): ProfileSaveResult => {
+const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, source?: CandidateSource, regressionResult?: ProgressionRegressionResult, kind: SaveFailureKind = regression ? 'regression' : 'unknown', serializedBytes?: number, validationReport?: SaveValidationReport): ProfileSaveResult => {
   if (regression && source && regressionResult) logProgressionRegression(slotId, source, regressionResult)
   console.error(`[profile-save] ${detail}`)
   const message = regression
@@ -311,13 +314,15 @@ const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, 
     : 'SAVE FAILED · The game could not write to browser storage.'
   const userMessage = regression
     ? message
-    : kind === 'quota'
+    : kind === 'validation'
+      ? 'SAVE FAILED Â· VALIDATION BLOCKED Â· The profile was not changed. Review the exact field paths in Developer Tools diagnostics.'
+      : kind === 'quota'
       ? 'SAVE STORAGE FULL · The current profile is too large for browser storage. Your previous valid save was preserved.'
       : kind === 'storage-unavailable'
         ? 'SAVE FAILED · Browser storage is unavailable. Your previous valid save was preserved.'
         : 'SAVE FAILED · The profile could not be written. Your previous valid save was preserved.'
-  recordSaveFailure(slotId, userMessage, regression, { kind, detail, serializedBytes })
-  return { ok: false, error: userMessage, kind, detail, serializedBytes }
+  recordSaveFailure(slotId, userMessage, regression, { kind, detail, serializedBytes, validationReport })
+  return { ok: false, error: userMessage, kind, detail, serializedBytes, validationReport }
 }
 
 const storageKeys = (slotId: ProfileSlotId) => [profileSaveKey(slotId), profileSaveBackupKey(slotId), profileSaveBackup2Key(slotId), profileSaveBackup3Key(slotId)]
@@ -341,7 +346,7 @@ export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options
     }
     serializedBytes = typeof Blob !== 'undefined' ? new Blob([encoded]).size : encoded.length * 2
     const candidate = validateSerializedSave(encoded, state)
-    if (!candidate.ok) return saveFailure(slotId, candidate.error ?? 'Critical gameplay data changed during save round-trip.', false, undefined, undefined, 'validation', serializedBytes)
+    if (!candidate.ok) return saveFailure(slotId, candidate.error ?? 'Critical gameplay data changed during save round-trip.', false, undefined, undefined, 'validation', serializedBytes, candidate.report)
 
     const existing = readRawCandidates(slotId)
     if (!options?.explicitReset) {

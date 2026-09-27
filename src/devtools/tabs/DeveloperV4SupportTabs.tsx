@@ -3,6 +3,7 @@ import { Button, Card, Status } from '../../components/ui'
 import { useGameStore } from '../../store/gameStore'
 import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
+import { useShallow } from 'zustand/react/shallow'
 
 const formatDuration = (milliseconds: number) => {
   const seconds = Math.floor(Math.max(0, milliseconds) / 1000)
@@ -55,7 +56,7 @@ export function DeveloperV4TesterPlaceholder({ title, description, systems }: { 
 }
 
 export function DeveloperDashboardOverview() {
-  const snapshot = useGameStore((state) => ({
+  const snapshot = useGameStore(useShallow((state) => ({
     health: state.player.health,
     maxHealth: state.player.maxHealth,
     mana: state.player.mana,
@@ -65,7 +66,7 @@ export function DeveloperDashboardOverview() {
     worldTier: state.worldTier.current,
     flux: state.tower.resources.arcaneFlux,
     notifications: state.notifications.length,
-  }))
+  })))
   return <div className="developer-tab-stack"><Card title="Session overview"><div className="developer-summary-grid"><div className="developer-summary"><span>Health</span><strong>{formatResourceAmount(snapshot.health)} / {formatResourceAmount(snapshot.maxHealth)}</strong></div><div className="developer-summary"><span>Mana</span><strong>{formatResourceAmount(snapshot.mana)} / {formatResourceAmount(snapshot.maxMana)}</strong></div><div className="developer-summary"><span>Combat</span><strong>{snapshot.active ? 'ACTIVE' : 'IDLE'}</strong></div><div className="developer-summary"><span>World Tier</span><strong>{snapshot.worldTier}</strong></div><div className="developer-summary"><span>Arcane Flux</span><strong>{Math.floor(snapshot.flux)}</strong></div><div className="developer-summary"><span>Active enemy</span><strong>{snapshot.enemyId ?? 'None'}</strong></div></div></Card><Card title="Quick actions"><div className="button-row"><Button onClick={() => { const state = useGameStore.getState(); state.setPlayer({ health: state.player.maxHealth }) }}>HEAL</Button><Button variant="secondary" onClick={() => { const state = useGameStore.getState(); state.setPlayer({ mana: state.player.maxMana }) }}>FILL MANA</Button><Button variant="ghost" onClick={() => useGameStore.getState().resetDebugOverrides()}>CLEAR DEBUG OVERRIDES</Button></div></Card></div>
 }
 

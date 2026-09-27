@@ -306,8 +306,8 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'guild-specialization': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 220, overflow: 'auto', label: 'Guild specialization summary' }),
     'guild-contract-controls': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 86, overflow: 'auto', label: 'Guild contract filters' }),
     'guild-contracts': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 1020, overflow: 'auto', label: 'Guild contract board' }),
-    'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 150, label: 'Guild skill points summary' }),
-    'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 560, overflow: 'auto', label: 'Guild skill branches' }),
+    'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 200, label: 'Guild skill points summary' }),
+    'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 860, overflow: 'auto', label: 'Guild skill branches' }),
     'guild-skills-note': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 5, minHeight: 0, preferredHeight: 72, label: 'Guild skill tree note' }),
     'guild-locked': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 520, label: 'Guild locked state' }),
   }, [

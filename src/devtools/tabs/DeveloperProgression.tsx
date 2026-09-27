@@ -1,4 +1,4 @@
-import { Button, Card, Status } from '../../components/ui'
+import { Card, Status } from '../../components/ui'
 import { DUNGEONS, DUNGEON_ORDER, isDungeonCompleted, isDungeonUnlocked, isTutorialCompleted } from '../../game/content/dungeons/dungeons'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTER_IDS, isBossMonster, MONSTERS } from '../../game/content/monsters'
@@ -7,7 +7,7 @@ import { SPELLS } from '../../game/content/spells/spells'
 import { getSpellRank } from '../../game/systems/spells'
 import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { useGameStore } from '../../store/gameStore'
-import { NumberField, Summary } from './DeveloperTabPrimitives'
+import { Summary } from './DeveloperTabPrimitives'
 import { getGuildPointsAvailable } from '../../game/systems/guild/guildSelectors'
 
 const schoolIds = Object.keys(SCHOOLS) as Array<keyof typeof SCHOOLS>
@@ -46,7 +46,7 @@ export function DeveloperProgression() {
     </Card>
     <Card title="GUILD · Status">
       <div className="developer-summary-grid"><Summary label="Guild" value={progress.guildUnlocked ? 'Unlocked' : 'Locked'} /><Summary label="Rank" value={progress.guildRank} /><Summary label="Reputation" value={progress.guildReputation} /><Summary label="Guild Points" value={`${getGuildPointsAvailable(state)} available / ${progress.guildPointsEarned} earned`} /></div>
-      <div className="developer-button-grid"><Button variant="secondary" onClick={state.promoteGuild}>Promote if legal</Button><Button variant="ghost" onClick={() => state.debugGrantGuildPoint(1)}>Grant 1 GP</Button><NumberField label="Guild reputation" value={progress.guildReputation} onChange={state.setGuildReputation} /></div>
+      <p className="muted">Read-only progression overview. Guild mutation controls are intentionally not duplicated here.</p>
       <div className="developer-owned-list">{flags.map((flag) => <span key={flag.label}>{flag.label}<strong>{flag.value ? 'ON' : 'OFF'}</strong></span>)}</div>
     </Card>
   </div>

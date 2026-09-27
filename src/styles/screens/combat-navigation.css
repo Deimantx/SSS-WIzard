@@ -59,6 +59,12 @@
 .combat-location-section-label { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .13em; }
 .combat-location-section-head { display: flex; justify-content: space-between; gap: 8px; }
 .combat-location-section-head small { color: var(--ui-text-muted); font: 8px var(--font-mono); letter-spacing: .06em; }
+.combat-location-sigil-drops { margin-top: 2px; }
+.combat-location-sigil-set-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.combat-location-sigil-set-list > .game-tooltip-trigger { min-width: 0; }
+.combat-location-sigil-set-list span { display: grid; gap: 2px; padding: 6px 7px; border: 1px solid var(--ui-border); border-radius: 5px; background: color-mix(in srgb, var(--ui-accent) 6%, var(--ui-panel)); }
+.combat-location-sigil-set-list strong { color: var(--ui-text); font-size: var(--text-xs); }
+.combat-location-sigil-set-list small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .combat-target-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .combat-target-grid > .game-tooltip-trigger { min-width: 0; }
 .combat-target-card { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 7px; width: 100%; min-width: 0; min-height: 62px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 72%, transparent); cursor: pointer; text-align: left; }

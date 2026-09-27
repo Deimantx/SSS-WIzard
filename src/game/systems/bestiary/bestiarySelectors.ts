@@ -3,6 +3,8 @@ import { MONSTERS, isBossMonster, type MonsterDefinition } from '../../content/m
 import type { BestiaryCategory, GameState, MonsterId } from '../../types'
 import { completionPercent } from '../archive/archiveSelectors'
 import { getBestiaryActionSearchText, getBestiaryMechanicSearchText, getBestiaryResonanceSearchText, getBestiaryTraitSearchText } from '../../presentation/bestiary/bestiaryPresentation'
+import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
+import { SIGIL_SETS } from '../../content/sigils/sigilSets'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
@@ -20,7 +22,8 @@ export const getMonsterDefeatCount = (state: Pick<GameState, 'progress'>, monste
 
 export const formatDefeats = (count: number) => `${count.toLocaleString()} ${count === 1 ? 'defeat' : 'defeats'}`
 
-export const getMonsterLocations = (monsterId: MonsterId) => Object.values(DUNGEONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || dungeon.boss === monsterId).map((dungeon) => dungeon.name)
+export const getMonsterLocationEntries = (monsterId: MonsterId) => Object.values(DUNGEONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || dungeon.boss === monsterId).map((dungeon) => ({ id: dungeon.id, name: dungeon.name }))
+export const getMonsterLocations = (monsterId: MonsterId) => getMonsterLocationEntries(monsterId).map((dungeon) => dungeon.name)
 
 export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {
   const entries = getBestiaryEntries()
@@ -33,7 +36,7 @@ export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {
   return { discovered, total: entries.length, percent: completionPercent(discovered, entries.length), categories, totalDefeats }
 }
 
-export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, getBestiaryTraitSearchText(monster), getBestiaryActionSearchText(monster), getBestiaryMechanicSearchText(monster), getBestiaryResonanceSearchText(monster), ...Object.values(monster.actionPatterns).flatMap((pattern) => [pattern.id, ...pattern.steps.map((step) => step.type === 'basic' ? 'Basic' : monster.actions[step.actionId]?.name ?? step.actionId)])].join(' ').toLowerCase()
+export const getBestiarySearchText = (monster: MonsterDefinition) => [monster.name, monster.subtitle, getBestiaryTraitSearchText(monster), getBestiaryActionSearchText(monster), getBestiaryMechanicSearchText(monster), getBestiaryResonanceSearchText(monster), ...getMonsterLocationEntries(monster.id).flatMap((location) => getSigilRegionSetPool(location.id).map((setId) => SIGIL_SETS[setId].name)), ...Object.values(monster.actionPatterns).flatMap((pattern) => [pattern.id, ...pattern.steps.map((step) => step.type === 'basic' ? 'Basic' : monster.actions[step.actionId]?.name ?? step.actionId)])].join(' ').toLowerCase()
 
 export const formatDropChance = (chance: number) => chance >= 1 ? 'Guaranteed' : `${Number((Math.max(0, chance) * 100).toFixed(1))}%`
 export const formatDropQuantity = (min: number, max: number) => min === max ? `×${min}` : `×${min}–${max}`

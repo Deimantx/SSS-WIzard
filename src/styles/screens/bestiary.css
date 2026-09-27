@@ -327,6 +327,21 @@
 .bestiary-effect-row-buff { border-left: 2px solid var(--ui-secondary); }
 .bestiary-effect-row-pattern, .bestiary-effect-row-utility { border-left: 2px solid var(--ui-accent); }
 
+.bestiary-sigil-drops { display: grid; gap: 12px; }
+.bestiary-sigil-drop-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.bestiary-sigil-drop-summary span { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-accent) 7%, var(--ui-panel)); }
+.bestiary-sigil-drop-summary strong { color: var(--ui-accent); font: 700 var(--text-sm) var(--font-mono); }
+.bestiary-sigil-drop-summary small, .bestiary-sigil-locations { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.bestiary-sigil-source { display: grid; gap: 8px; }
+.bestiary-sigil-source-heading { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.bestiary-sigil-set-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.bestiary-sigil-set { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text); background: var(--ui-panel); cursor: pointer; text-align: left; }
+.bestiary-sigil-set:hover, .bestiary-sigil-set:focus-visible { border-color: var(--ui-accent); background: var(--ui-accent-soft); }
+.bestiary-sigil-set span { display: grid; gap: 3px; min-width: 0; }
+.bestiary-sigil-set small { overflow: hidden; color: var(--ui-text-muted); font-size: var(--text-micro); text-overflow: ellipsis; white-space: nowrap; }
+.bestiary-sigil-locations { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
+.bestiary-sigil-locations > span { display: inline-flex; align-items: center; gap: 5px; color: var(--ui-text); }
+
 @media (max-width: 520px) {
   .bestiary-defence-core-grid { grid-template-columns: 1fr; }
   .bestiary-resistance-grid,
@@ -334,4 +349,5 @@
   .bestiary-phase-card-heading { align-items: flex-start; flex-direction: column; }
   .bestiary-phase-card-heading small { text-align: left; }
   .bestiary-effect-row { grid-template-columns: 1fr; gap: 2px; }
+  .bestiary-sigil-drop-summary, .bestiary-sigil-set-list { grid-template-columns: 1fr; }
 }

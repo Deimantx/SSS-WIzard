@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { ProfileSlotId } from '../profiles/profileTypes'
+import type { SaveValidationReport } from './saveIntegrity'
 
 export type SaveHealth = 'healthy' | 'recovered' | 'protected' | 'error'
 export type SaveFailureKind = 'quota' | 'storage-unavailable' | 'serialization' | 'validation' | 'write-verification' | 'regression' | 'unknown'
@@ -13,6 +14,7 @@ export interface SaveDiagnosticsState {
   lastFailureKind: SaveFailureKind | null
   lastFailureDetail: string | null
   lastFailureSerializedBytes: number | null
+  lastValidationReport: SaveValidationReport | null
 }
 
 const initialState: SaveDiagnosticsState = {
@@ -24,6 +26,7 @@ const initialState: SaveDiagnosticsState = {
   lastFailureKind: null,
   lastFailureDetail: null,
   lastFailureSerializedBytes: null,
+  lastValidationReport: null,
 }
 
 let current = initialState
@@ -39,7 +42,7 @@ export const setSaveDiagnosticsProfile = (activeProfileId: ProfileSlotId | null)
 }
 
 export const recordSuccessfulSave = (activeProfileId: ProfileSlotId, savedAt: number) => {
-  current = { ...current, activeProfileId, health: 'healthy', lastSuccessfulSaveAt: savedAt, lastFailure: null, lastRegressionFailure: null, lastFailureKind: null, lastFailureDetail: null, lastFailureSerializedBytes: null }
+  current = { ...current, activeProfileId, health: 'healthy', lastSuccessfulSaveAt: savedAt, lastFailure: null, lastRegressionFailure: null, lastFailureKind: null, lastFailureDetail: null, lastFailureSerializedBytes: null, lastValidationReport: null }
   emit()
 }
 
@@ -48,8 +51,8 @@ export const recordRecoveredProfile = (activeProfileId: ProfileSlotId) => {
   emit()
 }
 
-export const recordSaveFailure = (activeProfileId: ProfileSlotId, error: string, regression = false, details?: { kind?: SaveFailureKind; detail?: string; serializedBytes?: number }) => {
-  current = { ...current, activeProfileId, health: regression ? 'protected' : 'error', lastFailure: error, lastFailureKind: details?.kind ?? (regression ? 'regression' : 'unknown'), lastFailureDetail: details?.detail ?? null, lastFailureSerializedBytes: details?.serializedBytes ?? null, ...(regression ? { lastRegressionFailure: error } : {}) }
+export const recordSaveFailure = (activeProfileId: ProfileSlotId, error: string, regression = false, details?: { kind?: SaveFailureKind; detail?: string; serializedBytes?: number; validationReport?: SaveValidationReport }) => {
+  current = { ...current, activeProfileId, health: regression ? 'protected' : 'error', lastFailure: error, lastFailureKind: details?.kind ?? (regression ? 'regression' : 'unknown'), lastFailureDetail: details?.detail ?? null, lastFailureSerializedBytes: details?.serializedBytes ?? null, lastValidationReport: details?.validationReport ?? null, ...(regression ? { lastRegressionFailure: error } : {}) }
   emit()
 }
 

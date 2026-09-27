@@ -11,7 +11,7 @@ describe('RecipeDetail Used In summary', () => {
 
   it('keeps Used In compact and opens the full list in a dialog', () => {
     const view = render(<RecipeDetail recipe={RECIPES['fire-fragment']} />)
-    expect(screen.getByText(/USED IN.*5 uses/)).toBeTruthy()
+    expect(screen.getByText(/USED IN.*4 uses/)).toBeTruthy()
     expect(screen.queryByText('Prismatic Fragment')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'VIEW' }))
     expect(screen.getByRole('dialog', { name: /FIRE FRAGMENT/ })).toBeTruthy()

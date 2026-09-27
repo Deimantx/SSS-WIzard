@@ -73,7 +73,7 @@ describe('Developer Tools window presentation', () => {
     expect(screen.getByRole('button', { name: 'Combat' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Progression' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'System' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Quick Setup' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Overview' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Scenarios' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Offline Bank' })).toBeTruthy()
   })

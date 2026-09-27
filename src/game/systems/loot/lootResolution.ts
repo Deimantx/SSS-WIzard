@@ -39,10 +39,13 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   const encounterPower = resolveEnemyPowerRating(enemyId, encounterWorldTier)
   state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, encounterPower)
   if (isBoss && encounterWorldTier >= 2) state.sigils.hasDefeatedWorldTier2Boss = true
-  // Onboarding is tied to the first eligible combat resolution, not to a
-  // generic pity counter. Subsequent kills use the authored ordinary chances.
-  const guaranteeFirstSigil = state.sigils.lifetimeDrops === 0
-  if (guaranteeFirstSigil || rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)) {
+  // The first drop uses the authored chance on kills 1–4 and is guaranteed on
+  // the fifth eligible kill. The counter is only for the pre-first-drop path;
+  // normal post-onboarding drops never inherit this pity state.
+  const firstDropPending = state.sigils.lifetimeDrops === 0
+  const pityGuarantee = firstDropPending && state.sigils.firstDropPityKills >= 4
+  const naturalDrop = rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)
+  if (pityGuarantee || naturalDrop) {
     const sigil = generateSigil({ state, dungeonId: state.combat.dungeonId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
     drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)
     const autoSalvage = (sigil.quality === 'common' || sigil.quality === 'refined') && state.sigils.autoSalvage[sigil.quality]
@@ -54,6 +57,8 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
       if (atSoftCap && !autoSalvage) pushNotification(state, 'Sigil Storage is full; the incoming low-quality Sigil was salvaged.', 'warning', { key: 'sigil-storage-cap', cooldownMs: 60_000 })
     }
     onSigilDrop?.({ instanceId: sigil.instanceId, setId: sigil.setId, slot: sigil.slot, tier: sigil.tier, quality: sigil.quality, autoSalvaged, dustGranted: Math.max(0, state.sigils.dust - dustBefore) })
+  } else if (firstDropPending) {
+    state.sigils.firstDropPityKills = Math.min(4, state.sigils.firstDropPityKills + 1)
   }
   return drops.join(', ')
 }

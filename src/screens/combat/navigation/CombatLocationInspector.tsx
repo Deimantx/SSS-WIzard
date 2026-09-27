@@ -12,6 +12,7 @@ import type { MonsterId } from '../../../game/types'
 import { MonsterPortrait } from '../MonsterPortrait'
 import { useGameStore } from '../../../store/gameStore'
 import { CombatLocationIcon } from './CombatLocationIcon'
+import { CombatLocationSigilDrops } from './CombatLocationSigilDrops'
 
 export function CombatLocationInspector({ location, activeLocationId, combatActive, selectedTargetEnemyId, onSelectTarget, onLoot, onBestiary, onEnter }: { location: CombatLocationViewModel | null; activeLocationId: string | null; combatActive: boolean; selectedTargetEnemyId: MonsterId | null; onSelectTarget: (enemyId: MonsterId) => void; onLoot: () => void; onBestiary: () => void; onEnter: () => void }) {
   if (!location) return <aside className="combat-location-inspector" aria-label="Location details"><div className="combat-location-inspector-empty"><span aria-hidden="true">◇</span><strong>SELECT A LOCATION</strong><p>Choose a location to inspect its interaction and entry action.</p></div></aside>
@@ -46,6 +47,7 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
     <div className="combat-location-inspector-scroll">
       <div className="combat-location-inspector-hero"><div className="combat-location-inspector-glyph" aria-hidden="true"><CombatLocationIcon type={location.type} size={20} /><i /></div><div className="combat-location-inspector-heading"><span className="combat-subsection-label">LOCATION DETAILS</span><h3>{location.name}</h3><div className="combat-location-inspector-badges"><Status tone={tone}>{location.statusLabel}</Status><span className="combat-location-type-badge">{location.typeLabel}</span></div></div></div>
       <p className="combat-location-description">{location.description}</p>
+      {location.dungeonId && <CombatLocationSigilDrops dungeonId={location.dungeonId} />}
       {location.targeting ? <CombatZoneBody type={location.type} targeting={location.targeting} selectedTargetEnemyId={selectedTargetEnemyId} activeTargetEnemyId={activeTarget} onSelectTarget={onSelectTarget} boss={location.boss} zoneAffix={location.zoneAffix} bossHunt={location.bossHunt} autoHuntDisabled={locked || prototype || !location.bossHunt?.autoHuntUnlocked} onToggleAutoHunt={() => { if (location.dungeonId) toggleAutoHunt(location.dungeonId) }} onEngageBoss={() => { if (location.bossHunt) engageBoss(location.bossHunt.bossId) }} /> : location.sequence ? <SequenceDungeonBody sequence={location.sequence} firstClearUnlockPreview={location.firstClearUnlockPreview} firstClearCompleted={location.firstClearCompleted} /> : <DungeonBody encounters={location.encounters} boss={location.boss} />}
       {locked && <div className="combat-location-lock-note"><LockKeyhole size={14} aria-hidden="true" /><span>{location.unlockText ?? 'This location is not available yet.'}</span></div>}
       {prototype && <div className="combat-location-lock-note is-prototype"><Gem size={14} aria-hidden="true" /><span>This location is presentation-only until gameplay content is authored.</span></div>}

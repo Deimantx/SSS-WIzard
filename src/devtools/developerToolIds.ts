@@ -1,8 +1,8 @@
 export const DEVELOPER_TOOL_IDS = [
-  'quick', 'scenarios', 'offline-bank', 'character', 'arcane-core', 'spells', 'schools', 'resonance',
-  'acolytes', 'channeling', 'research', 'transmutation', 'artificing', 'summoning', 'inventory', 'artifacts',
-  'crystals', 'sigils', 'combat', 'world-tier', 'monsters', 'statuses', 'progression', 'chronicles', 'guild',
-  'archive', 'story-portal', 'save', 'diagnostics', 'ui-tuning', 'settings',
+  'quick', 'scenarios', 'offline-bank', 'character', 'arcane-core', 'spells', 'resonance',
+  'acolytes', 'channeling', 'research', 'transmutation', 'artificing', 'inventory', 'artifacts',
+  'crystals', 'sigils', 'combat', 'combat-encounter', 'combat-boss', 'combat-actions', 'combat-balance', 'combat-telemetry', 'world-tier', 'monsters', 'statuses', 'progression', 'chronicles',
+  'magic-schools', 'save', 'diagnostics', 'ui-tuning',
 ] as const
 
 export type DeveloperToolsTab = typeof DEVELOPER_TOOL_IDS[number]

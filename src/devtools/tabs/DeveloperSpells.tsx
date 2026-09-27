@@ -8,7 +8,6 @@ import type { SchoolId, SpellId, SpellType } from '../../game/types'
 import { useGameStore } from '../../store/gameStore'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
 import { getDeveloperSpellView } from '../developerReadModels'
-import { DeveloperSchools } from './DeveloperSchools'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 
 type SpellFilter = 'all' | SchoolId | SpellType | 'locked' | 'unlocked' | 'auto-cast'
@@ -18,7 +17,6 @@ const typeFilters: readonly FilterOption<SpellFilter>[] = spellTypes.map((id) =>
 const FILTERS: readonly FilterOption<SpellFilter>[] = [{ value: 'all', label: 'ALL' }, ...schoolFilters, ...typeFilters, { value: 'locked', label: 'LOCKED' }, { value: 'unlocked', label: 'UNLOCKED' }, { value: 'auto-cast', label: 'AUTO-CAST' }]
 
 export function DeveloperSpells() {
-  const [view, setView] = useState<'spells' | 'schools'>('spells')
   const state = useGameStore()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<SpellFilter>('all')
@@ -31,18 +29,12 @@ export function DeveloperSpells() {
   const selectedSpell = selected ? SPELLS[selected] : null
   useEffect(() => { if (options.length === 0) setSelected(null); else if (!selected || !options.some((spell) => spell.id === selected)) setSelected(options[0].id) }, [options, selected])
 
-  if (view === 'schools') return <div className="developer-tab-stack"><SpellSchoolsSwitcher view={view} setView={setView} /><DeveloperSchools /></div>
   return <div className="developer-tab-stack">
-    <SpellSchoolsSwitcher view={view} setView={setView} />
     <Card title="Spell browser" className="developer-browser-card">
       <div className="developer-filter-stack"><label>Search spells<input aria-label="Search spells" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, school, effect..." /></label><div className="developer-filter-label">SCHOOL / TYPE / STATE<FilterBar options={FILTERS} value={filter} onChange={setFilter} ariaLabel="Developer spell filter" /></div></div>
       <DeveloperBrowserLayout browser={<><div className="developer-browser-heading"><strong>{options.length} authored spells</strong><small>Choose a spell to inspect its player-facing effects and tester actions.</small></div><DeveloperBrowser items={options.map((spell) => { const rank = getSpellRank(state, spell.id); return { id: spell.id, label: spell.name, icon: SCHOOLS[spell.school].glyph, accent: SCHOOLS[spell.school].color, meta: `${SCHOOLS[spell.school].name} · ${formatReadableId(spell.type)} · ${formatResourceAmount(spell.manaCost)} Mana · ${formatDuration(spell.cooldownMs)}`, status: <Status tone={rank ? 'success' : 'locked'}>{rank ? `RANK ${rank}` : 'LOCKED'}</Status> } })} selectedId={selected} onSelect={(id) => setSelected(id as SpellId)} emptyMessage="No matching spells." /></>} inspector={selectedSpell && selected ? <SpellInspector spellId={selected} /> : <div className="developer-browser-empty"><strong>No matching spells</strong><small>Change the search or filter.</small></div>} />
     </Card>
   </div>
-}
-
-function SpellSchoolsSwitcher({ view, setView }: { view: 'spells' | 'schools'; setView: (view: 'spells' | 'schools') => void }) {
-  return <div className="developer-local-tabs" role="tablist" aria-label="Magic developer sections"><button role="tab" aria-selected={view === 'spells'} className={view === 'spells' ? 'active' : ''} onClick={() => setView('spells')}>SPELLS</button><button role="tab" aria-selected={view === 'schools'} className={view === 'schools' ? 'active' : ''} onClick={() => setView('schools')}>SCHOOLS</button></div>
 }
 
 function SpellInspector({ spellId }: { spellId: SpellId }) {

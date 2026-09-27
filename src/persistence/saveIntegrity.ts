@@ -2,15 +2,36 @@ import type { GameState } from '../game/types'
 import { migrateSave, normalizeLegacyProgressEvidence } from './migrations'
 import { CURRENT_SAVE_VERSION, isRecord } from './saveSchema'
 
-export interface CriticalSaveSnapshot {
+export type SaveValidationClassification = 'MATCH' | 'DERIVED_ONLY' | 'AUTHORITATIVE_CHANGE' | 'STRUCTURAL_INVALID'
+
+export interface SaveValidationChange {
+  path: string
+  before: unknown
+  after: unknown
+  classification: Exclude<SaveValidationClassification, 'MATCH' | 'STRUCTURAL_INVALID'>
+}
+
+export interface SaveValidationReport {
+  classification: SaveValidationClassification
+  changes: SaveValidationChange[]
+  summary: string
+}
+
+/** Explicit allow-list of player-owned and progression-bearing save data. */
+export interface AuthoritativeSaveSnapshot {
   inventory: GameState['inventory']
+  crystals: GameState['crystals']
   protectedItems: GameState['protectedItems']
   equipment: GameState['equipment']
+  artifactProgress: GameState['artifactProgress']
   arcaneCore: GameState['arcaneCore']
+  sigils: GameState['sigils']
+  guardians: GameState['guardians']
   schools: GameState['schools']
   currencies: GameState['currencies']
   resonance: GameState['resonance']
   worldTier: GameState['worldTier']
+  tower: GameState['tower']
   activities: {
     channeling: GameState['activities']['channeling']
     research: GameState['activities']['research']
@@ -18,7 +39,8 @@ export interface CriticalSaveSnapshot {
     artificing: GameState['activities']['artificing']
     autoCast: GameState['activities']['autoCast']
   }
-  progress: GameState['progress']
+  progress: Omit<GameState['progress'], 'chronicle'>
+  storyProgress: GameState['storyProgress']
   darkPortal: GameState['darkPortal']
   spellPresets: GameState['spellPresets']
   offlineBankMs: number
@@ -27,10 +49,14 @@ export interface CriticalSaveSnapshot {
   combatRngState: number
 }
 
+/** Compatibility name retained for existing diagnostics/tests. */
+export type CriticalSaveSnapshot = AuthoritativeSaveSnapshot
+
 export interface SaveValidationResult {
   ok: boolean
   state: GameState | null
   error: string | null
+  report: SaveValidationReport
 }
 
 export interface SaveRecoveryResult {
@@ -38,24 +64,37 @@ export interface SaveRecoveryResult {
   error: string | null
 }
 
+const emptyReport = (): SaveValidationReport => ({ classification: 'MATCH', changes: [], summary: 'Authoritative save data matches after migration.' })
 const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
-/** Stable ordering makes the comparison semantic rather than dependent on object insertion order. */
+/** Stable ordering makes the comparison semantic rather than insertion-order dependent. */
 const canonicalize = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(canonicalize)
   if (isRecord(value)) return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]))
   return value
 }
 
-export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'arcaneCore' | 'schools' | 'currencies' | 'resonance' | 'worldTier' | 'activities' | 'progress' | 'darkPortal' | 'spellPresets' | 'offlineBankMs' | 'combat'>): CriticalSaveSnapshot => cloneJson({
+const normalizeProgress = (value: GameState['progress']) => {
+  const progress = cloneJson(value)
+  normalizeLegacyProgressEvidence(progress)
+  const { chronicle: _derivedChronicle, ...authoritativeProgress } = progress
+  return authoritativeProgress
+}
+
+export const getAuthoritativeSaveSnapshot = (state: GameState): AuthoritativeSaveSnapshot => cloneJson({
   inventory: state.inventory,
+  crystals: state.crystals,
   protectedItems: state.protectedItems,
   equipment: state.equipment,
+  artifactProgress: state.artifactProgress,
   arcaneCore: state.arcaneCore,
+  sigils: state.sigils,
+  guardians: state.guardians,
   schools: state.schools,
   currencies: state.currencies,
   resonance: state.resonance,
   worldTier: state.worldTier,
+  tower: state.tower,
   activities: {
     channeling: state.activities.channeling,
     research: state.activities.research,
@@ -63,11 +102,8 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
     artificing: state.activities.artificing,
     autoCast: state.activities.autoCast,
   },
-  progress: (() => {
-    const progress = cloneJson(state.progress)
-    normalizeLegacyProgressEvidence(progress)
-    return progress
-  })(),
+  progress: normalizeProgress(state.progress),
+  storyProgress: state.storyProgress,
   darkPortal: state.darkPortal,
   spellPresets: state.spellPresets,
   offlineBankMs: state.offlineBankMs,
@@ -76,17 +112,60 @@ export const getCriticalSaveSnapshot = (state: Pick<GameState, 'inventory' | 'pr
   combatRngState: state.combat.combatRngState,
 })
 
-export const criticalSaveSnapshotsEqual = (left: CriticalSaveSnapshot, right: CriticalSaveSnapshot) => JSON.stringify(canonicalize(left)) === JSON.stringify(canonicalize(right))
+export const getCriticalSaveSnapshot = getAuthoritativeSaveSnapshot
+export const criticalSaveSnapshotsEqual = (left: AuthoritativeSaveSnapshot, right: AuthoritativeSaveSnapshot) => JSON.stringify(canonicalize(left)) === JSON.stringify(canonicalize(right))
+
+const pathFor = (path: string, key: string | number) => path ? `${path}.${String(key)}` : String(key)
+
+const collectDiffs = (before: unknown, after: unknown, path: string, changes: SaveValidationChange[], classification: SaveValidationChange['classification']) => {
+  if (changes.length >= 50) return
+  if (JSON.stringify(canonicalize(before)) === JSON.stringify(canonicalize(after))) return
+  if (Array.isArray(before) && Array.isArray(after)) {
+    const length = Math.max(before.length, after.length)
+    for (let index = 0; index < length && changes.length < 50; index += 1) collectDiffs(before[index], after[index], pathFor(path, index), changes, classification)
+    return
+  }
+  if (isRecord(before) && isRecord(after)) {
+    const keys = new Set([...Object.keys(before), ...Object.keys(after)].sort())
+    for (const key of keys) if (changes.length < 50) collectDiffs(before[key], after[key], pathFor(path, key), changes, classification)
+    return
+  }
+  changes.push({ path: path || '$', before, after, classification })
+}
+
+const getDerivedSnapshot = (state: GameState) => ({ chronicle: state.progress.chronicle })
+
+const buildValidationReport = (expected: GameState, actual: GameState): SaveValidationReport => {
+  const authoritativeChanges: SaveValidationChange[] = []
+  collectDiffs(getAuthoritativeSaveSnapshot(expected), getAuthoritativeSaveSnapshot(actual), '', authoritativeChanges, 'AUTHORITATIVE_CHANGE')
+  if (authoritativeChanges.length) return {
+    classification: 'AUTHORITATIVE_CHANGE',
+    changes: authoritativeChanges,
+    summary: `${authoritativeChanges.length}${authoritativeChanges.length === 50 ? '+' : ''} authoritative field${authoritativeChanges.length === 1 ? '' : 's'} changed during migration.`,
+  }
+  const derivedChanges: SaveValidationChange[] = []
+  collectDiffs(getDerivedSnapshot(expected), getDerivedSnapshot(actual), '', derivedChanges, 'DERIVED_ONLY')
+  return derivedChanges.length
+    ? { classification: 'DERIVED_ONLY', changes: derivedChanges, summary: `${derivedChanges.length} derived field${derivedChanges.length === 1 ? '' : 's'} normalized during migration.` }
+    : emptyReport()
+}
 
 export const validateSerializedSave = (encoded: string, expectedState?: GameState): SaveValidationResult => {
   try {
     const roundTripped = migrateSave(JSON.parse(encoded))
-    if (expectedState && !criticalSaveSnapshotsEqual(getCriticalSaveSnapshot(expectedState), getCriticalSaveSnapshot(roundTripped))) {
-      return { ok: false, state: null, error: 'Critical gameplay data changed during save round-trip.' }
+    const report = expectedState ? buildValidationReport(expectedState, roundTripped) : emptyReport()
+    if (report.classification === 'AUTHORITATIVE_CHANGE') {
+      const paths = report.changes.map((change) => change.path).join(', ')
+      return { ok: false, state: null, error: `Critical gameplay data changed during save round-trip: ${paths}.`, report }
     }
-    return { ok: true, state: roundTripped, error: null }
+    return { ok: true, state: roundTripped, error: null, report }
   } catch (error) {
-    return { ok: false, state: null, error: error instanceof Error ? error.message : 'Save data could not be validated.' }
+    return {
+      ok: false,
+      state: null,
+      error: error instanceof Error ? error.message : 'Save data could not be validated.',
+      report: { classification: 'STRUCTURAL_INVALID', changes: [], summary: 'Save data could not be migrated into a valid profile state.' },
+    }
   }
 }
 
@@ -98,7 +177,7 @@ const decodeSave = (encoded: string): Record<string, unknown> => {
 }
 
 const hasCurrentSaveShape = (value: Record<string, unknown>) => {
-  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'worldTier', 'inventory', 'protectedItems', 'equipment', 'sigils', 'activities', 'combat', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
+  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'worldTier', 'inventory', 'crystals', 'protectedItems', 'equipment', 'artifactProgress', 'sigils', 'guardians', 'activities', 'combat', 'progress', 'storyProgress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
   return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
     && typeof value.lastSavedAt === 'number'
     && Number.isFinite(value.lastSavedAt)
@@ -123,25 +202,21 @@ export const validateStoredSave = (encoded: string): SaveValidationResult => {
     const decoded = decodeSave(encoded)
     const saveVersion = decoded.saveVersion as number
     if (saveVersion === CURRENT_SAVE_VERSION && !hasCurrentSaveShape(decoded)) {
-      return { ok: false, state: null, error: 'Current save is missing required gameplay data.' }
+      return { ok: false, state: null, error: 'Current save is missing required gameplay data.', report: { classification: 'STRUCTURAL_INVALID', changes: [], summary: 'Current save is missing required gameplay data.' } }
     }
     if (saveVersion < CURRENT_SAVE_VERSION && !hasRecoverableSaveShape(decoded)) {
-      return { ok: false, state: null, error: 'Historical save is missing required gameplay data.' }
+      return { ok: false, state: null, error: 'Historical save is missing required gameplay data.', report: { classification: 'STRUCTURAL_INVALID', changes: [], summary: 'Historical save is missing required gameplay data.' } }
     }
     const migrated = migrateSave(decoded)
     const roundTrip = validateSerializedSave(JSON.stringify(migrated), migrated)
     if (!roundTrip.ok) return roundTrip
-    return { ok: true, state: migrated, error: null }
+    return { ok: true, state: migrated, error: null, report: roundTrip.report }
   } catch (error) {
-    return { ok: false, state: null, error: error instanceof Error ? error.message : 'Save data could not be validated.' }
+    return { ok: false, state: null, error: error instanceof Error ? error.message : 'Save data could not be validated.', report: { classification: 'STRUCTURAL_INVALID', changes: [], summary: 'Save data could not be validated.' } }
   }
 }
 
-/**
- * Controlled fallback for a historical document that the normal stored-save
- * path rejected. Migration is still required, and the canonical second pass
- * must preserve all critical gameplay data before the candidate is accepted.
- */
+/** Controlled fallback for a historical document rejected by the normal path. */
 export const attemptLegacySaveRecovery = (encoded: string): SaveRecoveryResult => {
   try {
     const decoded = decodeSave(encoded)

@@ -6,7 +6,7 @@ import { getActiveEncounterWorldTier, resolveWorldTierLootQuantity } from '../wo
 import { rollPowerScaledCurrencyReward } from './powerScaledCurrencyRewards'
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { resolveEnemyPowerRating } from '../combat/enemyPower'
-import { SIGIL_DROP_CHANCE, SIGIL_FIRST_DROP_PITY_KILLS } from '../../content/sigils/sigilDropConfig'
+import { SIGIL_DROP_CHANCE } from '../../content/sigils/sigilDropConfig'
 import { generateSigil } from '../sigils/sigilGeneration'
 import { salvageSigil } from '../sigils/sigilSalvage'
 import { SIGIL_STORAGE_SOFT_CAP } from '../../content/sigils/sigilDropConfig'
@@ -39,10 +39,10 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   const encounterPower = resolveEnemyPowerRating(enemyId, encounterWorldTier)
   state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, encounterPower)
   if (isBoss && encounterWorldTier >= 2) state.sigils.hasDefeatedWorldTier2Boss = true
-  if (state.sigils.lifetimeDrops === 0) state.sigils.firstDropPityKills += 1
-  else state.sigils.firstDropPityKills = 0
-  const forcePityDrop = state.sigils.lifetimeDrops === 0 && state.sigils.firstDropPityKills >= SIGIL_FIRST_DROP_PITY_KILLS
-  if (forcePityDrop || rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)) {
+  // Onboarding is tied to the first eligible combat resolution, not to a
+  // generic pity counter. Subsequent kills use the authored ordinary chances.
+  const guaranteeFirstSigil = state.sigils.lifetimeDrops === 0
+  if (guaranteeFirstSigil || rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)) {
     const sigil = generateSigil({ state, dungeonId: state.combat.dungeonId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
     drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)
     const autoSalvage = (sigil.quality === 'common' || sigil.quality === 'refined') && state.sigils.autoSalvage[sigil.quality]

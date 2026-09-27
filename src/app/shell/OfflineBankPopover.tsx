@@ -5,11 +5,9 @@ import { getActivityTelemetry } from '../../game/systems/activity/activityTeleme
 import { formatCompactDuration, formatOfflineBank } from '../../game/utils'
 import type { OfflineBankProgress } from '../../game/systems/offline-bank/offlineBankSimulation'
 import { useGameStore } from '../../store/gameStore'
-import { getTransmutationAcolytesAssigned } from '../../game/systems/transmutation/transmutationSelectors'
-import { getResearchAcolytesAssigned } from '../../game/systems/research/researchSelectors'
+import { OFFLINE_BANK_SPEND_PRESETS as presets } from '../../game/systems/offline-bank/offlineBankDuration'
+import { canAdvanceOfflineBank } from '../../game/systems/offline-bank/offlineBankSelectors'
 import { useSampledGameReadModel } from './sampledGameReadModel'
-
-const presets = [{ label: '1 MIN', short: '1m', ms: 60_000 }, { label: '5 MIN', short: '5m', ms: 300_000 }, { label: '15 MIN', short: '15m', ms: 900_000 }, { label: '1 HOUR', short: '1h', ms: 3_600_000 }]
 
 type OfflineBankPopoverProps = { open: boolean; onClose: () => void; onViewLastResults: () => void }
 
@@ -29,10 +27,7 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
   const advance = useGameStore((state) => state.advanceWithOfflineBank)
   const lastOfflineBankReport = useGameStore((state) => state.lastOfflineBankReport)
   const activities = useSampledGameReadModel((state) => getActivityTelemetry(state), 250)
-  const canAdvance = useSampledGameReadModel((state) => {
-    const meaningfulRecovery = state.combat.active && (Boolean(state.combat.enemyId) || state.player.health < state.player.maxHealth || state.combat.encounterTimerMs > 0)
-    return getTransmutationAcolytesAssigned(state) > 0 || getResearchAcolytesAssigned(state) > 0 || meaningfulRecovery
-  }, 250)
+  const canAdvance = useSampledGameReadModel((state) => canAdvanceOfflineBank(state), 250)
 
   useEffect(() => {
     const updatePosition = () => {
@@ -60,19 +55,16 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
   const spend = async (durationMs: number) => {
     setError(null)
     setAdvancing(true)
-    setProgress({ phase: 'simulating', percent: 0 })
+    setProgress({ phase: 'simulating', simulatedMs: 0, totalMs: durationMs, percent: 0, realElapsedMs: 0 })
     setAdvancingDurationMs(durationMs)
     await waitForPaint()
     try {
       const result = await advance(durationMs, (nextProgress) => setProgress(nextProgress))
       if (!result.ok) setError(result.error ?? 'Unable to advance Offline Bank.')
+      else { setProgress(null); setAdvancingDurationMs(0) }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to advance Offline Bank.')
-    } finally {
-      setAdvancing(false)
-      setProgress(null)
-      setAdvancingDurationMs(0)
-    }
+    } finally { setAdvancing(false) }
   }
 
   return <div className="offline-bank-popover" style={position} ref={panelRef} role="dialog" aria-label="Offline Bank">
@@ -80,15 +72,16 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
     <div className="offline-bank-hero"><span className="offline-bank-section-label">BANKED TIME</span><strong>{formatOfflineBank(bankMs)}</strong><small>Available for simulation</small><div className="offline-bank-meter" aria-hidden="true"><i /></div></div>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ACTIVE SYSTEMS</span><small>{activities.length ? `${activities.length} running` : 'Standby'}</small></div>{activities.length ? <div className="offline-active-list">{activities.map((activity) => <div className={`offline-active-row accent-${activity.accent}`} key={activity.id}><span className="offline-activity-icon"><ActivityIcon activity={activity.label} /></span><span className="offline-active-copy"><strong>{activity.label}</strong><small>{activity.subtitle ?? activity.status}</small></span><em>{activity.status === 'running' ? 'ACTIVE' : activity.status.replace('-', ' ').toUpperCase()}</em></div>)}</div> : <div className="offline-empty-state"><strong>No active timed systems.</strong><span>Start an activity before spending Offline Bank time.</span></div>}</section>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ADVANCE TIME</span><small>Spend deliberately</small></div>{!canAdvance && <div className="offline-no-work">Start an activity before spending Offline Bank time.</div>}<div className="offline-presets">{presets.map((preset) => { const disabled = advancing || bankMs < preset.ms || !canAdvance; const reason = !canAdvance ? 'Start an activity before spending Offline Bank time.' : 'Not enough Offline Bank time.'; const button = <button key={preset.ms} className="offline-preset" disabled={disabled} onClick={() => spend(preset.ms)} aria-label={`Advance ${preset.short}`}><strong>+{preset.label}</strong><small>Advance active systems</small></button>; return disabled && !advancing ? <GameTooltip key={preset.ms} block content={reason} accent="warning">{button}</GameTooltip> : button })}</div>{advancing && progress && <OfflineProgress progress={progress} durationMs={advancingDurationMs} />}</section>
-    {error && <div className="offline-bank-error" role="alert">{error}</div>}
+    {error && <div className="offline-bank-error" role="alert"><strong>OFFLINE ADVANCE NOT COMMITTED</strong><span>{error}</span><small>No Offline Bank time was spent. The live profile was rolled back.</small></div>}
     <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span>{lastOfflineBankReport && <button type="button" className="offline-last-results" onClick={onViewLastResults}>View Last Results</button>}</div>
   </div>
 }
 
 function OfflineProgress({ progress, durationMs }: { progress: OfflineBankProgress; durationMs: number }) {
-  const percent = Math.max(0, Math.min(100, Math.round(progress.percent)))
-  const phase = progress.phase === 'simulating' ? 'SIMULATING' : progress.phase === 'finalizing' ? 'FINALIZING' : 'SAVING'
-  return <div className="offline-progress" role="status" aria-live="polite"><div className="offline-progress-head"><span>ADVANCING OFFLINE TIME</span><strong>{percent}%</strong></div><div className="offline-progress-phase"><span>{phase}</span><i aria-hidden="true" /></div><div className="offline-progress-track" role="progressbar" aria-label="Offline Bank progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><span style={{ width: `${percent}%` }} /></div>{progress.phase === 'simulating' && <small>{formatProgressDuration(durationMs * progress.percent / 100)} / {formatOfflineBank(durationMs)} simulated</small>}</div>
+  const numericPercent = Math.max(0, Math.min(100, progress.percent))
+  const percent = numericPercent > 0 && numericPercent < 1 ? '<1%' : `${Math.round(numericPercent)}%`
+  const phase = progress.phase === 'preparing' ? 'PREPARING' : progress.phase === 'simulating' ? 'SIMULATING' : progress.phase === 'finalizing' ? 'FINALIZING' : 'SAVING'
+  return <div className="offline-progress" role="status" aria-live="polite"><div className="offline-progress-head"><span>ADVANCING OFFLINE TIME</span><strong>{percent}</strong></div><div className="offline-progress-phase"><span>{phase}</span><i aria-hidden="true" /></div><div className="offline-progress-track" role="progressbar" aria-label="Offline Bank progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(numericPercent)}><span style={{ width: `${numericPercent}%` }} /></div>{progress.phase === 'simulating' && <small>{formatProgressDuration(progress.simulatedMs ?? durationMs * numericPercent / 100)} / {formatOfflineBank(durationMs)} simulated</small>}</div>
 }
 
 const formatProgressDuration = (ms: number) => ms <= 0 ? '0s' : formatCompactDuration(ms)

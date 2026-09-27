@@ -1,51 +1,10 @@
-import { DeveloperArtificing } from './tabs/DeveloperArtificing'
 import type { DeveloperToolsTab } from './developerToolsStore'
-import { DeveloperQuickSetup } from './tabs/DeveloperQuickSetup'
-import { DeveloperCombat } from './tabs/DeveloperCombat'
-import { DeveloperChanneling } from './tabs/DeveloperChanneling'
-import { DeveloperCharacter } from './tabs/DeveloperCharacter'
-import { DeveloperDiagnostics } from './tabs/DeveloperDiagnostics'
-import { DeveloperAcolytes } from './tabs/DeveloperAcolytes'
-import { DeveloperTransmutation } from './tabs/DeveloperTransmutation'
-import { DeveloperResearch } from './tabs/DeveloperResearch'
-import { DeveloperInventory } from './tabs/DeveloperInventory'
-import { DeveloperProgression } from './tabs/DeveloperProgression'
-import { DeveloperCrystals } from './tabs/DeveloperCrystals'
-import { DeveloperSaveState } from './tabs/DeveloperSaveState'
-import { DeveloperSpells } from './tabs/DeveloperSpells'
-import { DeveloperMonsters } from './tabs/DeveloperMonsters'
-import { DeveloperStatuses } from './tabs/DeveloperStatuses'
-import { DeveloperArtifacts } from './tabs/DeveloperArtifacts'
-import { DeveloperUITuning } from './tabs/DeveloperUITuning'
-import { DeveloperArcaneCore } from './tabs/DeveloperArcaneCore'
-import { DeveloperResonance } from './tabs/DeveloperResonance'
-import { DeveloperWorldTier } from './tabs/DeveloperWorldTier'
-import { DeveloperChronicles } from './tabs/DeveloperChronicles'
-import { DeveloperSigils } from './tabs/DeveloperSigils'
+import { Suspense } from 'react'
+import { getDeveloperToolDefinition } from './developerToolRegistry'
 
 export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (label: string, value: unknown) => Promise<void> }) {
-  if (tab === 'quick') return <DeveloperQuickSetup />
-  if (tab === 'character') return <DeveloperCharacter />
-  if (tab === 'channeling') return <DeveloperChanneling />
-  if (tab === 'acolytes') return <DeveloperAcolytes />
-  if (tab === 'artificing') return <DeveloperArtificing />
-  if (tab === 'artifacts') return <DeveloperArtifacts />
-  if (tab === 'sigils') return <DeveloperSigils />
-  if (tab === 'resonance') return <DeveloperResonance />
-  if (tab === 'world-tier') return <DeveloperWorldTier />
-  if (tab === 'transmutation') return <DeveloperTransmutation />
-  if (tab === 'research') return <DeveloperResearch />
-  if (tab === 'inventory') return <DeveloperInventory initialView="all" />
-  
-  if (tab === 'combat') return <DeveloperCombat copy={copy} />
-  if (tab === 'spells') return <DeveloperSpells />
-  if (tab === 'monsters') return <DeveloperMonsters />
-  if (tab === 'statuses') return <DeveloperStatuses />
-  if (tab === 'progression') return <DeveloperProgression />
-  if (tab === 'chronicles') return <DeveloperChronicles />
-  if (tab === 'crystals') return <DeveloperCrystals />
-  if (tab === 'arcane-core') return <DeveloperArcaneCore />
-  if (tab === 'diagnostics') return <DeveloperDiagnostics copy={copy} />
-  if (tab === 'ui-tuning') return <DeveloperUITuning copy={copy} />
-  return <DeveloperSaveState copy={copy} />
+  const definition = getDeveloperToolDefinition(tab)
+  if (!definition) return <div className="developer-empty-state"><strong>Unknown developer tool</strong><span>The requested tool is not registered in the V4 registry.</span><code>{tab}</code></div>
+  const Component = definition.component
+  return <Suspense fallback={<div className="developer-empty-state"><strong>Loading {definition.label}</strong><span>Preparing the registered tester surface.</span></div>}><Component copy={copy} /></Suspense>
 }

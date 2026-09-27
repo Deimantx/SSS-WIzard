@@ -94,7 +94,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.enemyWorldTier = getWorldTierDefinition(state.worldTier.current).id
   const enemyProfile = resolveWorldTierEnemyProfile(enemyId, state.combat.enemyWorldTier)
   resetArcaneCoreEncounterRuntime(state)
-  state.combat.sigilRuntime = { spellCastCount: 0, predatorCriticalStacks: 0, predatorStacksExpireAtMs: 0, secondSkinUsed: false }
+  state.combat.sigilRuntime = { spellCastCount: 0, predatorCriticalStacks: 0, predatorStacksExpireAtMs: 0, secondSkinUsed: false, criticalFlowAvailableAtMs: 0 }
   state.combat.enemyHp = enemyProfile.maxHealth
   state.combat.enemyMaxHp = enemyProfile.maxHealth
   state.combat.enemyBarrier = 0

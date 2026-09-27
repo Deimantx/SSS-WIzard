@@ -77,7 +77,7 @@ export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rn
     state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, Number.isFinite(enemyPower) ? enemyPower : 0)
   }
   if (source !== 'debug') registerDiscovery(state, sigil)
-  if (source !== 'debug') recordChronicleEvent(state, 'first-sigil-earned')
+  if (source === 'drop') recordChronicleEvent(state, 'first-sigil-earned')
   return sigil
 }
 

@@ -9,6 +9,11 @@ import { getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks } from '../a
 import type { ArtificingKindFilter, ArtificingTierFilter, ArtificingRecipeId, GameState, EquipmentItemSlot } from '../../types'
 
 export { canCraftArtificingRecipe, getArtificingCraftIngredients, hasArtificingRecipeRequirements }
+const ARTIFICING_UNLOCK_STAGES: readonly GameState['progress']['tutorialStage'][] = ['first-kill', 'tower-work', 'channeling', 'transmutation', 'research', 'complete']
+
+/** Artificing and its Sigil workspace open with the first Tower unlock. */
+export const isArtificingUnlocked = (state: Pick<GameState, 'progress'>) => ARTIFICING_UNLOCK_STAGES.includes(state.progress.tutorialStage)
+
 export const getArtificingUnlockReason = getRecipeUnlockRequirement
 export interface ArtificingIngredientProgress { itemId: import('../../types').ItemId; available: number; required: number; missing: number; ready: boolean }
 export const getArtificingMissingIngredients = (state: Pick<GameState, 'inventory' | 'protectedItems' | 'equipment' | 'activities'>, recipeId: import('../../types').ArtificingRecipeId): ArtificingIngredientProgress[] => {

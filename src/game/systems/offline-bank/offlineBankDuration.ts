@@ -17,12 +17,22 @@ const MILLISECONDS_BY_UNIT: Record<OfflineBankUnit, number> = {
   days: MILLISECONDS_PER_DAY,
 }
 
-export const OFFLINE_BANK_PRESETS = [
+export const OFFLINE_BANK_DEBUG_GRANT_PRESETS = [
   { label: '+1 Hour', amount: 1, unit: 'hours' },
   { label: '+8 Hours', amount: 8, unit: 'hours' },
   { label: '+1 Day', amount: 1, unit: 'days' },
   { label: '+7 Days', amount: 7, unit: 'days' },
 ] as const satisfies readonly { label: string; amount: number; unit: OfflineBankUnit }[]
+
+export const OFFLINE_BANK_SPEND_PRESETS = [
+  { label: '1 MIN', short: '1m', ms: 60_000 },
+  { label: '5 MIN', short: '5m', ms: 300_000 },
+  { label: '15 MIN', short: '15m', ms: 900_000 },
+  { label: '1 HOUR', short: '1h', ms: 3_600_000 },
+] as const
+
+/** Compatibility alias for existing tester callers. */
+export const OFFLINE_BANK_PRESETS = OFFLINE_BANK_DEBUG_GRANT_PRESETS
 
 export const clampOfflineBankMs = (value: unknown) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0

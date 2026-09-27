@@ -13,6 +13,7 @@ import { getInventoryCategoryLabel, getInventorySubcategoryLabel, getItemSourceD
 import { getItemDropSources, getItemSources } from '../../game/content/contentRelations'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { isArtificingUnlocked } from '../../game/systems/artificing/artificingSelectors'
 
 interface CollectionInspectorProps {
   itemId: ItemId | null
@@ -37,6 +38,7 @@ export function CollectionInspector({ itemId, inventory, progress, navigate }: C
   const openSource = () => {
     if (!source) return
     const drop = getItemDropSources(itemId)[0]
+    if (source.destination === 'tower-artificing' && !isArtificingUnlocked({ progress })) return
     if (source.destination === 'combat' && drop) setNavigationIntent({ combatDungeonId: drop.dungeonId, combatMonsterId: drop.monsterId })
     else if (source.destination === 'tower-research') setNavigationIntent({ researchItemId: itemId, researchSchoolId: null })
     else if (source.destination === 'tower-artificing' || source.destination === 'tower-transmutation') {
@@ -46,6 +48,7 @@ export function CollectionInspector({ itemId, inventory, progress, navigate }: C
     navigate(source.destination)
   }
   const openUse = (use: ReturnType<typeof getItemUses>[number]) => {
+    if (use.destination === 'tower-artificing' && !isArtificingUnlocked({ progress })) return
     if (use.recipeId) {
       if (use.destination === 'tower-artificing') setNavigationIntent({ artificingRecipeId: use.recipeId as never })
       else if (use.destination === 'tower-transmutation') setNavigationIntent({ transmutationRecipeId: use.recipeId as never })

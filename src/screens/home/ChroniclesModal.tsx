@@ -10,6 +10,7 @@ import { ModalPortal } from '../../components/ui/ModalPortal'
 import { defaultScreenPreferences } from '../../ui/preferences/uiPreferencesStorage'
 import { setUiPreferences, toggleChronicleObjectiveTracking, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import type { ChronicleGroupMode, ChronicleSortMode, ChronicleStatusFilter, ChronicleViewMode } from '../../ui/preferences/uiPreferencesTypes'
+import { isScreenNavigationAllowed } from '../../app/navigation'
 
 export interface ChronicleOpenTarget {
   chapterId: ChronicleChapterId
@@ -19,7 +20,7 @@ export interface ChronicleOpenTarget {
 const statusOptions: readonly { id: ChronicleStatusFilter; label: string }[] = [{ id: 'current', label: 'Current' }, { id: 'available', label: 'Available' }, { id: 'locked', label: 'Locked' }, { id: 'completed', label: 'Completed' }]
 const sortOptions = [{ value: 'recommended', label: 'Recommended' }, { value: 'progress', label: 'Progress' }, { value: 'track', label: 'Track' }, { value: 'reward', label: 'Reward' }, { value: 'authored', label: 'Authored order' }] as const
 const groupOptions = [{ value: 'track', label: 'By Track' }, { value: 'none', label: 'No Grouping' }, { value: 'status', label: 'By Status' }] as const
-const destinationLabels: Partial<Record<import('../../game/types').ScreenId, string>> = { combat: 'Open Combat', guild: 'Open Guild', schools: 'Open Magic Schools', 'arcane-core': 'Open Arcane Core', 'tower-research': 'Open Research', 'tower-transmutation': 'Open Transmutation', 'tower-channeling': 'Open Channeling', 'tower-summoning': 'Open Summoning', crystals: 'Open Crystals', equipment: 'Open Equipment' }
+const destinationLabels: Partial<Record<import('../../game/types').ScreenId, string>> = { combat: 'Open Combat', guild: 'Open Guild', schools: 'Open Magic Schools', 'arcane-core': 'Open Arcane Core', 'tower-research': 'Open Research', 'tower-transmutation': 'Open Transmutation', 'tower-channeling': 'Open Channeling', 'tower-summoning': 'Open Summoning', 'tower-artificing': 'Open Artificing · Sigils', crystals: 'Open Crystals', equipment: 'Open Equipment' }
 const allStatuses = statusOptions.map((option) => option.id)
 const scrollChronicleObjectiveIntoView = (objectiveId: ChronicleObjectiveId, behavior: ScrollBehavior) => {
   const element = document.querySelector<HTMLElement>(`[data-chronicle-objective-id="${objectiveId}"]`)
@@ -95,7 +96,7 @@ export function ChroniclesModal({ open, onClose, initialTarget = null }: Chronic
     setChapterId(currentChapter); setSelectedId(currentObjective?.id ?? null); setFocusedObjectiveId(null); setChroniclePreferences({ statusFilters: allStatuses, trackFilters: [...CHRONICLE_TRACKS], hideCompleted: false, showLocked: true, showOptional: true }); setFeedback(currentObjective ? `Jumped to ${currentObjective.title}.` : 'There is no unfinished Main objective.')
     requestAnimationFrame(() => currentObjective && scrollChronicleObjectiveIntoView(currentObjective.id, uiPreferences.reducedMotion ? 'auto' : 'smooth'))
   }
-  const navigate = (objective: ChronicleObjectiveReadModel) => { if (objective.navigateTo) state.setScreen(objective.navigateTo); onClose() }
+  const navigate = (objective: ChronicleObjectiveReadModel) => { if (objective.navigateTo && isScreenNavigationAllowed(state, objective.navigateTo)) state.setScreen(objective.navigateTo); onClose() }
 
   return <ModalPortal open={open} onClose={onClose} backdropClassName="chronicles-modal-backdrop" surfaceClassName="chronicles-modal-surface" ariaLabel="Chronicles">
     <div className="chronicles-modal-frame">

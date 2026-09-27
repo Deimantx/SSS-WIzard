@@ -1,11 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { DeveloperSaveState } from './DeveloperSaveState'
 import { useGameStore } from '../../store/gameStore'
 import { loadProfileGame } from '../../persistence/profileSaveManager'
 import { createProfile, enterProfile } from '../../profiles/profileController'
 import { refreshProfiles, setActiveProfileId } from '../../profiles/profileSessionStore'
-import { PROFILE_RESET_CONFIRMATION } from '../developerProfileReset'
 
 describe('Developer Save/Profile controls', () => {
   beforeEach(() => {
@@ -19,16 +18,14 @@ describe('Developer Save/Profile controls', () => {
     expect(enterProfile('slot-1').ok).toBe(true)
     useGameStore.getState().addItem('fire-fragment', 3)
     useGameStore.getState().setSchoolXpDebug('fire', 2070)
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
-
     render(<DeveloperSaveState copy={async () => undefined} />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset Current Profile Progress' }))
+    expect(screen.getByRole('dialog', { name: 'Reset current profile progress?' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'RESET PROFILE' }))
 
-    expect(confirm).toHaveBeenCalledWith(PROFILE_RESET_CONFIRMATION)
     expect(useGameStore.getState().schools.fire).toEqual({ level: 1, xp: 0 })
     expect(useGameStore.getState().inventory).toEqual({})
     expect(loadProfileGame('slot-1').state?.schools.fire).toEqual({ level: 1, xp: 0 })
     expect(useGameStore.getState().progress.lifetimeKills).toBe(0)
-    confirm.mockRestore()
   })
 })

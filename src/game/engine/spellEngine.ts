@@ -8,7 +8,7 @@ import type { CombatEffect, CombatEventSink, CombatSource } from '../systems/com
 import { scaleMagnitude } from '../systems/combat/combatTypes'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
 import { getCombatModifiers } from '../systems/combat/modifiers'
-import { getSpellCombatSource } from '../systems/spells/spellSource'
+import { getSpellCombatSource, isDirectPlayerSpell } from '../systems/spells/spellSource'
 import { getSpellCastTimeMultiplier } from '../systems/spells/spellCastTiming'
 import { consumeArtifactPreCastManaShift, getArtifactPreCastDamageMultiplier, getArtifactSpellCritDamageBonus, recordArtifactManaPayment } from '../systems/artifacts/artifactProgression'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
@@ -262,7 +262,8 @@ export const resolvePlayerSpellCast = (state: GameState, uiEvents?: CombatEventS
     const pulse = getArcaneCoreCooldownPulseReduction(state)
     if (pulse > 0) executeCombatEffects(state, [{ type: 'modify-cooldown', target: 'self', amountMs: -pulse }], { actor: 'player', kind: 'arcane-core', sourceId: 'control-rapid-cycle-10', tags: ['special'] }, undefined, uiEvents, resolution)
   }
-  runCombatTriggers(state, 'player', 'on-spell-cast', { source, eventTarget: state.combat.enemyId ? 'enemy' : 'player', sourceTags: source.tags ?? ['spell', 'magic'], amount: paidMana }, executeCombatEffects, 0, [], uiEvents, resolution)
+  const sourceTags = [...(source.tags ?? ['spell', 'magic']), ...(isDirectPlayerSpell(spell.id) ? ['direct' as const] : [])]
+  runCombatTriggers(state, 'player', 'on-spell-cast', { source, eventTarget: state.combat.enemyId ? 'enemy' : 'player', sourceTags, amount: paidMana }, executeCombatEffects, 0, [], uiEvents, resolution)
   appendLog(state, `${spell.name} cast${spell.effects.some((effect) => effect.type === 'deal-damage') ? ` for ${resolution.spellHealthDamageTotal ?? state.combat.lastDamageDealt}` : ''}.`)
   return true
 }

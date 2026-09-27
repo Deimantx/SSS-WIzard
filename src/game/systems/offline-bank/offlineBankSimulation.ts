@@ -10,6 +10,7 @@ import { createOfflineBankReportCollector, type OfflineBankReport } from './offl
 import { createOfflineCombatTrace, type OfflineCombatDefeatResult } from './offlineCombatTrace'
 import type { CombatTelemetryScope } from '../../telemetry/combat/combatTelemetryTypes'
 import { createCombatEventSink } from '../combat/combatEventSink'
+import { canAdvanceOfflineBank } from './offlineBankSelectors'
 
 export interface OfflineBankPerformanceMetrics {
   requestedDurationMs: number
@@ -34,11 +35,11 @@ export interface OfflineBankPerformanceMetrics {
   autoCastChecks: number
   timing: { boundaryMs: number; combatMs: number; continuousManaMs: number; autoCastMs: number; analyticsMs: number; yieldMs: number }
 }
-export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[]; combatDefeat?: OfflineCombatDefeatResult; performance?: OfflineBankPerformanceMetrics }
+export interface OfflineBankResult { ok: boolean; error?: string; report?: OfflineBankReport; completedArtificingRecipeIds?: ArtificingRecipeId[]; combatDefeat?: OfflineCombatDefeatResult; performance?: OfflineBankPerformanceMetrics; saveKind?: import('../../../persistence/saveDiagnosticsStore').SaveFailureKind }
 type StateSetter = (recipe: (state: GameState) => void) => void
-type SilentSave = () => void
+type SilentSave = (candidate?: GameState) => { ok: boolean; error: string | null; kind?: import('../../../persistence/saveDiagnosticsStore').SaveFailureKind } | void
 type ItemAcquired = (state: GameState, itemId: ItemId, quantity: number) => void
-export type OfflineBankProgress = { phase: 'simulating' | 'finalizing' | 'saving'; percent: number }
+export type OfflineBankProgress = { phase: 'preparing' | 'simulating' | 'finalizing' | 'saving'; simulatedMs?: number; totalMs?: number; percent: number; realElapsedMs?: number }
 export interface OfflineBankDetachedObservers {
   telemetry?: CombatTelemetryObserver
   statistics?: DungeonStatisticsObserver
@@ -76,6 +77,7 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const before = getState()
   const available = Math.max(0, before.offlineBankMs)
   if (duration > available) return { ok: false, error: 'Not enough time in the Offline Bank.' }
+  if (!canAdvanceOfflineBank(before)) return { ok: false, error: 'Start an activity before spending Offline Bank time.' }
 
   active = true
   const snapshot = cloneGameState(before)
@@ -96,39 +98,44 @@ export const advanceWithOfflineBank = async (durationMs: number, getState: () =>
   const simulationStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
   let combatEvents = 0
   let finalSaveMs = 0
+  let liveCommitted = false
   let fastForwardMetrics: OfflineFastForwardMetrics = { eventBoundaries: 0, largestJumpMs: 0, totalJumpMs: 0, combatSelections: 0, statusTicks: 0, researchCompletions: 0, transmutationCompletions: 0, artificingCompletions: 0, yields: 0, longestCpuSliceMs: 0, combatBoundaryCalls: 0, researchPlannerCalls: 0, transmutationPlannerCalls: 0, continuousManaAllocationCalls: 0, autoCastChecks: 0, timing: { boundaryMs: 0, combatMs: 0, continuousManaMs: 0, autoCastMs: 0, analyticsMs: 0, yieldMs: 0 } }
   const performanceMetrics = (): OfflineBankPerformanceMetrics => ({ requestedDurationMs: duration, realExecutionMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt, simulationQuanta: fastForwardMetrics.eventBoundaries, yields: fastForwardMetrics.yields, combatEvents, longestCpuSliceMs: fastForwardMetrics.longestCpuSliceMs, finalSaveMs, eventBoundaries: fastForwardMetrics.eventBoundaries, largestJumpMs: fastForwardMetrics.largestJumpMs, averageJumpMs: fastForwardMetrics.eventBoundaries > 0 ? fastForwardMetrics.totalJumpMs / fastForwardMetrics.eventBoundaries : 0, combatSelections: fastForwardMetrics.combatSelections, statusTicks: fastForwardMetrics.statusTicks, researchCompletions: fastForwardMetrics.researchCompletions, transmutationCompletions: fastForwardMetrics.transmutationCompletions, artificingCompletions: fastForwardMetrics.artificingCompletions, combatBoundaryCalls: fastForwardMetrics.combatBoundaryCalls, researchPlannerCalls: fastForwardMetrics.researchPlannerCalls, transmutationPlannerCalls: fastForwardMetrics.transmutationPlannerCalls, continuousManaAllocationCalls: fastForwardMetrics.continuousManaAllocationCalls, autoCastChecks: fastForwardMetrics.autoCastChecks, timing: fastForwardMetrics.timing })
   try {
     const context: AdvanceContext = { mode: 'banked', report: collector, onItemAcquired: (itemId, quantity) => { acquiredItems.set(itemId, (acquiredItems.get(itemId) ?? 0) + quantity) }, onArtificingComplete: (completion) => completedArtificingRecipeIds.add(completion.recipeId), uiEvents: simulationEvents, onPlayerDefeated: (event) => combatTrace.captureDefeat(event, getEncounterTelemetry?.()), onCombatCompleted, telemetry, statistics }
     const runner = shouldUseOfflineBankReferenceEngine() ? advanceGameStateBankedReference : advanceGameStateBanked
+    const simulationStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    onProgress?.({ phase: 'preparing', simulatedMs: 0, totalMs: duration, percent: 0, realElapsedMs: 0 })
     const fastForwardResult = await runner(workingState, duration, context, {
-      onProgress: (simulatedMs) => onProgress?.({ phase: 'simulating', percent: Math.min(99, duration > 0 ? simulatedMs / duration * 100 : 100) }),
+      onProgress: ({ simulatedMs, realElapsedMs }) => onProgress?.({ phase: 'simulating', simulatedMs, totalMs: duration, percent: Math.min(99, duration > 0 ? simulatedMs / duration * 100 : 100), realElapsedMs: realElapsedMs ?? ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt) }),
       onCombatEvent: () => { combatEvents += 1 },
     })
     fastForwardMetrics = fastForwardResult.metrics
     workingState.offlineBankMs = Math.max(0, workingState.offlineBankMs - duration)
-    onProgress?.({ phase: 'finalizing', percent: 100 })
+    onProgress?.({ phase: 'finalizing', simulatedMs: duration, totalMs: duration, percent: 100, realElapsedMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt })
     await yieldToBrowser()
     for (const [itemId, quantity] of acquiredItems) onItemAcquired?.(workingState, itemId, quantity)
     const report = collector.finalize(workingState)
     const majorEvents = workingState.notifications.filter((note) => !previousIds.has(note.id) && isMajorNotification(note.text))
     workingState.notifications = [...previousNotifications, ...majorEvents].slice(-3)
     pushNotification(workingState, `Advanced ${formatOfflineBank(duration)} using Offline Bank.`, 'info')
+    onProgress?.({ phase: 'saving', simulatedMs: duration, totalMs: duration, percent: 100, realElapsedMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - simulationStartedAt })
+    await yieldToBrowser()
+    const saveStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    const saveResult = silentSave(workingState)
+    finalSaveMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - saveStartedAt
+    if (saveResult && !saveResult.ok) throw Object.assign(new Error(saveResult.error ?? 'Offline Bank result could not be saved.'), { saveKind: saveResult.kind })
     setState((state) => {
       Object.assign(state, workingState)
       return state
     })
+    liveCommitted = true
     detached?.commit()
-    onProgress?.({ phase: 'saving', percent: 100 })
-    await yieldToBrowser()
-    const saveStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-    silentSave()
-    finalSaveMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - saveStartedAt
     return { ok: true, report, completedArtificingRecipeIds: [...completedArtificingRecipeIds], combatDefeat: combatTrace.getDefeat(), performance: performanceMetrics() }
   } catch (error) {
-    try { setState((state) => { Object.assign(state, snapshot); return state }) } catch { /* preserve the original failure result */ }
+    if (liveCommitted) try { setState((state) => { Object.assign(state, snapshot); return state }) } catch { /* preserve the original failure result */ }
     try { if (analyticsSnapshot !== undefined) observers?.restore?.(analyticsSnapshot) } catch { /* preserve the original failure result */ }
-    return { ok: false, error: error instanceof Error ? error.message : 'Offline Bank simulation failed and was rolled back.' }
+    return { ok: false, error: error instanceof Error ? error.message : 'Offline Bank simulation failed and was rolled back.', saveKind: typeof error === 'object' && error !== null && 'saveKind' in error ? (error as { saveKind?: import('../../../persistence/saveDiagnosticsStore').SaveFailureKind }).saveKind : undefined }
   } finally {
     active = false
   }

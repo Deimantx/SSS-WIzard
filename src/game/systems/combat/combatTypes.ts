@@ -456,7 +456,7 @@ export interface TraitDefinition {
 
 export interface CombatConditionContext {
   source?: CombatSource
-  sourceTags?: CombatTag[]
+  sourceTags?: readonly CombatTag[]
   /** The actor affected by an event, when the event has an affected actor. */
   eventTarget?: 'player' | 'enemy'
   /** The actor whose HP/barrier/status changed for this event. */

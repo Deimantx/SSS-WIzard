@@ -12,8 +12,18 @@ import { migrateSave } from '../../../persistence/migrations'
 import { getActiveSigilCombatProviders } from './sigilCombatRuntime'
 import { processSigilSpecialCombatEvent } from './sigilCombatRuntime'
 import { getCombatModifiers } from '../combat/modifiers'
+import { getEffectiveManaCost } from '../combat/combatStats'
 import { createOfflineBankReportCollector } from '../offline-bank/offlineBankReport'
 import type { CombatSource } from '../combat/combatTypes'
+import { isDirectPlayerSpell } from '../spells/spellSource'
+import { spawnEnemy } from '../combat/combatRuntime'
+import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
+
+const equipDebugSigil = (state: ReturnType<typeof createInitialState>, slot: 1 | 2 | 3 | 4, setId: 'arcane' | 'echo' | 'precision' | 'sage' | 'tempest', traitIds: string[] = []) => {
+  const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: setId, forcedSlot: slot, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+  sigil.traitIds = traitIds as typeof sigil.traitIds
+  state.sigils.equipped[slot] = sigil.instanceId
+}
 
 describe('Arcane Sigils', () => {
   it('resolves authored tiers from resolved enemy Power boundaries', () => {
@@ -113,6 +123,69 @@ describe('Arcane Sigils', () => {
     expect(getCombatModifiers(predatorState, 'player', 'damage-dealt-percent', { source })).toBe(0)
   })
 
+  it('applies Efficient Cycle to the next committed spell and keeps failed casts out of the count', () => {
+    const state = createInitialState()
+    equipDebugSigil(state, 1, 'sage', ['efficient-cycle'])
+    const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'fire-bolt', tags: ['spell', 'direct'] }
+    const committed = { source, sourceTags: ['spell', 'direct'] as const }
+
+    expect(getEffectiveManaCost(state, 100)).toBe(100)
+    for (let cast = 0; cast < 5; cast += 1) processSigilSpecialCombatEvent(state, 'player', 'on-spell-cast', committed, () => undefined, 0)
+    expect(state.combat.sigilRuntime.spellCastCount).toBe(5)
+    expect(getEffectiveManaCost(state, 100)).toBe(80)
+
+    processSigilSpecialCombatEvent(state, 'player', 'on-spell-cast', committed, () => undefined, 0)
+    expect(state.combat.sigilRuntime.spellCastCount).toBe(6)
+    expect(getEffectiveManaCost(state, 100)).toBe(100)
+    expect(getEffectiveManaCost(state, 100)).toBe(100)
+  })
+
+  it('limits Critical Flow to direct critical hits with a one-second internal cooldown', () => {
+    const state = createInitialState()
+    equipDebugSigil(state, 1, 'precision', ['critical-flow'])
+    state.combat.spellCooldowns['fire-bolt'] = 1000
+    const directSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'fire-bolt', tags: ['spell', 'direct'] }
+
+    processSigilSpecialCombatEvent(state, 'player', 'on-spell-hit', { source: directSource, sourceTags: ['spell', 'direct'], critical: true }, () => undefined, 0)
+    processSigilSpecialCombatEvent(state, 'player', 'on-spell-hit', { source: directSource, sourceTags: ['spell', 'direct'], critical: true }, () => undefined, 0)
+    expect(state.combat.spellCooldowns['fire-bolt']).toBe(850)
+    state.combat.arcaneCoreRuntime.elapsedMs = 1000
+    processSigilSpecialCombatEvent(state, 'player', 'on-spell-hit', { source: directSource, sourceTags: ['spell', 'direct'], critical: true }, () => undefined, 0)
+    expect(state.combat.spellCooldowns['fire-bolt']).toBe(700)
+
+    const indirectState = createInitialState()
+    equipDebugSigil(indirectState, 1, 'precision', ['critical-flow'])
+    indirectState.combat.spellCooldowns['fire-bolt'] = 1000
+    processSigilSpecialCombatEvent(indirectState, 'player', 'on-spell-hit', { source: directSource, critical: true }, () => undefined, 0)
+    expect(indirectState.combat.spellCooldowns['fire-bolt']).toBe(1000)
+  })
+
+  it('lets Echo Set copy direct damage and healing spells, but not status ticks or recursively copied spells', () => {
+    expect(isDirectPlayerSpell('fire-bolt')).toBe(true)
+    expect(isDirectPlayerSpell('mending-waters')).toBe(true)
+    expect(isDirectPlayerSpell('regeneration')).toBe(false)
+
+    const directState = createInitialState()
+    for (let slot = 1; slot <= 4; slot += 1) equipDebugSigil(directState, slot as 1 | 2 | 3 | 4, 'echo')
+    const directSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'fire-bolt', tags: ['spell', 'direct'] }
+    let echoCalls = 0
+    let echoSeed = 0
+    for (; echoSeed < 1000 && echoCalls === 0; echoSeed += 1) {
+      directState.combat.sigilRuntime.spellCastCount = 0
+      directState.combat.combatRngState = echoSeed
+      echoCalls = 0
+      processSigilSpecialCombatEvent(directState, 'player', 'on-spell-cast', { source: directSource, sourceTags: ['spell', 'direct'] }, () => { echoCalls += 1 }, 0)
+    }
+    expect(echoCalls).toBe(1)
+
+    const statusState = createInitialState()
+    for (let slot = 1; slot <= 4; slot += 1) equipDebugSigil(statusState, slot as 1 | 2 | 3 | 4, 'echo')
+    statusState.combat.combatRngState = echoSeed - 1
+    let statusCalls = 0
+    processSigilSpecialCombatEvent(statusState, 'player', 'on-spell-cast', { source: directSource, sourceTags: ['spell', 'magic'] }, () => { statusCalls += 1 }, 0)
+    expect(statusCalls).toBe(0)
+  })
+
   it('deduplicates UNIQUE traits while preserving repeated non-unique traits', () => {
     const state = createInitialState()
     const uniqueA = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 1, source: 'debug', rng: () => .2 })
@@ -146,16 +219,36 @@ describe('Arcane Sigils', () => {
     expect(salvageSigil(state, sigil.instanceId)).toMatchObject({ ok: false })
   })
 
-  it('forces the first drop on the fifth eligible kill and preserves discovery through auto-salvage', () => {
+  it('guarantees the first eligible drop and preserves discovery through auto-salvage', () => {
     const state = createInitialState()
     state.sigils.autoSalvage.refined = true
-    for (let kill = 0; kill < 4; kill += 1) resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0.8)
-    expect(state.sigils.lifetimeDrops).toBe(0)
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0.8)
     expect(state.sigils.lifetimeDrops).toBe(1)
     expect(Object.keys(state.sigils.storage)).toHaveLength(0)
     expect(Object.keys(state.sigils.discovery.discoveredSets)).toHaveLength(1)
     expect(state.sigils.dust).toBeGreaterThan(0)
+
+    resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0.8)
+    expect(state.sigils.lifetimeDrops).toBe(1)
+  })
+
+  it('guarantees the first Sigil in Offline Bank combat and reports it before auto-salvage', async () => {
+    const state = createInitialState()
+    state.progress.spellRanks['fire-bolt'] = 1
+    state.spellPresets.presets = [{ id: 'offline-sigil-test', name: 'Offline Sigil Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
+    state.spellPresets.selectedPresetId = 'offline-sigil-test'
+    state.sigils.autoSalvage.refined = true
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.offlineBankMs = 6_000
+    expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
+    state.combat.enemyHp = 0
+
+    const result = await advanceWithOfflineBank(6_000, () => state, (recipe) => recipe(state), () => {}, undefined, {})
+    expect(result.ok).toBe(true)
+    expect(result.report?.combat.sigilsFound).toBeGreaterThanOrEqual(1)
+    expect(state.sigils.lifetimeDrops).toBeGreaterThanOrEqual(1)
+    expect(Object.keys(state.sigils.discovery.discoveredSets)).toHaveLength(1)
   })
 
   it('adds a safe default Sigil state to old saves and sanitizes malformed instances', () => {

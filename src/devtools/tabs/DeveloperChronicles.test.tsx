@@ -17,8 +17,9 @@ describe('Developer Chronicles tab', () => {
     const user = userEvent.setup()
     render(<GameShell />)
     await user.click(screen.getByRole('button', { name: 'Dev Tools' }))
-    const devNav = within(screen.getByRole('navigation', { name: 'Developer tool sections' }))
-    await user.click(devNav.getByRole('button', { name: 'Chronicles' }))
+    const workspaceNav = within(screen.getByRole('navigation', { name: 'Developer workspaces' }))
+    await user.click(workspaceNav.getByRole('button', { name: 'Progression' }))
+    await user.click(within(screen.getByRole('tablist', { name: 'Progression tools' })).getByRole('tab', { name: 'Chronicles' }))
 
     expect(screen.getByRole('heading', { name: 'Chronicles · tester workspace' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Reconcile Now' })).toBeTruthy()

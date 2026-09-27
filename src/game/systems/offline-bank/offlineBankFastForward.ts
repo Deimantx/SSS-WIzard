@@ -45,8 +45,21 @@ export interface OfflineFastForwardMetrics {
 }
 
 export interface OfflineFastForwardOptions {
-  onProgress?: (simulatedMs: number) => void
+  onProgress?: (progress: OfflineFastForwardProgress) => void | Promise<void>
   onCombatEvent?: (event: Parameters<NonNullable<CombatEventSink['push']>>[0]) => void
+  environment?: OfflineRunnerEnvironment
+}
+
+export interface OfflineFastForwardProgress {
+  simulatedMs: number
+  totalMs: number
+  realElapsedMs: number
+}
+
+export interface OfflineRunnerEnvironment {
+  now: () => number
+  yieldCpu: () => Promise<void>
+  yieldPaint: () => Promise<void>
 }
 
 const now = () => typeof performance !== 'undefined' ? performance.now() : Date.now()
@@ -62,6 +75,32 @@ const yieldToBrowser = () => new Promise<void>((resolve) => {
   if (typeof window !== 'undefined') window.setTimeout(resolve, 0)
   else setTimeout(resolve, 0)
 })
+const yieldForPaint = () => new Promise<void>((resolve) => {
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(() => resolve())
+  else setTimeout(resolve, 0)
+})
+const defaultEnvironment: OfflineRunnerEnvironment = { now, yieldCpu: yieldToBrowser, yieldPaint: yieldForPaint }
+export const createOfflineProgressReporter = (totalMs: number, options: OfflineFastForwardOptions) => {
+  const environment = options.environment ?? defaultEnvironment
+  const startedAt = environment.now()
+  let lastSimulatedMs = 0
+  let lastPercent = 0
+  let lastEmitAt = startedAt
+  let emitted = false
+  return async (simulatedMs: number, force = false) => {
+    const boundedMs = Math.max(lastSimulatedMs, Math.min(totalMs, Number.isFinite(simulatedMs) ? simulatedMs : lastSimulatedMs))
+    const percent = totalMs > 0 ? boundedMs / totalMs * 100 : 100
+    const realElapsedMs = Math.max(0, environment.now() - startedAt)
+    const shouldEmit = force || !emitted || boundedMs >= totalMs || realElapsedMs - (lastEmitAt - startedAt) >= 75 || percent - lastPercent >= .25
+    if (!shouldEmit) return
+    lastSimulatedMs = boundedMs
+    lastPercent = Math.max(lastPercent, percent)
+    lastEmitAt = environment.now()
+    emitted = true
+    await options.onProgress?.({ simulatedMs: boundedMs, totalMs, realElapsedMs })
+    await environment.yieldPaint()
+  }
+}
 const minBoundary = (values: readonly (number | null | undefined)[]) => {
   let next: number | null = null
   values.forEach((value) => {
@@ -291,6 +330,7 @@ const decrementSchedule = (schedule: OfflineEventSchedule, deltaMs: number) => {
 const runReferenceBanked = async (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions) => {
   const metrics = createMetrics()
   const startedAt = now()
+  const reportProgress = createOfflineProgressReporter(durationMs, options)
   let lastYieldAt = startedAt
   let lastProgressAt = startedAt
   let simulatedMs = 0
@@ -335,8 +375,8 @@ const runReferenceBanked = async (state: GameState, durationMs: number, context:
       zeroBoundaryStalls = 0
     }
     const timestamp = now()
-    if (timestamp - lastProgressAt >= 100) {
-      options.onProgress?.(Math.min(durationMs, simulatedMs))
+    if (timestamp - lastProgressAt >= 75 || simulatedMs > 0) {
+      await reportProgress(simulatedMs)
       lastProgressAt = timestamp
     }
     if (timestamp - lastYieldAt >= OFFLINE_CPU_SLICE_BUDGET_MS) {
@@ -348,13 +388,14 @@ const runReferenceBanked = async (state: GameState, durationMs: number, context:
       lastYieldAt = now()
     }
   }
-  options.onProgress?.(durationMs)
+  await reportProgress(durationMs, true)
   return { metrics, realExecutionMs: now() - startedAt }
 }
 
 const runOptimizedBanked = async (state: GameState, durationMs: number, context: AdvanceContext, options: OfflineFastForwardOptions) => {
   const metrics = createMetrics()
   const startedAt = now()
+  const reportProgress = createOfflineProgressReporter(durationMs, options)
   let lastYieldAt = startedAt
   let lastProgressAt = startedAt
   let simulatedMs = 0
@@ -500,8 +541,8 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
     }
 
     const timestamp = now()
-    if (timestamp - lastProgressAt >= 100) {
-      options.onProgress?.(Math.min(durationMs, simulatedMs))
+    if (timestamp - lastProgressAt >= 75 || simulatedMs > 0) {
+      await reportProgress(simulatedMs)
       lastProgressAt = timestamp
     }
     if (timestamp - lastYieldAt >= OFFLINE_CPU_SLICE_BUDGET_MS) {
@@ -515,7 +556,7 @@ const runOptimizedBanked = async (state: GameState, durationMs: number, context:
       lastYieldAt = now()
     }
   }
-  options.onProgress?.(durationMs)
+  await reportProgress(durationMs, true)
   return { metrics, realExecutionMs: now() - startedAt }
 }
 

@@ -534,6 +534,7 @@ export interface CombatState {
     predatorStacksExpireAtMs: number
     secondSkinUsed: boolean
     barrierReboundReadyAtMs?: number
+    criticalFlowAvailableAtMs?: number
   }
   pendingBossId: MonsterId | null
   pendingPlayerSpellCast: PendingPlayerSpellCast | null

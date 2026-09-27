@@ -61,7 +61,7 @@ export const processSigilSpecialCombatEvent = (state: GameState, actor: 'player'
   if (actor !== 'player') return
   const traits = new Set(getEquippedSigils(state).flatMap((sigil) => sigil.traitIds))
   const counts = getEquippedSigilSetCounts(state)
-  const runtime = state.combat.sigilRuntime ?? (state.combat.sigilRuntime = { spellCastCount: 0, predatorCriticalStacks: 0, predatorStacksExpireAtMs: 0, secondSkinUsed: false })
+  const runtime = state.combat.sigilRuntime ?? (state.combat.sigilRuntime = { spellCastCount: 0, predatorCriticalStacks: 0, predatorStacksExpireAtMs: 0, secondSkinUsed: false, criticalFlowAvailableAtMs: 0 })
   if (runtime.barrierReboundReadyAtMs && state.combat.arcaneCoreRuntime.elapsedMs >= runtime.barrierReboundReadyAtMs) {
     runtime.barrierReboundReadyAtMs = 0
     if (traits.has('barrier-rebound')) executeEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.05 }, mode: 'add', durationMs: null }], sigilSource('barrier-rebound'), depth + 1, uiEvents, resolution)
@@ -71,17 +71,23 @@ export const processSigilSpecialCombatEvent = (state: GameState, actor: 'player'
     if (getSigilSetBonusCount('tempest', counts.tempest ?? 0) > 0 && runtime.spellCastCount % 5 === 0) reduceLongestCooldown(state, 300)
     if (traits.has('arcane-surge') && runtime.spellCastCount % 6 === 0) state.combat.arcaneCoreRuntime.nextEffectivenessMultiplier = Math.max(state.combat.arcaneCoreRuntime.nextEffectivenessMultiplier ?? 1, 1.15)
     if (traits.has('mana-echo') && runtime.spellCastCount % 8 === 0) executeEffects(state, [{ type: 'restore-resource', target: 'self', resource: 'mana', magnitude: { type: 'source-max-mana-percent', value: 0.04 } }], sigilSource('mana-echo'), depth + 1, uiEvents, resolution)
-    if (getSigilSetBonusCount('echo', counts.echo ?? 0) > 0 && nextCombatRandom(state) < 0.08) {
+    if (context.sourceTags?.includes('direct') && getSigilSetBonusCount('echo', counts.echo ?? 0) > 0 && nextCombatRandom(state) < 0.08) {
       const spell = SPELLS[context.source.sourceId as keyof typeof SPELLS]
       if (spell) executeEffects(state, spell.effects.map((effect) => scaleEffect(effect, 0.35)), context.source, depth + 1, uiEvents, resolution)
     }
   }
-  if (event === 'on-spell-hit' && context.critical && context.source?.tags?.includes('direct') && state.combat.inBossFight && traits.has('predatory-rhythm')) {
+  if (event === 'on-spell-hit' && context.critical && context.sourceTags?.includes('direct') && state.combat.inBossFight && traits.has('predatory-rhythm')) {
     runtime.predatorCriticalStacks = Math.min(3, runtime.predatorCriticalStacks + 1)
     runtime.predatorStacksExpireAtMs = state.combat.arcaneCoreRuntime.elapsedMs + 5000
   }
   if (runtime.predatorStacksExpireAtMs > 0 && state.combat.arcaneCoreRuntime.elapsedMs >= runtime.predatorStacksExpireAtMs) runtime.predatorCriticalStacks = 0
-  if (event === 'on-spell-hit' && context.critical && traits.has('critical-flow')) reduceLongestCooldown(state, 150)
+  if (event === 'on-spell-hit' && context.critical && context.sourceTags?.includes('direct') && traits.has('critical-flow')) {
+    const now = Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs)
+    if (now >= (runtime.criticalFlowAvailableAtMs ?? 0)) {
+      reduceLongestCooldown(state, 150)
+      runtime.criticalFlowAvailableAtMs = now + 1000
+    }
+  }
   if (event === 'on-damage-dealt' && traits.has('cinder-echo') && context.source?.statusId === 'burning' && (context.amount ?? 0) > 0 && nextCombatRandom(state) < 0.08) executeEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: context.damageType ?? 'fire', magnitude: { type: 'flat', value: (context.amount ?? 0) * 0.5 } }], tags: ['dot', 'trait'] }], sigilSource('cinder-echo'), depth + 1, uiEvents, resolution)
   if (event === 'on-status-applied' && context.eventTarget === 'enemy' && traits.has('tactical-pause')) reduceLongestCooldown(state, 150)
   if (event === 'on-heal' && context.source?.actor === 'player') {

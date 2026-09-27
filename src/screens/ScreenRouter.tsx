@@ -12,12 +12,10 @@ import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
 import { SettingsScreenV2 } from './settings/SettingsScreen'
 import { TowerChannelingScreen, TowerAcolyteScreen, TowerResearchScreen, TowerTransmutationScreen, TowerArtificingScreen, TowerSummoningScreen } from './tower/TowerScreens'
 import { ScreenTransitionFrame } from '../ui/game-feel/ScreenTransitionFrame'
-import { isScreenUnlocked } from '../game/systems/story/storyProgression'
+import { isScreenNavigationAllowed } from '../app/navigation'
 import { DarkPortalScreen } from './tower/dark-portal/DarkPortalScreen'
-import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { ArcaneCoreScreen } from './arcane-core/ArcaneCoreScreen'
 import { CrystalsScreen } from './crystals/CrystalsScreen'
-import { isCrystalSystemUnlocked } from '../game/systems/crystals/crystalRuntime'
 import { StartingSchoolScreen } from './onboarding/StartingSchoolScreen'
 
 function CurrentScreen({ screen }: { screen: ScreenId }) {
@@ -46,10 +44,6 @@ export function ScreenRouter() {
   const storyProgress = useGameStore((state) => state.storyProgress)
   const progress = useGameStore((state) => state.progress)
   if (progress.startingSchoolId === null) return <StartingSchoolScreen />
-  const screen = requestedScreen === 'crystals'
-    ? isCrystalSystemUnlocked({ progress }) ? requestedScreen : 'home'
-    : requestedScreen === 'tower-summoning'
-      ? isSummoningUnlocked({ progress }) ? requestedScreen : 'home'
-      : isScreenUnlocked({ storyProgress }, requestedScreen) ? requestedScreen : 'home'
+  const screen = isScreenNavigationAllowed({ storyProgress, progress }, requestedScreen) ? requestedScreen : 'home'
   return <ScreenErrorBoundary key={screen} screen={screen}><ScreenTransitionFrame key={screen} screen={screen}><CurrentScreen screen={screen} /></ScreenTransitionFrame></ScreenErrorBoundary>
 }

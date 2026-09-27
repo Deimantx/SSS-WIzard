@@ -44,12 +44,13 @@ describe('Developer Tools window presentation', () => {
     expect(getDeveloperToolsState()).toMatchObject({ mode: 'docked', dockedWidth: 640, dockedHeight: 560 })
   })
 
-  it('makes clear, mode, and close actions available in the header', () => {
+  it('makes clear, search, mode, and close actions available in the header', () => {
     openDeveloperTools()
     render(<DeveloperToolsWindow />)
     expect(screen.getByRole('button', { name: 'Clear all debug overrides' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Show Artifact Path Dev Panel' }))
-    expect(getDeveloperToolsState().showArtifactDevPanel).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Open Developer command palette' }))
+    expect(screen.getByRole('dialog', { name: 'Developer command palette' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Close Developer command palette' }))
     fireEvent.click(screen.getByRole('button', { name: 'Dock Developer Tools' }))
     fireEvent.click(screen.getByRole('button', { name: 'Open full Developer Workspace' }))
     expect(getDeveloperToolsState().mode).toBe('workspace')
@@ -57,21 +58,24 @@ describe('Developer Tools window presentation', () => {
     expect(screen.queryByRole('dialog', { name: 'Developer Tools' })).toBeNull()
   })
 
-  it('keeps the tester-first navigation flat and normalizes legacy tab ids', () => {
+  it('uses the eight-workspace navigation and normalizes legacy tab ids', () => {
     expect(normalizeDeveloperToolsTab('equipment')).toBe('inventory')
     expect(normalizeDeveloperToolsTab('schools')).toBe('spells')
     expect(normalizeDeveloperToolsTab('crystals')).toBe('crystals')
+    openDeveloperTools('quick')
     openDeveloperTools()
     render(<DeveloperToolsWindow />)
-    expect(screen.getByRole('button', { name: 'Quick Setup' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Inventory & Equipment' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Spells & Schools' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Artifacts' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Resonance' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Crystals' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Advanced Diagnostics' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /^Equipment$/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: /^Magic Schools$/ })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Dashboard' }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Player' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Magic' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Tower' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Equipment' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Combat' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Progression' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'System' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Quick Setup' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Scenarios' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Offline Bank' })).toBeTruthy()
   })
 
   it('persists the Combat Balance tab in developer-only session state', () => {

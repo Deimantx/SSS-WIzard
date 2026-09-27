@@ -4,6 +4,7 @@ import { grantItem } from "../game/systems/inventory/itemAcquisition";
 import { getConsumableQuantity } from "../game/core/inventory/inventoryConsumption";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { isScreenNavigationAllowed } from "../app/navigation";
 import { BALANCE } from "../game/core/balance/balance";
 import {
   DUNGEONS,
@@ -68,6 +69,7 @@ import { createCombatResolutionContext } from "../game/systems/combat/combatType
 import {
   loadProfileGame,
   resetProfileGame,
+  validateProfileCandidate,
 } from "../persistence/profileSaveManager";
 import { type SaveReason } from "../persistence/saveConstants";
 import { getActiveProfileId } from "../profiles/profileSessionStore";
@@ -124,6 +126,7 @@ import { craftSigilAction, enhanceSigilAction, equipSigilAction, salvageSigilAct
 import { generateSigil, generateCraftedSigil } from '../game/systems/sigils/sigilGeneration';
 import { configureSigilForDebug } from '../game/systems/sigils/sigilRuntime';
 import { getSigilTierDefinition } from '../game/content/sigils/sigilTiers';
+import { DEBUG_SIGIL_STORAGE_HARD_CAP } from '../game/content/sigils/sigilDropConfig';
 import { chooseStartingSchoolAction, chooseStartingSchoolDebugAction, grantStarterArtifactAction, resetTutorialAction, setTutorialStageAction, skipTutorialAction } from "./actions/onboardingActions";
 import {
   donateGuildRequestAction,
@@ -185,7 +188,7 @@ import {
   upgradeTransmutationArrayAction,
 } from "./actions/transmutationActions";
 import { forceCompleteTransmutationCycle } from "../game/systems/transmutation/transmutationEngine";
-import { saveGameAction } from "./actions/persistenceActions";
+import { saveGameAction, saveGameCandidateAction } from "./actions/persistenceActions";
 import { advanceGameState } from "../game/systems/simulation/advanceGameState";
 import { forceCompleteResearchCycle } from "../game/systems/research/researchEngine";
 import {
@@ -831,6 +834,9 @@ export type GameStore = GameState &
 export interface SaveResult {
   ok: boolean;
   error: string | null;
+  kind?: import('../persistence/saveDiagnosticsStore').SaveFailureKind;
+  detail?: string;
+  serializedBytes?: number;
 }
 
 export const recordRecentAcquisition = (
@@ -957,18 +963,7 @@ export const useGameStore = create<GameStore>()(
       }),
     setScreen: (screen) => {
       return set((state) => {
-        state.ui.screen =
-          screen === "crystals"
-            ? isCrystalSystemUnlocked(state)
-              ? screen
-              : "home"
-            : screen === "tower-summoning"
-              ? isSummoningUnlocked(state)
-                ? screen
-                : "home"
-              : isScreenUnlocked(state, screen)
-                ? screen
-                : "home";
+        state.ui.screen = isScreenNavigationAllowed(state, screen) ? screen : "home";
         return state;
       });
     },
@@ -1653,6 +1648,10 @@ export const useGameStore = create<GameStore>()(
     debugCreateSigil: (tier, quality, setId, slot, mainStatId) => {
       let instanceId = '';
       set((state) => {
+        if (Object.keys(state.sigils.storage).length >= DEBUG_SIGIL_STORAGE_HARD_CAP) {
+          pushNotification(state, 'Debug spawn blocked. Use Drop Simulator for bulk testing.', 'warning', { key: 'sigil-debug-cap', cooldownMs: 1200 });
+          return state;
+        }
         instanceId = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: getSigilTierDefinition(tier).minEnemyPower, source: 'debug', forcedTier: tier, forcedQuality: quality, forcedSetId: setId, forcedSlot: slot as import('../game/types').SigilSlot, forcedMainStatId: mainStatId, rng: Math.random }).instanceId;
         return state;
       });
@@ -1661,6 +1660,10 @@ export const useGameStore = create<GameStore>()(
     debugCraftSigil: (mode, tier, setId, slot) => {
       let instanceId = '';
       set((state) => {
+        if (Object.keys(state.sigils.storage).length >= DEBUG_SIGIL_STORAGE_HARD_CAP) {
+          pushNotification(state, 'Debug spawn blocked. Use Drop Simulator for bulk testing.', 'warning', { key: 'sigil-debug-cap', cooldownMs: 1200 });
+          return state;
+        }
         instanceId = generateCraftedSigil({ state, dungeonId: 'whispering-woods', tier, setId, slot, rng: Math.random, source: 'debug' }).instanceId;
         return state;
       });
@@ -3088,6 +3091,9 @@ export const useGameStore = create<GameStore>()(
         return state;
       }),
   advanceWithOfflineBank: async (durationMs, onProgress) => {
+      const activeProfileId = getActiveProfileId();
+      const preflight = validateProfileCandidate(activeProfileId, get());
+      if (!preflight.ok) return { ok: false, error: `Offline Bank could not start because the profile cannot currently be saved. Open Save Diagnostics. ${preflight.error ?? ''}`.trim(), saveKind: preflight.kind };
       const result = await runOfflineBankAdvance(
         durationMs,
         get,
@@ -3096,9 +3102,7 @@ export const useGameStore = create<GameStore>()(
             recipe(state);
             return state;
           }),
-        () => {
-          get().saveGame("autosave");
-        },
+        (candidate) => candidate ? saveGameCandidateAction(candidate, getActiveProfileId(), Date.now()) : undefined,
         (state, itemId, amount) =>
           recordRecentAcquisition(state as GameStore, itemId, amount),
         offlineBankAnalyticsObservers,

@@ -12,9 +12,15 @@ import {
 import type { ProfileSlotId } from '../profiles/profileTypes'
 import { attemptLegacySaveRecovery, validateSerializedSave, validateStoredSave } from './saveIntegrity'
 import { detectCatastrophicProgressRegression, getProgressionEvidence, summarizeProgressionEvidence, type ProgressionEvidenceSummary, type ProgressionRegressionResult } from './progressionEvidence'
-import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave } from './saveDiagnosticsStore'
+import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave, type SaveFailureKind } from './saveDiagnosticsStore'
 
-export interface ProfileSaveResult { ok: boolean; error: string | null }
+export interface ProfileSaveResult {
+  ok: boolean
+  error: string | null
+  kind?: SaveFailureKind
+  detail?: string
+  serializedBytes?: number
+}
 
 export const serializeGameState = (state: GameState, savedAt = state.lastSavedAt) => {
   const { lastOfflineBankReport: _transientReport, recentAcquisitions: _transientAcquisitions, debug: _debug, ...gameplayState } = state as GameState & { lastOfflineBankReport?: unknown; recentAcquisitions?: unknown }
@@ -41,6 +47,21 @@ export interface ProfileSaveDiagnostics {
   recovery: StoredCandidateDiagnostic
   suspect: StoredCandidateDiagnostic
   legacyBackup?: StoredCandidateDiagnostic
+}
+
+export interface ProfileStorageFootprint {
+  candidateBytes: number
+  primaryBytes: number
+  backup1Bytes: number
+  backup2Bytes: number
+  backup3Bytes: number
+  recoveryBytes: number
+  suspectBytes: number
+  totalKnownBytes: number
+  sigilCount: number
+  rollHistoryEntries: number
+  inventoryKeyCount: number
+  topLevelBytes: Record<string, number>
 }
 
 export interface ProfileLoadResult {
@@ -184,6 +205,43 @@ export const getProfileSaveDiagnostics = (slotId: ProfileSlotId): ProfileSaveDia
   try { return readRawCandidates(slotId).diagnostics } catch { return emptyDiagnostics(slotId === 'slot-1') }
 }
 
+const byteLength = (value: string | null) => value === null ? 0 : typeof Blob !== 'undefined' ? new Blob([value]).size : value.length * 2
+
+export const getProfileStorageFootprint = (slotId: ProfileSlotId, candidateState?: GameState): ProfileStorageFootprint => {
+  const empty: ProfileStorageFootprint = { candidateBytes: 0, primaryBytes: 0, backup1Bytes: 0, backup2Bytes: 0, backup3Bytes: 0, recoveryBytes: 0, suspectBytes: 0, totalKnownBytes: 0, sigilCount: 0, rollHistoryEntries: 0, inventoryKeyCount: 0, topLevelBytes: {} }
+  if (!isProfileSlotId(slotId) || typeof localStorage === 'undefined') return empty
+  try {
+    const raws = readRawCandidates(slotId).raws
+    const primary = raws.primary
+    const parsed = candidateState ?? (primary ? validateStoredSave(primary).state : null)
+    const topLevelBytes: Record<string, number> = {}
+    if (candidateState) Object.entries(serializeGameState(candidateState)).forEach(([key, value]) => { try { topLevelBytes[key] = byteLength(JSON.stringify(value)) } catch { topLevelBytes[key] = 0 } })
+    const values = [primary, raws.backup, raws.backup2, raws.backup3, localStorage.getItem(profileSaveRecoveryKey(slotId)), localStorage.getItem(profileSaveSuspectKey(slotId))]
+    return {
+      candidateBytes: candidateState ? byteLength(JSON.stringify(serializeGameState(candidateState))) : 0,
+      primaryBytes: byteLength(primary), backup1Bytes: byteLength(raws.backup), backup2Bytes: byteLength(raws.backup2), backup3Bytes: byteLength(raws.backup3), recoveryBytes: byteLength(values[4]), suspectBytes: byteLength(values[5]),
+      totalKnownBytes: values.reduce((sum, value) => sum + byteLength(value), 0),
+      sigilCount: parsed ? Object.keys(parsed.sigils.storage).length : 0,
+      rollHistoryEntries: parsed ? Object.values(parsed.sigils.storage).reduce((sum, sigil) => sum + sigil.rollHistory.length, 0) : 0,
+      inventoryKeyCount: parsed ? Object.keys(parsed.inventory).length : 0,
+      topLevelBytes,
+    }
+  } catch { return empty }
+}
+
+export const validateProfileCandidate = (slotId: ProfileSlotId | null, state: GameState): ProfileSaveResult => {
+  if (!isProfileSlotId(slotId)) return { ok: false, error: 'Invalid profile slot.', kind: 'validation', detail: 'Invalid profile slot.' }
+  if (typeof localStorage === 'undefined') return { ok: false, error: 'Browser storage is unavailable.', kind: 'storage-unavailable', detail: 'Browser storage is unavailable.' }
+  try {
+    const encoded = JSON.stringify(serializeGameState(state, state.lastSavedAt))
+    const serializedBytes = typeof Blob !== 'undefined' ? new Blob([encoded]).size : encoded.length * 2
+    const result = validateSerializedSave(encoded, state)
+    return result.ok ? { ok: true, error: null, serializedBytes } : { ok: false, error: result.error ?? 'Profile validation failed.', kind: 'validation', detail: result.error ?? 'Profile validation failed.', serializedBytes }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Profile could not be serialized.', kind: 'serialization', detail: error instanceof Error ? error.message : 'Profile could not be serialized.' }
+  }
+}
+
 export const loadProfileGame = (slotId: ProfileSlotId): ProfileLoadResult => {
   if (!isProfileSlotId(slotId) || typeof localStorage === 'undefined') return emptyLoadResult()
   try {
@@ -244,14 +302,22 @@ const logProgressionRegression = (slotId: ProfileSlotId, source: CandidateSource
   }))
 }
 
-const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, source?: CandidateSource, regressionResult?: ProgressionRegressionResult): ProfileSaveResult => {
+const isQuotaError = (error: unknown) => typeof DOMException !== 'undefined' && error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+const saveFailure = (slotId: ProfileSlotId, detail: string, regression = false, source?: CandidateSource, regressionResult?: ProgressionRegressionResult, kind: SaveFailureKind = regression ? 'regression' : 'unknown', serializedBytes?: number): ProfileSaveResult => {
   if (regression && source && regressionResult) logProgressionRegression(slotId, source, regressionResult)
   console.error(`[profile-save] ${detail}`)
   const message = regression
     ? 'SAVE PROTECTION ACTIVE · A possible progression rollback was blocked.'
     : 'SAVE FAILED · The game could not write to browser storage.'
-  recordSaveFailure(slotId, regression ? `${message} ${detail}` : message, regression)
-  return { ok: false, error: message }
+  const userMessage = regression
+    ? message
+    : kind === 'quota'
+      ? 'SAVE STORAGE FULL · The current profile is too large for browser storage. Your previous valid save was preserved.'
+      : kind === 'storage-unavailable'
+        ? 'SAVE FAILED · Browser storage is unavailable. Your previous valid save was preserved.'
+        : 'SAVE FAILED · The profile could not be written. Your previous valid save was preserved.'
+  recordSaveFailure(slotId, userMessage, regression, { kind, detail, serializedBytes })
+  return { ok: false, error: userMessage, kind, detail, serializedBytes }
 }
 
 const storageKeys = (slotId: ProfileSlotId) => [profileSaveKey(slotId), profileSaveBackupKey(slotId), profileSaveBackup2Key(slotId), profileSaveBackup3Key(slotId)]
@@ -263,14 +329,19 @@ const writeVerified = (key: string, value: string | null) => {
 
 export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options?: { savedAt?: number; explicitReset?: boolean }): ProfileSaveResult => {
   if (!isProfileSlotId(slotId)) return { ok: false, error: 'Invalid profile slot.' }
-  if (typeof localStorage === 'undefined') return { ok: false, error: 'Browser storage is unavailable.' }
+  if (typeof localStorage === 'undefined') return saveFailure(slotId, 'Browser storage is unavailable.', false, undefined, undefined, 'storage-unavailable')
   let previous: (string | null)[] = []
   let transactionStarted = false
+  let serializedBytes: number | undefined
   try {
     const savedAt = options?.savedAt ?? state.lastSavedAt
-    const encoded = JSON.stringify(serializeGameState(state, savedAt))
+    let encoded: string
+    try { encoded = JSON.stringify(serializeGameState(state, savedAt)) } catch (error) {
+      return saveFailure(slotId, error instanceof Error ? error.message : 'Profile could not be serialized.', false, undefined, undefined, 'serialization')
+    }
+    serializedBytes = typeof Blob !== 'undefined' ? new Blob([encoded]).size : encoded.length * 2
     const candidate = validateSerializedSave(encoded, state)
-    if (!candidate.ok) return saveFailure(slotId, candidate.error ?? 'Critical gameplay data changed during save round-trip.')
+    if (!candidate.ok) return saveFailure(slotId, candidate.error ?? 'Critical gameplay data changed during save round-trip.', false, undefined, undefined, 'validation', serializedBytes)
 
     const existing = readRawCandidates(slotId)
     if (!options?.explicitReset) {
@@ -279,7 +350,7 @@ export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options
         const regression = detectCatastrophicProgressRegression(prior.state, state)
         if (regression.catastrophic) {
           preserveSuspectSnapshot(slotId, encoded)
-          return saveFailure(slotId, regression.reasons.join('; '), true, prior.source, regression)
+          return saveFailure(slotId, regression.reasons.join('; '), true, prior.source, regression, 'regression', serializedBytes)
         }
       }
     }
@@ -301,17 +372,36 @@ export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options
         { raw: existing.raws.backup3, diagnostic: existing.diagnostics.backup3 },
       ]
       const retained = priorBySource.filter(({ raw, diagnostic }) => Boolean(raw) && diagnostic.ok && raw !== encoded && raw !== suspectRaw).map(({ raw }) => raw!)
-      ;[encoded, ...retained.slice(0, 3)].forEach((value, index) => writeVerified(keys[index], value))
-      for (let index = retained.slice(0, 3).length + 1; index < keys.length; index += 1) writeVerified(keys[index], null)
+      const writeGeneration = (backupCount: number) => {
+        writeVerified(keys[0], encoded)
+        retained.slice(0, backupCount).forEach((value, index) => writeVerified(keys[index + 1], value))
+        for (let index = backupCount + 1; index < keys.length; index += 1) writeVerified(keys[index], null)
+      }
+      try { writeGeneration(3) } catch (error) {
+        if (!isQuotaError(error)) throw error
+        for (const backupCount of [2, 1]) {
+          try {
+            writeVerified(keys[3], null)
+            if (backupCount === 1) writeVerified(keys[2], null)
+            writeGeneration(backupCount)
+            break
+          } catch (retryError) {
+            if (!isQuotaError(retryError) || backupCount === 1) throw retryError
+          }
+        }
+      }
     }
     recordSuccessfulSave(slotId, savedAt)
-    return { ok: true, error: null }
+    return { ok: true, error: null, serializedBytes }
   } catch (error) {
     if (transactionStarted) {
-      try { storageKeys(slotId).forEach((key, index) => writeVerified(key, previous[index] ?? null)) }
+      try {
+        storageKeys(slotId).forEach((key) => localStorage.removeItem(key))
+        storageKeys(slotId).forEach((key, index) => writeVerified(key, previous[index] ?? null))
+      }
       catch (restoreError) { console.error('[profile-save] Save failed and previous storage could not be fully restored.', restoreError) }
     }
-    return saveFailure(slotId, error instanceof Error ? error.message : 'Profile save could not be written.')
+    return saveFailure(slotId, error instanceof Error ? error.message : 'Profile save could not be written.', false, undefined, undefined, isQuotaError(error) ? 'quota' : error instanceof Error && error.message.startsWith('Save write verification failed') ? 'write-verification' : 'unknown', serializedBytes)
   }
 }
 

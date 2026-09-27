@@ -2,28 +2,61 @@ import type { DebugOverrides } from '../game/types'
 
 export interface ActiveDebugOverride {
   id: string
+  key: keyof DebugOverrides
   label: string
   group: 'combat' | 'resource' | 'progression' | 'system'
   tone: 'warning' | 'danger'
 }
 
-export const getActiveDebugOverrides = (debug: DebugOverrides): ActiveDebugOverride[] => {
-  const active: ActiveDebugOverride[] = []
-  const add = (id: string, label: string, group: ActiveDebugOverride['group'] = 'combat', tone: ActiveDebugOverride['tone'] = 'warning') => active.push({ id, label, group, tone })
-  if (debug.playerImmortal) add('player-immortal', 'PLAYER IMMORTAL', 'combat', 'danger')
-  if (debug.enemyImmortal) add('enemy-immortal', 'ENEMY IMMORTAL', 'combat', 'danger')
-  if (debug.infiniteMana) add('infinite-mana', 'INFINITE MANA', 'resource')
-  if (debug.ignoreSpellCooldowns) add('ignore-cooldowns', 'IGNORE COOLDOWNS', 'combat')
-  if (debug.disableAutoCast) add('auto-cast-off', 'AUTO-CAST OFF', 'combat')
-  if (debug.freezePlayerActions) add('player-frozen', 'PLAYER FROZEN', 'combat')
-  if (debug.freezeEnemyActions) add('enemy-frozen', 'ENEMY FROZEN', 'combat')
-  if (debug.combatPaused) add('combat-paused', 'COMBAT PAUSED', 'combat', 'danger')
-  if (debug.combatTimeScale !== 1) add('combat-speed', `COMBAT ×${debug.combatTimeScale}`, 'combat')
-  if (debug.bonusManaRegenFlat || debug.bonusMaxManaFlat || debug.bonusAcolytes || debug.acolyteTotalOverride !== null || debug.arcaneFluxCapacityOverride !== null || debug.allowManaOverCap || debug.ignoreAcolyteLimit) add('resource-overrides', 'RESOURCE OVERRIDES', 'resource')
-  if (debug.artifactFreeRankPurchase || debug.artifactIgnoreOwnership) add('artifact-overrides', 'ARTIFACT RANK OVERRIDES', 'progression')
-  if (debug.showLockedTransmutationRecipes) add('show-locked-transmutation', 'Show Locked Transmutation Recipes', 'system')
-  if (debug.showLockedArtificingRecipes) add('show-locked-artificing', 'Show Locked Artificing Recipes', 'system')
-  return active
+type DebugOverrideDefinition = {
+  key: keyof DebugOverrides
+  label: string | ((value: DebugOverrides[keyof DebugOverrides]) => string)
+  group: ActiveDebugOverride['group']
+  tone?: ActiveDebugOverride['tone']
+  active: (value: DebugOverrides[keyof DebugOverrides]) => boolean
 }
+
+// Exhaustive by design: a new runtime override must get an explicit label and
+// active-state rule before the presentation compiles.
+export const DEBUG_OVERRIDE_KEYS = [
+  'bonusManaRegenFlat', 'bonusMaxManaFlat', 'allowManaOverCap', 'showLockedTransmutationRecipes', 'showLockedArtificingRecipes',
+  'playerImmortal', 'enemyImmortal', 'infiniteMana', 'ignoreSpellCooldowns', 'disableAutoCast', 'freezePlayerActions',
+  'freezeEnemyActions', 'combatPaused', 'combatTimeScale', 'artifactFreeRankPurchase', 'artifactIgnoreOwnership',
+  'arcaneCoreFreeCosts', 'arcaneCoreIgnorePrerequisites', 'bonusAcolytes', 'acolyteTotalOverride', 'ignoreAcolyteLimit', 'arcaneFluxCapacityOverride',
+] as const satisfies readonly (keyof DebugOverrides)[]
+
+const definitions: readonly DebugOverrideDefinition[] = [
+  { key: 'bonusManaRegenFlat', label: (value) => `+${value} MANA REGEN`, group: 'resource', active: (value) => value !== 0 },
+  { key: 'bonusMaxManaFlat', label: (value) => `+${value} MAX MANA`, group: 'resource', active: (value) => value !== 0 },
+  { key: 'allowManaOverCap', label: 'MANA OVERCAP', group: 'resource', active: Boolean },
+  { key: 'showLockedTransmutationRecipes', label: 'SHOW LOCKED TRANSMUTATION', group: 'system', active: Boolean },
+  { key: 'showLockedArtificingRecipes', label: 'SHOW LOCKED ARTIFICING', group: 'system', active: Boolean },
+  { key: 'playerImmortal', label: 'PLAYER IMMORTAL', group: 'combat', tone: 'danger', active: Boolean },
+  { key: 'enemyImmortal', label: 'ENEMY IMMORTAL', group: 'combat', tone: 'danger', active: Boolean },
+  { key: 'infiniteMana', label: 'INFINITE MANA', group: 'resource', active: Boolean },
+  { key: 'ignoreSpellCooldowns', label: 'IGNORE COOLDOWNS', group: 'combat', active: Boolean },
+  { key: 'disableAutoCast', label: 'AUTO-CAST OFF', group: 'combat', active: Boolean },
+  { key: 'freezePlayerActions', label: 'PLAYER FROZEN', group: 'combat', active: Boolean },
+  { key: 'freezeEnemyActions', label: 'ENEMY FROZEN', group: 'combat', active: Boolean },
+  { key: 'combatPaused', label: 'COMBAT PAUSED', group: 'combat', tone: 'danger', active: Boolean },
+  { key: 'combatTimeScale', label: (value) => `COMBAT x${value}`, group: 'combat', active: (value) => value !== 1 },
+  { key: 'artifactFreeRankPurchase', label: 'FREE ARTIFACT RANKS', group: 'progression', active: Boolean },
+  { key: 'artifactIgnoreOwnership', label: 'IGNORE ARTIFACT OWNERSHIP', group: 'progression', active: Boolean },
+  { key: 'arcaneCoreFreeCosts', label: 'FREE ARCANE CORE', group: 'progression', active: Boolean },
+  { key: 'arcaneCoreIgnorePrerequisites', label: 'IGNORE ARCANE GATES', group: 'progression', active: Boolean },
+  { key: 'bonusAcolytes', label: (value) => `+${value} DEV ACOLYTES`, group: 'resource', active: (value) => value !== 0 },
+  { key: 'acolyteTotalOverride', label: (value) => `ACOLYTE TOTAL ${value}`, group: 'resource', active: (value) => value !== null },
+  { key: 'ignoreAcolyteLimit', label: 'IGNORE ACOLYTE LIMIT', group: 'resource', active: Boolean },
+  { key: 'arcaneFluxCapacityOverride', label: (value) => `FLUX CAPACITY ${value}`, group: 'resource', active: (value) => value !== null },
+]
+
+const definitionKeys = definitions.map((definition) => definition.key)
+if (definitionKeys.length !== DEBUG_OVERRIDE_KEYS.length || DEBUG_OVERRIDE_KEYS.some((key) => !definitionKeys.includes(key))) throw new Error('Debug override presentation is not exhaustive.')
+
+export const getActiveDebugOverrides = (debug: DebugOverrides): ActiveDebugOverride[] => definitions.flatMap((definition) => {
+  const value = debug[definition.key]
+  if (!definition.active(value)) return []
+  return [{ id: String(definition.key), key: definition.key, label: typeof definition.label === 'function' ? definition.label(value) : definition.label, group: definition.group, tone: definition.tone ?? 'warning' }]
+})
 
 export const hasActiveDebugOverrides = (debug: DebugOverrides) => getActiveDebugOverrides(debug).length > 0

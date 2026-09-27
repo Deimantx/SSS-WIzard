@@ -8,7 +8,7 @@ import { updateProfileMetadata } from '../../profiles/profileStorage'
 /** Persistence-specific state mutations stay separate from storage adapters. */
 export const markSavedAt = (state: GameState, savedAt: number) => { state.lastSavedAt = savedAt }
 
-export interface PersistenceSaveResult { ok: boolean; error: string | null }
+export type PersistenceSaveResult = ReturnType<typeof saveProfileGame>
 let lastBackgroundSaveErrorAt = 0
 
 export const saveGameAction = (state: GameState, activeProfileId: ProfileSlotId | null, reason: SaveReason, savedAt: number): PersistenceSaveResult => {
@@ -21,5 +21,16 @@ export const saveGameAction = (state: GameState, activeProfileId: ProfileSlotId 
     pushNotification(state, result.error ?? 'Profile save failed.', 'warning')
   }
   if (result.ok) updateProfileMetadata(activeProfileId, { lastSavedAt: savedAt })
+  return result
+}
+
+/** Saves a detached candidate. The caller owns the live-state commit and only applies it after this succeeds. */
+export const saveGameCandidateAction = (candidate: GameState, activeProfileId: ProfileSlotId | null, savedAt: number): PersistenceSaveResult => {
+  if (!activeProfileId) return { ok: false, error: 'No active profile.', kind: 'storage-unavailable', detail: 'No active profile.' }
+  const result = saveProfileGame(activeProfileId, candidate, { savedAt })
+  if (result.ok) {
+    markSavedAt(candidate, savedAt)
+    updateProfileMetadata(activeProfileId, { lastSavedAt: savedAt })
+  }
   return result
 }

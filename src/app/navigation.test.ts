@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { navigationGroups, isNavigationItemVisible } from './navigation'
+import { navigationGroups, isNavigationItemVisible, isScreenNavigationAllowed } from './navigation'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
 import { createInitialState } from '../store/initialState'
 
@@ -35,5 +35,25 @@ describe('Crystal navigation visibility', () => {
     expect(world.items.map((item) => item.id)).toContain('bestiary')
     expect(hero.items.map((item) => item.id)).not.toContain('collection')
     expect(hero.items.map((item) => item.id)).not.toContain('bestiary')
+  })
+})
+
+describe('Artificing navigation visibility', () => {
+  const artificingItem = navigationGroups.flatMap((group) => group.items).find((item) => item.id === 'tower-artificing')!
+
+  it.each([
+    ['choose-school', false],
+    ['combat', false],
+    ['first-kill', true],
+    ['tower-work', true],
+    ['channeling', true],
+    ['transmutation', true],
+    ['research', true],
+    ['complete', true],
+  ] as const)('is %s %s', (tutorialStage, visible) => {
+    const state = createInitialState()
+    state.progress.tutorialStage = tutorialStage
+    expect(isNavigationItemVisible(artificingItem, state)).toBe(visible)
+    expect(isScreenNavigationAllowed(state, 'tower-artificing')).toBe(visible)
   })
 })

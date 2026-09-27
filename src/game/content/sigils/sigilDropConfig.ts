@@ -2,8 +2,8 @@ import type { SigilQuality } from './sigilQualities'
 import type { SigilTier } from './sigilTiers'
 
 export const SIGIL_DROP_CHANCE = { normal: .04, boss: .35 } as const
-export const SIGIL_FIRST_DROP_PITY_KILLS = 5
 export const SIGIL_STORAGE_SOFT_CAP = 500
+export const DEBUG_SIGIL_STORAGE_HARD_CAP = 1_000
 export const SIGIL_ATTUNEMENT_WEIGHT = 3
 export const SIGIL_AUTO_SALVAGE_DEFAULTS = { common: false, refined: false } as const
 

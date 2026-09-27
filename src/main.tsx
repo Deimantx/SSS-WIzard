@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { applyStoredUiPreferences } from './ui/theme/themeManager'
 import './styles/index.css'
+import './styles/screens/guild.css'
 import { AppRoot } from './app/AppRoot'
 import { validateGameContent } from './game/content/validateGameContent'
 

@@ -11,27 +11,13 @@ import { createInitialWorldTierState } from '../game/systems/world-tier/worldTie
 import { createInitialCrystalState } from '../game/systems/crystals/crystalRuntime'
 import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { createInitialChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
+import { createEmptySigilState } from '../game/systems/sigils/sigilStateNormalization'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
 export const SAVE_VERSION = 50
 
-export const createInitialSigilState = (): import('../game/types').SigilState => ({
-  nextInstanceSequence: 1,
-  storage: {},
-  equipped: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null },
-  dust: 0,
-  attunedSetId: null,
-  highestSourcePowerDefeated: 0,
-  lifetimeDrops: 0,
-  firstDropPityKills: 0,
-  highestRankEver: 0,
-  secondaryRollsLifetime: 0,
-  traitsUnlockedLifetime: 0,
-  discovery: { discoveredSets: {}, discoveredSlotsBySet: {}, bestQualityBySet: {}, bestTierBySet: {}, discoveredTraits: {}, qualitiesFound: {}, tiersFound: {} },
-  hasDefeatedWorldTier2Boss: false,
-  autoSalvage: { common: false, refined: false },
-})
+export const createInitialSigilState = createEmptySigilState
 
 const emptySpellRecord = <T>(value: T) => Object.fromEntries(CANONICAL_SPELL_IDS.map((spellId) => [spellId, value])) as Record<import('../game/types').SpellId, T>
 

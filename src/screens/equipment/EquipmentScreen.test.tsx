@@ -9,7 +9,7 @@ import { EquipmentScreen } from './EquipmentScreen'
 describe('EquipmentScreen', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    setNavigationIntent({ equipmentItemId: null, equipmentPosition: null })
+    setNavigationIntent({ equipmentItemId: null, equipmentPosition: null, equipmentMode: null })
     useGameStore.getState().resetSave()
   })
 
@@ -19,6 +19,24 @@ describe('EquipmentScreen', () => {
     expect(screen.getByText('EQUIPMENT')).toBeTruthy()
     expect(screen.queryByText('ACCESSORIES')).toBeNull()
     expect(screen.queryByText('OFFHAND')).toBeNull()
+  })
+
+  it('owns the six-slot Sigil array and opens it from a Sigil deep link', () => {
+    setNavigationIntent({ equipmentMode: 'sigils' })
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    expect(screen.getByRole('tab', { name: 'SIGILS' }).getAttribute('aria-selected')).toBe('true')
+    expect(container.querySelectorAll('.sigils-slot-row .sigil-slot')).toHaveLength(6)
+    expect(screen.getByRole('tab', { name: 'STORAGE' })).toBeTruthy()
+    expect(screen.queryByRole('tab', { name: 'FORGE' })).toBeNull()
+  })
+
+  it('switches from the Sigil array back to gear equipment', () => {
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+    fireEvent.click(screen.getByRole('tab', { name: 'SIGILS' }))
+    expect(container.querySelectorAll('.sigils-slot-row .sigil-slot')).toHaveLength(6)
+    fireEvent.click(screen.getByRole('tab', { name: 'GEAR' }))
+    expect(container.querySelectorAll('.equipment-slot-card')).toHaveLength(3)
   })
 
   it('uses one epsilon for meaningful equipment values and hides empty optional groups', () => {

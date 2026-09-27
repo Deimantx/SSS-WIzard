@@ -1,4 +1,8 @@
 .equipment-screen .screen-grid-panel-content > .card { height: 100%; min-height: 100%; }
+.equipment-mode-tabs { display: flex; align-self: end; gap: 5px; padding: 4px; border: 1px solid var(--ui-border); border-radius: 9px; background: var(--ui-panel); }
+.equipment-mode-tabs button { min-height: 34px; padding: 0 12px; border: 1px solid transparent; border-radius: 6px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.equipment-mode-tabs button:hover, .equipment-mode-tabs button.active { border-color: color-mix(in srgb, var(--ui-accent) 52%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
+.equipment-screen > .sigils-workspace { margin-top: 6px; }
 .equipment-screen .card { overflow: hidden; }
 .equipment-armory-panel, .equipment-inspector { display: flex; flex-direction: column; }
 .equipment-armory-panel > .card-head, .equipment-inspector > .card-head { flex: 0 0 auto; }

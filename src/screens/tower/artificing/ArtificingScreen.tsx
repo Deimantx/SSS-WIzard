@@ -21,13 +21,13 @@ export function ArtificingScreen() {
     className={`artificing-screen ${mode === 'sigils' ? 'sigils-screen' : ''}`}
     eyebrow="WIZARD TOWER · ARTIFICING"
     title="Arcane Forge"
-    description={mode === 'sigils' ? 'Read, refine, and equip Sigils found in Combat.' : 'Forge permanent Artifacts, or open the combat-born Sigil array.'}
+    description={mode === 'sigils' ? 'Forge Sigils and tune your collection. Equip and manage them in Equipment.' : 'Forge permanent Artifacts, or refine combat-born Sigils.'}
   >
     <div className="artificing-mode-switch">
       <button className={mode === 'artifacts' ? 'active' : ''} onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button>
       <button className={mode === 'sigils' ? 'active' : ''} onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button>
     </div>
-    {mode === 'sigils' ? <SigilsWorkspace /> : <ArtifactsWorkspace />}
+    {mode === 'sigils' ? <><button className="sigils-open-equipment" type="button" onClick={() => { setNavigationIntent({ equipmentMode: 'sigils' }); useGameStore.getState().setScreen('equipment') }}>OPEN SIGIL EQUIPMENT</button><SigilsWorkspace initialMode="forge" hideModeTabs /></> : <ArtifactsWorkspace />}
   </TowerFrame>
 }
 

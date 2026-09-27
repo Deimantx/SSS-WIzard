@@ -33,9 +33,9 @@ const nextRandom = (seed: { value: number }) => {
 const bump = (record: Record<string, number>, key: string | number) => { record[String(key)] = (record[String(key)] ?? 0) + 1 }
 
 /**
- * Runs the same authored generation rolls against an isolated fixture. This
- * intentionally uses source=debug so discovery, chronicles, dust, and drop
- * lifetime counters cannot be changed by analysis.
+ * Runs the same authored generation rolls against an isolated fixture. Generated
+ * instances are not retained; analysis cannot mutate discovery, chronicles,
+ * dust, drop counters, or grow the fixture's storage during large simulations.
  */
 export const simulateSigilDrops = (input: SigilDropSimulationInput): SigilDropSimulationResult => {
   const iterations = Math.max(0, Math.min(100_000, Math.floor(input.iterations)))
@@ -45,7 +45,7 @@ export const simulateSigilDrops = (input: SigilDropSimulationInput): SigilDropSi
   const result: SigilDropSimulationResult = { iterations, sigilsFound: 0, byTier: {}, byQuality: {}, bySet: {}, bySlot: {}, byMainStat: {}, autoSalvageDustEstimate: 0 }
   const tier = (Math.min(2, Math.max(1, input.worldTier)) as SigilTier)
   for (let index = 0; index < iterations; index += 1) {
-    const sigil = generateSigil({ state: fixture, dungeonId: input.dungeonId, enemyId: input.enemyId, enemyPower: 0, forcedTier: tier, source: 'debug', rng: () => nextRandom(seed) })
+    const sigil = generateSigil({ state: fixture, dungeonId: input.dungeonId, enemyId: input.enemyId, enemyPower: 0, forcedTier: tier, source: 'debug', persistGeneratedInstance: false, rng: () => nextRandom(seed) })
     result.sigilsFound += 1
     bump(result.byTier, sigil.tier)
     bump(result.byQuality, sigil.quality)

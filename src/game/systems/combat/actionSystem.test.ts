@@ -223,8 +223,10 @@ describe('classic real-time combat action timing', () => {
     expect(enemy.combat.enemyActionTimerMs).toBe(0)
 
     const player = stateWithEnemy()
+    player.combat.targetEnemyId = 'forest-wisp'
     player.player.health = 0
     resolveCombatDeaths(player)
+    expect(player.combat.targetEnemyId).toBeNull()
     expect(player.combat.active).toBe(false)
     expect(player.combat.enemyId).toBeNull()
     expect(player.combat.enemyCurrentStepId).toBeNull()

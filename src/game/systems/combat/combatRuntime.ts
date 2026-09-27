@@ -332,6 +332,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     report?.recordPlayerDeath()
     clearGuardianRuntime(state)
     state.combat.active = false
+    state.combat.targetEnemyId = null
     state.combat.enemyId = null
     state.combat.enemyWorldTier = null
     state.combat.enemyInstanceKey = null

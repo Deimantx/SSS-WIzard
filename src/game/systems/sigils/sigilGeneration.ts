@@ -6,6 +6,7 @@ import { SIGIL_MAIN_STAT_POOLS, SIGIL_SECONDARY_STAT_IDS } from '../../content/s
 import { SIGIL_SET_IDS } from '../../content/sigils/sigilSets'
 import { getSigilTierDefinition, resolveSigilTierFromEnemyPower } from '../../content/sigils/sigilTiers'
 import { clampSigilRollQuality } from './sigilRuntime'
+import { registerSigilInstanceDiscovery } from './sigilStateNormalization'
 import { recordChronicleEvent } from '../chronicles/chronicleRuntime'
 
 export interface SigilGenerationOptions {
@@ -22,6 +23,7 @@ export interface SigilGenerationOptions {
   forcedQuality?: SigilQuality
   forcedMainStatId?: SigilStatId
   source?: 'drop' | 'craft' | 'debug'
+  persistGeneratedInstance?: boolean
 }
 
 const random01 = (rng: () => number) => clampSigilRollQuality(rng())
@@ -40,19 +42,7 @@ const rollQuality = (tier: SigilTier, isBoss: boolean, rng: () => number, overri
   return weightedPick(Object.keys(weights) as SigilQuality[], Object.values(weights), rng)
 }
 
-const registerDiscovery = (state: GameState, sigil: SigilInstance) => {
-  const discovery = state.sigils.discovery
-  discovery.discoveredSets[sigil.setId] = true
-  discovery.discoveredSlotsBySet[sigil.setId] = { ...(discovery.discoveredSlotsBySet[sigil.setId] ?? {}), [sigil.slot]: true }
-  discovery.qualitiesFound[sigil.quality] = true
-  discovery.tiersFound[sigil.tier] = true
-  sigil.traitIds.forEach((traitId) => { discovery.discoveredTraits[traitId] = true })
-  const previousQuality = discovery.bestQualityBySet[sigil.setId]
-  if (!previousQuality || getSigilQualityDefinition(sigil.quality).maxRank > getSigilQualityDefinition(previousQuality).maxRank) discovery.bestQualityBySet[sigil.setId] = sigil.quality
-  if (!discovery.bestTierBySet[sigil.setId] || sigil.tier > (discovery.bestTierBySet[sigil.setId] ?? 0)) discovery.bestTierBySet[sigil.setId] = sigil.tier
-}
-
-export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop' }: SigilGenerationOptions): SigilInstance => {
+export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop', persistGeneratedInstance = true }: SigilGenerationOptions): SigilInstance => {
   const tier = forcedTier ?? resolveSigilTierFromEnemyPower(enemyPower)
   const pool = getSigilRegionSetPool(dungeonId)
   const weights = pool.map((setId) => setId === state.sigils.attunedSetId ? SIGIL_ATTUNEMENT_WEIGHT : 1)
@@ -70,13 +60,13 @@ export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rn
   const instanceId = `sigil:${state.sigils.nextInstanceSequence}`
   state.sigils.nextInstanceSequence += 1
   const sigil: SigilInstance = { instanceId, tier, quality, setId, slot, rank: 0, mainStatId, secondaries, traitIds: [], rollHistory: [], locked: false }
-  state.sigils.storage[instanceId] = sigil
+  if (persistGeneratedInstance) state.sigils.storage[instanceId] = sigil
   if (source === 'drop') {
     state.sigils.lifetimeDrops += 1
     state.sigils.firstDropPityKills = 0
     state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, Number.isFinite(enemyPower) ? enemyPower : 0)
   }
-  if (source !== 'debug') registerDiscovery(state, sigil)
+  if (persistGeneratedInstance) registerSigilInstanceDiscovery(state.sigils, sigil)
   if (source === 'drop') recordChronicleEvent(state, 'first-sigil-earned')
   return sigil
 }

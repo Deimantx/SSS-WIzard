@@ -3,6 +3,7 @@
 .collection-primary-tabs button { padding: 7px 12px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .collection-primary-tabs button.active, .collection-primary-tabs button:hover, .collection-primary-tabs button:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .sigil-collection-archive { display: grid; gap: 12px; min-width: 0; }
+.sigil-collection-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .sigil-collection-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .sigil-collection-metrics span { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text-muted); background: var(--ui-panel); font: var(--text-xs) var(--font-mono); }
 .sigil-collection-metrics b { color: var(--ui-accent); font-size: var(--text-lg); }
@@ -31,6 +32,8 @@
 .artificing-mode-switch button { padding: 7px 12px; border: 1px solid transparent; border-radius: 5px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .artificing-mode-switch button:hover, .artificing-mode-switch button:focus-visible, .artificing-mode-switch button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .sigils-workspace { display: grid; gap: 12px; min-width: 0; }
+.sigils-open-equipment { align-self: start; padding: 8px 12px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.sigils-open-equipment:hover { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .sigils-mode-tabs { display: flex; gap: 5px; width: fit-content; padding: 4px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
 .sigils-mode-tabs button { padding: 6px 10px; border: 1px solid transparent; border-radius: 5px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .sigils-mode-tabs button:hover, .sigils-mode-tabs button:focus-visible, .sigils-mode-tabs button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }

@@ -14,6 +14,7 @@ export interface NavigationIntent {
   inventoryItemId: ItemId | null;
   equipmentItemId: ItemId | null;
   equipmentPosition: EquipmentPosition | null;
+  equipmentMode: 'items' | 'sigils' | null;
   artificingRecipeId: ArtificingRecipeId | null;
   transmutationRecipeId: TransmutationRecipeId | null;
   researchItemId: ItemId | null;
@@ -30,6 +31,7 @@ const emptyIntent: NavigationIntent = {
   inventoryItemId: null,
   equipmentItemId: null,
   equipmentPosition: null,
+  equipmentMode: null,
   artificingRecipeId: null,
   transmutationRecipeId: null,
   researchItemId: null,

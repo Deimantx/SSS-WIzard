@@ -15,7 +15,7 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI']
 const formatStat = (statId: Parameters<typeof getSigilStatLabel>[0], value: number) => statId.endsWith('Pct') || statId === 'critChance' || statId === 'critDamage' ? `${(value * 100).toFixed(1)}%` : Math.round(value).toLocaleString()
 const formatTrait = (traitId: keyof typeof SIGIL_TRAITS) => SIGIL_TRAITS[traitId]?.name ?? traitId
 
-export function SigilsWorkspace() {
+export function SigilsWorkspace({ initialMode = 'array', hideModeTabs = false, allowForge = true }: { initialMode?: 'array' | 'storage' | 'forge'; hideModeTabs?: boolean; allowForge?: boolean }) {
   const state = useGameStore()
   const [selectedId, setSelectedId] = useState<string | null>(Object.keys(state.sigils.storage)[0] ?? null)
   const [qualityFilter, setQualityFilter] = useState<SigilQuality | 'all'>('all')
@@ -25,7 +25,7 @@ export function SigilsWorkspace() {
   const [mainStatFilter, setMainStatFilter] = useState<SigilStatId | 'all'>('all')
   const [stateFilter, setStateFilter] = useState<'all' | 'equipped' | 'locked' | 'unlocked'>('all')
   const [sortMode, setSortMode] = useState<'quality' | 'tier' | 'rank'>('quality')
-  const [mode, setMode] = useState<'array' | 'storage' | 'forge'>('array')
+  const [mode, setMode] = useState<'array' | 'storage' | 'forge'>(initialMode)
   const maxCraftTier = getHighestCraftableSigilTier(state.sigils.highestSourcePowerDefeated)
   const [craftTier, setCraftTier] = useState<SigilTier>(maxCraftTier)
   useEffect(() => { if (craftTier > maxCraftTier) setCraftTier(maxCraftTier) }, [craftTier, maxCraftTier])
@@ -48,7 +48,7 @@ export function SigilsWorkspace() {
   return <div className="sigils-workspace" data-mode={mode}>
     <div className="sigils-mode-rail"><div><span className="eyebrow">ARTIFICING · SIGILS</span><strong>Arcane Sigil Array</strong><small>Combat-born equipment for six build-defining slots.</small></div><div className="sigils-resource-readout"><span>DUST</span><b>{state.sigils.dust.toLocaleString()}</b><small>{Object.keys(state.sigils.storage).length} stored · global cap +{cap}</small></div></div>
     <section className="sigils-loadout card"><div className="card-head"><div><span className="eyebrow">EQUIPPED ARRAY</span><h2>Six active channels</h2></div><span className="sigils-loadout-count">{Object.values(equipped).filter(Boolean).length} / 6</span></div><div className="sigils-slot-row">{([1, 2, 3, 4, 5, 6] as SigilSlot[]).map((slot) => { const sigil = equipped[slot] ? state.sigils.storage[equipped[slot]!] : undefined; return <GameTooltip key={slot} block content={sigil ? getSigilLabel(sigil) : `Slot ${roman[slot - 1]} is empty`}><button className={`sigil-slot ${sigil ? 'filled' : ''}`} onClick={() => sigil && setSelectedId(sigil.instanceId)}><span>{roman[slot - 1]}</span><strong>{sigil ? SIGIL_SETS[sigil.setId].name : 'EMPTY'}</strong>{sigil && <small>T{sigil.tier} · +{sigil.rank}</small>}</button></GameTooltip> })}</div><div className="sigils-set-summary">{SIGIL_SET_IDS.filter((setId) => (setCounts[setId] ?? 0) > 0).map((setId) => <span key={setId} className={(setCounts[setId] ?? 0) >= SIGIL_SETS[setId].piecesRequired ? 'active' : ''}><b>{SIGIL_SETS[setId].name}</b> {setCounts[setId]} / {SIGIL_SETS[setId].piecesRequired}</span>)}{Object.keys(setCounts).length === 0 && <small>Equip Sigils to activate Set bonuses.</small>}</div></section>
-    <nav className="sigils-mode-tabs" aria-label="Sigil workspace modes" role="tablist"><button role="tab" aria-selected={mode === 'array'} className={mode === 'array' ? 'active' : ''} onClick={() => setMode('array')}>ARRAY</button><button role="tab" aria-selected={mode === 'storage'} className={mode === 'storage' ? 'active' : ''} onClick={() => setMode('storage')}>STORAGE</button><button role="tab" aria-selected={mode === 'forge'} className={mode === 'forge' ? 'active' : ''} onClick={() => setMode('forge')}>FORGE</button></nav>
+    {!hideModeTabs && <nav className="sigils-mode-tabs" aria-label="Sigil workspace modes" role="tablist"><button role="tab" aria-selected={mode === 'array'} className={mode === 'array' ? 'active' : ''} onClick={() => setMode('array')}>ARRAY</button><button role="tab" aria-selected={mode === 'storage'} className={mode === 'storage' ? 'active' : ''} onClick={() => setMode('storage')}>STORAGE</button>{allowForge && <button role="tab" aria-selected={mode === 'forge'} className={mode === 'forge' ? 'active' : ''} onClick={() => setMode('forge')}>FORGE</button>}</nav>}
     <div className="sigils-cap-readout"><span><b>GLOBAL ENHANCEMENT CAP</b> +{capView.current}</span>{capView.next ? <small>Next cap +{capView.next} · {capView.requirement}</small> : <small>Maximum authored cap reached.</small>}</div>
     {mode === 'storage' && <button type="button" className="sigils-clear-filters" onClick={clearFilters}>CLEAR STORAGE FILTERS</button>}
     <div className="sigils-main-grid">

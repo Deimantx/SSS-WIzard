@@ -5,7 +5,7 @@ import { CollectionScreen } from './collection/CollectionScreen'
 import { BestiaryScreen } from './bestiary/BestiaryScreen'
 import { CombatScreenV2 } from './combat/CombatScreen'
 import { EquipmentScreenV2 } from './equipment/EquipmentScreen'
-import { GuildScreenV2 } from './guild/GuildScreen'
+import { GuildScreen } from './guild/GuildScreen'
 import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
@@ -35,7 +35,7 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'equipment') return <EquipmentScreenV2 />
   if (screen === 'arcane-core') return <ArcaneCoreScreen />
   if (screen === 'crystals') return <CrystalsScreen />
-  if (screen === 'guild') return <GuildScreenV2 />
+  if (screen === 'guild') return <GuildScreen />
   if (screen === 'collection') return <CollectionScreen />
   if (screen === 'bestiary') return <BestiaryScreen />
   return <SettingsScreenV2 />

@@ -13,6 +13,7 @@ export type ChronicleStatusFilter = 'current' | 'available' | 'locked' | 'comple
 export type ChronicleSortMode = 'recommended' | 'progress' | 'track' | 'reward' | 'authored'
 export type ChronicleGroupMode = 'none' | 'track' | 'status'
 export type ChronicleViewMode = 'compact' | 'detailed'
+export type GuildScreenTab = 'overview' | 'contracts' | 'skills'
 
 export interface CustomThemeColors {
   background: string
@@ -76,6 +77,10 @@ export interface ChroniclesScreenPreferences {
   collapsedGroups: string[]
 }
 
+export interface GuildScreenPreferences {
+  activeTab: GuildScreenTab
+}
+
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
   transmutation: TransmutationScreenPreferences
@@ -83,6 +88,7 @@ export interface ScreenPreferences {
   research: ResearchScreenPreferences
   combat: CombatScreenPreferences
   chronicles: ChroniclesScreenPreferences
+  guild: GuildScreenPreferences
 }
 
 export interface UiPreferences {

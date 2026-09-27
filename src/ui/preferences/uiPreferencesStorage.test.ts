@@ -15,6 +15,7 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.inventory).toEqual({ sourceOpen: false, researchValueOpen: false })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
+    expect(preferences.screenState.guild).toEqual({ activeTab: 'overview' })
   })
 
   it('validates the Full Combat Log font preference independently of gameplay', () => {
@@ -126,5 +127,11 @@ describe('screen UI preferences', () => {
     expect(toggleChronicleObjectiveTracking('m3-heart-of-the-woods')).toBe(true)
     expect(toggleChronicleObjectiveTracking('m4-break-the-den')).toBe(false)
     expect(loadUiPreferences().screenState.chronicles.trackedObjectiveIds).toHaveLength(3)
+  })
+
+  it('persists Guild tab choice as UI-only state', () => {
+    setUiPreferences({ screenState: { guild: { activeTab: 'skills' } } })
+    expect(loadUiPreferences().screenState.guild.activeTab).toBe('skills')
+    expect(normalizeUiPreferences({ screenState: { guild: { activeTab: 'invalid' } } }).screenState.guild.activeTab).toBe('overview')
   })
 })

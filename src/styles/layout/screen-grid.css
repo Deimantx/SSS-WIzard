@@ -32,9 +32,7 @@
 }
 
 .screen-grid-panel-content > .card,
-.screen-grid-panel-content > .objective-card,
-.screen-grid-panel-content > .guild-banner,
-.screen-grid-panel-content > .locked-screen {
+.screen-grid-panel-content > .objective-card {
   margin: 0;
 }
 

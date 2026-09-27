@@ -5,6 +5,7 @@ import type {
   EquipmentPosition,
   ItemId,
   MonsterId,
+  SigilSlot,
   SchoolId,
   SpellId,
   TransmutationRecipeId,
@@ -14,7 +15,10 @@ export interface NavigationIntent {
   inventoryItemId: ItemId | null;
   equipmentItemId: ItemId | null;
   equipmentPosition: EquipmentPosition | null;
-  equipmentMode: 'items' | 'sigils' | null;
+  openSigilVault: boolean;
+  equipmentSigilInstanceId: string | null;
+  equipmentSigilSlot: SigilSlot | null;
+  artificingSigilInstanceId: string | null;
   artificingRecipeId: ArtificingRecipeId | null;
   transmutationRecipeId: TransmutationRecipeId | null;
   researchItemId: ItemId | null;
@@ -31,7 +35,10 @@ const emptyIntent: NavigationIntent = {
   inventoryItemId: null,
   equipmentItemId: null,
   equipmentPosition: null,
-  equipmentMode: null,
+  openSigilVault: false,
+  equipmentSigilInstanceId: null,
+  equipmentSigilSlot: null,
+  artificingSigilInstanceId: null,
   artificingRecipeId: null,
   transmutationRecipeId: null,
   researchItemId: null,

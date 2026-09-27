@@ -22,7 +22,7 @@ export function SigilCollectionArchive({ state, deepLinkedSetId = null }: { stat
   const selectedSet = selectedSetId ? SIGIL_SETS[selectedSetId] : null
   const sourceLocations = selectedSetId ? Object.values(DUNGEONS).filter((dungeon) => getSigilRegionSetPool(dungeon.id).includes(selectedSetId)) : []
   const openEquipment = () => {
-    setNavigationIntent({ equipmentMode: 'sigils' })
+    setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: null, equipmentSigilSlot: null })
     useGameStore.getState().setScreen('equipment')
   }
   const openForge = () => {

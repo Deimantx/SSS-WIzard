@@ -3,9 +3,11 @@ import { ItemIcon } from '../../components/ui/item'
 import { ITEMS } from '../../game/content/items/items'
 import { useGameStore } from '../../store/gameStore'
 import { setUiPreferences } from '../preferences/uiPreferencesStore'
+import { setNavigationIntent } from '../navigation/navigationIntent'
 import { playUiSound } from '../game-feel/audio/uiAudioEngine'
 import { getLootReveals, pauseLootReveal, removeLootReveal, resumeLootReveal, subscribeLootReveals } from './lootRevealStore'
 import type { LootRevealEvent } from './lootRevealTypes'
+import type { SigilSetId, SigilSlot } from '../../game/types'
 
 export function LootRevealLayer() {
   const reveals = useSyncExternalStore(subscribeLootReveals, getLootReveals, getLootReveals)
@@ -26,7 +28,7 @@ export function LootRevealLayer() {
     if (announced.current.size > 32) announced.current = new Set(reveals.map((reveal) => reveal.id))
   }, [reveals])
   if (!reveals.length) return null
-  return <div className="loot-reveal-layer" aria-live="polite">{reveals.slice(0, 3).map((reveal) => <LootRevealCard key={reveal.id} reveal={reveal} onOpenInventory={() => { removeLootReveal(reveal.id); setScreen('inventory') }} onOpenSigil={() => { removeLootReveal(reveal.id); setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } }); setScreen('tower-artificing') }} />)}</div>
+  return <div className="loot-reveal-layer" aria-live="polite">{reveals.slice(0, 3).map((reveal) => <LootRevealCard key={reveal.id} reveal={reveal} onOpenInventory={() => { removeLootReveal(reveal.id); setScreen('inventory') }} onOpenSigil={() => { removeLootReveal(reveal.id); const sigil = reveal.sigils.find((entry) => !entry.autoSalvaged); if (sigil) { setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: sigil.instanceId, equipmentSigilSlot: sigil.slot as SigilSlot }); setScreen('equipment') } else { const salvaged = reveal.sigils[0]; setNavigationIntent({ sigilSetId: (salvaged?.setId as SigilSetId | undefined) ?? null }); setUiPreferences({ screenState: { collection: { primaryTab: 'sigils' } } }); setScreen('collection') } }} />)}</div>
 }
 
 function LootRevealCard({ reveal, onOpenInventory, onOpenSigil }: { reveal: LootRevealEvent; onOpenInventory: () => void; onOpenSigil: () => void }) {

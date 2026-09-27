@@ -49,6 +49,437 @@ Before completing a UI screen, audit:
 4. Tooltip overflow.
 5. Keyboard focus behavior.
 
+## UI visual quality contract — hard Definition of Done
+
+SSS Wizard is a custom game UI. A feature is **not complete merely because it functions**.
+
+Any new or redesigned player-facing screen, modal, panel, popup, tooltip, context menu, Developer Tools surface, filter bar, form, or interactive control must visually belong to the existing SSS Wizard design system.
+
+A working feature that visibly falls back to browser/default HTML styling is a **failed implementation** and must not be handed off as complete.
+
+### Native/default browser controls are forbidden in feature screens
+
+Feature code under normal game screens and Developer Tools must not directly introduce unthemed browser-native controls such as:
+
+```text
+<select>
+default-looking <button>
+unstyled <input>
+native checkbox/radio presentation
+browser title= tooltips
+browser-default modal/dialog styling
+```
+
+Use the shared themed UI infrastructure instead.
+
+Preferred shared components include:
+
+```text
+Button
+SelectMenu
+SearchInput
+Tabs / FilterBar
+GameTooltip
+ModalPortal
+Status
+shared context menus
+shared toggle / segmented / filter controls
+```
+
+A raw HTML element may exist inside the implementation of a shared primitive, but a feature screen must not use browser defaults as its final presentation.
+
+If the required shared component does not exist:
+
+```text
+1. create or extend a reusable shared themed primitive;
+2. use that primitive in the feature;
+3. do not leave a raw browser control as the finished UI.
+```
+
+### Browser-default visual appearance is an automatic UI failure
+
+The following visible results are not acceptable in finished SSS Wizard UI:
+
+```text
+white/default browser buttons
+system-default select boxes
+native select arrows
+native blue checkbox/radio styling
+default focus rings that conflict with the game theme
+default system fonts
+unstyled input fields
+unstyled scrollbars where a themed bounded scroll owner is expected
+raw text controls packed together without visual hierarchy
+```
+
+If any of these are visible in a screenshot of the finished feature, the task is not complete.
+
+### Reuse the existing design language before inventing local styling
+
+Before styling a new surface, inspect nearby production-quality SSS Wizard screens and shared components.
+
+Match the established language for:
+
+```text
+panel surfaces
+borders
+radii
+spacing
+typography
+accent hierarchy
+button hierarchy
+selected/hover/focus states
+status chips
+tooltips
+modal chrome
+scroll regions
+empty states
+inspectors
+filter controls
+```
+
+Do not create a separate visual language for one feature.
+
+Do not create one-off CSS that visually conflicts with:
+
+```text
+Equipment
+Guild
+Chronicles
+Magic Schools
+other current polished screens
+```
+
+### Shared design tokens are mandatory
+
+Use the existing design tokens and CSS variables.
+
+Do not introduce arbitrary local colors, fonts, shadows, or radii when an existing token already represents the concept.
+
+Gameplay rarity/color systems may define dedicated semantic tokens, but they must be centralized and reused everywhere that rarity appears.
+
+Example:
+
+```text
+Sigil Common / Refined / Perfect / Legendary
+```
+
+must use one shared quality-token definition across:
+
+```text
+Equipment
+Loot Reveal
+Artificing
+Collection
+Developer Tools
+tooltips
+```
+
+Do not misuse generic UI semantics such as:
+
+```text
+success
+warning
+error
+```
+
+as item rarity colors.
+
+### Modal quality contract
+
+Every new modal must:
+
+```text
+render through the shared ModalPortal;
+use the game theme;
+have intentional header/body/action hierarchy;
+have bounded internal scrolling;
+fit common desktop resolutions;
+have no browser-default controls;
+have working focus trapping / Escape behavior;
+have working GameTooltip coverage;
+have clear selected / hover / focus states;
+remain visually contained at narrow widths.
+```
+
+A large modal must not be a giant unstructured document.
+
+For master-detail workflows, prefer:
+
+```text
+navigation / browser
+content
+inspector
+```
+
+or another explicit spatial hierarchy.
+
+### Button hierarchy
+
+Use shared `Button` variants or an equivalent shared themed primitive.
+
+Every action group must have intentional hierarchy:
+
+```text
+primary action
+secondary action
+ghost/utility action
+danger action
+```
+
+Do not render every action with equal visual weight.
+
+Do not place many raw buttons in one uninterrupted row.
+
+Group related actions into sections, menus, or local modes.
+
+### Select/filter controls
+
+Do not use native `<select>` as finished SSS Wizard UI.
+
+Use:
+
+```text
+SelectMenu
+FilterBar
+segmented controls
+chips
+themed popovers
+```
+
+Choose the control based on interaction semantics:
+
+```text
+mutually exclusive context/category -> tabs/radio/segmented
+combinable filters -> toggles/chips/checkbox-style controls
+large option list -> SelectMenu/searchable picker
+```
+
+Do not expose seven dropdowns at once when the same workflow can be expressed with:
+
+```text
+primary chips
++
+FILTERS popover
++
+SORT control
+```
+
+### Checkbox/toggle contract
+
+Do not show raw browser checkboxes in final game UI.
+
+Boolean gameplay/settings controls must use a themed toggle, checkbox primitive, or clear button state.
+
+The visible control must have:
+
+```text
+label
+active/inactive state
+hover state
+focus state
+disabled state where relevant
+tooltip where meaning is not obvious
+```
+
+### Inspector quality contract
+
+Inspectors must be human-readable.
+
+Do not expose raw IDs or enum keys such as:
+
+```text
+critChance
+maxHealthPct
+critical-flow
+sigil-set-id
+```
+
+when authored display labels exist.
+
+Use presentation/read-model helpers.
+
+Organize inspector information into meaningful sections rather than raw object dumps.
+
+### Empty/loading/locked/error states are part of the design
+
+Every redesigned workflow must intentionally handle:
+
+```text
+nothing selected
+no owned content
+no search matches
+locked content
+disabled action
+loading where applicable
+validation error
+save error
+```
+
+Do not leave an empty panel or generic browser text.
+
+### Tooltip coverage remains mandatory
+
+Continue to follow the shared `GameTooltip` contract.
+
+A visually polished screen with missing interaction explanation is still incomplete.
+
+Tooltips are especially required for:
+
+```text
+icons
+rarity/Tier abbreviations
+lock state
+slot restrictions
+disabled actions
+Set bonuses
+Traits
+costs
+unfamiliar stats
+compact buttons
+```
+
+### Developer Tools follow the same visual bar
+
+Developer Tools may be denser and more technical than normal player UI, but they are **not exempt** from the design system.
+
+Developer Tools must not use:
+
+```text
+white native buttons
+raw native selects
+raw native checkboxes
+browser-like forms
+unstructured walls of controls
+```
+
+Use the V4 shared developer UI and normal game UI primitives.
+
+A Developer Tools screen that looks like an HTML debug page is not complete.
+
+### No "functional now, polish later" handoff for requested UI work
+
+When the user asks for a UI implementation or rework, visual integration is part of the same task.
+
+Do not hand off:
+
+```text
+functional shell now
+styling later
+```
+
+unless the user explicitly requested only a functional prototype.
+
+If the user asked for:
+
+```text
+AAA UI
+full rework
+match our design
+polished modal
+production UI
+```
+
+then a visually unfinished version is a failed task.
+
+### Screenshot sanity check is mandatory for UI changes
+
+Before final handoff of a substantial UI task, inspect the rendered result.
+
+At minimum verify the relevant screen/modal at a normal desktop size.
+
+The implementation is not complete if the rendered result visibly contains:
+
+```text
+browser-default controls
+broken spacing
+overflow
+overlap
+unreadable text
+wrong color language
+unstyled empty states
+missing selected states
+missing hover/focus states
+obviously unfinished placeholder sections
+```
+
+Where available, also verify a narrower layout.
+
+Do not rely only on unit tests for visual completion.
+
+### Changed-file UI audit before handoff
+
+Before completing a UI task, review all changed `.tsx` feature files for newly introduced browser-native controls.
+
+For changed feature files, explicitly search for:
+
+```text
+<select
+type="checkbox"
+type="radio"
+title=
+```
+
+Any match must be one of:
+
+```text
+inside an approved shared UI primitive
+or
+explicitly justified and fully themed
+```
+
+Otherwise replace it with shared UI infrastructure.
+
+Also review direct raw `<button>` usage in changed feature code. Prefer the shared `Button` primitive unless the element is implementing an established shared interaction pattern such as a custom tab, listbox option, card, or context-menu row with complete theme styling.
+
+### UI Definition of Done
+
+A UI task is complete only when all of the following are true:
+
+```text
+[ ] Functionality works.
+[ ] The surface visually belongs to SSS Wizard.
+[ ] No browser-default controls are visible.
+[ ] Shared UI primitives are used where available.
+[ ] Design tokens are used instead of arbitrary local styling.
+[ ] Button/action hierarchy is clear.
+[ ] Hover, selected, focus, disabled, and locked states are styled.
+[ ] Tooltips are complete.
+[ ] Empty/error states are intentional.
+[ ] Modal/popover/dropdown layers render correctly.
+[ ] No panel overlap or clipping exists.
+[ ] Normal desktop rendering was visually inspected.
+[ ] Relevant narrow layout was checked when the surface is responsive.
+[ ] Focused tests pass.
+[ ] Final build/test workflow required by the repository passes.
+```
+
+If any visual-quality item above is clearly false, do not report the UI task as complete.
+
+---
+
+## Additional recommended automated guard
+
+Add a lightweight source-quality test or lint check for newly changed feature code that prevents accidental introduction of raw native `<select>` controls and native `title=` tooltips.
+
+The automated guard should not blindly fail existing legacy code on day one.
+
+Use either:
+
+```text
+an explicit legacy allowlist
+```
+
+or:
+
+```text
+changed-file-only enforcement
+```
+
+until legacy screens have been migrated.
+
+The goal is to prevent new design debt while old debt is removed incrementally.
+
 ## Centralized gameplay definitions
 
 Do not duplicate authoritative lists, costs, formulas, slot definitions, recipe definitions, or Focus calculations inside UI components.

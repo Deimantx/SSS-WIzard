@@ -15,9 +15,9 @@ const roman = ['I', 'II', 'III', 'IV', 'V', 'VI']
 const formatStat = (statId: Parameters<typeof getSigilStatLabel>[0], value: number) => statId.endsWith('Pct') || statId === 'critChance' || statId === 'critDamage' ? `${(value * 100).toFixed(1)}%` : Math.round(value).toLocaleString()
 const formatTrait = (traitId: keyof typeof SIGIL_TRAITS) => SIGIL_TRAITS[traitId]?.name ?? traitId
 
-export function SigilsWorkspace({ initialMode = 'array', hideModeTabs = false, allowForge = true }: { initialMode?: 'array' | 'storage' | 'forge'; hideModeTabs?: boolean; allowForge?: boolean }) {
+export function SigilsWorkspace({ initialMode = 'array', initialSelectedId = null, hideModeTabs = false, allowForge = true }: { initialMode?: 'array' | 'storage' | 'forge'; initialSelectedId?: string | null; hideModeTabs?: boolean; allowForge?: boolean }) {
   const state = useGameStore()
-  const [selectedId, setSelectedId] = useState<string | null>(Object.keys(state.sigils.storage)[0] ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId && state.sigils.storage[initialSelectedId] ? initialSelectedId : Object.keys(state.sigils.equipped).map((slot) => state.sigils.equipped[Number(slot) as SigilSlot]).find(Boolean) ?? Object.keys(state.sigils.storage).slice(-1)[0] ?? null)
   const [qualityFilter, setQualityFilter] = useState<SigilQuality | 'all'>('all')
   const [setFilter, setSetFilter] = useState<SigilSetId | 'all'>('all')
   const [slotFilter, setSlotFilter] = useState<SigilSlot | 'all'>('all')

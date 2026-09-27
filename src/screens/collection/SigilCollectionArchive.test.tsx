@@ -9,7 +9,7 @@ import { SigilCollectionArchive } from './SigilCollectionArchive'
 describe('SigilCollectionArchive navigation', () => {
   beforeEach(() => {
     useGameStore.getState().resetSave()
-    setNavigationIntent({ equipmentMode: null })
+    setNavigationIntent({ openSigilVault: false, equipmentSigilInstanceId: null, equipmentSigilSlot: null })
   })
 
   it('opens the Equipment-owned Sigil array directly', () => {
@@ -20,7 +20,9 @@ describe('SigilCollectionArchive navigation', () => {
     render(<TooltipProvider><SigilCollectionArchive state={state} /></TooltipProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'OPEN SIGIL EQUIPMENT' }))
 
-    expect(getNavigationIntent().equipmentMode).toBe('sigils')
+    expect(getNavigationIntent().openSigilVault).toBe(true)
+    expect(getNavigationIntent().equipmentSigilInstanceId).toBeNull()
+    expect(getNavigationIntent().equipmentSigilSlot).toBeNull()
     expect(useGameStore.getState().ui.screen).toBe('equipment')
   })
 })

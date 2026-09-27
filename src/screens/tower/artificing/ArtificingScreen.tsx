@@ -17,6 +17,8 @@ import { SigilsWorkspace } from './sigils/SigilsWorkspace'
 
 export function ArtificingScreen() {
   const mode = useUiPreferences().screenState.artificing.mode
+  const navigationIntent = useNavigationIntent()
+  useEffect(() => { if (mode === 'sigils' && navigationIntent.artificingSigilInstanceId) setNavigationIntent({ artificingSigilInstanceId: null }) }, [mode, navigationIntent.artificingSigilInstanceId])
   return <TowerFrame
     className={`artificing-screen ${mode === 'sigils' ? 'sigils-screen' : ''}`}
     eyebrow="WIZARD TOWER · ARTIFICING"
@@ -27,7 +29,7 @@ export function ArtificingScreen() {
       <button className={mode === 'artifacts' ? 'active' : ''} onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button>
       <button className={mode === 'sigils' ? 'active' : ''} onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button>
     </div>
-    {mode === 'sigils' ? <><button className="sigils-open-equipment" type="button" onClick={() => { setNavigationIntent({ equipmentMode: 'sigils' }); useGameStore.getState().setScreen('equipment') }}>OPEN SIGIL EQUIPMENT</button><SigilsWorkspace initialMode="forge" hideModeTabs /></> : <ArtifactsWorkspace />}
+    {mode === 'sigils' ? <><button className="sigils-open-equipment" type="button" onClick={() => { setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: null, equipmentSigilSlot: null }); useGameStore.getState().setScreen('equipment') }}>OPEN SIGIL EQUIPMENT</button><SigilsWorkspace initialMode={navigationIntent.artificingSigilInstanceId ? 'storage' : 'forge'} initialSelectedId={navigationIntent.artificingSigilInstanceId} hideModeTabs /></> : <ArtifactsWorkspace />}
   </TowerFrame>
 }
 

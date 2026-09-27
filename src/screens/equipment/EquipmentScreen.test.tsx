@@ -2,14 +2,17 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { useGameStore } from '../../store/gameStore'
-import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
-import { isMeaningfulEquipmentStatValue } from '../../game/presentation/equipment/equipmentStatPresentation'
+import { getNavigationIntent, setNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { formatEquipmentStat, isMeaningfulEquipmentStatValue } from '../../game/presentation/equipment/equipmentStatPresentation'
+import { getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
+import { createInitialState } from '../../store/initialState'
+import { generateSigil } from '../../game/systems/sigils/sigilGeneration'
 import { EquipmentScreen } from './EquipmentScreen'
 
 describe('EquipmentScreen', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    setNavigationIntent({ equipmentItemId: null, equipmentPosition: null, equipmentMode: null })
+    setNavigationIntent({ equipmentItemId: null, equipmentPosition: null, openSigilVault: false, equipmentSigilInstanceId: null, equipmentSigilSlot: null })
     useGameStore.getState().resetSave()
   })
 
@@ -21,22 +24,45 @@ describe('EquipmentScreen', () => {
     expect(screen.queryByText('OFFHAND')).toBeNull()
   })
 
-  it('owns the six-slot Sigil array and opens it from a Sigil deep link', () => {
-    setNavigationIntent({ equipmentMode: 'sigils' })
+  it('keeps gear visible and embeds six Sigil sockets that open the Vault focused to the selected slot', () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
 
-    expect(screen.getByRole('tab', { name: 'SIGILS' }).getAttribute('aria-selected')).toBe('true')
-    expect(container.querySelectorAll('.sigils-slot-row .sigil-slot')).toHaveLength(6)
-    expect(screen.getByRole('tab', { name: 'STORAGE' })).toBeTruthy()
-    expect(screen.queryByRole('tab', { name: 'FORGE' })).toBeNull()
+    expect(container.querySelectorAll('.equipment-slot-card')).toHaveLength(3)
+    expect(container.querySelectorAll('.equipment-sigil-sockets .sigil-socket')).toHaveLength(6)
+    expect(screen.queryByRole('tab', { name: 'SIGILS' })).toBeNull()
+    fireEvent.click(container.querySelector('.equipment-sigil-sockets .sigil-socket') as HTMLElement)
+    expect(screen.getByRole('dialog', { name: /ARCANE SIGIL VAULT/i })).toBeTruthy()
+    expect(screen.getByText('CHOOSING FOR SLOT I')).toBeTruthy()
   })
 
-  it('switches from the Sigil array back to gear equipment', () => {
+  it('consumes a Sigil loot deep link into the exact Vault slot while retaining normal Equipment panels', () => {
+    const state = createInitialState()
+    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'echo', forcedSlot: 4, forcedQuality: 'legendary', rng: () => .7 })
+    setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: sigil.instanceId, equipmentSigilSlot: 4 })
+    useGameStore.setState(state)
+
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
-    fireEvent.click(screen.getByRole('tab', { name: 'SIGILS' }))
-    expect(container.querySelectorAll('.sigils-slot-row .sigil-slot')).toHaveLength(6)
-    fireEvent.click(screen.getByRole('tab', { name: 'GEAR' }))
+
     expect(container.querySelectorAll('.equipment-slot-card')).toHaveLength(3)
+    expect(screen.getByRole('heading', { name: 'ARMORY' })).toBeTruthy()
+    expect(screen.getByText('CHOOSING FOR SLOT IV')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /ECHO SIGIL IV/i })).toBeTruthy()
+    expect(document.querySelector('.sigil-vault-card.selected')).toBeTruthy()
+    expect(getNavigationIntent().openSigilVault).toBe(false)
+  })
+
+  it('opens an equipped socket on the exact instance and displays its Inspector immediately', () => {
+    const state = createInitialState()
+    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'precision', forcedSlot: 3, forcedQuality: 'perfect', rng: () => .4 })
+    state.sigils.equipped[3] = sigil.instanceId
+    useGameStore.setState(state)
+    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.click(screen.getByRole('button', { name: /Sigil Slot III, Precision/i }))
+
+    expect(screen.getByText('CHOOSING FOR SLOT III')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /PRECISION SIGIL III/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'UNEQUIP' })).toBeTruthy()
   })
 
   it('uses one epsilon for meaningful equipment values and hides empty optional groups', () => {
@@ -89,5 +115,19 @@ describe('EquipmentScreen', () => {
 
     expect(screen.getByText('Spell Power')).toBeTruthy()
     expect(screen.getByText('57')).toBeTruthy()
+  })
+
+  it('includes equipped Sigil stats in the live Wizard Stats panel', () => {
+    const state = createInitialState()
+    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', forcedMainStatId: 'spellPower', rng: () => .5 })
+    state.sigils.equipped[1] = sigil.instanceId
+    useGameStore.setState(state)
+    const expected = getEquipmentStatSnapshot(state, state.equipment).spellPower
+
+    const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    const spellPowerRow = [...container.querySelectorAll('.equipment-stat-row')].find((row) => row.querySelector('.equipment-stat-label')?.textContent === 'Spell Power')
+    expect(spellPowerRow?.textContent).toContain(formatEquipmentStat('spellPower', expected, false))
+    expect(container.querySelector('.equipment-sigil-sockets .sigil-socket.is-filled')).toBeTruthy()
   })
 })

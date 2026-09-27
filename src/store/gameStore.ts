@@ -121,7 +121,9 @@ import {
 } from "./actions/inventoryActions";
 import { equipItemAction, unequipItemAction } from "./actions/equipmentActions";
 import { craftSigilAction, enhanceSigilAction, equipSigilAction, salvageSigilAction, setSigilAttunementAction, setSigilAutoSalvageAction, toggleSigilLockAction, unequipSigilAction } from './actions/sigilActions';
-import { generateSigil } from '../game/systems/sigils/sigilGeneration';
+import { generateSigil, generateCraftedSigil } from '../game/systems/sigils/sigilGeneration';
+import { configureSigilForDebug } from '../game/systems/sigils/sigilRuntime';
+import { getSigilTierDefinition } from '../game/content/sigils/sigilTiers';
 import { chooseStartingSchoolAction, chooseStartingSchoolDebugAction, grantStarterArtifactAction, resetTutorialAction, setTutorialStageAction, skipTutorialAction } from "./actions/onboardingActions";
 import {
   donateGuildRequestAction,
@@ -417,7 +419,7 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
   },
 };
 const combatLogUiSink = combatEventSink;
-const combatLootObserver: CombatLootObserver = (state, enemyId, drops) => {
+const combatLootObserver: CombatLootObserver = (state, enemyId, drops, sigils = []) => {
   const dungeon = DUNGEONS[state.combat.dungeonId ?? "whispering-woods"];
   const monster = MONSTERS[enemyId];
   enqueueCombatLootReveal({
@@ -428,6 +430,7 @@ const combatLootObserver: CombatLootObserver = (state, enemyId, drops) => {
       quantity,
       isNewDiscovery,
     })),
+    sigils,
   });
 };
 const emitActionFeel = (
@@ -647,8 +650,12 @@ export interface GameActions {
   debugResetAllArtifactRanks: () => void;
   debugGrantArtifactMaterials: () => void;
   debugCreateSigil: (tier: import('../game/types').SigilTier, quality: import('../game/types').SigilQuality, setId: import('../game/types').SigilSetId, slot: number, mainStatId?: import('../game/types').SigilStatId) => string;
-  debugEnhanceSigil: (instanceId: string) => boolean;
+  debugCraftSigil: (mode: import('../game/systems/sigils/sigilCrafting').SigilCraftMode, tier: import('../game/types').SigilTier, setId: import('../game/types').SigilSetId, slot?: import('../game/types').SigilSlot) => string;
+  debugConfigureSigil: (instanceId: string, configuration: import('../game/systems/sigils/sigilRuntime').DebugSigilConfiguration) => boolean;
+  debugEnhanceSigil: (instanceId: string, options?: { ignoreGlobalCap?: boolean }) => boolean;
   debugAddSigilDust: (amount: number) => void;
+  debugSetSigilDust: (amount: number) => void;
+  notifySigil: (message: string, tone?: 'info' | 'success' | 'warning') => void;
   cancelArtificingCraft: () => void;
   castSpell: (spellId: SpellId) => void;
   debugCastSpell: (spellId: SpellId) => void;
@@ -1646,17 +1653,32 @@ export const useGameStore = create<GameStore>()(
     debugCreateSigil: (tier, quality, setId, slot, mainStatId) => {
       let instanceId = '';
       set((state) => {
-        instanceId = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: tier >= 2 ? 5000 : 0, forcedTier: tier, forcedQuality: quality, forcedSetId: setId, forcedSlot: slot as import('../game/types').SigilSlot, forcedMainStatId: mainStatId, rng: Math.random }).instanceId;
+        instanceId = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: getSigilTierDefinition(tier).minEnemyPower, source: 'debug', forcedTier: tier, forcedQuality: quality, forcedSetId: setId, forcedSlot: slot as import('../game/types').SigilSlot, forcedMainStatId: mainStatId, rng: Math.random }).instanceId;
         return state;
       });
       return instanceId;
     },
-    debugEnhanceSigil: (instanceId) => {
+    debugCraftSigil: (mode, tier, setId, slot) => {
+      let instanceId = '';
+      set((state) => {
+        instanceId = generateCraftedSigil({ state, dungeonId: 'whispering-woods', tier, setId, slot, rng: Math.random, source: 'debug' }).instanceId;
+        return state;
+      });
+      return instanceId;
+    },
+    debugConfigureSigil: (instanceId, configuration) => {
       let ok = false;
-      set((state) => { ok = enhanceSigilAction(state, instanceId, { bypassGlobalCap: true }).ok; return state; });
+      set((state) => { ok = configureSigilForDebug(state, instanceId, configuration); return state; });
+      return ok;
+    },
+    debugEnhanceSigil: (instanceId, options) => {
+      let ok = false;
+      set((state) => { ok = enhanceSigilAction(state, instanceId, { bypassGlobalCap: options?.ignoreGlobalCap ?? true, free: true, recordProgression: false }).ok; return state; });
       return ok;
     },
     debugAddSigilDust: (amount) => set((state) => { state.sigils.dust += Math.max(0, Math.floor(amount)); return state; }),
+    debugSetSigilDust: (amount) => set((state) => { state.sigils.dust = Math.max(0, Math.floor(amount)); return state; }),
+    notifySigil: (message, tone = 'info') => set((state) => { pushNotification(state, message, tone, { key: 'sigil-ui', cooldownMs: 800 }); return state; }),
     castSpell: (spellId) =>
       set((state) => {
         castSpellAction(state, spellId, combatEventSink);

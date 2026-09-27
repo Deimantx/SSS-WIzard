@@ -44,7 +44,17 @@
 .sigils-set-summary { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .sigils-set-summary span.active { color: var(--ui-success); }
 .sigils-main-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(290px, .85fr); gap: 12px; min-width: 0; }
-.sigils-storage, .sigils-inspector { min-width: 0; min-height: 0; }
+.sigils-storage, .sigils-inspector, .sigils-inspector-stack, .sigils-comparison { min-width: 0; min-height: 0; }
+.sigils-inspector-stack { display: grid; gap: 12px; align-content: start; }
+.sigil-comparison-head { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.sigil-comparison-head span, .sigil-comparison-sets { display: grid; gap: 3px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.sigil-comparison-head strong { color: var(--ui-text); font: 700 var(--text-small) var(--font-display); overflow-wrap: anywhere; }
+.sigil-comparison-head small { color: var(--ui-text-faint); }
+.sigil-comparison-stats { display: grid; gap: 4px; }
+.sigil-comparison-stats .positive { color: var(--ui-success); }
+.sigil-comparison-stats .negative { color: var(--ui-danger); }
+.sigil-comparison-sets { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
+.sigil-comparison-sets .changed { color: var(--ui-accent); }
 .sigils-storage-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(142px, 1fr)); gap: 7px; max-height: 480px; overflow: auto; padding: 10px 2px 2px 0; }
 .sigil-card { position: relative; display: grid; gap: 5px; min-width: 0; min-height: 102px; padding: 10px 9px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text-muted); background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel-strong) 86%, transparent), var(--ui-panel)); cursor: pointer; text-align: left; }
 .sigil-card:hover, .sigil-card:focus-visible, .sigil-card.selected { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 55%, transparent); }

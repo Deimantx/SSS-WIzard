@@ -12,6 +12,7 @@ import { nextCombatRandom } from './combatRng'
 import { getActiveArtifactCombatProviders, isArtifactItem, processArtifactSpecialCombatEvent } from '../artifacts/artifactProgression'
 import { getArcaneCoreCombatRules } from '../arcaneCore/arcaneCoreProgression'
 import { processArcaneCoreCombatEvent } from '../arcaneCore/arcaneCoreMechanicRuntime'
+import { getActiveSigilCombatProviders, processSigilSpecialCombatEvent } from '../sigils/sigilCombatRuntime'
 
 export type CombatEventContext = CombatConditionContext
 export type TriggerEffectExecutor = (state: GameState, effects: CombatEffect[], source: CombatSource, depth?: number, uiEvents?: CombatEventSink, resolution?: CombatResolutionContext) => void
@@ -21,7 +22,7 @@ const statusesFor = (state: GameState, actor: CombatActor) => actor === 'player'
 
 export interface OwnedRule {
   rule: CombatTriggerRule
-  ownerKind: 'trait' | 'status' | 'equipment' | 'arcane-core'
+  ownerKind: 'trait' | 'status' | 'equipment' | 'arcane-core' | 'sigil'
   ownerId: string
   ownerName: string
   actor: CombatActor
@@ -65,6 +66,11 @@ export const collectOwnedRules = (state: GameState, actor: CombatActor, transien
       stableOrder += 1
     }))
   })
+  if (actor === 'player') getActiveSigilCombatProviders(state).forEach((provider) => provider.rules.forEach((rule) => {
+    const providerInstanceKey = `sigil:${provider.id}`
+    owned.push({ rule, ownerKind: 'sigil', ownerId: provider.id, ownerName: provider.name, actor, sourceTags: ['equipment', 'trait'], providerInstanceKey, stableOrder })
+    stableOrder += 1
+  }))
   if (actor === 'player') getArcaneCoreCombatRules(state.arcaneCore).forEach(({ node, rule }) => {
     owned.push({ rule, ownerKind: 'arcane-core', ownerId: node.id, ownerName: node.name, actor, sourceTags: ['special'], providerInstanceKey: `arcane-core:${node.id}`, stableOrder })
     stableOrder += 1
@@ -75,7 +81,7 @@ export const collectOwnedRules = (state: GameState, actor: CombatActor, transien
 export const getRuleRuntimeKey = (actor: CombatActor, ownerKind: OwnedRule['ownerKind'], ownerId: string, ruleId: string, equipmentPosition?: OwnedRule['equipmentPosition'], providerInstanceKey?: string) => {
   // Keep the established persisted key shape while incorporating the
   // provider instance where equipment can have two authored instances.
-  if (ownerKind === 'equipment') {
+  if (ownerKind === 'equipment' || ownerKind === 'sigil') {
     const provider = providerInstanceKey?.startsWith('artifact-node:') || providerInstanceKey?.startsWith('equipment:') ? providerInstanceKey : equipmentPosition ? `equipment:${equipmentPosition}:${ownerId}` : undefined
     if (provider) return `${actor}:${provider}:${ruleId}`
   }
@@ -166,12 +172,13 @@ export const runCombatTriggers = (
     if (rule.cooldownMs && rule.cooldownMs > 0) state.combat.ruleCooldowns[runtimeKey] = rule.cooldownMs
     const isArtifactProvider = providerInstanceKey?.startsWith('artifact-node:') ?? false
     const providerKey = ownerKind === 'equipment' ? isArtifactProvider ? providerInstanceKey : equipmentPosition : undefined
-    const source: CombatSource = { actor, kind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceId: ownerId, sourceMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, sourceInstanceKey: actor === 'enemy' ? state.combat.enemyInstanceKey ?? undefined : undefined, providerInstanceKey: providerKey, ruleId: rule.id, eventSource: context.source, tags: sourceTags }
-    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' ? 'equipment' : ownerKind, sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: providerKey, itemId: ownerKind === 'equipment' && !isArtifactProvider ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
+    const source: CombatSource = { actor, kind: ownerKind === 'equipment' || ownerKind === 'sigil' ? 'equipment' : ownerKind, sourceId: ownerId, sourceMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined, sourceInstanceKey: actor === 'enemy' ? state.combat.enemyInstanceKey ?? undefined : undefined, providerInstanceKey: providerKey, ruleId: rule.id, eventSource: context.source, tags: sourceTags }
+    uiEvents?.push({ source: actor === 'enemy' && state.combat.enemyId ? { kind: 'enemy', monsterId: state.combat.enemyId } : actor === 'player' ? { kind: 'player' } : { kind: 'system' }, sourceKind: ownerKind === 'equipment' || ownerKind === 'sigil' ? 'equipment' : ownerKind, sourceMonsterId: source.sourceMonsterId, sourceInstanceKey: source.sourceInstanceKey, target: context.eventTarget, targetMonsterId: context.eventTarget === 'enemy' ? state.combat.enemyId ?? undefined : undefined, category: ownerKind === 'trait' || ownerKind === 'sigil' ? 'trait' : 'system', sourceId: ownerId, providerInstanceKey: providerKey, itemId: ownerKind === 'equipment' && !isArtifactProvider ? ownerId as ItemId : undefined, traitId: ownerKind === 'trait' ? ownerId as TraitId : undefined, statusId: ownerKind === 'status' ? ownerId as StatusId : undefined, amount: context.amount, damageType: context.damageType, healthDamage: context.healthDamage, barrierAbsorbed: context.barrierDamage })
     executeEffects(state, rule.effects, source, depth + 1, uiEvents, cascade)
     appendLog(state, `${rule.ui?.name ?? ownerName} triggers.`)
   })
   processArtifactSpecialCombatEvent(state, actor, event, context, executeEffects, depth, uiEvents, cascade)
+  processSigilSpecialCombatEvent(state, actor, event, context, executeEffects, depth, uiEvents, cascade)
   const arcaneCoreOwnedEvent = actor === 'player' || ((event === 'on-status-expired' || event === 'on-status-removed') && context.eventTarget === 'enemy' && (context.source?.kind === 'spell' || context.source?.originSourceKind === 'spell'))
   if (arcaneCoreOwnedEvent) processArcaneCoreCombatEvent(state, actor, event, context, executeEffects, depth, uiEvents, cascade)
 }

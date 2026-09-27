@@ -14,14 +14,14 @@ import { getActiveArtifactCombatProviders, isArtifactItem } from '../artifacts/a
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
 import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
 import { getEquippedCrystalStats } from '../crystals/crystalStats'
+import { getActiveSigilCombatProviders } from '../sigils/sigilCombatRuntime'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
   combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'dungeonId' | 'targetEnemyId' | 'guardian'>>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
-} & Partial<Pick<GameState, 'arcaneCore'>>
-  & Partial<Pick<GameState, 'crystals'>>
+} & Partial<Pick<GameState, 'arcaneCore' | 'crystals' | 'sigils'>>
 export type CombatModifierEvaluation = 'active' | 'unconditional' | 'all'
 
 export interface ModifierContext {
@@ -38,7 +38,7 @@ export interface ModifierContext {
 export interface CombatModifierContribution {
   modifier: CombatModifier
   value: number
-  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian' | 'arcane-core'
+  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian' | 'arcane-core' | 'sigil'
   sourceId?: string
   sourceName?: string
 }
@@ -109,6 +109,7 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
     add(modifier, 'trait', trait.id, trait.name)
   }))
   getArcaneCoreCombatModifierProviders(state.arcaneCore).forEach(({ node, modifier }) => add(modifier, 'arcane-core', node.id, node.name))
+  if (actor === 'player' && state.sigils) getActiveSigilCombatProviders(state as GameState).forEach((provider) => provider.modifiers.forEach((modifier) => add(modifier, 'sigil', provider.id, provider.name)))
   if (actor === 'player') {
     Object.values(state.equipment).forEach((itemId) => {
       if (!itemId) return

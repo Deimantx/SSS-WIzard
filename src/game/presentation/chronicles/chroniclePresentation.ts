@@ -36,6 +36,15 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'arcane-core-invested-nodes': return `Invest in ${condition.count} Arcane Core node${condition.count === 1 ? '' : 's'}`
     case 'spell-loadout-slots': return `Fill ${condition.count} Spell slots`
     case 'world-tier-kill': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'} in World Tier ${condition.tier}`
+    case 'sigil-obtained': return `Earn ${condition.count} Sigil${condition.count === 1 ? '' : 's'}`
+    case 'sigil-equipped': return `Equip ${condition.count} Sigil${condition.count === 1 ? '' : 's'}`
+    case 'sigil-rank-at-least': return `Reach Sigil Rank +${condition.rank}`
+    case 'sigil-secondary-rolls': return `Reach ${condition.count} Sigil secondary roll${condition.count === 1 ? '' : 's'}`
+    case 'sigil-set-active': return `Activate the ${formatReadableId(condition.setId)} Set with ${condition.pieces} pieces`
+    case 'sigil-quality-found': return `Find a ${formatReadableId(condition.quality)} Sigil`
+    case 'sigil-tier-found': return `Reach Sigil Tier ${condition.tier}`
+    case 'sigil-traits-unlocked': return `Unlock ${condition.count} Sigil Trait${condition.count === 1 ? '' : 's'}`
+    case 'sigil-set-discovered': return `Discover the ${formatReadableId(condition.setId)} Set`
   }
 }
 

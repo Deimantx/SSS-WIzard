@@ -3,12 +3,13 @@ import { getArcaneCoreTotalPointsEarned } from '../arcaneCore/arcaneCoreProgress
 import { ITEMS } from '../../content/items/items'
 import type { ArtificingRecipeId, ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 import { RESONANCE_TYPES, type ResonanceYield } from '../../content/resonance/resonance'
+import type { SigilLootResolution } from '../loot/lootResolution'
 
 export interface OfflineBankReport {
   durationMs: number
   bankBeforeMs: number
   bankAfterMs: number
-  combat: { killsTotal: number; killsByMonster: Partial<Record<MonsterId, number>>; bossKills: Partial<Record<MonsterId, number>>; playerDeaths: number; loot: Partial<Record<ItemId, number>>; resonance: Record<typeof RESONANCE_TYPES[number], number> }
+  combat: { killsTotal: number; killsByMonster: Partial<Record<MonsterId, number>>; bossKills: Partial<Record<MonsterId, number>>; playerDeaths: number; loot: Partial<Record<ItemId, number>>; sigilsFound: number; perfectSigils: number; legendarySigils: number; resonance: Record<typeof RESONANCE_TYPES[number], number> }
   production: { transmutation: Partial<Record<ItemId, number>>; craftsByRecipe: Partial<Record<RecipeId, number>> }
   research: { researchedItems: Partial<Record<ItemId, number>>; xpBySchool: Partial<Record<SchoolId, number>>; levelBefore: Partial<Record<SchoolId, number>>; levelAfter: Partial<Record<SchoolId, number>>; stoppedAtCap?: boolean }
   consumption: { research: Partial<Record<ItemId, number>>; transmutation: Partial<Record<ItemId, number>> }
@@ -21,6 +22,7 @@ export interface SimulationReportCollector {
   readonly report: OfflineBankReport
   recordKill: (monsterId: MonsterId) => void
   recordLoot: (itemId: ItemId, quantity: number) => void
+  recordSigil: (drop: SigilLootResolution) => void
   recordPlayerDeath: () => void
   recordArcanePoints: (amount: number, pointsBefore?: number, pointsAfter?: number) => void
   recordResonance: (bundle: ResonanceYield) => void
@@ -43,7 +45,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
   const levelBefore = Object.fromEntries((Object.keys(state.schools) as SchoolId[]).map((id) => [id, state.schools[id].level])) as Partial<Record<SchoolId, number>>
   const report: OfflineBankReport = {
     durationMs, bankBeforeMs, bankAfterMs: bankBeforeMs,
-    combat: { killsTotal: 0, killsByMonster: {}, bossKills: {}, playerDeaths: 0, loot: {}, resonance: Object.fromEntries(RESONANCE_TYPES.map((type) => [type, 0])) as OfflineBankReport['combat']['resonance'] },
+    combat: { killsTotal: 0, killsByMonster: {}, bossKills: {}, playerDeaths: 0, loot: {}, sigilsFound: 0, perfectSigils: 0, legendarySigils: 0, resonance: Object.fromEntries(RESONANCE_TYPES.map((type) => [type, 0])) as OfflineBankReport['combat']['resonance'] },
     production: { transmutation: {}, craftsByRecipe: {} },
     research: { researchedItems: {}, xpBySchool: {}, levelBefore, levelAfter: {}, stoppedAtCap: false },
     consumption: { research: {}, transmutation: {} }, netInventory: {},
@@ -56,6 +58,7 @@ export function createOfflineBankReportCollector(state: GameState, durationMs: n
     report,
     recordKill: (monsterId) => { report.combat.killsTotal += 1; add(report.combat.killsByMonster, monsterId, 1); if (isBossMonster(MONSTERS[monsterId])) add(report.combat.bossKills, monsterId, 1) },
     recordLoot: (itemId, quantity) => { touch(itemId); add(report.combat.loot, itemId, quantity) },
+    recordSigil: (drop) => { report.combat.sigilsFound += 1; if (drop.quality === 'perfect') report.combat.perfectSigils += 1; if (drop.quality === 'legendary') report.combat.legendarySigils += 1; recordNotable(`${drop.quality[0].toUpperCase()}${drop.quality.slice(1)} Sigil found`) },
     recordPlayerDeath: () => { report.combat.playerDeaths += 1 },
     recordArcanePoints: (amount, pointsBefore, pointsAfter) => { report.progression.arcaneCore.pointsGained += Math.max(0, Math.floor(amount)); if (pointsBefore !== undefined) report.progression.arcaneCore.pointsBefore = pointsBefore; if (pointsAfter !== undefined) report.progression.arcaneCore.pointsAfter = pointsAfter },
     recordResonance: (bundle) => { RESONANCE_TYPES.forEach((type) => { add(report.combat.resonance, type, bundle[type] ?? 0) }) },

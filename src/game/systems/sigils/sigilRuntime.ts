@@ -1,9 +1,9 @@
-import type { EquipmentStats, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilState, SigilTier, SigilTraitId } from '../../types'
+import type { EquipmentStats, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilState, SigilStatId, SigilTier, SigilTraitId } from '../../types'
 import { getSigilTierDefinition, resolveSigilTierFromEnemyPower } from '../../content/sigils/sigilTiers'
 import { getSigilQualityDefinition, SIGIL_QUALITIES } from '../../content/sigils/sigilQualities'
 import { getSigilSetBonuses, SIGIL_SETS } from '../../content/sigils/sigilSets'
-import { SIGIL_STAT_DEFINITIONS, resolveSigilStats } from '../../content/sigils/sigilStats'
-import { SIGIL_TRAITS } from '../../content/sigils/sigilTraits'
+import { SIGIL_MAIN_STAT_POOLS, SIGIL_STAT_DEFINITIONS, resolveSigilStats } from '../../content/sigils/sigilStats'
+import { getEligibleSigilTraits, SIGIL_TRAITS } from '../../content/sigils/sigilTraits'
 import { addEquipmentStats } from '../../core/equipment/equipmentStatAggregation'
 
 export const clampSigilRollQuality = (value: number) => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
@@ -45,7 +45,25 @@ export const getSigilSalvageValue = (sigil: Pick<SigilInstance, 'quality' | 'tie
 export const getSigilMainStatLabel = (sigil: Pick<SigilInstance, 'mainStatId'>) => SIGIL_STAT_DEFINITIONS[sigil.mainStatId].label
 export const getSigilStatLabel = (statId: keyof typeof SIGIL_STAT_DEFINITIONS) => SIGIL_STAT_DEFINITIONS[statId].label
 
-export const sanitizeSigilState = (state: Pick<GameState, 'sigils'>): SigilState => state.sigils
+export const sanitizeSigilState = (state: Pick<GameState, 'sigils'>): SigilState => {
+  const storage: Record<string, SigilInstance> = {}
+  Object.entries(state.sigils.storage).forEach(([instanceId, sigil]) => {
+    if (!SIGIL_SETS[sigil.setId] || !SIGIL_MAIN_STAT_POOLS[sigil.slot]?.includes(sigil.mainStatId)) return
+    const secondaries = sigil.secondaries.filter((secondary, index, list) => SIGIL_STAT_DEFINITIONS[secondary.statId] && secondary.statId !== sigil.mainStatId && list.findIndex((candidate) => candidate.statId === secondary.statId) === index).slice(0, 4)
+    const rank = Math.max(0, Math.min(getSigilQualityDefinition(sigil.quality).maxRank, Math.floor(sigil.rank)))
+    const traitLimit = sigil.quality === 'legendary' ? rank >= 20 ? 2 : rank >= 15 ? 1 : 0 : sigil.quality === 'perfect' && rank >= 15 ? 1 : 0
+    const eligible = new Set(getEligibleSigilTraits(sigil.setId))
+    const traitIds = sigil.traitIds.filter((traitId, index, list) => eligible.has(traitId) && list.indexOf(traitId) === index).slice(0, traitLimit)
+    storage[instanceId] = { ...sigil, instanceId, rank, secondaries, traitIds }
+  })
+  state.sigils.storage = storage
+  const equipped = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null } as SigilState['equipped']
+  Object.entries(state.sigils.equipped).forEach(([rawSlot, instanceId]) => { const slot = Number(rawSlot) as SigilSlot; if (slot >= 1 && slot <= 6 && instanceId && storage[instanceId]?.slot === slot) equipped[slot] = instanceId })
+  state.sigils.equipped = equipped
+  const maxSequence = Object.keys(storage).reduce((max, id) => Math.max(max, /^sigil:(\d+)$/.exec(id)?.[1] ? Number(/^sigil:(\d+)$/.exec(id)?.[1]) : 0), 0)
+  state.sigils.nextInstanceSequence = Math.max(1, Math.floor(state.sigils.nextInstanceSequence), maxSequence + 1)
+  return state.sigils
+}
 
 export const getAvailableSigilTier = (state: Pick<GameState, 'sigils'>): SigilTier => resolveSigilTierFromEnemyPower(state.sigils.highestSourcePowerDefeated)
 
@@ -55,7 +73,7 @@ export const getActiveSigilTraitIds = (state: Pick<GameState, 'sigils'>): SigilT
   getEquippedSigils(state).forEach((sigil) => sigil.traitIds.forEach((traitId) => {
     const definition = SIGIL_TRAITS[traitId]
     if (!definition || (definition.unique && seen.has(traitId))) return
-    seen.add(traitId)
+    if (definition.unique) seen.add(traitId)
     active.push(traitId)
   }))
   return active
@@ -65,4 +83,30 @@ export const getSigilSetActivation = (state: Pick<GameState, 'sigils'>, setId: S
   const pieces = getEquippedSigilSetCounts(state)[setId] ?? 0
   const definition = SIGIL_SETS[setId]
   return { pieces, active: definition.piecesRequired === 2 ? Math.floor(pieces / 2) > 0 : pieces >= 4, bonusCopies: definition.piecesRequired === 2 ? Math.floor(pieces / 2) : pieces >= 4 ? 1 : 0 }
+}
+
+export interface DebugSigilConfiguration {
+  secondaryStatIds?: readonly SigilStatId[]
+  rollQuality01?: number
+  traitIds?: readonly SigilTraitId[]
+}
+
+/** Tester-only roll editing. It still applies authored slot, stat, set, and milestone legality. */
+export const configureSigilForDebug = (state: GameState, instanceId: string, configuration: DebugSigilConfiguration) => {
+  const sigil = state.sigils.storage[instanceId]
+  if (!sigil) return false
+  if (configuration.secondaryStatIds) {
+    const selected = configuration.secondaryStatIds.filter((statId, index, list) => SIGIL_STAT_DEFINITIONS[statId] && statId !== sigil.mainStatId && list.indexOf(statId) === index).slice(0, 4)
+    const quality01 = clampSigilRollQuality(configuration.rollQuality01 ?? .5)
+    sigil.secondaries = selected.map((statId) => ({ statId, rolls: [{ quality01, rank: 0 }] }))
+  } else if (configuration.rollQuality01 !== undefined) {
+    const quality01 = clampSigilRollQuality(configuration.rollQuality01)
+    sigil.secondaries.forEach((secondary) => secondary.rolls.forEach((roll) => { roll.quality01 = quality01 }))
+  }
+  if (configuration.traitIds) {
+    const traitLimit = sigil.quality === 'legendary' ? sigil.rank >= 20 ? 2 : sigil.rank >= 15 ? 1 : 0 : sigil.quality === 'perfect' && sigil.rank >= 15 ? 1 : 0
+    const eligible = new Set(getEligibleSigilTraits(sigil.setId))
+    sigil.traitIds = configuration.traitIds.filter((traitId, index, list) => eligible.has(traitId) && list.indexOf(traitId) === index).slice(0, traitLimit)
+  }
+  return true
 }

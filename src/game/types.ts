@@ -10,16 +10,17 @@ export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment'
 export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'completed' | 'locked' | 'recovering'
 
 export type ChronicleChapterId = 'first-frontier' | 'shattered-frontier'
-export type ChronicleTrack = 'main' | 'combat' | 'magic' | 'tower' | 'guild' | 'region'
+export type ChronicleTrack = 'main' | 'combat' | 'magic' | 'tower' | 'guild' | 'region' | 'equipment'
 export type ChronicleObjectiveId =
   | 'm1-choose-school' | 'm2-first-blood' | 'm3-heart-of-the-woods' | 'm4-break-the-den' | 'm5-fallen-archmage'
   | 'c1-enter-whispering-woods' | 'c2-auto-cast'
   | 'mg1-strengthen-artifact' | 'mg2-expand-spellbook' | 'mg3-four-spell-arsenal'
-  | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle'
+  | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle' | 't5-read-a-sigil'
   | 'g1-join-verdant-circle' | 'g2-first-guild-contract' | 'g3-guild-apprentice'
   | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m6-world-tier-two'
   | 'sf-bind-guardian' | 'sf-fight-together' | 'sf-socket-first-crystal' | 'sf-step-into-harder-world'
-export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill'
+  | `sigil-${string}`
+export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill' | 'first-sigil-earned'
 export type GuildRankId = 'outsider' | 'initiate' | 'apprentice' | 'adept' | 'magister' | 'circle-master'
 export type GuildRequestKind = 'donation' | 'dungeon-kills' | 'monster-kills' | 'boss-kill'
 export type GuildSkillNodeId =
@@ -527,6 +528,13 @@ export interface CombatState {
   enemyActionDurationMs: number
   triggeredRuleIds: string[]
   ruleCooldowns: Record<string, number>
+  sigilRuntime: {
+    spellCastCount: number
+    predatorCriticalStacks: number
+    predatorStacksExpireAtMs: number
+    secondSkinUsed: boolean
+    barrierReboundReadyAtMs?: number
+  }
   pendingBossId: MonsterId | null
   pendingPlayerSpellCast: PendingPlayerSpellCast | null
   /** One-slot manual intent. This is transient and is never restored from saves. */

@@ -45,4 +45,12 @@ describe('monster loot resolution', () => {
       expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
     })
   })
+
+  it('emits a structured Sigil loot result for live and offline consumers', () => {
+    const state = createInitialState()
+    let result: { quality: string; tier: number; instanceId: string; autoSalvaged: boolean } | undefined
+    resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0, (drop) => { result = drop })
+    expect(result).toMatchObject({ tier: 1, autoSalvaged: false })
+    expect(result?.instanceId).toMatch(/^sigil:/)
+  })
 })

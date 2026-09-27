@@ -5,6 +5,7 @@ import { grantArcanePoints } from '../arcaneCore/arcaneCoreProgression'
 import { getArtifactTotalInvestedRanks } from '../artifacts/artifactProgression'
 import { pushNotification } from '../../engine'
 import type { ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, GameState, GuildRankId } from '../../types'
+import { getEquippedSigilSetCounts } from '../sigils/sigilRuntime'
 
 export const createInitialChronicleProgress = () => ({ completedObjectiveIds: [], grantedUnlockRewardIds: [], eventFlags: {} }) satisfies GameState['progress']['chronicle']
 
@@ -46,6 +47,15 @@ export const getChronicleConditionValue = (state: GameState, condition: Chronicl
     case 'arcane-core-invested-nodes': return { current: Object.values(state.arcaneCore.nodes).filter((node) => node && safeCount(node.rank) > 0).length, target: condition.count }
     case 'spell-loadout-slots': return { current: activeSpellSlotCount(state), target: condition.count }
     case 'world-tier-kill': return { current: state.progress.chronicle.eventFlags['first-wt2-kill'] || state.worldTier.highestUnlocked >= condition.tier ? 1 : 0, target: condition.count }
+    case 'sigil-obtained': return { current: safeCount(state.sigils.lifetimeDrops), target: condition.count }
+    case 'sigil-equipped': return { current: Object.values(state.sigils.equipped).filter(Boolean).length, target: condition.count }
+    case 'sigil-rank-at-least': return { current: Math.max(0, ...Object.values(state.sigils.storage).map((sigil) => safeCount(sigil.rank))), target: condition.rank }
+    case 'sigil-secondary-rolls': return { current: safeCount(state.sigils.secondaryRollsLifetime), target: condition.count }
+    case 'sigil-set-active': return { current: getEquippedSigilSetCounts(state)[condition.setId] ?? 0, target: condition.pieces }
+    case 'sigil-quality-found': return { current: state.sigils.discovery.qualitiesFound[condition.quality] ? 1 : 0, target: 1 }
+    case 'sigil-tier-found': return { current: state.sigils.discovery.tiersFound[condition.tier] ? 1 : 0, target: 1 }
+    case 'sigil-traits-unlocked': return { current: safeCount(state.sigils.traitsUnlockedLifetime), target: condition.count }
+    case 'sigil-set-discovered': return { current: state.sigils.discovery.discoveredSets[condition.setId] ? 1 : 0, target: 1 }
   }
 }
 
@@ -71,6 +81,15 @@ export const evaluateChronicleCondition = (state: GameState, condition: Chronicl
     case 'arcane-core-invested-nodes': return Object.values(state.arcaneCore.nodes).filter((node) => node && safeCount(node.rank) > 0).length >= condition.count
     case 'spell-loadout-slots': return activeSpellSlotCount(state) >= condition.count
     case 'world-tier-kill': return state.progress.chronicle.eventFlags['first-wt2-kill'] === true || state.worldTier.highestUnlocked >= condition.tier
+    case 'sigil-obtained': return safeCount(state.sigils.lifetimeDrops) >= condition.count
+    case 'sigil-equipped': return Object.values(state.sigils.equipped).filter(Boolean).length >= condition.count
+    case 'sigil-rank-at-least': return Math.max(0, ...Object.values(state.sigils.storage).map((sigil) => safeCount(sigil.rank))) >= condition.rank
+    case 'sigil-secondary-rolls': return safeCount(state.sigils.secondaryRollsLifetime) >= condition.count
+    case 'sigil-set-active': return (getEquippedSigilSetCounts(state)[condition.setId] ?? 0) >= condition.pieces
+    case 'sigil-quality-found': return state.sigils.discovery.qualitiesFound[condition.quality] === true
+    case 'sigil-tier-found': return state.sigils.discovery.tiersFound[condition.tier] === true
+    case 'sigil-traits-unlocked': return safeCount(state.sigils.traitsUnlockedLifetime) >= condition.count
+    case 'sigil-set-discovered': return state.sigils.discovery.discoveredSets[condition.setId] === true
   }
 }
 

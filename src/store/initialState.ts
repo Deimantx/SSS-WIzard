@@ -69,7 +69,8 @@ export const createInitialState = (): GameState => {
   lastSavedAt: Date.now(),
   notifications: [],
     debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, allowManaOverCap: false, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactFreeRankPurchase: false, artifactIgnoreOwnership: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false, bonusAcolytes: 0, acolyteTotalOverride: null, ignoreAcolyteLimit: false, arcaneFluxCapacityOverride: null },
-  }) as GameState
+  }) as unknown as GameState
+  state.combat.sigilRuntime = { spellCastCount: 0, predatorCriticalStacks: 0, predatorStacksExpireAtMs: 0, secondSkinUsed: false }
   state.combat.arcaneCoreRuntime.lastCastOrigin = null
   state.combat.arcaneCoreRuntime.recentSpellSequence = []
   state.combat.arcaneCoreRuntime.recentDamagingSpellSequence = []

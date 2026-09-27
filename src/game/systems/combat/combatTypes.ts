@@ -102,6 +102,7 @@ export type CombatLogCategory =
   | 'trait'
   | 'death'
   | 'loot'
+  | 'sigil-loot'
   | 'resonance'
   | 'pattern'
   | 'system'
@@ -144,6 +145,7 @@ export interface CombatEvent {
   statusPhase?: CombatStatusPhase
   itemId?: ItemId
   resonanceReward?: ResonanceRewardEventPayload
+  sigilLoot?: { instanceId: string; setId: string; slot: number; tier: number; quality: string; autoSalvaged: boolean; dustGranted: number }
   worldTier?: WorldTierId
   damageType?: DamageType
   /** All damage types represented by one Hit. */

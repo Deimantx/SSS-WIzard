@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { SIGIL_TIERS, resolveSigilTierFromEnemyPower } from '../../content/sigils/sigilTiers'
+import { SIGIL_TIERS, resolveSigilTierFromDefinitions, resolveSigilTierFromEnemyPower } from '../../content/sigils/sigilTiers'
 import { getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
 import { getSigilSetBonusCount, getSigilSetBonuses } from '../../content/sigils/sigilSets'
 import { generateSigil } from './sigilGeneration'
-import { resolveSigilStatsForInstance } from './sigilRuntime'
+import { getActiveSigilTraitIds, resolveSigilStatsForInstance } from './sigilRuntime'
 import { enhanceSigil } from './sigilEnhancement'
 import { salvageSigil } from './sigilSalvage'
 import { resolveMonsterLoot } from '../loot/lootResolution'
 import { migrateSave } from '../../../persistence/migrations'
+import { getActiveSigilCombatProviders } from './sigilCombatRuntime'
+import { processSigilSpecialCombatEvent } from './sigilCombatRuntime'
+import { getCombatModifiers } from '../combat/modifiers'
+import { createOfflineBankReportCollector } from '../offline-bank/offlineBankReport'
+import type { CombatSource } from '../combat/combatTypes'
 
 describe('Arcane Sigils', () => {
   it('resolves authored tiers from resolved enemy Power boundaries', () => {
@@ -17,6 +22,7 @@ describe('Arcane Sigils', () => {
     expect(resolveSigilTierFromEnemyPower(5000)).toBe(2)
     expect(resolveSigilTierFromEnemyPower(999999)).toBe(2)
     expect(SIGIL_TIERS).toHaveLength(2)
+    expect(resolveSigilTierFromDefinitions(12000, [...SIGIL_TIERS, { ...SIGIL_TIERS[1], tier: 3, label: 'T3', minEnemyPower: 10000 }])).toBe(3)
   })
 
   it('derives stronger main and secondary values for T2', () => {
@@ -54,6 +60,82 @@ describe('Arcane Sigils', () => {
     expect(sigil.rollHistory.some((entry) => entry.kind === 'trait' && entry.rank === 15)).toBe(true)
   })
 
+  it('grants Legendary Trait I at +15 and Trait II at +20 without a secondary at +20', () => {
+    const state = createInitialState()
+    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'legendary', rng: () => .5 })
+    state.sigils.dust = 1_000_000
+    for (let rank = 1; rank <= 20; rank += 1) expect(enhanceSigil(state, sigil.instanceId, { bypassGlobalCap: true, rng: () => .5 }).ok).toBe(true)
+    expect(sigil.traitIds).toHaveLength(2)
+    expect(new Set(sigil.traitIds).size).toBe(2)
+    expect(sigil.rollHistory.filter((entry) => entry.kind === 'trait')).toHaveLength(2)
+    expect(sigil.rollHistory.some((entry) => entry.rank === 20 && entry.kind !== 'trait')).toBe(false)
+  })
+
+  it('supports free debug-style enhancement without spending Dust', () => {
+    const state = createInitialState()
+    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5, source: 'debug' })
+    state.sigils.dust = 0
+    expect(enhanceSigil(state, sigil.instanceId, { bypassGlobalCap: true, free: true, rng: () => .5 })).toMatchObject({ ok: true, cost: 0 })
+    expect(state.sigils.dust).toBe(0)
+    expect(state.sigils.lifetimeDrops).toBe(0)
+  })
+
+  it('exposes mechanical providers for every equipped combat Set and Trait', () => {
+    const state = createInitialState()
+    for (let slot = 1; slot <= 4; slot += 1) {
+      const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'tempest', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+      state.sigils.equipped[slot as 1 | 2 | 3 | 4] = sigil.instanceId
+    }
+    state.combat.inBossFight = true
+    const providers = getActiveSigilCombatProviders(state)
+    expect(providers.map((provider) => provider.id)).toContain('set:tempest')
+  })
+
+  it('executes Tempest cooldown reduction and Predator boss damage', () => {
+    const state = createInitialState()
+    for (let slot = 1; slot <= 4; slot += 1) {
+      const tempest = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'tempest', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+      state.sigils.equipped[slot as 1 | 2 | 3 | 4] = tempest.instanceId
+    }
+    state.combat.spellCooldowns['fire-bolt'] = 1000
+    const source: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'fire-bolt', tags: ['spell', 'direct'] }
+    for (let cast = 0; cast < 5; cast += 1) processSigilSpecialCombatEvent(state, 'player', 'on-spell-cast', { source }, () => undefined, 0)
+    expect(state.combat.spellCooldowns['fire-bolt']).toBe(700)
+
+    const predatorState = createInitialState()
+    for (let slot = 1; slot <= 4; slot += 1) {
+      const predator = generateSigil({ state: predatorState, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'predator', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+      predatorState.sigils.equipped[slot as 1 | 2 | 3 | 4] = predator.instanceId
+    }
+    predatorState.combat.inBossFight = true
+    expect(getCombatModifiers(predatorState, 'player', 'damage-dealt-percent', { source })).toBeCloseTo(.15)
+    predatorState.combat.inBossFight = false
+    expect(getCombatModifiers(predatorState, 'player', 'damage-dealt-percent', { source })).toBe(0)
+  })
+
+  it('deduplicates UNIQUE traits while preserving repeated non-unique traits', () => {
+    const state = createInitialState()
+    const uniqueA = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 1, source: 'debug', rng: () => .2 })
+    const uniqueB = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 2, source: 'debug', rng: () => .2 })
+    uniqueA.traitIds = ['restorative-echo', 'execution-mark']
+    uniqueB.traitIds = ['restorative-echo', 'execution-mark']
+    state.sigils.equipped[1] = uniqueA.instanceId
+    state.sigils.equipped[2] = uniqueB.instanceId
+    const active = getActiveSigilTraitIds(state)
+    expect(active.filter((traitId) => traitId === 'restorative-echo')).toHaveLength(1)
+    expect(active.filter((traitId) => traitId === 'execution-mark')).toHaveLength(2)
+  })
+
+  it('records Sigil quality in the offline report without putting Sigils in item loot', () => {
+    const state = createInitialState()
+    const collector = createOfflineBankReportCollector(state, 1000, 0)
+    collector.recordSigil({ instanceId: 'sigil:test', setId: 'echo', slot: 1, tier: 2, quality: 'legendary', autoSalvaged: false, dustGranted: 0 })
+    const report = collector.finalize(state)
+    expect(report.combat.sigilsFound).toBe(1)
+    expect(report.combat.legendarySigils).toBe(1)
+    expect(report.combat.loot).toEqual({})
+  })
+
   it('protects locked and equipped sigils from salvage', () => {
     const state = createInitialState()
     const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
@@ -81,5 +163,26 @@ describe('Arcane Sigils', () => {
     expect(state.sigils.storage).toEqual({})
     expect(state.sigils.equipped).toEqual({ 1: null, 2: null, 3: null, 4: null, 5: null, 6: null })
     expect(state.saveVersion).toBe(50)
+  })
+
+  it('preserves authored discovery evidence even when storage has been salvaged', () => {
+    const raw = createInitialState()
+    raw.sigils.discovery.discoveredSets.echo = true
+    raw.sigils.discovery.discoveredSlotsBySet.echo = { 2: true }
+    raw.sigils.discovery.bestQualityBySet.echo = 'perfect'
+    raw.sigils.discovery.bestTierBySet.echo = 2
+    raw.sigils.discovery.discoveredTraits['mana-echo'] = true
+    raw.sigils.discovery.qualitiesFound.legendary = true
+    raw.sigils.discovery.tiersFound[2] = true
+    raw.sigils.nextInstanceSequence = 4
+    const migrated = migrateSave({ ...raw, saveVersion: 49, sigils: { ...raw.sigils, storage: { 'sigil:9': undefined } } })
+    expect(migrated.sigils.discovery.discoveredSets.echo).toBe(true)
+    expect(migrated.sigils.discovery.discoveredSlotsBySet.echo).toEqual({ 2: true })
+    expect(migrated.sigils.discovery.bestQualityBySet.echo).toBe('perfect')
+    expect(migrated.sigils.discovery.bestTierBySet.echo).toBe(2)
+    expect(migrated.sigils.discovery.discoveredTraits['mana-echo']).toBe(true)
+    expect(migrated.sigils.discovery.qualitiesFound.legendary).toBe(true)
+    expect(migrated.sigils.discovery.tiersFound[2]).toBe(true)
+    expect(migrated.sigils.nextInstanceSequence).toBe(4)
   })
 })

@@ -23,11 +23,14 @@ export const getSigilTierDefinition = (tier: SigilTier): SigilTierDefinition => 
   return SIGIL_TIERS.find((definition) => definition.tier === tier) ?? SIGIL_TIERS[0]
 }
 
-export const resolveSigilTierFromEnemyPower = (power: number): SigilTier => {
+export const resolveSigilTierFromDefinitions = (power: number, definitions: readonly SigilTierDefinition[]): SigilTier => {
   const sanitized = safePower(power)
-  const eligible = [...SIGIL_TIERS].sort((a, b) => a.minEnemyPower - b.minEnemyPower).filter((definition) => definition.minEnemyPower <= sanitized)
-  return eligible[eligible.length - 1]?.tier ?? SIGIL_TIERS[0].tier
+  const ordered = [...definitions].sort((a, b) => a.minEnemyPower - b.minEnemyPower)
+  const eligible = ordered.filter((definition) => definition.minEnemyPower <= sanitized)
+  return eligible[eligible.length - 1]?.tier ?? ordered[0]?.tier ?? 1
 }
+
+export const resolveSigilTierFromEnemyPower = (power: number): SigilTier => resolveSigilTierFromDefinitions(power, SIGIL_TIERS)
 
 export const isSigilTier = (value: unknown): value is SigilTier =>
   typeof value === 'number' && SIGIL_TIERS.some((definition) => definition.tier === value)

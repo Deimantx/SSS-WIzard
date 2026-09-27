@@ -1,11 +1,12 @@
 import type { DungeonId, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier } from '../../types'
-import { SIGIL_CRAFT_QUALITY_WEIGHTS, SIGIL_QUALITY_WEIGHTS } from '../../content/sigils/sigilDropConfig'
+import { SIGIL_ATTUNEMENT_WEIGHT, SIGIL_CRAFT_QUALITY_WEIGHTS, SIGIL_QUALITY_WEIGHTS } from '../../content/sigils/sigilDropConfig'
 import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
 import { getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
 import { SIGIL_MAIN_STAT_POOLS, SIGIL_SECONDARY_STAT_IDS } from '../../content/sigils/sigilStats'
 import { SIGIL_SET_IDS } from '../../content/sigils/sigilSets'
 import { getSigilTierDefinition, resolveSigilTierFromEnemyPower } from '../../content/sigils/sigilTiers'
 import { clampSigilRollQuality } from './sigilRuntime'
+import { recordChronicleEvent } from '../chronicles/chronicleRuntime'
 
 export interface SigilGenerationOptions {
   state: GameState
@@ -20,6 +21,7 @@ export interface SigilGenerationOptions {
   qualityWeights?: Record<SigilQuality, number>
   forcedQuality?: SigilQuality
   forcedMainStatId?: SigilStatId
+  source?: 'drop' | 'craft' | 'debug'
 }
 
 const random01 = (rng: () => number) => clampSigilRollQuality(rng())
@@ -50,10 +52,10 @@ const registerDiscovery = (state: GameState, sigil: SigilInstance) => {
   if (!discovery.bestTierBySet[sigil.setId] || sigil.tier > (discovery.bestTierBySet[sigil.setId] ?? 0)) discovery.bestTierBySet[sigil.setId] = sigil.tier
 }
 
-export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId }: SigilGenerationOptions): SigilInstance => {
+export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop' }: SigilGenerationOptions): SigilInstance => {
   const tier = forcedTier ?? resolveSigilTierFromEnemyPower(enemyPower)
   const pool = getSigilRegionSetPool(dungeonId)
-  const weights = pool.map((setId) => setId === state.sigils.attunedSetId ? 3 : 1)
+  const weights = pool.map((setId) => setId === state.sigils.attunedSetId ? SIGIL_ATTUNEMENT_WEIGHT : 1)
   const setId = forcedSetId && (pool.includes(forcedSetId) || SIGIL_SET_IDS.includes(forcedSetId)) ? forcedSetId : weightedPick(pool, weights, rng)
   const slot = forcedSlot ?? (pick([1, 2, 3, 4, 5, 6] as const, rng) as SigilSlot)
   const quality = forcedQuality ?? rollQuality(tier, isBoss, rng, qualityWeights)
@@ -69,11 +71,14 @@ export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rn
   state.sigils.nextInstanceSequence += 1
   const sigil: SigilInstance = { instanceId, tier, quality, setId, slot, rank: 0, mainStatId, secondaries, traitIds: [], rollHistory: [], locked: false }
   state.sigils.storage[instanceId] = sigil
-  state.sigils.lifetimeDrops += 1
-  state.sigils.firstDropPityKills = 0
-  state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, Number.isFinite(enemyPower) ? enemyPower : 0)
-  registerDiscovery(state, sigil)
+  if (source === 'drop') {
+    state.sigils.lifetimeDrops += 1
+    state.sigils.firstDropPityKills = 0
+    state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, Number.isFinite(enemyPower) ? enemyPower : 0)
+  }
+  if (source !== 'debug') registerDiscovery(state, sigil)
+  if (source !== 'debug') recordChronicleEvent(state, 'first-sigil-earned')
   return sigil
 }
 
-export const generateCraftedSigil = (options: Omit<SigilGenerationOptions, 'enemyPower' | 'isBoss'> & { tier: SigilTier; setId: SigilSetId; slot?: SigilSlot; rng: () => number }): SigilInstance => generateSigil({ ...options, enemyPower: options.tier >= 2 ? 5000 : 0, forcedTier: options.tier, forcedSetId: options.setId, forcedSlot: options.slot, qualityWeights: SIGIL_CRAFT_QUALITY_WEIGHTS[options.tier] })
+export const generateCraftedSigil = (options: Omit<SigilGenerationOptions, 'enemyPower' | 'isBoss' | 'source'> & { tier: SigilTier; setId: SigilSetId; slot?: SigilSlot; rng: () => number; source?: 'craft' | 'debug' }): SigilInstance => generateSigil({ ...options, source: options.source ?? 'craft', enemyPower: getSigilTierDefinition(options.tier).minEnemyPower, forcedTier: options.tier, forcedSetId: options.setId, forcedSlot: options.slot, qualityWeights: SIGIL_CRAFT_QUALITY_WEIGHTS[options.tier] })

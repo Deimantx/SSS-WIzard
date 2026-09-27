@@ -12,8 +12,10 @@ import { salvageSigil } from '../sigils/sigilSalvage'
 import { SIGIL_STORAGE_SOFT_CAP } from '../../content/sigils/sigilDropConfig'
 import { pushNotification } from '../../engine'
 
+export interface SigilLootResolution { instanceId: string; setId: string; slot: number; tier: number; quality: string; autoSalvaged: boolean; dustGranted: number }
+
 /** Resolves the authored material table into inventory changes and a readable log fragment. */
-export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random): string {
+export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random, onSigilDrop?: (drop: SigilLootResolution) => void): string {
   const drops: string[] = []
   const encounterWorldTier = getActiveEncounterWorldTier(state)
   MONSTERS[enemyId].loot.forEach((drop) => {
@@ -37,17 +39,21 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   const encounterPower = resolveEnemyPowerRating(enemyId, encounterWorldTier)
   state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, encounterPower)
   if (isBoss && encounterWorldTier >= 2) state.sigils.hasDefeatedWorldTier2Boss = true
-  state.sigils.firstDropPityKills += 1
+  if (state.sigils.lifetimeDrops === 0) state.sigils.firstDropPityKills += 1
+  else state.sigils.firstDropPityKills = 0
   const forcePityDrop = state.sigils.lifetimeDrops === 0 && state.sigils.firstDropPityKills >= SIGIL_FIRST_DROP_PITY_KILLS
   if (forcePityDrop || rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)) {
     const sigil = generateSigil({ state, dungeonId: state.combat.dungeonId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
     drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)
     const autoSalvage = (sigil.quality === 'common' || sigil.quality === 'refined') && state.sigils.autoSalvage[sigil.quality]
     const atSoftCap = Object.keys(state.sigils.storage).length > SIGIL_STORAGE_SOFT_CAP && (sigil.quality === 'common' || sigil.quality === 'refined')
+    const dustBefore = state.sigils.dust
+    const autoSalvaged = autoSalvage || atSoftCap
     if (autoSalvage || atSoftCap) {
       salvageSigil(state, sigil.instanceId)
       if (atSoftCap && !autoSalvage) pushNotification(state, 'Sigil Storage is full; the incoming low-quality Sigil was salvaged.', 'warning', { key: 'sigil-storage-cap', cooldownMs: 60_000 })
     }
+    onSigilDrop?.({ instanceId: sigil.instanceId, setId: sigil.setId, slot: sigil.slot, tier: sigil.tier, quality: sigil.quality, autoSalvaged, dustGranted: Math.max(0, state.sigils.dust - dustBefore) })
   }
   return drops.join(', ')
 }

@@ -16,20 +16,32 @@ import { setNavigationIntent, useNavigationIntent } from '../../../ui/navigation
 import { SigilsWorkspace } from './sigils/SigilsWorkspace'
 
 export function ArtificingScreen() {
+  const mode = useUiPreferences().screenState.artificing.mode
+  return <TowerFrame
+    className={`artificing-screen ${mode === 'sigils' ? 'sigils-screen' : ''}`}
+    eyebrow="WIZARD TOWER · ARTIFICING"
+    title="Arcane Forge"
+    description={mode === 'sigils' ? 'Read, refine, and equip Sigils found in Combat.' : 'Forge permanent Artifacts, or open the combat-born Sigil array.'}
+  >
+    <div className="artificing-mode-switch">
+      <button className={mode === 'artifacts' ? 'active' : ''} onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button>
+      <button className={mode === 'sigils' ? 'active' : ''} onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button>
+    </div>
+    {mode === 'sigils' ? <SigilsWorkspace /> : <ArtifactsWorkspace />}
+  </TowerFrame>
+}
+
+function ArtifactsWorkspace() {
   const state = useGameStore()
   const preferences = useUiPreferences().screenState.artificing
-  if (preferences.mode === 'sigils') {
-    return <TowerFrame className="artificing-screen sigils-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Read, refine, and equip Sigils found in Combat."><div className="artificing-mode-switch"><button className="active" onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button><button onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button></div><SigilsWorkspace /></TowerFrame>
-  }
   const navigationIntent = useNavigationIntent()
   const intentRecipeId = navigationIntent.artificingRecipeId && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, navigationIntent.artificingRecipeId) ? navigationIntent.artificingRecipeId : null
   const [query, setQuery] = useState('')
   const visible = getVisibleArtificingRecipes(state, preferences, query)
   const visibleIds = visible.map((entry) => entry.id).join('|')
   const selected = intentRecipeId ?? preferences.selectedRecipeId
-  // Search/filter context never changes acquisition or the selected blueprint.
-  // A hidden/invalid selection simply has no inspector until visible again.
   const recipe = selected && ARTIFICING_RECIPES[selected] && (Boolean(intentRecipeId) || visible.some(entry => entry.id === selected)) ? ARTIFICING_RECIPES[selected] : null
+
   useEffect(() => {
     if (intentRecipeId) {
       setQuery('')
@@ -41,6 +53,7 @@ export function ArtificingScreen() {
       setUiPreferences({ screenState: { artificing: { selectedRecipeId: visible[0]?.id ?? null } } })
     }
   }, [intentRecipeId, selected, visibleIds])
+
   const select = (id: ArtificingRecipeId) => {
     clearAttention(getActiveProfileId(), 'recipe', id)
     setUiPreferences({ screenState: { artificing: { selectedRecipeId: id } } })
@@ -49,5 +62,5 @@ export function ArtificingScreen() {
     { id: 'artificing-catalog', content: <EquipmentCatalog selected={recipe?.id ?? null} onSelect={select} query={query} onQueryChange={setQuery} /> },
     { id: 'artificing-detail', content: <InspectorTransition identity={recipe?.id ?? 'none'} accent={recipe ? ITEMS[recipe.output.itemId].color : undefined}><ArtificingDetail recipe={recipe} /></InspectorTransition> },
   ]
-  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge permanent Artifacts, or open the combat-born Sigil array."><div className="artificing-mode-switch"><button className="active" onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button><button onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button></div><ScreenGrid screen="tower-artificing" panels={panels} /></TowerFrame>
+  return <ScreenGrid screen="tower-artificing" panels={panels} />
 }

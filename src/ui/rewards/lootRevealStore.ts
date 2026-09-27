@@ -1,4 +1,4 @@
-import type { LootRevealEvent, CombatLootRevealInput, LootRevealItem } from './lootRevealTypes'
+import type { LootRevealEvent, CombatLootRevealInput, LootRevealItem, LootRevealSigil } from './lootRevealTypes'
 
 export const MAX_VISIBLE_LOOT_REVEALS = 3
 export const MAX_QUEUED_LOOT_REVEALS = 10
@@ -22,6 +22,7 @@ const normalizeItems = (items: readonly LootRevealItem[]) => {
   })
   return [...merged.values()]
 }
+const normalizeSigils = (sigils: readonly LootRevealSigil[]) => [...new Map(sigils.filter(Boolean).map((sigil) => [sigil.instanceId, { ...sigil }])).values()]
 const durationFor = (items: readonly LootRevealItem[]) => items.some((item) => item.isNewDiscovery) ? 3600 : 2700
 const clearTimer = (id: string) => {
   const timer = timers.get(id)
@@ -45,7 +46,8 @@ export const getVisibleLootReveals = () => events.slice(0, MAX_VISIBLE_LOOT_REVE
 export const enqueueCombatLootReveal = (input: CombatLootRevealInput) => {
   const now = input.now ?? Date.now()
   const items = normalizeItems(input.items)
-  if (!items.length) return null
+  const sigils = normalizeSigils(input.sigils ?? [])
+  if (!items.length && !sigils.length) return null
   const sourceKey = sourceKeyFor(input)
   const mergeIndex = events.findIndex((event) => {
     const age = now - event.createdAt
@@ -55,13 +57,14 @@ export const enqueueCombatLootReveal = (input: CombatLootRevealInput) => {
     const existing = events[mergeIndex]
     if (!existing) return null
     const mergedItems = normalizeItems([...existing.items, ...items])
-    const updated = { ...existing, items: mergedItems, durationMs: durationFor(mergedItems) }
+    const mergedSigils = normalizeSigils([...existing.sigils, ...sigils])
+    const updated = { ...existing, items: mergedItems, sigils: mergedSigils, durationMs: durationFor(mergedItems) }
     events = events.map((event, index) => index === mergeIndex ? updated : event)
     if (!pausedRemaining.has(existing.id)) schedule(updated, Math.max(0, updated.durationMs - Math.max(0, now - existing.createdAt)))
     emit()
     return existing.id
   }
-  const event: LootRevealEvent = { id: `loot-reveal-${++serial}`, sourceKind: 'combat', sourceKey, sourceLabel: input.sourceLabel, sourceDetail: input.sourceDetail, items, createdAt: now, durationMs: durationFor(items) }
+  const event: LootRevealEvent = { id: `loot-reveal-${++serial}`, sourceKind: 'combat', sourceKey, sourceLabel: input.sourceLabel, sourceDetail: input.sourceDetail, items, sigils, createdAt: now, durationMs: durationFor(items) }
   const bounded = [...events, event]
   const firstRetainedIndex = Math.max(0, bounded.length - (MAX_VISIBLE_LOOT_REVEALS + MAX_QUEUED_LOOT_REVEALS))
   bounded.slice(0, firstRetainedIndex).forEach((dropped) => {

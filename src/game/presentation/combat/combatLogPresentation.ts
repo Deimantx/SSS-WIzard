@@ -59,6 +59,11 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
     message = item ? `${item.name.toUpperCase()} ×${entry.amount ?? 0}` : 'LOOT ACQUIRED'
     semanticClass = 'log-loot'
     actionClass = 'log-action-loot'
+  } else if (entry.category === 'sigil-loot') {
+    message = 'SIGIL FOUND'
+    result = entry.sigilLoot ? `T${entry.sigilLoot.tier} ${entry.sigilLoot.quality.toUpperCase()} ${entry.sigilLoot.setId}${entry.sigilLoot.autoSalvaged ? ` · +${entry.sigilLoot.dustGranted} DUST` : ''}` : undefined
+    semanticClass = 'log-loot'
+    actionClass = 'log-action-loot'
   } else if (entry.category === 'resonance' && entry.resonanceReward) {
     const rewardEnemy = MONSTERS[entry.resonanceReward.enemyId]
     message = `${rewardEnemy?.name ?? 'ENEMY'} RESONANCE HARVEST`

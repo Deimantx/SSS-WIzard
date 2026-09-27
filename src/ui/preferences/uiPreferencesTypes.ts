@@ -29,6 +29,9 @@ export interface InventoryScreenPreferences {
   sourceOpen: boolean
   researchValueOpen: boolean
 }
+export interface CollectionScreenPreferences {
+  primaryTab: 'items' | 'sigils'
+}
 
 export interface TransmutationScreenPreferences {
   selectedRecipeId: import('../../game/types').TransmutationRecipeId
@@ -84,6 +87,7 @@ export interface GuildScreenPreferences {
 
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
+  collection: CollectionScreenPreferences
   transmutation: TransmutationScreenPreferences
   artificing: ArtificingScreenPreferences
   research: ResearchScreenPreferences

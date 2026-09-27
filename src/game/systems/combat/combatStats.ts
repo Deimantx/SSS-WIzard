@@ -9,6 +9,7 @@ import type { CombatActor } from './magnitude'
 import type { CombatSource, DamageType } from './combatTypes'
 import { getCombatModifiers, getResistance, type CombatModifierState } from './modifiers'
 import { getActiveEncounterWorldTier, resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
+import { getActiveSigilTraitIds } from '../sigils/sigilRuntime'
 
 export { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 
@@ -172,4 +173,10 @@ export const getHealingDoneBonus = (state: GameState, actor: CombatActor, source
 export const getBarrierPowerBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'barrier-power-percent', { source, sourceTags: source?.tags })
 export const getCooldownRecoveryMultiplier = (state: CombatModifierState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
 
-export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8))))
+export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => {
+  const combat = (state as Partial<Pick<GameState, 'combat'>>).combat
+  const nextCommittedSpell = (combat?.sigilRuntime?.spellCastCount ?? 0) + 1
+  const efficientCycle = Boolean(state.sigils && getActiveSigilTraitIds(state as Pick<GameState, 'sigils'>).includes('efficient-cycle') && nextCommittedSpell % 6 === 0)
+  const reduction = clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8) + (efficientCycle ? 0.2 : 0)
+  return Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - Math.min(0.95, reduction))))
+}

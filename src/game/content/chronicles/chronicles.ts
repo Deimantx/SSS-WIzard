@@ -1,4 +1,5 @@
-import type { ArtifactId, ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, CrystalVariantId, DungeonId, GuildRankId, ItemId, MonsterId, ScreenId, SchoolId, WorldTierId } from '../../types'
+import type { ArtifactId, ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, CrystalVariantId, DungeonId, GuildRankId, ItemId, MonsterId, ScreenId, SchoolId, SigilQuality, SigilSetId, SigilTier, WorldTierId } from '../../types'
+import { SIGIL_SETS, SIGIL_SET_IDS } from '../sigils/sigilSets'
 
 export type ChronicleCondition =
   | { type: 'starting-school-selected' }
@@ -18,6 +19,15 @@ export type ChronicleCondition =
   | { type: 'arcane-core-invested-nodes'; count: number }
   | { type: 'spell-loadout-slots'; count: number }
   | { type: 'world-tier-kill'; tier: WorldTierId; count: number }
+  | { type: 'sigil-obtained'; count: number }
+  | { type: 'sigil-equipped'; count: number }
+  | { type: 'sigil-rank-at-least'; rank: number }
+  | { type: 'sigil-secondary-rolls'; count: number }
+  | { type: 'sigil-set-active'; setId: SigilSetId; pieces: number }
+  | { type: 'sigil-quality-found'; quality: SigilQuality }
+  | { type: 'sigil-tier-found'; tier: SigilTier }
+  | { type: 'sigil-traits-unlocked'; count: number }
+  | { type: 'sigil-set-discovered'; setId: SigilSetId }
 
 export type ChronicleReward =
   | { type: 'item'; itemId: ItemId; quantity: number }
@@ -53,6 +63,14 @@ export const CHRONICLE_CHAPTERS: readonly ChronicleChapterDefinition[] = [
   { id: 'shattered-frontier', name: 'Shattered Frontier', description: 'Push beyond the first gate, bind a Guardian, and survive a world that no longer stays still.', order: 2, unlockCondition: { type: 'boss-kill', bossId: 'archmage-edrin-shade', count: 1 } },
 ]
 
+const SIGIL_CHRONICLE_OBJECTIVES: ChronicleObjectiveDefinition[] = SIGIL_SET_IDS.flatMap((setId) => {
+  const set = SIGIL_SETS[setId]
+  return [
+    { id: `sigil-${setId}-discovered` as ChronicleObjectiveId, chapterId: 'first-frontier', track: 'equipment', title: `Archive the ${set.name} Set`, description: `Discover the ${set.name} Sigil Set.`, condition: { type: 'sigil-set-discovered', setId }, navigateTo: 'tower-artificing', optional: true },
+    { id: `sigil-${setId}-active` as ChronicleObjectiveId, chapterId: 'first-frontier', track: 'equipment', title: `Activate ${set.name}`, description: `Equip enough ${set.name} Sigils to activate the Set bonus.`, condition: { type: 'sigil-set-active', setId, pieces: set.piecesRequired }, navigateTo: 'tower-artificing', optional: true },
+  ]
+})
+
 export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 'm1-choose-school', chapterId: 'first-frontier', track: 'main', title: 'Choose Your School', description: 'Choose the Magic School that will shape your first frontier.', condition: { type: 'starting-school-selected' }, navigateTo: 'schools' },
   { id: 'm2-first-blood', chapterId: 'first-frontier', track: 'main', title: 'First Blood', description: 'Defeat your first enemy and begin the real work of the Tower.', prerequisiteIds: ['m1-choose-school'], condition: { type: 'lifetime-kills', count: 1 }, navigateTo: 'combat' },
@@ -71,6 +89,7 @@ export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 't2-shape-resonance', chapterId: 'first-frontier', track: 'tower', title: 'Shape Resonance', description: 'Complete your first Fragment Transmutation cycle.', prerequisiteIds: ['t1-channeling-acolyte'], condition: { type: 'chronicle-event', eventId: 'first-fragment-transmuted' }, navigateTo: 'tower-transmutation' },
   { id: 't3-study-the-fragment', chapterId: 'first-frontier', track: 'tower', title: 'Study the Fragment', description: 'Complete your first Research batch.', prerequisiteIds: ['t2-shape-resonance'], condition: { type: 'chronicle-event', eventId: 'first-research-batch-completed' }, navigateTo: 'tower-research' },
   { id: 't4-answer-verdant-circle', chapterId: 'first-frontier', track: 'tower', title: 'Answer the Verdant Circle', description: 'Claim your first Guild Request.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-request-claimed', count: 1 }, navigateTo: 'guild' },
+  { id: 't5-read-a-sigil', chapterId: 'first-frontier', track: 'tower', title: 'Read the Arcane Sigils', description: 'Earn your first combat-born Sigil.', prerequisiteIds: ['m2-first-blood'], condition: { type: 'chronicle-event', eventId: 'first-sigil-earned' }, navigateTo: 'tower-artificing', optional: true },
 
   { id: 'g1-join-verdant-circle', chapterId: 'first-frontier', track: 'guild', title: 'Join the Verdant Circle', description: 'Unlock the Guild and receive the Initiate rank.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-rank', rank: 'initiate' }, navigateTo: 'guild' },
   { id: 'g2-first-guild-contract', chapterId: 'first-frontier', track: 'guild', title: 'Sign Your First Contract', description: 'Claim your first Guild contract.', prerequisiteIds: ['g1-join-verdant-circle'], condition: { type: 'guild-request-claimed', count: 1 }, navigateTo: 'guild' },
@@ -87,6 +106,7 @@ export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 'sf-fight-together', chapterId: 'shattered-frontier', track: 'magic', title: 'Fight Together', description: 'Complete one valid encounter with an active Guardian.', prerequisiteIds: ['sf-bind-guardian'], condition: { type: 'guardian-combat-completed' }, navigateTo: 'combat', onCompleteReward: [{ type: 'arcane-points', amount: 250 }] },
   { id: 'sf-socket-first-crystal', chapterId: 'shattered-frontier', track: 'magic', title: 'Socket Your First Crystal', description: 'Equip at least one Crystal.', unlockCondition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, condition: { type: 'crystal-equipped', count: 1 }, navigateTo: 'crystals', onUnlockReward: [{ type: 'crystal', variantId: 'force-t1', quantity: 1 }] },
   { id: 'sf-step-into-harder-world', chapterId: 'shattered-frontier', track: 'combat', title: 'Step Into a Harder World', description: 'Defeat one enemy in World Tier 2.', unlockCondition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, condition: { type: 'world-tier-kill', tier: 2, count: 1 }, navigateTo: 'combat', onCompleteReward: [{ type: 'arcane-points', amount: 250 }], optional: true },
+  ...SIGIL_CHRONICLE_OBJECTIVES,
 ]
 
 export const CHRONICLE_OBJECTIVE_BY_ID = Object.fromEntries(CHRONICLE_OBJECTIVES.map((objective) => [objective.id, objective])) as Record<ChronicleObjectiveId, ChronicleObjectiveDefinition>

@@ -1,9 +1,31 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../store/initialState'
-import { serializeGameState } from './profileSaveManager'
+import { chooseStartingSchoolAction } from '../store/actions/onboardingActions'
+import { saveProfileGame, serializeGameState } from './profileSaveManager'
 import { getAuthoritativeSaveSnapshot, validateSerializedSave } from './saveIntegrity'
 
 describe('authoritative save validation', () => {
+  beforeEach(() => localStorage.clear())
+
+  it.each(['fire', 'water', 'earth', 'air'] as const)('fresh %s character round-trips immediately after starting-school selection', (schoolId) => {
+    const state = createInitialState()
+    expect(chooseStartingSchoolAction(state, schoolId)).toBe(true)
+
+    const result = validateSerializedSave(JSON.stringify(serializeGameState(state)), state)
+
+    expect(result.ok).toBe(true)
+    expect(result.report.classification).not.toBe('AUTHORITATIVE_CHANGE')
+  })
+
+  it.each(['fire', 'water', 'earth', 'air'] as const)('can persist a newly created %s profile', (schoolId) => {
+    const state = createInitialState()
+    expect(chooseStartingSchoolAction(state, schoolId)).toBe(true)
+
+    const result = saveProfileGame('slot-1', state, { savedAt: 100 })
+
+    expect(result.ok).toBe(true)
+  })
+
   it('round-trips sigils, crystals, and guardian progression as authoritative data', () => {
     const state = createInitialState()
     state.sigils.dust = 31

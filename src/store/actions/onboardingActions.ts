@@ -3,7 +3,7 @@ import { STARTING_SCHOOL_CONFIG } from '../../game/content/onboarding/startingSc
 import { getSchoolTotalXpForLevel } from '../../game/core/balance/schoolXpCurve'
 import { grantItem } from '../../game/systems/inventory/itemAcquisition'
 import { equipItemAction } from './equipmentActions'
-import { getDefaultSpellAutomationConfig, getNextSpellPresetId, syncAutoCastRuntimeForLoadout } from '../../game/systems/spells'
+import { getDefaultSpellAutomationConfig, getNextSpellPresetId } from '../../game/systems/spells'
 import { getSpellsForSchool, syncSpellUnlocksForSchool } from '../../game/systems/spells/spellProgression'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
 import type { GameState, SchoolId, TutorialStage } from '../../game/types'
@@ -29,14 +29,12 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   const slots = starterSpells.map((spell) => ({ spellId: spell.id, autoCast: true, automation: getDefaultSpellAutomationConfig(spell.id, true, false) }))
   state.spellPresets.presets.push({ id: presetId, name: `${SCHOOLS[schoolId].name} Initiate`, slots })
   state.spellPresets.selectedPresetId = presetId
-  syncAutoCastRuntimeForLoadout(state, slots)
 
   state.progress.startingSchoolId = schoolId
   state.progress.tutorialStage = 'combat'
   state.player.mana = state.player.maxMana
   state.ui.screen = 'combat'
   state.ui.lastEnteredCombatDungeonId = 'whispering-woods'
-  state.combat.targetEnemyId = starterConfig.firstTargetMonsterId
   reconcileChronicleProgress(state)
   return true
 }

@@ -13,7 +13,7 @@ export const UI_PREFERENCES_KEY = 'sss-wizard-ui-preferences-v1'
 export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { sourceOpen: false, researchValueOpen: false },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
-  artificing: { selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
+  artificing: { mode: 'artifacts', selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
   chronicles: { hideCompleted: true, showLocked: true, showOptional: true, statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'region'], sort: 'recommended', group: 'track', view: 'compact', trackedObjectiveIds: [], collapsedGroups: [] },
@@ -77,6 +77,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const pinnedRecipeSource = Array.isArray(rawPinnedRecipeIds) ? rawPinnedRecipeIds : [(a as { pinnedRecipeId?: unknown }).pinnedRecipeId]
   const pinnedRecipeIds = Array.from(new Set(pinnedRecipeSource.filter((id): id is ArtificingRecipeId => typeof id === 'string' && ARTIFICING_RECIPE_ORDER.includes(id as ArtificingRecipeId)))).slice(0, MAX_ARTIFICING_RECIPE_PINS)
   const artificing: ScreenPreferences['artificing'] = {
+    mode: a.mode === 'sigils' ? 'sigils' : 'artifacts',
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
     pinnedRecipeIds,
     pinsCollapsed: a.pinsCollapsed === true,

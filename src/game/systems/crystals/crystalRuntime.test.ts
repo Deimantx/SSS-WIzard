@@ -221,7 +221,7 @@ describe("Crystal System V1", () => {
       progress: { bossKillsByBoss: { "meridian-splitter": 1 } },
       inventory: { "tier-1-crystal-cache": 0 },
     });
-    expect(migrated.saveVersion).toBe(49);
+    expect(migrated.saveVersion).toBe(50);
     expect(migrated.crystals.equippedSlots).toHaveLength(15);
     expect(migrated.crystals.unlockedSlots).toBe(5);
     expect(migrated.inventory["tier-1-crystal-cache"]).toBe(0);

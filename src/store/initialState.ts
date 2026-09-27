@@ -14,7 +14,24 @@ import { createInitialChronicleProgress } from '../game/systems/chronicles/chron
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 49
+export const SAVE_VERSION = 50
+
+export const createInitialSigilState = (): import('../game/types').SigilState => ({
+  nextInstanceSequence: 1,
+  storage: {},
+  equipped: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null },
+  dust: 0,
+  attunedSetId: null,
+  highestSourcePowerDefeated: 0,
+  lifetimeDrops: 0,
+  firstDropPityKills: 0,
+  highestRankEver: 0,
+  secondaryRollsLifetime: 0,
+  traitsUnlockedLifetime: 0,
+  discovery: { discoveredSets: {}, discoveredSlotsBySet: {}, bestQualityBySet: {}, bestTierBySet: {}, discoveredTraits: {}, qualitiesFound: {}, tiersFound: {} },
+  hasDefeatedWorldTier2Boss: false,
+  autoSalvage: { common: false, refined: false },
+})
 
 const emptySpellRecord = <T>(value: T) => Object.fromEntries(CANONICAL_SPELL_IDS.map((spellId) => [spellId, value])) as Record<import('../game/types').SpellId, T>
 
@@ -33,6 +50,7 @@ export const createInitialState = (): GameState => {
   equipment: { weapon: null, armor: null, head: null },
   arcaneCore: { arcaneCoreVersion: ARCANE_CORE_SCHEMA_VERSION, totalPointsEarned: 0, nodes: {} },
   artifactProgress: {},
+  sigils: createInitialSigilState(),
   guardians: createInitialGuardiansState(),
   activities: {
     channeling: { acolytesAssigned: 0 },

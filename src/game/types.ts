@@ -158,6 +158,16 @@ export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
 export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff' | 'debuff' | 'hybrid'
 import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
+import type { SigilSetId } from './content/sigils/sigilSets'
+import type { SigilQuality } from './content/sigils/sigilQualities'
+import type { SigilStatId } from './content/sigils/sigilStats'
+import type { SigilTier } from './content/sigils/sigilTiers'
+import type { SigilTraitId } from './content/sigils/sigilTraits'
+export type { SigilSetId } from './content/sigils/sigilSets'
+export type { SigilQuality } from './content/sigils/sigilQualities'
+export type { SigilStatId } from './content/sigils/sigilStats'
+export type { SigilTier } from './content/sigils/sigilTiers'
+export type { SigilTraitId } from './content/sigils/sigilTraits'
 export type { ActionPattern, ActionStep, ActiveStatus, CombatActionDefinition, CombatCondition, CombatConditionContext, CombatDamageComponentEvent, CombatEffect, CombatEvent, CombatEventSink, CombatModifier, CombatResolutionContext, CombatSource, CombatTag, DamageComponent, DamageType, EffectTarget, Magnitude, ModifierKey, StatusId, StatusDefinition, TraitDefinition, TraitId } from './systems/combat/combatTypes'
 export type ManaPillarId = 'leyline-conduit' | 'arcane-reservoir' | 'mana-resonance' | 'astral-expansion' | 'echo-attunement'
 export type TransmutationArrayId = 'temporal-array' | 'conservation-array' | 'replication-array' | 'flux-refinement-array' | 'resonance-stability-array'
@@ -211,6 +221,62 @@ export interface EquipmentStats {
   statusDurationPct?: number
   manaCostReductionPct?: number
   resistances?: Partial<Record<import('./systems/combat/combatTypes').DamageType, number>>
+}
+
+export type SigilSlot = 1 | 2 | 3 | 4 | 5 | 6
+
+export interface SigilSecondaryState {
+  statId: SigilStatId
+  rolls: Array<{ quality01: number; rank: number }>
+}
+
+export interface SigilRollHistoryEntry {
+  rank: number
+  kind: 'new-secondary' | 'improve-secondary' | 'trait'
+  statId?: SigilStatId
+  traitId?: SigilTraitId
+  rollQuality01?: number
+}
+
+export interface SigilInstance {
+  instanceId: string
+  tier: SigilTier
+  quality: SigilQuality
+  setId: SigilSetId
+  slot: SigilSlot
+  rank: number
+  mainStatId: SigilStatId
+  secondaries: SigilSecondaryState[]
+  traitIds: SigilTraitId[]
+  rollHistory: SigilRollHistoryEntry[]
+  locked: boolean
+}
+
+export interface SigilDiscoveryState {
+  discoveredSets: Partial<Record<SigilSetId, boolean>>
+  discoveredSlotsBySet: Partial<Record<SigilSetId, Partial<Record<SigilSlot, boolean>>>>
+  bestQualityBySet: Partial<Record<SigilSetId, SigilQuality>>
+  bestTierBySet: Partial<Record<SigilSetId, SigilTier>>
+  discoveredTraits: Partial<Record<SigilTraitId, boolean>>
+  qualitiesFound: Partial<Record<SigilQuality, boolean>>
+  tiersFound: Partial<Record<SigilTier, boolean>>
+}
+
+export interface SigilState {
+  nextInstanceSequence: number
+  storage: Record<string, SigilInstance>
+  equipped: Record<SigilSlot, string | null>
+  dust: number
+  attunedSetId: SigilSetId | null
+  highestSourcePowerDefeated: number
+  lifetimeDrops: number
+  firstDropPityKills: number
+  highestRankEver: number
+  secondaryRollsLifetime: number
+  traitsUnlockedLifetime: number
+  discovery: SigilDiscoveryState
+  hasDefeatedWorldTier2Boss: boolean
+  autoSalvage: { common: boolean; refined: boolean }
 }
 
 export type ArcaneCoreBranchId = 'power' | 'vitality' | 'mana' | 'control'
@@ -721,6 +787,7 @@ export interface GameState {
   equipment: Record<EquipmentPosition, ItemId | null>
   arcaneCore: ArcaneCoreState
   artifactProgress: Partial<Record<ArtifactId, ArtifactProgressState>>
+  sigils: SigilState
   guardians: GuardiansState
   activities: ActivitiesState
   combat: CombatState

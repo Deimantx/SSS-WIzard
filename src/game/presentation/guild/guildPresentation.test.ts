@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { getGuildRecommendedRequestIds, getGuildRequestPresentation, getGuildRankProgressPresentation } from './guildPresentation'
+import { getGuildRecommendedRequestIds, getGuildRequestPresentation, getGuildRankProgressPresentation, getGuildSkillBranchProgress } from './guildPresentation'
 
 describe('Guild presentation read model', () => {
   it('prioritizes ready and nearly complete contracts for the overview board', () => {
@@ -20,5 +20,13 @@ describe('Guild presentation read model', () => {
     state.progress.requestClaims = { 'field-supplies': true, 'thin-the-pack': true, 'den-stalker': true }
 
     expect(getGuildRankProgressPresentation(state)).toMatchObject({ status: 'ready', requirementsComplete: 2, requirementCount: 2 })
+  })
+
+  it('exposes authored skill branch progress for the overview summary', () => {
+    const state = createInitialState()
+    state.progress.guildSkillNodeRanks['hunter-arcane-quarry'] = 1
+
+    expect(getGuildSkillBranchProgress(state, 'hunter')).toEqual({ purchased: 1, total: 3 })
+    expect(getGuildSkillBranchProgress(state, 'tower')).toEqual({ purchased: 0, total: 3 })
   })
 })

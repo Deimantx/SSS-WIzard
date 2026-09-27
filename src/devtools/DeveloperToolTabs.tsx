@@ -21,6 +21,7 @@ import { DeveloperArcaneCore } from './tabs/DeveloperArcaneCore'
 import { DeveloperResonance } from './tabs/DeveloperResonance'
 import { DeveloperWorldTier } from './tabs/DeveloperWorldTier'
 import { DeveloperChronicles } from './tabs/DeveloperChronicles'
+import { DeveloperSigils } from './tabs/DeveloperSigils'
 
 export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (label: string, value: unknown) => Promise<void> }) {
   if (tab === 'quick') return <DeveloperQuickSetup />
@@ -29,6 +30,7 @@ export function DeveloperTab({ tab, copy }: { tab: DeveloperToolsTab; copy: (lab
   if (tab === 'acolytes') return <DeveloperAcolytes />
   if (tab === 'artificing') return <DeveloperArtificing />
   if (tab === 'artifacts') return <DeveloperArtifacts />
+  if (tab === 'sigils') return <DeveloperSigils />
   if (tab === 'resonance') return <DeveloperResonance />
   if (tab === 'world-tier') return <DeveloperWorldTier />
   if (tab === 'transmutation') return <DeveloperTransmutation />

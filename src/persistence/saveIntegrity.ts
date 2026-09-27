@@ -98,7 +98,7 @@ const decodeSave = (encoded: string): Record<string, unknown> => {
 }
 
 const hasCurrentSaveShape = (value: Record<string, unknown>) => {
-  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'worldTier', 'inventory', 'protectedItems', 'equipment', 'activities', 'combat', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
+  const requiredKeys = ['player', 'schools', 'currencies', 'resonance', 'worldTier', 'inventory', 'protectedItems', 'equipment', 'sigils', 'activities', 'combat', 'progress', 'darkPortal', 'offlineBankMs', 'lastSavedAt']
   return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
     && typeof value.lastSavedAt === 'number'
     && Number.isFinite(value.lastSavedAt)

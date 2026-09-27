@@ -13,10 +13,14 @@ import { InspectorTransition } from '../../../ui/game-feel/InspectorTransition'
 import { EquipmentCatalog } from './EquipmentCatalog'
 import { ArtificingDetail } from './ArtificingDetail'
 import { setNavigationIntent, useNavigationIntent } from '../../../ui/navigation/navigationIntent'
+import { SigilsWorkspace } from './sigils/SigilsWorkspace'
 
 export function ArtificingScreen() {
   const state = useGameStore()
   const preferences = useUiPreferences().screenState.artificing
+  if (preferences.mode === 'sigils') {
+    return <TowerFrame className="artificing-screen sigils-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Read, refine, and equip Sigils found in Combat."><div className="artificing-mode-switch"><button className="active" onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button><button onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button></div><SigilsWorkspace /></TowerFrame>
+  }
   const navigationIntent = useNavigationIntent()
   const intentRecipeId = navigationIntent.artificingRecipeId && Object.prototype.hasOwnProperty.call(ARTIFICING_RECIPES, navigationIntent.artificingRecipeId) ? navigationIntent.artificingRecipeId : null
   const [query, setQuery] = useState('')
@@ -45,5 +49,5 @@ export function ArtificingScreen() {
     { id: 'artificing-catalog', content: <EquipmentCatalog selected={recipe?.id ?? null} onSelect={select} query={query} onQueryChange={setQuery} /> },
     { id: 'artificing-detail', content: <InspectorTransition identity={recipe?.id ?? 'none'} accent={recipe ? ITEMS[recipe.output.itemId].color : undefined}><ArtificingDetail recipe={recipe} /></InspectorTransition> },
   ]
-  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge permanent Artifacts from elemental fragments and Artifact Essence. Each Artifact can be forged once."><ScreenGrid screen="tower-artificing" panels={panels} /></TowerFrame>
+  return <TowerFrame className="artificing-screen" eyebrow="WIZARD TOWER · ARTIFICING" title="Arcane Forge" description="Forge permanent Artifacts, or open the combat-born Sigil array."><div className="artificing-mode-switch"><button className="active" onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'artifacts' } } })}>ARTIFACTS</button><button onClick={() => setUiPreferences({ screenState: { artificing: { mode: 'sigils' } } })}>SIGILS</button></div><ScreenGrid screen="tower-artificing" panels={panels} /></TowerFrame>
 }

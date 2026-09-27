@@ -42,6 +42,12 @@ import { normalizeResonanceState } from '../game/systems/resonance/resonanceRunt
 import { isWorldTierId, reconcileWorldTierProgression, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
 import { isCrystalSystemUnlocked, normalizeCrystalState } from '../game/systems/crystals/crystalRuntime'
+import { SIGIL_SET_IDS } from '../game/content/sigils/sigilSets'
+import { SIGIL_TRAIT_IDS } from '../game/content/sigils/sigilTraits'
+import { SIGIL_STAT_DEFINITIONS } from '../game/content/sigils/sigilStats'
+import { SIGIL_TIERS, isSigilTier } from '../game/content/sigils/sigilTiers'
+import { SIGIL_QUALITIES, isSigilQuality, getSigilQualityDefinition } from '../game/content/sigils/sigilQualities'
+import type { SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilState, SigilStatId, SigilTier, SigilTraitId } from '../game/types'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -78,6 +84,40 @@ const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): G
   const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'crystals', 'collection', 'bestiary', 'tower-channeling', 'tower-acolytes', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
+}
+
+const clamp01 = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
+const validSigilSlot = (value: unknown): value is SigilSlot => [1, 2, 3, 4, 5, 6].includes(value as number)
+
+const normalizeSigils = (migrated: GameState, raw: Record<string, any>) => {
+  const fresh = createInitialState().sigils
+  const source = isRecord(raw.sigils) ? raw.sigils : {}
+  const storage: Record<string, SigilInstance> = {}
+  const sourceStorage = isRecord(source.storage) ? source.storage : {}
+  Object.entries(sourceStorage).forEach(([key, value]) => {
+    if (!isRecord(value) || typeof key !== 'string') return
+    const setId = SIGIL_SET_IDS.includes(value.setId as SigilSetId) ? value.setId as SigilSetId : null
+    const mainStatId = typeof value.mainStatId === 'string' && Object.prototype.hasOwnProperty.call(SIGIL_STAT_DEFINITIONS, value.mainStatId) ? value.mainStatId as SigilStatId : null
+    const slot = validSigilSlot(value.slot) ? value.slot : null
+    const tier = isSigilTier(value.tier) ? value.tier : SIGIL_TIERS[0].tier
+    const quality = isSigilQuality(value.quality) ? value.quality : 'common'
+    if (!setId || !mainStatId || !slot) return
+    const secondaries = Array.isArray(value.secondaries) ? value.secondaries.filter(isRecord).map((secondary) => {
+      if (typeof secondary.statId !== 'string' || !Object.prototype.hasOwnProperty.call(SIGIL_STAT_DEFINITIONS, secondary.statId)) return null
+      const rolls = Array.isArray(secondary.rolls) ? secondary.rolls.filter(isRecord).map((roll) => ({ quality01: clamp01(roll.quality01), rank: Math.max(1, Math.floor(typeof roll.rank === 'number' && Number.isFinite(roll.rank) ? roll.rank : 1)) })) : []
+      return { statId: secondary.statId as SigilStatId, rolls }
+    }).filter(Boolean).slice(0, 4) as SigilInstance['secondaries'] : []
+    const traitIds = Array.isArray(value.traitIds) ? value.traitIds.filter((trait): trait is SigilTraitId => SIGIL_TRAIT_IDS.includes(trait as SigilTraitId)).filter((trait, index, list) => list.indexOf(trait) === index).slice(0, getSigilQualityDefinition(quality).traitCount) : []
+    const rank = Math.min(getSigilQualityDefinition(quality).maxRank, Math.max(0, Math.floor(typeof value.rank === 'number' && Number.isFinite(value.rank) ? value.rank : 0)))
+    storage[key] = { instanceId: key, tier, quality, setId, slot, rank, mainStatId, secondaries, traitIds, rollHistory: Array.isArray(value.rollHistory) ? value.rollHistory.filter(isRecord).map((entry) => ({ rank: Math.max(0, Math.floor(Number(entry.rank) || 0)), kind: entry.kind === 'trait' || entry.kind === 'improve-secondary' ? entry.kind : 'new-secondary', ...(typeof entry.statId === 'string' && Object.prototype.hasOwnProperty.call(SIGIL_STAT_DEFINITIONS, entry.statId) ? { statId: entry.statId as SigilStatId } : {}), ...(typeof entry.traitId === 'string' && SIGIL_TRAIT_IDS.includes(entry.traitId as SigilTraitId) ? { traitId: entry.traitId as SigilTraitId } : {}), ...(entry.rollQuality01 !== undefined ? { rollQuality01: clamp01(entry.rollQuality01) } : {}) })) : [], locked: value.locked === true }
+  })
+  const equipped = { ...fresh.equipped }
+  if (isRecord(source.equipped)) Object.entries(source.equipped).forEach(([slot, id]) => { if (validSigilSlot(Number(slot)) && typeof id === 'string' && storage[id]?.slot === Number(slot)) equipped[Number(slot) as SigilSlot] = id })
+  const sourceDiscovery = isRecord(source.discovery) ? source.discovery : {}
+  const discovery: GameState['sigils']['discovery'] = { ...fresh.discovery, discoveredSets: {}, discoveredSlotsBySet: {}, bestQualityBySet: {}, bestTierBySet: {}, discoveredTraits: {}, qualitiesFound: {}, tiersFound: {} }
+  SIGIL_SET_IDS.forEach((setId) => { if (isRecord(sourceDiscovery.discoveredSets) && sourceDiscovery.discoveredSets[setId] === true) discovery.discoveredSets[setId] = true })
+  Object.entries(storage).forEach(([id, sigil]) => { discovery.discoveredSets[sigil.setId] = true; discovery.discoveredSlotsBySet[sigil.setId] = { ...(discovery.discoveredSlotsBySet[sigil.setId] ?? {}), [sigil.slot]: true }; discovery.qualitiesFound[sigil.quality] = true; discovery.tiersFound[sigil.tier] = true; sigil.traitIds.forEach((trait) => { discovery.discoveredTraits[trait] = true }) })
+  migrated.sigils = { ...fresh, ...source, nextInstanceSequence: Math.max(1, Math.floor(Number(source.nextInstanceSequence) || 1)), storage, equipped, dust: Math.max(0, Math.floor(Number(source.dust) || 0)), attunedSetId: SIGIL_SET_IDS.includes(source.attunedSetId as SigilSetId) ? source.attunedSetId as SigilSetId : null, highestSourcePowerDefeated: Math.max(0, Number(source.highestSourcePowerDefeated) || 0), lifetimeDrops: Math.max(0, Math.floor(Number(source.lifetimeDrops) || 0)), firstDropPityKills: Math.max(0, Math.floor(Number(source.firstDropPityKills) || 0)), highestRankEver: Math.max(0, Math.floor(Number(source.highestRankEver) || 0)), secondaryRollsLifetime: Math.max(0, Math.floor(Number(source.secondaryRollsLifetime) || 0)), traitsUnlockedLifetime: Math.max(0, Math.floor(Number(source.traitsUnlockedLifetime) || 0)), discovery, hasDefeatedWorldTier2Boss: source.hasDefeatedWorldTier2Boss === true, autoSalvage: { common: isRecord(source.autoSalvage) && source.autoSalvage.common === true, refined: isRecord(source.autoSalvage) && source.autoSalvage.refined === true } } as SigilState
 }
 
 const normalizeLastEnteredCombatDungeonId = (value: unknown): DungeonId | undefined => {
@@ -943,6 +983,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.ui.screen = normalizeScreen(rawUi.screen, migrated.ui.screen)
   migrated.ui.lastEnteredCombatDungeonId = normalizeLastEnteredCombatDungeonId(rawUi.lastEnteredCombatDungeonId ?? migrated.ui.lastEnteredCombatDungeonId)
   normalizeDynamicRecords(migrated, raw)
+  normalizeSigils(migrated, raw)
   normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
   reconcileWorldTierProgression(migrated)

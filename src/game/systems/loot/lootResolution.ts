@@ -5,6 +5,12 @@ import { grantItem } from '../inventory/itemAcquisition'
 import { getActiveEncounterWorldTier, resolveWorldTierLootQuantity } from '../world-tier/worldTierRuntime'
 import { rollPowerScaledCurrencyReward } from './powerScaledCurrencyRewards'
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
+import { resolveEnemyPowerRating } from '../combat/enemyPower'
+import { SIGIL_DROP_CHANCE, SIGIL_FIRST_DROP_PITY_KILLS } from '../../content/sigils/sigilDropConfig'
+import { generateSigil } from '../sigils/sigilGeneration'
+import { salvageSigil } from '../sigils/sigilSalvage'
+import { SIGIL_STORAGE_SOFT_CAP } from '../../content/sigils/sigilDropConfig'
+import { pushNotification } from '../../engine'
 
 /** Resolves the authored material table into inventory changes and a readable log fragment. */
 export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random): string {
@@ -28,5 +34,20 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   grantItem(state, 'artifact-essence', artifactEssenceQuantity)
   onDrop?.('artifact-essence', artifactEssenceQuantity)
   drops.push(`${artifactEssenceQuantity} ${ITEMS['artifact-essence'].name}`)
+  const encounterPower = resolveEnemyPowerRating(enemyId, encounterWorldTier)
+  state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, encounterPower)
+  if (isBoss && encounterWorldTier >= 2) state.sigils.hasDefeatedWorldTier2Boss = true
+  state.sigils.firstDropPityKills += 1
+  const forcePityDrop = state.sigils.lifetimeDrops === 0 && state.sigils.firstDropPityKills >= SIGIL_FIRST_DROP_PITY_KILLS
+  if (forcePityDrop || rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)) {
+    const sigil = generateSigil({ state, dungeonId: state.combat.dungeonId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
+    drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)
+    const autoSalvage = (sigil.quality === 'common' || sigil.quality === 'refined') && state.sigils.autoSalvage[sigil.quality]
+    const atSoftCap = Object.keys(state.sigils.storage).length > SIGIL_STORAGE_SOFT_CAP && (sigil.quality === 'common' || sigil.quality === 'refined')
+    if (autoSalvage || atSoftCap) {
+      salvageSigil(state, sigil.instanceId)
+      if (atSoftCap && !autoSalvage) pushNotification(state, 'Sigil Storage is full; the incoming low-quality Sigil was salvaged.', 'warning', { key: 'sigil-storage-cap', cooldownMs: 60_000 })
+    }
+  }
   return drops.join(', ')
 }

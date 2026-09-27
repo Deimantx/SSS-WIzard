@@ -27,6 +27,7 @@
 @import './screens/crystals.css';
 @import './screens/transmutation.css';
 @import './screens/artificing.css';
+@import './screens/sigils.css';
 @import './components/context-menu.css';
 @import './screens/research.css';
 @import './screens/dark-portal.css';

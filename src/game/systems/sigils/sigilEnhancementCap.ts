@@ -1,0 +1,1 @@
+export { getSigilEnhancementCap } from './sigilRuntime'

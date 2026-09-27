@@ -64,6 +64,14 @@ export const getGuildRankProgressPresentation = (state: Pick<GameState, 'progres
   }
 }
 
+export const getGuildSkillBranchProgress = (state: Pick<GameState, 'progress'>, branch: GuildSkillBranch) => {
+  const nodes = Object.values(GUILD_SKILL_NODES).filter((node) => node.branch === branch)
+  return {
+    purchased: nodes.filter((node) => Boolean(state.progress.guildSkillNodeRanks[node.id])).length,
+    total: nodes.length,
+  }
+}
+
 export const getGuildSkillNodePresentation = (state: Pick<GameState, 'progress'>, nodeId: keyof typeof GUILD_SKILL_NODES) => {
   const node = GUILD_SKILL_NODES[nodeId]
   const purchased = Boolean(state.progress.guildSkillNodeRanks[node.id])

@@ -40,6 +40,7 @@ export interface TransmutationScreenPreferences {
   collapsedCategories: Record<RecipeCategory, boolean>
 }
 export interface ArtificingScreenPreferences {
+  mode: 'artifacts' | 'sigils'
   selectedRecipeId: import('../../game/types').ArtificingRecipeId | null
   pinnedRecipeIds: import('../../game/types').ArtificingRecipeId[]
   pinsCollapsed: boolean

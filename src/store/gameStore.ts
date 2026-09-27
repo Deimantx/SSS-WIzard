@@ -120,6 +120,8 @@ import {
   toggleItemProtectionAction,
 } from "./actions/inventoryActions";
 import { equipItemAction, unequipItemAction } from "./actions/equipmentActions";
+import { craftSigilAction, enhanceSigilAction, equipSigilAction, salvageSigilAction, setSigilAttunementAction, setSigilAutoSalvageAction, toggleSigilLockAction, unequipSigilAction } from './actions/sigilActions';
+import { generateSigil } from '../game/systems/sigils/sigilGeneration';
 import { chooseStartingSchoolAction, chooseStartingSchoolDebugAction, grantStarterArtifactAction, resetTutorialAction, setTutorialStageAction, skipTutorialAction } from "./actions/onboardingActions";
 import {
   donateGuildRequestAction,
@@ -644,6 +646,9 @@ export interface GameActions {
   debugGrantAllArtifacts: () => void;
   debugResetAllArtifactRanks: () => void;
   debugGrantArtifactMaterials: () => void;
+  debugCreateSigil: (tier: import('../game/types').SigilTier, quality: import('../game/types').SigilQuality, setId: import('../game/types').SigilSetId, slot: number, mainStatId?: import('../game/types').SigilStatId) => string;
+  debugEnhanceSigil: (instanceId: string) => boolean;
+  debugAddSigilDust: (amount: number) => void;
   cancelArtificingCraft: () => void;
   castSpell: (spellId: SpellId) => void;
   debugCastSpell: (spellId: SpellId) => void;
@@ -770,6 +775,14 @@ export interface GameActions {
   clearRecentNew: (itemId: ItemId) => void;
   equipItem: (itemId: ItemId, targetPosition?: EquipmentPosition) => void;
   unequipItem: (position: EquipmentPosition) => void;
+  equipSigil: (instanceId: string) => { ok: boolean; reason?: string };
+  unequipSigil: (slot: import('../game/types').SigilSlot) => { ok: boolean; reason?: string };
+  toggleSigilLock: (instanceId: string) => { ok: boolean; reason?: string };
+  enhanceSigil: (instanceId: string, options?: import('./actions/sigilActions').SigilEnhancementOptions) => { ok: boolean; reason?: string; rank?: number };
+  salvageSigil: (instanceId: string) => { ok: boolean; reason?: string; dust?: number };
+  setSigilAttunement: (setId: import('../game/types').SigilSetId | null) => void;
+  setSigilAutoSalvage: (quality: 'common' | 'refined', enabled: boolean) => void;
+  craftSigil: (mode: import('../game/systems/sigils/sigilCrafting').SigilCraftMode, tier: import('../game/types').SigilTier, setId: import('../game/types').SigilSetId, slot?: import('../game/types').SigilSlot) => { ok: boolean; reason?: string; instanceId?: string; cost?: number };
   unlockAllSpells: () => void;
   debugUnlockSpellRankOne: (spellId: SpellId) => void;
   debugLockSpell: (spellId: SpellId) => void;
@@ -1630,6 +1643,20 @@ export const useGameStore = create<GameStore>()(
         grantDebugArtifactMaterialsInState(state);
         return state;
       }),
+    debugCreateSigil: (tier, quality, setId, slot, mainStatId) => {
+      let instanceId = '';
+      set((state) => {
+        instanceId = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: tier >= 2 ? 5000 : 0, forcedTier: tier, forcedQuality: quality, forcedSetId: setId, forcedSlot: slot as import('../game/types').SigilSlot, forcedMainStatId: mainStatId, rng: Math.random }).instanceId;
+        return state;
+      });
+      return instanceId;
+    },
+    debugEnhanceSigil: (instanceId) => {
+      let ok = false;
+      set((state) => { ok = enhanceSigilAction(state, instanceId, { bypassGlobalCap: true }).ok; return state; });
+      return ok;
+    },
+    debugAddSigilDust: (amount) => set((state) => { state.sigils.dust += Math.max(0, Math.floor(amount)); return state; }),
     castSpell: (spellId) =>
       set((state) => {
         castSpellAction(state, spellId, combatEventSink);
@@ -2896,6 +2923,38 @@ export const useGameStore = create<GameStore>()(
           "var(--ui-warning)",
           0.75,
         );
+    },
+    equipSigil: (instanceId) => {
+      let result: ReturnType<typeof equipSigilAction> = { ok: false, reason: 'Sigil not found.' };
+      set((state) => { result = equipSigilAction(state, instanceId); return state; });
+      return result;
+    },
+    unequipSigil: (slot) => {
+      let result: ReturnType<typeof unequipSigilAction> = { ok: false, reason: 'No Sigil is equipped in that slot.' };
+      set((state) => { result = unequipSigilAction(state, slot); return state; });
+      return result;
+    },
+    toggleSigilLock: (instanceId) => {
+      let result: ReturnType<typeof toggleSigilLockAction> = { ok: false, reason: 'Sigil not found.' };
+      set((state) => { result = toggleSigilLockAction(state, instanceId); return state; });
+      return result;
+    },
+    enhanceSigil: (instanceId, options) => {
+      let result: ReturnType<typeof enhanceSigilAction> = { ok: false, reason: 'Sigil not found.' };
+      set((state) => { result = enhanceSigilAction(state, instanceId, options); return state; });
+      return result;
+    },
+    salvageSigil: (instanceId) => {
+      let result: ReturnType<typeof salvageSigilAction> = { ok: false, reason: 'Sigil not found.' };
+      set((state) => { result = salvageSigilAction(state, instanceId); return state; });
+      return result;
+    },
+    setSigilAttunement: (setId) => set((state) => { setSigilAttunementAction(state, setId); return state; }),
+    setSigilAutoSalvage: (quality, enabled) => set((state) => { setSigilAutoSalvageAction(state, quality, enabled); return state; }),
+    craftSigil: (mode, tier, setId, slot) => {
+      let result: ReturnType<typeof craftSigilAction> = { ok: false, reason: 'Unable to craft Sigil.' };
+      set((state) => { result = craftSigilAction(state, mode, tier, setId, slot); return state; });
+      return result;
     },
     unlockAllSpells: () =>
       set((state) => {

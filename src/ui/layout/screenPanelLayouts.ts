@@ -296,19 +296,33 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   // GUILD
   // ============================================================
-  // Guild V3 owns its internal master-detail surface directly. Keep an empty
-  // layout entry so the UI tuning resolver remains compatible with old saves.
-  guild: defineScreen({
-    screen: {
-      columns: SCREEN_LAYOUT_DEFAULTS.columns,
-      columnGap: SCREEN_LAYOUT_DEFAULTS.columnGap,
-      rowGap: SCREEN_LAYOUT_DEFAULTS.rowGap,
-      minWidth: 0,
-      maxWidth: null,
-      alignItems: 'stretch',
-    },
-    panels: {},
-  }),
+  guild: screen({
+    // Each visible Guild surface has its own editable panel. The shared mobile
+    // layout changes these values to auto when panels stack vertically.
+    'guild-header': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 190, label: 'Guild identity and metrics' }),
+    'guild-tabs': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 100, label: 'Guild navigation tabs' }),
+    'guild-progression': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Guild rank progression' }),
+    'guild-recommended-contracts': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Recommended Guild contracts' }),
+    'guild-specialization': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 220, overflow: 'auto', label: 'Guild specialization summary' }),
+    'guild-contract-controls': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 86, overflow: 'auto', label: 'Guild contract filters' }),
+    'guild-contracts': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 1020, overflow: 'auto', label: 'Guild contract board' }),
+    'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 150, label: 'Guild skill points summary' }),
+    'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 560, overflow: 'auto', label: 'Guild skill branches' }),
+    'guild-skills-note': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 5, minHeight: 0, preferredHeight: 72, label: 'Guild skill tree note' }),
+    'guild-locked': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 520, label: 'Guild locked state' }),
+  }, [
+    'guild-header',
+    'guild-tabs',
+    'guild-progression',
+    'guild-recommended-contracts',
+    'guild-specialization',
+    'guild-contract-controls',
+    'guild-contracts',
+    'guild-skills-summary',
+    'guild-skills',
+    'guild-skills-note',
+    'guild-locked',
+  ]),
 
   // ============================================================
   // SETTINGS / INFO

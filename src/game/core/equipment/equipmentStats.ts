@@ -4,6 +4,7 @@ import { getArtifactEffectiveStats, getActiveArtifactCombatProviders, isArtifact
 import { getArcaneCoreStaticStats } from '../../systems/arcaneCore/arcaneCoreProgression'
 import { addEquipmentStats } from './equipmentStatAggregation'
 import { getEquippedCrystalStats } from '../../systems/crystals/crystalStats'
+import { getEquippedSigilStats } from '../../systems/sigils/sigilRuntime'
 
 export { addEquipmentStats } from './equipmentStatAggregation'
 
@@ -16,7 +17,7 @@ export interface EquipmentModifierContext {
   statusTags?: CombatTag[]
 }
 
-export type EquipmentStatsState = Pick<GameState, 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'arcaneCore' | 'crystals'>>
+export type EquipmentStatsState = Pick<GameState, 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'arcaneCore' | 'crystals' | 'sigils'>>
 
 /** Aggregates authored equipped-item stats for every derived combat/system selector. */
 export const getEffectiveEquipmentItemStats = (state: EquipmentStatsState, itemId: import('../../types').ItemId): EquipmentStats =>
@@ -30,6 +31,7 @@ export const getEquipmentStats = (state: EquipmentStatsState): EquipmentStats =>
   })
   if (state.arcaneCore) addEquipmentStats(total, getArcaneCoreStaticStats(state.arcaneCore))
   if (state.crystals) addEquipmentStats(total, getEquippedCrystalStats(state as Pick<GameState, 'crystals'>))
+  if (state.sigils) addEquipmentStats(total, getEquippedSigilStats(state as Pick<GameState, 'sigils'>))
   return total
 }
 

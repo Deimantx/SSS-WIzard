@@ -743,8 +743,9 @@ export interface ProgressState {
 
 
 
-export type GuildCommissionCategory = 'delivery' | 'research' | 'transmutation'
+export type GuildCommissionCategory = 'delivery' | 'production' | 'research' | 'transmutation' | 'mixed'
 export type GuildCommissionQuality = 'routine' | 'special' | 'prestigious'
+export interface GuildCommissionComponentState { category: 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number; progress: number }
 export interface GuildCommissionState {
   id: string
   templateId: string
@@ -755,6 +756,7 @@ export interface GuildCommissionState {
   progress: number
   reputationReward: number
   advancementPointReward: number
+  components?: GuildCommissionComponentState[]
 }
 export interface GuildCommissionChainState { id: string; stageIndex: number; stageProgress: number }
 export interface ArcaneGuildProgress {
@@ -766,6 +768,8 @@ export interface ArcaneGuildProgress {
   generationCount: number
   completedCommissions: number
   freeRefreshes: number
+  rngState: number
+  completedChainIds: string[]
 }
 
 export interface ArcaneRegistryProgress {
@@ -775,10 +779,16 @@ export interface ArcaneRegistryProgress {
 
 export type HunterRankId = 'tracker' | 'scout' | 'stalker' | 'warden' | 'veteran' | 'master-hunter'
 export type HunterContractTier = 'routine' | 'special' | 'prestigious'
-export type HunterUpgradeId = 'trail-kit' | 'marked-quarry'
+export type HunterUpgradeId = 'trail-kit' | 'marked-quarry' | 'extended-trails' | 'deep-pockets'
+export type HunterContractTarget =
+  | { type: 'monster'; monsterId: MonsterId }
+  | { type: 'family'; familyId: string }
+  | { type: 'region'; dungeonId: DungeonId }
+  | { type: 'alignment'; alignmentId: string }
+  | { type: 'boss'; monsterId: MonsterId }
 export interface HunterContractState {
   id: string
-  targetMonsterId: MonsterId
+  targetSpec: HunterContractTarget
   target: number
   progress: number
   tier: HunterContractTier
@@ -797,6 +807,7 @@ export interface HuntersOrderProgress {
   totalContractsCompleted: number
   totalHunterKills: number
   generationCount: number
+  rngState: number
   monsterHunterStats: Partial<Record<MonsterId, { contractKills: number; contractsCompleted: number; marksEarned: number }>>
 }
 

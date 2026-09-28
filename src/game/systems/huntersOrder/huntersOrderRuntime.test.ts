@@ -1,50 +1,112 @@
 import { describe, expect, it } from 'vitest'
+import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
-import { acceptHunterContract, canHuntMonster, ensureHunterContractChoices, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade } from './huntersOrderRuntime'
+import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
+import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade } from './huntersOrderRuntime'
+import type { HunterContractState } from '../../types'
 
-describe('Hunter Order contract runtime', () => {
-  it('unlocks from the Howling Den boss and generates three hunt choices', () => {
-    const state = createInitialState()
-    expect(generateHunterContractChoices(state)).toHaveLength(0)
-    expect(canHuntMonster(state, 'ashen-tracker')).toBe(false)
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    const offers = generateHunterContractChoices(state)
-    state.progress.huntersOrder.availableContracts = offers
-    expect(offers).toHaveLength(3)
-    expect(canHuntMonster(state, offers[0].targetMonsterId)).toBe(false)
-    expect(acceptHunterContract(state, offers[0].id)).toBe(true)
-    expect(canHuntMonster(state, offers[0].targetMonsterId)).toBe(true)
-    expect(state.progress.huntersOrder.totalContractsAccepted).toBe(1)
+const contract = (targetSpec: HunterContractState['targetSpec'], tier: HunterContractState['tier'] = 'routine'): HunterContractState => ({ id: 'test-contract', targetSpec, target: 1, progress: 0, tier, reputationReward: 100, marksReward: 3 })
+const unlock = () => { const state = createInitialState(); state.progress.bossKillsByBoss['corrupted-greatbear'] = 1; return state }
+
+describe('Hunter Order hardened runtime', () => {
+  it('generates unique seeded generalized offers and save state preserves the next sequence', () => {
+    const a = unlock(); const b = unlock()
+    a.progress.huntersOrder.reputation = b.progress.huntersOrder.reputation = 1800
+    a.progress.huntersOrder.rngState = b.progress.huntersOrder.rngState = 123456
+    const firstA = generateHunterContractChoices(a); const firstB = generateHunterContractChoices(b)
+    expect(firstA).toEqual(firstB)
+    expect(new Set(firstA.map((offer) => JSON.stringify(offer.targetSpec))).size).toBe(firstA.length)
+    expect(firstA.every((offer) => offer.target > 1)).toBe(true)
+    const saved = structuredClone(a.progress.huntersOrder)
+    const nextA = generateHunterContractChoices(a)
+    const continued = unlock(); continued.progress.huntersOrder = saved
+    expect(generateHunterContractChoices(continued)).toEqual(nextA)
   })
 
-  it('counts only the active target, then grants Marks and Reputation on completion', () => {
-    const state = createInitialState()
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    const target = generateHunterContractChoices(state)[0]
-    target.target = 1
-    state.progress.huntersOrder.availableContracts = [target]
-    acceptHunterContract(state, target.id)
-    expect(recordHunterKill(state, 'gloamfang-stalker')).toBe(false)
-    expect(recordHunterKill(state, target.targetMonsterId)).toBe(true)
-    expect(state.progress.huntersOrder.totalContractsCompleted).toBe(1)
-    expect(state.progress.huntersOrder.hunterMarks).toBeGreaterThan(0)
-    expect(state.progress.huntersOrder.reputation).toBeGreaterThan(0)
+  it('matches specific monster, family, region, alignment, and boss objectives', () => {
+    const state = unlock()
+    const specific = contract({ type: 'monster', monsterId: 'ashen-tracker' })
+    expect(doesMonsterMatchHunterContract(specific, 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(specific, 'gloamfang-stalker', 'hunters-ground')).toBe(false)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'family', familyId: 'Gloamridge Predators' }), 'gloamfang-stalker', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'region', dungeonId: 'hunters-ground' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'region', dungeonId: 'hunters-ground' }), 'ashen-tracker', 'howling-den')).toBe(false)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'alignment', alignmentId: 'Wild' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious'), 'nightglass-alpha', 'hunters-ground')).toBe(true)
+    expect(state.progress.huntersOrder.rngState).toBeGreaterThan(0)
   })
 
-  it('keeps block, reroll, skip, and purchase as separate actions', () => {
-    const state = createInitialState()
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+  it('authorizes exact targets and leaves ordinary monsters unaffected', () => {
+    const state = unlock()
+    expect(getHunterAuthorization(state, 'ashen-tracker')).toMatchObject({ authorized: false, reason: 'contract-required' })
+    state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'ashen-tracker' })
+    expect(canHuntMonster(state, 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(getHunterAuthorization(state, 'gloamfang-stalker', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-target-mismatch' })
+    expect(canHuntMonster(state, 'forest-wisp', 'whispering-woods')).toBe(true)
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 0
+    expect(getHunterAuthorization(state, 'ashen-tracker')).toMatchObject({ authorized: false, reason: 'order-locked' })
+  })
+
+  it('rejects direct, pending-boss, and auto-hunt spawns that lack matching authorization', () => {
+    const state = unlock()
+    state.combat.dungeonId = 'hunters-ground'
+    state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'ashen-tracker' })
+    expect(spawnEnemy(state, 'gloamfang-stalker')).toBe(false)
+    state.combat.pendingBossId = 'nightglass-alpha'
+    expect(spawnNextEnemy(state)).toBe(false)
+    expect(state.combat.enemyId).toBeNull()
+    expect(state.combat.pendingBossId).toBe('nightglass-alpha')
+    expect(DUNGEONS['hunters-ground'].boss).toBe('nightglass-alpha')
+  })
+
+  it('keeps block capacity, protects active eligibility, and permits unblocking', () => {
+    const state = unlock()
+    expect(getHunterBlockSlotCount(state)).toBe(1)
+    expect(setHunterTargetBlocked(state, 'ashen-tracker', true)).toBe(true)
+    expect(setHunterTargetBlocked(state, 'gloamfang-stalker', true)).toBe(false)
+    expect(setHunterTargetBlocked(state, 'ashen-tracker', false)).toBe(true)
+    state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'gloamfang-stalker' })
+    expect(setHunterTargetBlocked(state, 'gloamfang-stalker', true)).toBe(false)
+    expect(state.progress.huntersOrder.availableContracts.length).toBeGreaterThan(0)
+  })
+
+  it('spends Marks for reroll and skip, and applies upgrades by rank', () => {
+    const state = unlock()
     state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
-    const targetId = state.progress.huntersOrder.availableContracts[0].targetMonsterId
-    expect(setHunterTargetBlocked(state, targetId, true)).toBe(true)
-    expect(state.progress.huntersOrder.availableContracts.some((entry) => entry.targetMonsterId === targetId)).toBe(false)
-    state.progress.huntersOrder.hunterMarks = 20
+    state.progress.huntersOrder.hunterMarks = 30
     expect(rerollHunterContracts(state)).toBe(true)
+    const costAfterReroll = state.progress.huntersOrder.hunterMarks
     const offer = state.progress.huntersOrder.availableContracts[0]
     expect(acceptHunterContract(state, offer.id)).toBe(true)
     expect(skipHunterContract(state)).toBe(true)
-    expect(state.progress.huntersOrder.activeContract).toBeNull()
+    expect(state.progress.huntersOrder.hunterMarks).toBe(costAfterReroll - 3)
     expect(purchaseHunterUpgrade(state, 'trail-kit')).toBe(true)
-    expect(state.progress.huntersOrder.purchasedUpgrades['trail-kit']).toBe(1)
+    expect(purchaseHunterUpgrade(state, 'trail-kit')).toBe(true)
+    expect(state.progress.huntersOrder.purchasedUpgrades['trail-kit']).toBe(2)
+  })
+
+  it('uses progress within the current rank interval', () => {
+    expect(getHunterRankProgress(0).progress).toBe(0)
+    expect(getHunterRankProgress(250).progress).toBe(0)
+    expect(getHunterRankProgress(525).progress).toBe(0.5)
+    expect(getHunterRankProgress(800).progress).toBe(0)
+    expect(getHunterRankProgress(9000)).toMatchObject({ nextRank: null, progress: 1 })
+  })
+
+  it('does not authorize Apex targets with an unrelated or under-tier contract', () => {
+    const state = unlock()
+    state.progress.huntersOrder.reputation = 7000
+    state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'ashen-tracker' }, 'routine')
+    expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-tier-locked' })
+    state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
+    expect(canHuntMonster(state, 'nightglass-alpha', 'hunters-ground')).toBe(true)
+  })
+
+  it('progresses and rewards generalized matching targets only', () => {
+    const state = unlock()
+    state.progress.huntersOrder.activeContract = contract({ type: 'family', familyId: 'Gloamridge Predators' })
+    expect(recordHunterKill(state, 'runehorn-brute', 'hunters-ground')).toBe(false)
+    expect(recordHunterKill(state, 'gloamfang-stalker', 'hunters-ground')).toBe(true)
+    expect(state.progress.huntersOrder.reputation).toBe(100)
   })
 })

@@ -37,9 +37,14 @@ function BreakdownContent({ state, statKey, pinned = false }: { state: GameState
   </div>
 }
 
+function StatBreakdownTooltip({ state, statKey }: { state: GameState; statKey: PlayerBreakdownStatKey }) {
+  const { advanced } = useTooltipDetailMode()
+  return advanced
+    ? <BreakdownContent state={state} statKey={statKey} />
+    : <TooltipContent title={getEquipmentStatLabel(statKey)} description={<>{getEquipmentStatDescription(statKey)}<br /><br />Hold ALT to inspect the contribution sources. Select this stat to keep the breakdown open.</>} />
+}
 export function PlayerStatBreakdown({ state, statKey, value, children }: { state: GameState; statKey: string; value: number; children: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const detailMode = useTooltipDetailMode()
   const key = statKey as PlayerBreakdownStatKey
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
@@ -47,11 +52,11 @@ export function PlayerStatBreakdown({ state, statKey, value, children }: { state
     setOpen(true)
   }
   return <>
-    <GameTooltip block wide delay={500} content={detailMode.advanced ? <BreakdownContent state={state} statKey={key} /> : <TooltipContent title={getEquipmentStatLabel(statKey)} description={<>{getEquipmentStatDescription(statKey)}<br /><br />Hold ALT to inspect the contribution sources. Select this stat to keep its breakdown open.</>} />}>
+    <GameTooltip block wide delay={500} content={<StatBreakdownTooltip state={state} statKey={key} />}>
       <div role="button" tabIndex={0} aria-label={`${getEquipmentStatLabel(statKey)} breakdown`} aria-haspopup="dialog" className="equipment-stat-breakdown-trigger" onClick={() => setOpen(true)} onKeyDown={onKeyDown}>{children}</div>
     </GameTooltip>
     <ModalPortal open={open} onClose={() => setOpen(false)} backdropClassName="equipment-stat-breakdown-backdrop" surfaceClassName="equipment-stat-breakdown-modal" ariaLabel={`${getEquipmentStatLabel(statKey)} stat breakdown`}>
-      <header className="equipment-stat-breakdown-header"><div><span className="eyebrow"><Layers3 size={14} /> WIZARD STATS</span><h2>{getEquipmentStatLabel(statKey)}</h2><p>{getEquipmentStatDescription(statKey)}</p></div><Button variant="ghost" ariaLabel="Close stat breakdown" onClick={() => setOpen(false)}>Ã—</Button></header>
+      <header className="equipment-stat-breakdown-header"><div><span className="eyebrow"><Layers3 size={14} /> WIZARD STATS</span><h2>{getEquipmentStatLabel(statKey)}</h2><p>{getEquipmentStatDescription(statKey)}</p></div><Button variant="ghost" ariaLabel="Close stat breakdown" onClick={() => setOpen(false)}>×</Button></header>
       <div className="equipment-stat-breakdown-scroll"><BreakdownContent state={state} statKey={key} pinned /></div>
       <footer className="equipment-stat-breakdown-footer"><span>Current sheet value</span><GameValue value={value} formatted={formatEquipmentStat(statKey, value, false)} /><Button variant="secondary" onClick={() => setOpen(false)}>CLOSE</Button></footer>
     </ModalPortal>

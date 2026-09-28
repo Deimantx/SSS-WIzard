@@ -142,7 +142,7 @@ export const completeTransmutationCycle = (state: GameState, recipe: (typeof REC
   const extraGuildOutput = guildOutputChance > 0 && roll() < guildOutputChance ? 1 : 0
   const outputQuantity = recipe.output.quantity * (replicated ? 2 : 1) + extraGuildOutput
   grantItem(state, recipe.output.itemId, outputQuantity)
-  recordGuildCommissionProgress(state, 'transmutation', 1)
+  recordGuildCommissionProgress(state, 'transmutation', 1, recipe.output.itemId)
   context.onItemAcquired?.(recipe.output.itemId, outputQuantity)
   context.report?.recordTransmutation(recipe.id, recipe.output.itemId, outputQuantity, consumedIngredients)
   context.onTransmutationComplete?.(recipe.id)

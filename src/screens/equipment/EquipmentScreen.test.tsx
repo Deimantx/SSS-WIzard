@@ -89,6 +89,9 @@ describe('EquipmentScreen', () => {
     expect(screen.getByRole('heading', { name: 'Ember Staff' })).toBeTruthy()
     expect(screen.getByText(/T1 ARTIFACT.*RANKS 0 . 50/)).toBeTruthy()
     expect(screen.getByText(/EQUIPPED.*Weapon/)).toBeTruthy()
+    expect(container.querySelector('.equipment-armory-artifact-meta')?.textContent).toContain('T1 ' + String.fromCharCode(183) + ' RANKS 0 / 50')
+    expect(container.textContent).toContain(String.fromCharCode(8594))
+    expect(container.textContent).not.toMatch(new RegExp('[' + String.fromCharCode(0xc3, 0xc2, 0xe2) + ']'))
     expect(container.querySelector('.equipment-copy-availability')?.textContent?.replace(/\s+/g, '')).toContain('OWNED1')
   })
 
@@ -101,6 +104,20 @@ describe('EquipmentScreen', () => {
     expect(container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]')).toBeNull()
   })
 
+  it('reveals and hides stat contributions when Alt changes over an open Wizard Stats tooltip', async () => {
+    render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
+
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Spell Power breakdown' }))
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip.textContent).toContain('Hold ALT to inspect the contribution sources.')
+
+    fireEvent.keyDown(window, { key: 'Alt' })
+    expect(tooltip.textContent).toContain('FINAL TOTAL')
+    expect(tooltip.textContent).toContain('Base Character Value')
+
+    fireEvent.keyUp(window, { key: 'Alt' })
+    expect(tooltip.textContent).toContain('Hold ALT to inspect the contribution sources.')
+  })
   it('shows equipped Crystal contribution in the Wizard Stats panel', () => {
     const state = useGameStore.getState()
     useGameStore.setState({

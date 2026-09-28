@@ -110,7 +110,7 @@ export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameStat
   if (combatSummary) return combatSummary
   const stats = getEquipmentSearchStats(itemId, state)
   const entries = Object.entries(stats).filter(([, value]) => typeof value === 'number' && isMeaningfulEquipmentStatValue(value)).slice(0, 2)
-  return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' Ã‚Â· ') : null
+  return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' · ') : null
 }
 
 export interface EquipmentPreviewTargetOptions {

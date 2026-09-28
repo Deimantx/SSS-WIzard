@@ -30,7 +30,7 @@ import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
-import { ensureHunterContractChoices, recordHunterKill, canHuntMonster } from '../huntersOrder/huntersOrderRuntime'
+import { ensureHunterContractChoices, recordHunterKill, getHunterAuthorization } from '../huntersOrder/huntersOrderRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -78,6 +78,12 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
 }
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
+  const authorization = getHunterAuthorization(state, enemyId, state.combat.dungeonId)
+  if (!authorization.authorized) {
+    const messages = { 'order-locked': 'Unlock Hunters Order before hunting this creature.', 'contract-required': 'Accept a matching Hunt Contract before engaging this creature.', 'contract-target-mismatch': 'Your active Hunt Contract does not authorize this target.', 'contract-tier-locked': 'Your Hunter Rank does not authorize this contract tier.', 'target-not-authorized': 'This creature is not authorized for the active Hunt Contract.' }
+    pushNotification(state, messages[authorization.reason], 'warning', { key: `hunter-authorization:${authorization.reason}:${enemyId}`, cooldownMs: 1000 })
+    return false
+  }
   const monster = MONSTERS[enemyId]
   const resolution = resolveSpellLoadoutForNextBattle(state)
   if (!resolution.ok) {
@@ -174,11 +180,6 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
     }
   }
   const targetedEnemyId = isCombatTargetForLocation(location, dungeon.id, state.combat.targetEnemyId) ? state.combat.targetEnemyId : null
-  if (dungeon.id === 'hunters-ground' && !canHuntMonster(state, targetedEnemyId ?? dungeon.boss)) {
-    state.combat.active = false
-    pushNotification(state, 'An active Hunter Contract is required to hunt in this Ground.', 'warning', { key: 'hunter-contract-required', cooldownMs: 1000 })
-    return false
-  }
   if (getCombatEncounterMode(location) === 'targeted' && !targetedEnemyId) {
     pushNotification(state, 'Select a Hunt Target before starting this Location.', 'warning', { key: `combat-target-required:${dungeon.id}`, cooldownMs: 1000 })
     return false
@@ -327,7 +328,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
   if (encounterWorldTier === 2 && state.worldTier.highestUnlocked >= 2) state.progress.chronicle.eventFlags['first-wt2-kill'] = true
   recordGuildEnemyKill(state, enemyId, state.combat.dungeonId ?? 'whispering-woods', bossDefeated)
-  recordHunterKill(state, enemyId)
+  recordHunterKill(state, enemyId, state.combat.dungeonId)
   reconcileChronicleProgress(state)
 }
 

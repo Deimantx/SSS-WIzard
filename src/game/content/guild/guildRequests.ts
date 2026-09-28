@@ -38,12 +38,14 @@ export const LEGACY_GUILD_REQUESTS = {
 
 export interface GuildCommissionTemplate {
   id: string
-  category: 'delivery' | 'research' | 'transmutation'
+  category: 'delivery' | 'production' | 'research' | 'transmutation' | 'mixed'
   itemId?: ItemId
   target: number
   baseReputation: number
   baseAdvancementPoints: number
   minimumProgressStage: 'guild' | 'research' | 'transmutation'
+  weight?: number
+  components?: readonly { category: 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number }[]
 }
 
 export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
@@ -54,4 +56,7 @@ export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
   { id: 'deliver-water-fragments', category: 'delivery', itemId: 'water-fragment', target: 6, baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
   { id: 'study-research-cycles', category: 'research', target: 3, baseReputation: 90, baseAdvancementPoints: 0, minimumProgressStage: 'research' },
   { id: 'transmute-materials', category: 'transmutation', target: 5, baseReputation: 100, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
+  { id: 'produce-fire-fragments', category: 'production', itemId: 'fire-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
+  { id: 'produce-water-fragments', category: 'production', itemId: 'water-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
+  { id: 'mixed-ember-study', category: 'mixed', target: 10, baseReputation: 160, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.7, components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'research', target: 2 }] },
 ]

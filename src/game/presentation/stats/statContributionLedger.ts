@@ -53,7 +53,7 @@ const sigilSetProvider: StatContributionProvider = { id: 'sigil-set-bonuses', co
   if (!count) return []
   const setId = id as SigilSetId
   const bonuses = getSigilSetBonuses({ [setId]: count })
-  return bundle(bonuses, key, 'sigil-set', setId, `${SIGIL_SETS[setId].name} ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${count}/${SIGIL_SETS[setId].piecesRequired}`)
+  return bundle(bonuses, key, 'sigil-set', setId, `${SIGIL_SETS[setId].name} - ${count}/${SIGIL_SETS[setId].piecesRequired}`)
 }) }
 const progressionProvider: StatContributionProvider = { id: 'progression', collect: (state, key) => key === 'maxMana' ? Object.entries(state.progress.permanentManaBonuses).flatMap(([id, value]) => safe(value) > 0 ? [entry(key, id === 'guild-apprentice' ? 'guild' : 'progression', id, id === 'guild-apprentice' ? 'Guild Apprentice Training' : id === 'forest-heart' ? 'Forest Heart Blessing' : 'Permanent Mana Bonus', 'flat', safe(value))] : []) : [] }
 const debugProvider: StatContributionProvider = { id: 'debug', collect: (state, key) => key === 'maxMana' && state.debug.bonusMaxManaFlat ? [entry(key, 'debug', 'max-mana', 'Developer Max Mana Override', 'flat', safe(state.debug.bonusMaxManaFlat))] : key === 'manaRegen' && state.debug.bonusManaRegenFlat ? [entry(key, 'debug', 'mana-regen', 'Developer Mana Regen Override', 'flat', safe(state.debug.bonusManaRegenFlat))] : [] }
@@ -95,12 +95,12 @@ function capFor(key: PlayerBreakdownStatKey): StatBreakdown['cap'] | undefined {
   return undefined
 }
 function formulaFor(key: PlayerBreakdownStatKey): string | undefined {
-  if (key === 'maxHealth') return '(Base Health + flat sources) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â (1 + percent sources)'
-  if (key === 'maxMana') return 'floor((Base Mana + flat + permanent + developer) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â (1 + percent))'
-  if (key === 'spellPower') return 'max(0, Base Spell Power + flat sources) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â (1 + percent sources)'
+  if (key === 'maxHealth') return '(Base Health + flat sources) * (1 + percent sources)'
+  if (key === 'maxMana') return 'floor((Base Mana + flat + permanent + developer) * (1 + percent))'
+  if (key === 'spellPower') return 'max(0, Base Spell Power + flat sources) * (1 + percent sources)'
   if (key === 'defense') return 'max(0, Base Defense + flat sources)'
   if (key === 'damageReduction') return 'Defense / (Defense + K), subject to the Defense Reduction cap.'
-  if (key === 'manaRegen') return 'max(0, (base + flat sources) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â combat effects ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Arcane Core multiplier)'
+  if (key === 'manaRegen') return 'max(0, (base + flat sources) * combat effects * Arcane Core multiplier)'
   return undefined
 }
 function temporaryContributions(state: GameState, key: PlayerBreakdownStatKey): StatContribution[] {

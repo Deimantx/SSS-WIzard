@@ -45,9 +45,13 @@ export const recordGuildCommissionChainProgress = (state: GameState, category: G
   }
   if (active.stageIndex >= chain.stages.length) {
     state.progress.guildReputation = safe(state.progress.guildReputation) + chain.reputationReward
-    state.progress.guildPointsEarned = safe(state.progress.guildPointsEarned) + chain.advancementPointsReward
-    state.progress.arcaneGuild.activeCommissionChain = null
-    pushNotification(state, `${chain.name} completed ? +${chain.reputationReward} Guild Reputation ? +${chain.advancementPointsReward} Advancement Point.`, 'success')
+    const guild = state.progress.arcaneGuild
+    const firstCompletion = !guild.completedChainIds.includes(chain.id)
+    const pointsAwarded = firstCompletion ? chain.advancementPointsReward : 0
+    if (firstCompletion) guild.completedChainIds.push(chain.id)
+    state.progress.guildPointsEarned = safe(state.progress.guildPointsEarned) + pointsAwarded
+    guild.activeCommissionChain = null
+    pushNotification(state, `${chain.name} completed - +${chain.reputationReward} Guild Reputation${pointsAwarded ? ` - +${pointsAwarded} Advancement Point` : ''}.`, 'success')
   }
   return changed
 }

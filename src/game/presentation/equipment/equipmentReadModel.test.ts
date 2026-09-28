@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { getEquipmentKeyChanges, getEquipmentLoadoutIdentity, getEquipmentPreview, getEquipmentStatSnapshot, resolveEquipmentPreviewTarget } from './equipmentReadModel'
+import { getEquipmentKeyChanges, getEquipmentLoadoutIdentity, getEquipmentPreview, getEquipmentPrimarySummary, getEquipmentStatSnapshot, resolveEquipmentPreviewTarget } from './equipmentReadModel'
 import { getDefenseReductionFromRating, getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
 import { BALANCE } from '../../core/balance/balance'
 
 describe('Equipment read model', () => {
+  it('separates compact equipment stats with a readable middle dot', () => {
+    expect(getEquipmentPrimarySummary('tideglass-wand', createInitialState())).toContain(String.fromCharCode(183))
+  })
+
   it('uses authored sheet inputs without borrowing transient encounter state', () => {
     const state = createInitialState()
     state.inventory['ember-staff'] = 1

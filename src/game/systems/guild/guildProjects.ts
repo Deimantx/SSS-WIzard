@@ -43,3 +43,22 @@ export const contributeGuildProject = (state: GameState, projectId: string, item
 }
 
 export const debugCompleteGuildProject = (state: GameState, projectId: string) => { const project = GUILD_PROJECTS.find((entry) => entry.id === projectId); if (!project) return false; for (const requirement of project.requirements) { const remaining = Math.max(0, requirement.quantity - (state.progress.arcaneGuild.projects[projectId]?.[requirement.itemId] ?? 0)); if (!remaining) continue; grantItem(state, requirement.itemId, remaining); contributeGuildProject(state, projectId, requirement.itemId, 'max') } return state.progress.arcaneGuild.completedProjectIds.includes(projectId) }
+
+export const debugCompleteGuildProjectPrerequisites = (state: GameState, projectId: string) => {
+  const visiting = new Set<string>()
+  const completePrerequisites = (id: string): boolean => {
+    const project = GUILD_PROJECTS.find((entry) => entry.id === id)
+    if (!project || visiting.has(id)) return false
+    visiting.add(id)
+    for (const rank of GUILD_RANKS) if (rank.order >= (GUILD_RANKS.find((entry) => entry.id === project.minimumGuildRank)?.order ?? 0)) { state.progress.guildRank = rank.id; break }
+    for (const prerequisiteId of project.prerequisiteProjectIds ?? []) {
+      if (!state.progress.arcaneGuild.completedProjectIds.includes(prerequisiteId)) {
+        if (!completePrerequisites(prerequisiteId) || !debugCompleteGuildProject(state, prerequisiteId)) return false
+      }
+    }
+    visiting.delete(id)
+    return true
+  }
+  const target = GUILD_PROJECTS.find((entry) => entry.id === projectId)
+  return Boolean(target && (target.prerequisiteProjectIds ?? []).every((prerequisiteId) => completePrerequisites(prerequisiteId) && debugCompleteGuildProject(state, prerequisiteId)))
+}

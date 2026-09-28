@@ -1,5 +1,6 @@
 import { GUILD_COMMISSION_TEMPLATES, type GuildCommissionTemplate } from '../../content/guild/guildRequests'
 import { GUILD_RANKS } from '../../content/guild/guildRanks'
+import { grantItem } from '../inventory/itemAcquisition'
 import { BALANCE } from '../../core/balance/balance'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { pushNotification } from '../../engine'
@@ -26,14 +27,19 @@ const nextGuildRandom = (state: GameState) => {
   guild.rngState = value >>> 0
   return guild.rngState / 0x100000000
 }
-const objectiveKey = (template: GuildCommissionTemplate) => template.category === 'mixed'
-  ? `mixed:${(template.components ?? []).map((component) => `${component.category}:${component.itemId ?? ''}`).sort().join('|')}`
-  : `${template.category}:${template.itemId ?? ''}`
+const commissionSignature = (commission: GuildCommissionState) => JSON.stringify({
+  category: commission.category,
+  itemId: commission.itemId ?? null,
+  quality: commission.quality,
+  target: commission.target,
+  components: commission.components?.map(({ category, itemId, target }) => ({ category, itemId: itemId ?? null, target })) ?? null,
+})
 const qualityOrder: GuildCommissionQuality[] = ['routine', 'special', 'prestigious']
-const chooseQuality = (state: GameState, available: ReadonlySet<GuildCommissionQuality>): GuildCommissionQuality | null => {
+const chooseQuality = (state: GameState, available: ReadonlySet<GuildCommissionQuality>, forcedQuality?: GuildCommissionQuality): GuildCommissionQuality | null => {
   const qualityRanks: Record<GuildCommissionQuality, string> = BALANCE.arcaneGuild.rankMinimumQuality
   const qualityOffset = getGuildProgressionBonuses(state).specialCommissionAccess ? 1 : 0
   const eligible = qualityOrder.filter((quality) => available.has(quality) && BALANCE.arcaneGuild.qualityWeights[quality] > 0 && rankOrder(state.progress.guildRank) + qualityOffset >= GUILD_RANKS.findIndex((rank) => rank.id === qualityRanks[quality]))
+  if (forcedQuality) return eligible.includes(forcedQuality) ? forcedQuality : null
   const total = eligible.reduce((sum, quality) => sum + BALANCE.arcaneGuild.qualityWeights[quality], 0)
   if (total <= 0) return null
   let roll = nextGuildRandom(state) * total
@@ -42,17 +48,18 @@ const chooseQuality = (state: GameState, available: ReadonlySet<GuildCommissionQ
 }
 const scaled = (target: number, quality: GuildCommissionQuality) => Math.max(1, Math.ceil(target * BALANCE.arcaneGuild.qualityTargetMultipliers[quality]))
 
-export const generateGuildCommissionChoices = (state: GameState): GuildCommissionState[] => {
+export interface GuildCommissionGenerationOptions { quality?: GuildCommissionQuality; templateId?: string }
+export const generateGuildCommissionChoices = (state: GameState, options: GuildCommissionGenerationOptions = {}): GuildCommissionState[] => {
   if (!state.progress.guildUnlocked) return []
-  const eligible = GUILD_COMMISSION_TEMPLATES.filter((template) => templateIsAccessible(state, template))
-  const unique = [...new Map(eligible.map((template) => [objectiveKey(template), template])).values()]
-  if (!unique.length) return []
-  const choiceCount = Math.min(unique.length, BALANCE.arcaneGuild.baseCommissionChoices + getGuildProgressionBonuses(state).commissionChoiceBonus)
+  const eligible = GUILD_COMMISSION_TEMPLATES.filter((template) => templateIsAccessible(state, template) && (!options.templateId || template.id === options.templateId))
+  if (!eligible.length) return []
+  const choiceCount = Math.min(eligible.length, options.templateId ? 1 : BALANCE.arcaneGuild.baseCommissionChoices + getGuildProgressionBonuses(state).commissionChoiceBonus)
   const selected: GuildCommissionState[] = []
-  const remaining = [...unique]
+  const signatures = new Set<string>()
+  const remaining = [...eligible]
   for (let index = 0; index < choiceCount && remaining.length; index += 1) {
     const availableQualities = new Set(remaining.map((template) => template.complexity ?? 'routine'))
-    const quality = chooseQuality(state, availableQualities)
+    const quality = chooseQuality(state, availableQualities, options.quality)
     if (!quality) break
     const tierPool = remaining.filter((template) => (template.complexity ?? 'routine') === quality)
     if (!tierPool.length) break
@@ -64,10 +71,19 @@ export const generateGuildCommissionChoices = (state: GameState): GuildCommissio
     remaining.splice(remaining.findIndex((entry) => entry.id === template.id), 1)
     const multiplier = BALANCE.arcaneGuild.qualityTargetMultipliers[quality]
     const bonuses = getGuildProgressionBonuses(state)
-    const components = template.components?.map((component) => ({ category: component.category, itemId: component.itemId, target: scaled(component.target, quality), progress: 0 }))
+    const components = template.components?.map((component) => {
+      const target = scaled(component.target, quality)
+      const adjustedTarget = component.category === 'delivery' ? Math.max(1, Math.floor(target * bonuses.deliveryQuantityMultiplier)) : target
+      return { category: component.category, itemId: component.itemId, target: adjustedTarget, progress: 0 }
+    })
     const target = components ? components.reduce((sum, component) => sum + component.target, 0) : scaled(template.target, quality)
     const adjustedTarget = template.category === 'delivery' ? Math.max(1, Math.floor(target * bonuses.deliveryQuantityMultiplier)) : target
-    selected.push({ id: `guild-${state.progress.arcaneGuild.generationCount}-${index}-${template.id}`, templateId: template.id, category: template.category, quality, itemId: template.itemId, target: adjustedTarget, progress: 0, reputationReward: Math.round(template.baseReputation * multiplier), advancementPointReward: template.baseAdvancementPoints, ...(components ? { components } : {}) })
+    const offer = { id: `guild-${state.progress.arcaneGuild.generationCount}-${index}-${template.id}`, templateId: template.id, category: template.category, quality, itemId: template.itemId, target: adjustedTarget, progress: 0, reputationReward: Math.round(template.baseReputation * multiplier), advancementPointReward: template.baseAdvancementPoints, ...(components ? { components } : {}) }
+    const signature = commissionSignature(offer)
+    if (!signatures.has(signature)) {
+      selected.push(offer)
+      signatures.add(signature)
+    }
   }
   return selected
 }
@@ -164,4 +180,25 @@ export const refreshGuildCommissionChoices = (state: GameState) => {
   guild.generationCount += 1
   guild.availableCommissions = generateGuildCommissionChoices(state)
   return true
+}
+
+export const debugSetGuildCommissionRngSeed = (state: GameState, seed: number) => { state.progress.arcaneGuild.rngState = safeInt(seed) || 1 }
+export const debugRegenerateGuildCommissionBoard = (state: GameState, options: GuildCommissionGenerationOptions = {}) => {
+  state.progress.guildUnlocked = true
+  if (state.progress.guildRank === 'outsider') state.progress.guildRank = 'initiate'
+  if (options.templateId || options.quality) state.progress.tutorialStage = 'complete'
+  const requestedTemplate = options.templateId ? GUILD_COMMISSION_TEMPLATES.find((template) => template.id === options.templateId) : undefined
+  const requestedQuality = options.quality ?? requestedTemplate?.complexity ?? 'routine'
+  const minimumRankId = BALANCE.arcaneGuild.rankMinimumQuality[requestedQuality]
+  const minimumRank = GUILD_RANKS.find((rank) => rank.id === minimumRankId) ?? GUILD_RANKS[0]
+  const currentRankOrder = rankOrder(state.progress.guildRank)
+  if (currentRankOrder < minimumRank.order) state.progress.guildRank = minimumRank.id
+  const templatesToPrepare = requestedTemplate ? [requestedTemplate] : options.quality ? GUILD_COMMISSION_TEMPLATES.filter((template) => (template.complexity ?? 'routine') === options.quality) : []
+  if (templatesToPrepare.length) {
+    const itemIds = templatesToPrepare.flatMap((template) => [template.itemId, ...(template.components ?? []).map((component) => component.itemId)]).filter((id): id is NonNullable<typeof id> => Boolean(id))
+    itemIds.forEach((itemId) => { if (!state.progress.discoveredItems.includes(itemId)) grantItem(state, itemId, 1) })
+  }
+  state.progress.arcaneGuild.generationCount += 1
+  state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state, options)
+  return state.progress.arcaneGuild.availableCommissions
 }

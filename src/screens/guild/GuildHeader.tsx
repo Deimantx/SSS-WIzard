@@ -22,9 +22,9 @@ export function GuildHeader({ state, promotion }: { state: GameStore; promotion:
       <div className="guild-v3-identity">
         <div className="guild-v3-crest" aria-hidden="true"><Shield size={30} strokeWidth={1.4} /><Sparkles className="guild-v3-crest-spark" size={12} /></div>
         <div className="guild-v3-identity-copy">
-          <div className="guild-v3-kicker">THE VERDANT CIRCLE · FIELD COMMAND</div>
+          <div className="guild-v3-kicker">ARCANE GUILD · ARCANE SERVICE</div>
           <div className="guild-v3-title-row"><h1>Arcane Guild</h1><Status tone="success">Guild unlocked</Status></div>
-          <p>Coordinate fieldwork, earn reputation, and shape the tower’s guild specialization.</p>
+          <p>Coordinate fieldwork, earn Reputation, and invest in lasting Guild services.</p>
           <div className="guild-v3-rank-line"><Crown size={14} /><strong>{promotion.currentRank.name}</strong><span>Current rank</span><span className="guild-v3-separator">/</span><span>{promotion.nextRank ? `Next: ${promotion.nextRank.name}` : 'Circle complete'}</span></div>
         </div>
       </div>

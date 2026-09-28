@@ -39,7 +39,8 @@ export const recordGuildCommissionChainProgress = (state: GameState, category: G
   let changed = false
   while (remaining > 0 && active.stageIndex < chain.stages.length) {
     const stage = chain.stages[active.stageIndex]
-    if (stage.category !== category || (stage.category === 'delivery' && stage.itemId !== itemId)) break
+    const requiresItemMatch = stage.category === 'delivery' || stage.category === 'production'
+    if (stage.category !== category || (requiresItemMatch && stage.itemId !== itemId)) break
     const step = Math.min(remaining, stage.target - active.stageProgress)
     active.stageProgress += step
     remaining -= step

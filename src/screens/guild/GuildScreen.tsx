@@ -7,7 +7,7 @@ import { getGuildPromotionProgress } from '../../game/systems/guild/guildSelecto
 import { useUiPreferences, setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import type { GuildScreenTab } from '../../ui/preferences/uiPreferencesTypes'
 import { GuildHeader, GuildTabs } from './GuildHeader'
-import { GuildRecommendedContracts, GuildSpecializationSummary } from './GuildOverviewTab'
+import { GuildRecommendedContracts, GuildAdvancementSummary } from './GuildOverviewTab'
 import { GuildContractsBoard } from './GuildContractsTab'
 import { GuildRankProgress } from './GuildRankProgress'
 import { ArcaneRegistryTab } from './ArcaneRegistryTab'
@@ -35,7 +35,7 @@ export function GuildScreen() {
     ...(activeTab === 'overview' ? [
       { id: 'guild-progression', content: <GuildRankProgress state={state} /> },
       { id: 'guild-recommended-contracts', content: <GuildRecommendedContracts state={state} onNavigate={setActiveTab} /> },
-      { id: 'guild-specialization', content: <GuildSpecializationSummary state={state} onNavigate={setActiveTab} /> },
+      { id: 'guild-advancement-summary', content: <GuildAdvancementSummary state={state} onNavigate={setActiveTab} /> },
     ] : activeTab === 'contracts' ? [
       { id: 'guild-contracts', content: <GuildContractsBoard state={state} /> },
     ] : activeTab === 'projects' ? [{ id: 'guild-projects', content: <GuildProjectsTab /> }]
@@ -66,7 +66,7 @@ function GuildLockedState({ state }: { state: GameStore }) {
 }
 
 function GuildLockedCard({ state, forestHeartDefeated }: { state: GameStore; forestHeartDefeated: number }) {
-  return <section className="guild-v3-lock-card" aria-labelledby="guild-invitation-sealed"><div className="guild-v3-lock-crest"><Shield size={42} strokeWidth={1.2} /><LockKeyhole className="guild-v3-lock-icon" size={17} /></div><span className="guild-v3-kicker">VERDANT CIRCLE · ACCESS CONTROL</span><h2 id="guild-invitation-sealed">Invitation Sealed</h2><p>The Circle is waiting for proof that the tower can survive the forest's first guardian.</p><div className="guild-v3-lock-requirement"><span>FOREST HEART</span><strong>{forestHeartDefeated} / 1</strong></div><GameTooltip content="Open Combat to challenge the Forest Heart and unlock the Guild." block><Button variant="primary" onClick={() => state.setScreen('combat')}><Swords size={15} /> Open Combat</Button></GameTooltip></section>
+  return <section className="guild-v3-lock-card" aria-labelledby="guild-invitation-sealed"><div className="guild-v3-lock-crest"><Shield size={42} strokeWidth={1.2} /><LockKeyhole className="guild-v3-lock-icon" size={17} /></div><span className="guild-v3-kicker">ARCANE GUILD · ACCESS CONTROL</span><h2 id="guild-invitation-sealed">Invitation Sealed</h2><p>The Guild awaits proof that the tower can survive the forest’s first guardian.</p><div className="guild-v3-lock-requirement"><span>FOREST HEART</span><strong>{forestHeartDefeated} / 1</strong></div><GameTooltip content="Open Combat to challenge the Forest Heart and unlock the Guild." block><Button variant="primary" onClick={() => state.setScreen('combat')}><Swords size={15} /> Open Combat</Button></GameTooltip></section>
 }
 
 export const GuildScreenV2 = GuildScreen

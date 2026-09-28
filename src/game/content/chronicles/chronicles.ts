@@ -68,7 +68,7 @@ export interface ChronicleObjectiveDefinition {
 }
 
 export const CHRONICLE_CHAPTERS: readonly ChronicleChapterDefinition[] = [
-  { id: 'first-frontier', name: 'First Frontier', description: 'Establish the Tower, master the first schools, and answer the call of the Verdant Circle.', order: 1 },
+  { id: 'first-frontier', name: 'First Frontier', description: 'Establish the Tower, master the first schools, and earn the Arcane Guild’s invitation.', order: 1 },
   { id: 'shattered-frontier', name: 'Shattered Frontier', description: 'Push beyond the first gate, bind a Guardian, and survive a world that no longer stays still.', order: 2, unlockCondition: { type: 'boss-kill', bossId: 'archmage-edrin-shade', count: 1 } },
 ]
 

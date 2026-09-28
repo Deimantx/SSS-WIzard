@@ -45,7 +45,7 @@
 .guild-v3-tab-count { color: var(--muted); font: 10px 'DM Mono', monospace; }
 .guild-v3-tab.active .guild-v3-tab-count { color: var(--gold); }
 .guild-v3-main { min-width: 0; }
-.guild-v3-panel, .guild-v3-contract-card, .guild-v3-specialization-summary { min-width: 0; }
+.guild-v3-panel, .guild-v3-contract-card, .guild-v3-advancement-summary { min-width: 0; }
 .guild-v3-panel-heading, .guild-v3-section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .guild-v3-panel-heading h2, .guild-v3-section-heading h2 { margin: 5px 0 0; color: #e9e4f4; font-size: 18px; letter-spacing: -.02em; }
 .guild-v3-panel-heading p, .guild-v3-section-heading p { max-width: 560px; margin: 6px 0 0; color: #a6a2b8; font-size: 13px; line-height: 1.5; }
@@ -105,12 +105,7 @@
 .guild-v3-donation-controls > div { display: flex; gap: 5px; flex-wrap: wrap; }
 .guild-v3-donation-controls .button { padding: 6px 8px; font-size: 11px; }
 .guild-v3-claim-button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; width: 100%; }
-.guild-v3-specialization-summary { margin-top: 0; }
-.guild-v3-specialization-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 17px; }
-.guild-v3-specialization-tiles > div { display: grid; grid-template-columns: auto 1fr; column-gap: 9px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255, 255, 255, .025); }
-.guild-v3-specialization-tiles svg { grid-row: span 2; color: var(--gold); }
-.guild-v3-specialization-tiles strong { color: #e3deee; font-size: 13px; }
-.guild-v3-specialization-tiles span { margin-top: 3px; color: #9290a4; font-size: 12px; line-height: 1.35; }
+.guild-v3-advancement-summary { margin-top: 0; }
 
 .guild-v3-tab-content { min-width: 0; }
 .guild-v3-contract-controls { display: flex; align-items: center; justify-content: space-between; gap: 18px; height: 100%; padding: 12px 16px; }
@@ -181,7 +176,7 @@
   .guild-v3-header-metrics { grid-template-columns: repeat(3, 1fr); }
   .guild-v3-header-metrics > div { min-width: 0; padding: 9px 7px; }
   .guild-v3-header-metrics strong { font-size: 15px; }
-  .guild-v3-contract-grid, .guild-v3-specialization-tiles { grid-template-columns: 1fr; }
+  .guild-v3-contract-grid { grid-template-columns: 1fr; }
   .guild-v3-contract-controls { align-items: flex-start; flex-direction: column; height: auto; }
   .guild-v3-section-heading, .guild-v3-panel-heading { flex-direction: column; }
   .guild-v3-section-heading > .button, .guild-v3-panel-heading > .status { align-self: flex-start; }

@@ -56,4 +56,12 @@ describe('Guild V3 screen', () => {
     expect(screen.getByRole('heading', { name: 'Research' })).toBeTruthy()
     expect(useGameStore.getState().progress.guildPointsEarned).toBe(1)
   })
+
+  it('keeps current Guild interface copy aligned with the Arcane Guild and Advancement Board', () => {
+    useGameStore.setState((state) => { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate' })
+    renderGuild()
+    const visibleCopy = document.body.textContent ?? ''
+    expect(visibleCopy).toContain('ARCANE GUILD')
+    expect(visibleCopy).not.toMatch(/Verdant Circle|specialization tier|next sigil/i)
+  })
 })

@@ -2,6 +2,8 @@ import { GUILD_REQUESTS, LEGACY_GUILD_REQUESTS, type GuildRequestId } from '../.
 import { GUILD_RANKS, GUILD_RANK_BY_ID, type GuildRankDefinition } from '../../content/guild/guildRanks'
 import { GUILD_SKILL_NODES, type GuildSkillNodeDefinition } from '../../content/guild/guildSkills'
 import { GUILD_PROJECTS } from '../../content/guild/guildProjects'
+import { ARCANE_REGISTRY_SETS } from '../../content/guild/registry/registrySets'
+import { GUILD_COMMISSION_CHAINS } from '../../content/guild/guildCommissionChains'
 import type { GameState, GuildRankId, GuildSkillNodeId } from '../../types'
 
 const rankOrder: GuildRankId[] = ['outsider', 'initiate', 'apprentice', 'adept', 'magister', 'circle-master']
@@ -53,6 +55,24 @@ export const getGuildProgressionBonuses = (state: Pick<GameState, 'progress'>): 
 
 export const getGuildPointsSpent = (state: Pick<GameState, 'progress'>) => Object.values(state.progress.guildSkillNodeRanks).reduce((sum, rank) => sum + Math.max(0, Math.floor(Number.isFinite(rank) ? rank : 0)), 0)
 export const getGuildPointsAvailable = (state: Pick<GameState, 'progress'>) => Math.max(0, Math.floor(state.progress.guildPointsEarned) - getGuildPointsSpent(state))
+export const getGuildAdvancementPointEconomy = () => {
+  const totalBoardPointCost = Object.values(GUILD_SKILL_NODES).reduce((sum, node) => sum + node.maxRank, 0)
+  const pointsByRank = Object.fromEntries(GUILD_RANKS.map((rank) => {
+    const rankPoints = GUILD_RANKS.filter((entry) => entry.order <= rank.order).reduce((sum, entry) => sum + (entry.promotionGuildPointReward ?? 0), 0)
+    const registryPoints = ARCANE_REGISTRY_SETS.reduce((sum, set) => sum + set.advancementPointsReward, 0)
+    const projectPoints = GUILD_PROJECTS.filter((project) => rankOrder.indexOf(project.minimumGuildRank) <= rank.order).reduce((sum, project) => sum + project.advancementPointsReward, 0)
+    const chainPoints = GUILD_COMMISSION_CHAINS.filter((chain) => rankOrder.indexOf(chain.minimumRank) <= rank.order).reduce((sum, chain) => sum + chain.advancementPointsReward, 0)
+    return [rank.id, rankPoints + registryPoints + projectPoints + chainPoints]
+  })) as Record<GuildRankId, number>
+  const maxBoundedPoints = pointsByRank[GUILD_RANKS[GUILD_RANKS.length - 1].id]
+  const majorThresholds = [...new Set(Object.values(GUILD_SKILL_NODES).flatMap((node) => node.requiredInvestedPoints === undefined ? [] : [node.requiredInvestedPoints]))].sort((a, b) => a - b)
+  const majorMilestones = majorThresholds.map((threshold) => ({
+    threshold,
+    pointsRequired: threshold + 1,
+    reachableAtRank: GUILD_RANKS.find((rank) => pointsByRank[rank.id] >= threshold + 1)?.id ?? null,
+  }))
+  return { totalBoardPointCost, maxBoundedPoints, pointsByRank, majorThresholds, majorMilestones }
+}
 export const getGuildRequestProgress = (state: Pick<GameState, 'progress'>, requestId: GuildRequestId) => Math.max(0, Math.floor(state.progress.requestProgress[requestId] ?? 0))
 export const isGuildRequestComplete = (state: Pick<GameState, 'progress'>, requestId: GuildRequestId) => getGuildRequestProgress(state, requestId) >= GUILD_REQUESTS[requestId].target
 export const getGuildRankOrder = () => [...rankOrder]

@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { CHRONICLE_OBJECTIVE_BY_ID } from '../../content/chronicles/chronicles'
-import { buildChronicleReadModel, filterChronicleReadModel, getChronicleLockReasons, sortChronicleReadModel } from './chronicleReadModel'
+import { buildChronicleReadModel, filterChronicleReadModel, getChronicleLockReasons, sortChronicleReadModel, CHRONICLE_TRACK_LABELS } from './chronicleReadModel'
+import { formatChronicleCondition } from './chroniclePresentation'
 
 describe('Chronicle read model', () => {
+  it('labels the shared side track as Organizations and renders Hunter’s Order correctly', () => {
+    expect(CHRONICLE_TRACK_LABELS.guild).toBe('Organizations')
+    expect(formatChronicleCondition({ type: 'hunters-order-unlocked' })).toBe('Unlock the Hunter’s Order')
+  })
+
   it('hides completed cards without changing Chronicle progression', () => {
     const state = createInitialState()
     state.progress.startingSchoolId = 'fire'

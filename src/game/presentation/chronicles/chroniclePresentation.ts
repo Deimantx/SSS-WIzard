@@ -32,7 +32,7 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'guild-rank': return `Reach Guild Rank ${rankLabel(condition.rank)}`
     case 'guild-commissions-completed': return `Complete ${condition.count} Guild Commission${condition.count === 1 ? '' : 's'}`
     case 'registry-items-registered': return `Register ${condition.count} item${condition.count === 1 ? '' : 's'} in the Arcane Registry`
-    case 'hunters-order-unlocked': return 'Unlock the Hunter?s Order'
+    case 'hunters-order-unlocked': return 'Unlock the Hunter’s Order'
     case 'hunter-contracts-completed': return `Complete ${condition.count} Hunt Contract${condition.count === 1 ? '' : 's'}`
     case 'hunter-contracts-accepted': return `Accept ${condition.count} Hunt Contract${condition.count === 1 ? '' : 's'}`
     case 'guild-project-completed': return `Complete the ${formatReadableId(condition.projectId)} Guild Project`

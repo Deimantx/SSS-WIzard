@@ -2,22 +2,13 @@ import { ClipboardList, RefreshCw, Truck } from 'lucide-react'
 import { Button, Card, GameTooltip, Progress } from '../../components/ui'
 import { GUILD_COMMISSION_TEMPLATES } from '../../game/content/guild/guildRequests'
 import { ITEMS } from '../../game/content/items/items'
+import { formatGuildCommissionObjective } from '../../game/presentation/guild/guildPresentation'
 import type { GameStore } from '../../store/gameStore'
 
 const templateFor = (id: string) => GUILD_COMMISSION_TEMPLATES.find((template) => template.id === id)
 const qualityLabel = { routine: 'ROUTINE', special: 'SPECIAL', prestigious: 'PRESTIGIOUS' } as const
 const categoryLabel: Record<import('../../game/types').GuildCommissionCategory, string> = { delivery: 'DELIVERY', production: 'PRODUCTION', research: 'RESEARCH', transmutation: 'TRANSMUTATION', mixed: 'MIXED' }
-const objectiveLabel = (commission: NonNullable<GameStore['progress']['arcaneGuild']['activeCommission']>) => {
-  if (commission.category === 'delivery' && commission.itemId) return `Deliver ${commission.target.toLocaleString()} ${ITEMS[commission.itemId].name}`
-  if (commission.category === 'production' && commission.itemId) return `Produce ${commission.target.toLocaleString()} ${ITEMS[commission.itemId].name}`
-  if (commission.category === 'mixed') return commission.components?.map((component) => {
-    const item = component.itemId ? ` ${ITEMS[component.itemId].name}` : ''
-    const verb = component.category === 'delivery' ? 'Deliver' : component.category === 'production' ? 'Produce' : component.category === 'research' ? 'Complete Research' : 'Complete Transmutations'
-    return `${verb} ${component.target.toLocaleString()}${item}`
-  }).join(' + ') || 'Complete a mixed Guild assignment'
-  if (commission.category === 'research') return `Complete ${commission.target.toLocaleString()} Research cycles`
-  return `Complete ${commission.target.toLocaleString()} Transmutations`
-}
+const objectiveLabel = formatGuildCommissionObjective
 
 export function GuildContractsBoard({ state }: { state: GameStore }) {
   const guild = state.progress.arcaneGuild

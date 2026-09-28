@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade } from './huntersOrderRuntime'
+import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, canOfferHunterApexContract, debugRegenerateHunterContractBoard } from './huntersOrderRuntime'
 import { BALANCE } from '../../core/balance/balance'
+import { HUNTER_APEX_CONTRACT } from '../../content/huntersOrder/hunterApex'
+import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
+import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
 import type { HunterContractState } from '../../types'
 
 const contract = (targetSpec: HunterContractState['targetSpec'], tier: HunterContractState['tier'] = 'routine'): HunterContractState => ({ id: 'test-contract', targetSpec, target: 1, progress: 0, tier, reputationReward: 100, marksReward: 3 })
@@ -163,6 +166,23 @@ describe('Hunter Order hardened runtime', () => {
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-target-mismatch' })
     state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: true })
+  })
+
+  it('offers the authored Apex Boss Contract at Master Hunter and preserves access above that rank', () => {
+    expect(canOfferHunterApexContract(6499)).toBe(false)
+    expect(canOfferHunterApexContract(6500)).toBe(true)
+    const futureRanks = [...HUNTER_RANKS, { id: 'apex-hunter' }]
+    expect(isHunterRankAtLeast('apex-hunter', HUNTER_APEX_CONTRACT.requiredRank, futureRanks)).toBe(true)
+    const state = unlock()
+    state.progress.huntersOrder.reputation = 6500
+    const offers = debugRegenerateHunterContractBoard(state, { archetype: 'boss', tier: 'prestigious' })
+    expect(offers).toHaveLength(1)
+    expect(offers[0]?.targetSpec).toEqual({ type: 'boss', monsterId: HUNTER_APEX_CONTRACT.monsterId })
+  })
+
+  it('keeps maximum Hunter Marks costs proportionate to the rank path', () => {
+    const totalMarks = HUNTER_UPGRADES.reduce((sum, upgrade) => sum + upgrade.markCosts.reduce((rankSum, cost) => rankSum + cost, 0), 0)
+    expect(totalMarks).toBe(188)
   })
 
   it('reports and records the same Deep Pockets Marks award', () => {

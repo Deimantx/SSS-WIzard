@@ -2,8 +2,9 @@ import { GUILD_REQUESTS, GUILD_REQUEST_IDS } from '../../game/content/guild/guil
 import { claimGuildRequest, donateGuildRequest, promoteGuild, purchaseGuildSkillNode, resetGuildRequests, resetGuildSkillTree, setGuildRank, grantGuildPoint, debugSetArcaneGuildUnlocked } from '../../game/systems/guild/guildRuntime'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
 import { debugCompleteRegistryEntry, debugCompleteRegistrySet, registerArcaneRegistryEntry } from '../../game/systems/guild/arcaneRegistry'
-import { acceptGuildCommission, deliverGuildCommissionItems, refreshGuildCommissionChoices } from '../../game/systems/guild/guildCommissions'
-import { contributeGuildProject, debugCompleteGuildProject } from '../../game/systems/guild/guildProjects'
+import { acceptGuildCommission, deliverGuildCommissionItems, refreshGuildCommissionChoices, debugSetGuildCommissionRngSeed, debugRegenerateGuildCommissionBoard } from '../../game/systems/guild/guildCommissions'
+import type { GuildCommissionGenerationOptions } from '../../game/systems/guild/guildCommissions'
+import { contributeGuildProject, debugCompleteGuildProject, debugCompleteGuildProjectPrerequisites } from '../../game/systems/guild/guildProjects'
 import { contributeGuildCommissionChainDelivery, debugCompleteGuildCommissionChain, startGuildCommissionChain } from '../../game/systems/guild/guildCommissionChains'
 import type { GameState, GuildRankId, GuildSkillNodeId } from '../../game/types'
 
@@ -31,11 +32,14 @@ export const registerArcaneRegistryEntryAction = (state: GameState, itemId: impo
 export const acceptGuildCommissionAction = (state: GameState, id: string) => acceptGuildCommission(state, id)
 export const deliverGuildCommissionItemsAction = (state: GameState, amount: number | 'max') => deliverGuildCommissionItems(state, amount)
 export const refreshGuildCommissionChoicesAction = (state: GameState) => refreshGuildCommissionChoices(state)
+export const debugSetGuildCommissionRngSeedAction = (state: GameState, seed: number) => debugSetGuildCommissionRngSeed(state, seed)
+export const debugRegenerateGuildCommissionBoardAction = (state: GameState, options: GuildCommissionGenerationOptions = {}) => debugRegenerateGuildCommissionBoard(state, options)
 
 export const contributeGuildProjectAction = (state: GameState, projectId: string, itemId: import('../../game/types').ItemId, amount: number | 'max') => contributeGuildProject(state, projectId, itemId, amount)
 export const startGuildCommissionChainAction = (state: GameState, chainId: string) => startGuildCommissionChain(state, chainId)
 export const contributeGuildCommissionChainDeliveryAction = (state: GameState, amount: number | 'max') => contributeGuildCommissionChainDelivery(state, amount)
 export const debugCompleteGuildProjectAction = (state: GameState, id: string) => debugCompleteGuildProject(state, id)
+export const debugCompleteGuildProjectPrerequisitesAction = (state: GameState, id: string) => debugCompleteGuildProjectPrerequisites(state, id)
 export const debugCompleteGuildCommissionChainAction = (state: GameState, id: string) => debugCompleteGuildCommissionChain(state, id)
 export const debugGrantGuildReputationAction = (state: GameState, amount: number) => { state.progress.guildReputation = Math.max(0, Math.floor(state.progress.guildReputation + amount)); reconcileChronicleProgress(state) }
 export const debugSetArcaneGuildUnlockedAction = (state: GameState, enabled: boolean) => debugSetArcaneGuildUnlocked(state, enabled)

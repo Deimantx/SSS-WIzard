@@ -141,11 +141,12 @@ import {
   setGuildRankAction,
   grantGuildPointAction,
   registerArcaneRegistryEntryAction,
-  acceptGuildCommissionAction, deliverGuildCommissionItemsAction, refreshGuildCommissionChoicesAction, contributeGuildProjectAction, startGuildCommissionChainAction, contributeGuildCommissionChainDeliveryAction, debugCompleteGuildProjectAction, debugCompleteGuildCommissionChainAction, debugGrantGuildReputationAction, debugSetArcaneGuildUnlockedAction, debugCompleteRegistryEntryAction, debugCompleteRegistrySetAction,
+  acceptGuildCommissionAction, deliverGuildCommissionItemsAction, refreshGuildCommissionChoicesAction, contributeGuildProjectAction, startGuildCommissionChainAction, contributeGuildCommissionChainDeliveryAction, debugCompleteGuildProjectAction, debugCompleteGuildProjectPrerequisitesAction, debugCompleteGuildCommissionChainAction, debugGrantGuildReputationAction, debugSetArcaneGuildUnlockedAction, debugCompleteRegistryEntryAction, debugCompleteRegistrySetAction,
 } from "./actions/guildActions";
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
 import type { GuildSkillNodeId, GuildRankId } from "../game/types";
-import { acceptHunterContractAction, rerollHunterContractsAction, setHunterTargetBlockedAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction } from './actions/huntersOrderActions'
+import { acceptHunterContractAction, rerollHunterContractsAction, setHunterTargetBlockedAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassBossContractAction, debugSetHunterApexThreatReadyAction } from './actions/huntersOrderActions'
+import { debugSetGuildCommissionRngSeedAction, debugRegenerateGuildCommissionBoardAction } from './actions/guildActions'
 import {
   debugLockSpellAction,
   debugUnlockSpellRankOneAction,
@@ -814,7 +815,10 @@ export interface GameActions {
   startGuildCommissionChain: (chainId: string) => boolean;
   contributeGuildCommissionChainDelivery: (amount: number | 'max') => boolean;
   debugCompleteGuildProject: (id: string) => boolean;
+  debugCompleteGuildProjectPrerequisites: (id: string) => boolean;
   debugCompleteGuildCommissionChain: (id: string) => boolean;
+  debugSetGuildCommissionRngSeed: (seed: number) => void;
+  debugRegenerateGuildCommissionBoard: (options?: { quality?: 'routine' | 'special' | 'prestigious'; templateId?: string }) => void;
   debugGrantGuildReputation: (amount: number) => void;
   debugSetArcaneGuildUnlocked: (unlocked: boolean) => void;
   debugCompleteRegistryEntry: (itemId: ItemId) => boolean;
@@ -822,6 +826,13 @@ export interface GameActions {
   debugSetHuntersOrderUnlocked: (unlocked: boolean) => void;
   debugGrantHunterReputation: (amount: number) => void;
   debugGrantHunterMarks: (amount: number) => void;
+  debugSetHunterRngSeed: (seed: number) => void;
+  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'region' | 'boss'; tier?: 'routine' | 'special' | 'prestigious' }) => void;
+  debugSetHunterRank: (rank: import('../game/types').HunterRankId) => boolean;
+  debugGrantHunterUpgrade: (upgradeId: string) => boolean;
+  debugClearHunterTargetBlocks: () => boolean;
+  debugGrantNightglassBossContract: () => boolean;
+  debugSetHunterApexThreatReady: () => void;
   debugCompleteActiveHunterContract: () => boolean;
   acceptHunterContract: (contractId: string) => boolean;
   skipHunterContract: () => boolean;
@@ -3049,7 +3060,10 @@ export const useGameStore = create<GameStore>()(
     startGuildCommissionChain: (chainId) => { let ok = false; set((state) => { ok = startGuildCommissionChainAction(state, chainId); return state; }); return ok; },
     contributeGuildCommissionChainDelivery: (amount) => { let ok = false; set((state) => { ok = contributeGuildCommissionChainDeliveryAction(state, amount); return state; }); return ok; },
     debugCompleteGuildProject: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildProjectAction(state, id); return state; }); return ok; },
+    debugCompleteGuildProjectPrerequisites: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildProjectPrerequisitesAction(state, id); return state; }); return ok; },
     debugCompleteGuildCommissionChain: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildCommissionChainAction(state, id); return state; }); return ok; },
+    debugSetGuildCommissionRngSeed: (seed) => set((state) => { debugSetGuildCommissionRngSeedAction(state, seed); return state; }),
+    debugRegenerateGuildCommissionBoard: (options = {}) => set((state) => { debugRegenerateGuildCommissionBoardAction(state, options); return state; }),
     debugGrantGuildReputation: (amount) => set((state) => { debugGrantGuildReputationAction(state, amount); return state; }),
     debugSetArcaneGuildUnlocked: (unlocked) => set((state) => { debugSetArcaneGuildUnlockedAction(state, unlocked); return state; }),
     debugCompleteRegistryEntry: (itemId) => { let ok = false; set((state) => { ok = debugCompleteRegistryEntryAction(state, itemId); reconcileChronicleProgress(state); return state; }); return ok; },
@@ -3057,6 +3071,13 @@ export const useGameStore = create<GameStore>()(
     debugSetHuntersOrderUnlocked: (unlocked) => set((state) => { debugSetHuntersOrderUnlockedAction(state, unlocked); return state; }),
     debugGrantHunterReputation: (amount) => set((state) => { debugGrantHunterReputationAction(state, amount); return state; }),
     debugGrantHunterMarks: (amount) => set((state) => { debugGrantHunterMarksAction(state, amount); return state; }),
+    debugSetHunterRngSeed: (seed) => set((state) => { debugSetHunterRngSeedAction(state, seed); return state; }),
+    debugRegenerateHunterContractBoard: (options = {}) => set((state) => { debugRegenerateHunterContractBoardAction(state, options); return state; }),
+    debugSetHunterRank: (rank) => { let ok = false; set((state) => { ok = debugSetHunterRankAction(state, rank); return state; }); return ok; },
+    debugGrantHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = debugGrantHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
+    debugClearHunterTargetBlocks: () => { let ok = false; set((state) => { ok = debugClearHunterTargetBlocksAction(state); return state; }); return ok; },
+    debugGrantNightglassBossContract: () => { let ok = false; set((state) => { ok = debugGrantNightglassBossContractAction(state); return state; }); return ok; },
+    debugSetHunterApexThreatReady: () => set((state) => { debugSetHunterApexThreatReadyAction(state); return state; }),
     debugCompleteActiveHunterContract: () => { let ok = false; set((state) => { ok = debugCompleteActiveHunterContractAction(state); reconcileChronicleProgress(state); return state; }); return ok; },
     acceptHunterContract: (contractId) => { let ok = false; set((state) => { ok = acceptHunterContractAction(state, contractId); return state; }); return ok; },
     skipHunterContract: () => { let ok = false; set((state) => { ok = skipHunterContractAction(state); if (ok) stopHunterContractCombat(state); return state; }); return ok; },

@@ -5,6 +5,8 @@ import { registerArcaneRegistryEntry } from './arcaneRegistry'
 import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
 import { BALANCE } from '../../core/balance/balance'
+import { GUILD_COMMISSION_TEMPLATES } from '../../content/guild/guildRequests'
+import { contributeGuildCommissionChainDelivery, recordGuildCommissionChainProgress, startGuildCommissionChain } from './guildCommissionChains'
 
 describe('Arcane Guild services', () => {
   it('generates only accessible noncombat work orders', () => {
@@ -35,6 +37,33 @@ describe('Arcane Guild services', () => {
     expect(offers.every((offer) => offer.quality !== 'prestigious' || state.progress.guildRank === 'magister')).toBe(true)
   })
 
+  it('keeps Life Essence quantity variants distinct and avoids identical generated offers', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.discoveredItems = ['life-essence']
+    const offers = generateGuildCommissionChoices(state)
+    const variants = GUILD_COMMISSION_TEMPLATES.filter((template) => template.id.startsWith('deliver-life-essence-')).map((template) => template.id)
+    expect(offers.map((offer) => offer.templateId).sort()).toEqual(variants.sort())
+    const signatures = offers.map((offer) => JSON.stringify({ category: offer.category, itemId: offer.itemId, quality: offer.quality, target: offer.target, components: offer.components }))
+    expect(new Set(signatures).size).toBe(signatures.length)
+  })
+
+  it('applies delivery efficiency to Mixed Delivery only', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.guildRank = 'magister'
+    state.progress.tutorialStage = 'complete'
+    state.progress.discoveredItems = ['life-essence', 'fire-fragment']
+    state.progress.guildSkillNodeRanks['major-efficient-procurement'] = 1
+    const offers = generateGuildCommissionChoices(state, { quality: 'special', templateId: 'mixed-materials-research' })
+    expect(offers[0]?.components).toEqual([
+      { category: 'delivery', itemId: 'life-essence', target: 11, progress: 0 },
+      { category: 'research', itemId: undefined, target: 3, progress: 0 },
+    ])
+    const production = generateGuildCommissionChoices(state, { quality: 'special', templateId: 'mixed-output-research' })[0]
+    expect(production?.components?.find((component) => component.category === 'production')?.target).toBe(12)
+  })
+
   it('keeps Production item-specific and counts actual replicated output quantity', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
@@ -49,6 +78,26 @@ describe('Arcane Guild services', () => {
     state.progress.arcaneGuild.activeCommission = { id: 'produce-fire-again', templateId: 'produce-fire-fragments', category: 'production', quality: 'routine', itemId: 'fire-fragment', target: 12, progress: 0, reputationReward: 10, advancementPointReward: 0 }
     recordGuildCommissionProgressBatch(state, [{ category: 'production', amount: 6, itemId: 'water-fragment' }])
     expect(state.progress.arcaneGuild.activeCommission?.progress).toBe(0)
+  })
+
+  it('matches Prismatic Chain Production to Water Fragment and counts replicated output', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.guildRank = 'magister'
+    expect(startGuildCommissionChain(state, 'prismatic-synthesis')).toBe(true)
+    state.inventory['prismatic-fragment'] = 5
+    expect(contributeGuildCommissionChainDelivery(state, 'max')).toBe(true)
+    expect(recordGuildCommissionChainProgress(state, 'production', 2, 'fire-fragment')).toBe(false)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 1, stageProgress: 0 })
+    state.progress.transmutation.arrays['replication-array'].level = 10
+    state.resonance.water = 10
+    expect(completeTransmutationCycle(state, TRANSMUTATION_RECIPES['water-fragment'], { mode: 'live', random: () => 0 })).toBe(true)
+    expect(state.inventory['water-fragment']).toBe(2)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 1, stageProgress: 2 })
+    expect(recordGuildCommissionChainProgress(state, 'production', 10, 'water-fragment')).toBe(true)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 2, stageProgress: 0 })
+    expect(recordGuildCommissionChainProgress(state, 'transmutation', 6)).toBe(true)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 3, stageProgress: 0 })
   })
 
   it('advances Mixed Production, Transmutation, and Research components independently in one cycle', () => {

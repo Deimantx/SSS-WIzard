@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { GUILD_PROJECTS } from '../../content/guild/guildProjects'
 import { createInitialState } from '../../../store/initialState'
-import { contributeGuildProject, getGuildProjectStatus } from './guildProjects'
+import { contributeGuildProject, getGuildProjectStatus, debugCompleteGuildProjectPrerequisites } from './guildProjects'
 import { getGuildProgressionBonuses } from './guildSelectors'
 import { contributeGuildCommissionChainDelivery, recordGuildCommissionChainProgress, startGuildCommissionChain } from './guildCommissionChains'
+import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
+import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
 
 describe('Guild long-term services', () => {
   it('accepts partial project contributions, then pays its one-time rewards', () => {
@@ -36,6 +38,15 @@ describe('Guild long-term services', () => {
     expect(getGuildProjectStatus(state, 'expand-research-wing')).toMatchObject({ available: false, reason: 'prerequisite-required', missingProjects: ['restore-arcane-archive'] })
     state.inventory['artifact-essence'] = 20
     expect(contributeGuildProject(state, 'expand-research-wing', 'artifact-essence', 10)).toBe(false)
+  })
+
+  it('completes authored Guild Project prerequisites for regression setup', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    expect(debugCompleteGuildProjectPrerequisites(state, 'expand-research-wing')).toBe(true)
+    expect(state.progress.arcaneGuild.completedProjectIds).toContain('restore-arcane-archive')
+    expect(state.progress.arcaneGuild.completedProjectIds).not.toContain('expand-research-wing')
+    expect(state.progress.guildPointsEarned).toBe(1)
   })
 
   it('activates modest Research and Transmutation project effects only after completion', () => {
@@ -82,5 +93,25 @@ describe('Guild long-term services', () => {
     completeChain()
     expect(state.progress.guildPointsEarned).toBe(1)
     expect(state.progress.guildReputation).toBe(700)
+  })
+
+  it('validates the authored item for Production Chain stages', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.guildRank = 'magister'
+    expect(startGuildCommissionChain(state, 'prismatic-synthesis')).toBe(true)
+    state.inventory['prismatic-fragment'] = 5
+    expect(contributeGuildCommissionChainDelivery(state, 'max')).toBe(true)
+    expect(recordGuildCommissionChainProgress(state, 'production', 2, 'fire-fragment')).toBe(false)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 1, stageProgress: 0 })
+    state.progress.transmutation.arrays['replication-array'].level = 10
+    state.resonance.water = 10
+    expect(completeTransmutationCycle(state, TRANSMUTATION_RECIPES['water-fragment'], { mode: 'live', random: () => 0 })).toBe(true)
+    expect(state.inventory['water-fragment']).toBe(2)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 1, stageProgress: 2 })
+    expect(recordGuildCommissionChainProgress(state, 'production', 10, 'water-fragment')).toBe(true)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 2, stageProgress: 0 })
+    expect(recordGuildCommissionChainProgress(state, 'transmutation', 6)).toBe(true)
+    expect(state.progress.arcaneGuild.activeCommissionChain).toMatchObject({ stageIndex: 3, stageProgress: 0 })
   })
 })

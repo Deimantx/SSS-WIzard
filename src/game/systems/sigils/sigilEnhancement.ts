@@ -1,4 +1,4 @@
-import type { GameState, SigilInstance, SigilStatId, SigilTraitId } from '../../types'
+﻿import type { GameState, SigilInstance, SigilStatId, SigilTraitId } from '../../types'
 import { getEligibleSigilTraits } from '../../content/sigils/sigilTraits'
 import { SIGIL_SECONDARY_STAT_IDS } from '../../content/sigils/sigilStats'
 import { getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
@@ -60,4 +60,19 @@ export const enhanceSigil = (state: GameState, instanceId: string, options: Sigi
     }
   }
   return { ok: true, cost, rank: nextRank, milestone }
+}
+
+export type SigilEnhancementMilestoneKind = 'secondary-roll' | 'trait' | 'secondary-and-trait'
+export interface SigilEnhancementMilestone { rank: number; kind: SigilEnhancementMilestoneKind }
+
+/** Returns the next authored secondary or Trait roll milestone for a Sigil. */
+export const getNextSigilEnhancementMilestone = (sigil: SigilInstance): SigilEnhancementMilestone | null => {
+  const secondary = sigil.secondaries.length >= 4 ? null : secondaryMilestones.find((rank) => rank > sigil.rank) ?? null
+  const quality = getSigilQualityDefinition(sigil.quality)
+  const canUnlockTrait = (sigil.quality === 'perfect' || sigil.quality === 'legendary') && sigil.traitIds.length < quality.traitCount
+  const trait = canUnlockTrait ? traitMilestones.find((rank) => rank > sigil.rank) ?? null : null
+  if (secondary === null && trait === null) return null
+  if (trait !== null && trait === secondary) return { rank: trait, kind: 'secondary-and-trait' }
+  if (trait !== null && (secondary === null || trait < secondary)) return { rank: trait, kind: 'trait' }
+  return { rank: secondary!, kind: 'secondary-roll' }
 }

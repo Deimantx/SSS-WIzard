@@ -1,4 +1,4 @@
-.equipment-loadout-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+﻿.equipment-loadout-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .equipment-sigil-loadout { display: grid; gap: 10px; min-width: 0; margin-top: 14px; padding: 14px; border: 1px solid color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); border-radius: 9px; background: linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel-strong)), var(--ui-panel)); }
 .equipment-sigil-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
 .equipment-sigil-heading > div { min-width: 0; }
@@ -40,74 +40,9 @@
 .sigil-vault-metrics { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
 .sigil-vault-metrics > span { display: flex; gap: 6px; align-items: baseline; padding: 5px 8px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-accent); background: var(--ui-panel); font: 700 var(--text-xs) var(--font-mono); }
 .sigil-vault-metrics small { color: var(--ui-text-muted); font-size: var(--text-micro); }
-.sigil-vault-body { display: grid; grid-template-columns: minmax(210px, .78fr) minmax(360px, 1.5fr) minmax(280px, .95fr); gap: 13px; flex: 1 1 auto; min-height: 0; padding: 14px; overflow: hidden; }
-.sigil-vault-array, .sigil-vault-storage, .sigil-vault-inspector { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; padding: 12px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel) 78%, transparent); }
-.sigil-vault-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.sigil-vault-section-heading h3 { margin: 3px 0 0; color: var(--ui-text); font: 700 var(--text-base) var(--font-display); letter-spacing: .055em; }
-.sigil-storage-cap { color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); }
-.sigil-vault-sockets { display: grid; gap: 7px; }
-.sigil-vault-array-summary { display: grid; gap: 7px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--ui-border); }
-.sigil-quality-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.sigil-quality-chips .quality-chip { padding: 5px 8px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); }
-.sigil-quality-chips .quality-chip.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
-.sigil-filter-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.sigil-filter-row > * { min-width: 0; }
-.sigil-vault-storage > .search-input, .sigil-vault-storage .search-input { width: 100%; }
-.sigil-target-banner { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid color-mix(in srgb, var(--ui-accent) 42%, var(--ui-border)); border-radius: 5px; color: var(--ui-accent); background: var(--ui-accent-soft); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-target-banner button { border: 0; color: var(--ui-text); background: transparent; cursor: pointer; font: inherit; }
-.sigil-vault-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-content: start; gap: 7px; min-height: 0; padding: 2px 3px 8px 0; overflow: auto; }
-.sigil-vault-card-grid > .game-tooltip-trigger { min-width: 0; }
-.sigil-vault-card { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; width: 100%; min-width: 0; min-height: 112px; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text); background: linear-gradient(145deg, color-mix(in srgb, var(--quality-color, var(--ui-accent)) 8%, var(--ui-panel-strong)), var(--ui-panel)); cursor: pointer; text-align: left; }
-.sigil-vault-card:hover, .sigil-vault-card:focus-visible, .sigil-vault-card.selected { border-color: var(--ui-accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 45%, transparent); }
-.sigil-vault-card.quality-common { --quality-color: var(--sigil-quality-common); }.sigil-vault-card.quality-refined { --quality-color: var(--sigil-quality-refined); }.sigil-vault-card.quality-perfect { --quality-color: var(--sigil-quality-perfect); }.sigil-vault-card.quality-legendary { --quality-color: var(--sigil-quality-legendary); }
-.sigil-card-tier, .sigil-card-rank { color: var(--ui-accent); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-card-identity { grid-column: 1 / -1; overflow: hidden; color: var(--ui-text); font: 700 var(--text-xs) var(--font-display); text-overflow: ellipsis; white-space: nowrap; }
-.sigil-card-main-stat { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 6px; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-card-main-stat b { color: var(--ui-text); }
-.sigil-card-markers { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; min-height: 14px; color: var(--ui-success); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-storage-empty, .sigil-inspector-empty { display: grid; place-items: center; align-content: center; gap: 8px; min-height: 180px; padding: 20px; color: var(--ui-text-muted); text-align: center; }
-.sigil-storage-empty strong, .sigil-inspector-empty strong { color: var(--ui-text); font: 700 var(--text-sm) var(--font-mono); letter-spacing: .06em; }
-.sigil-storage-empty p, .sigil-inspector-empty p { max-width: 32ch; margin: 0; font-size: var(--text-xs); line-height: 1.45; }
-.sigil-vault-inspector { padding: 0; overflow: hidden; }
-.sigil-inspector-scroll { display: grid; align-content: start; gap: 10px; min-height: 0; padding: 12px; overflow: auto; }
-.sigil-inspector-identity { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 1px solid var(--ui-border); }
-.sigil-inspector-identity h3 { margin: 0; color: var(--ui-text); font: 700 var(--text-base) var(--font-display); }
-.sigil-inspector-identity > strong { color: var(--ui-accent); font: 700 var(--text-lg) var(--font-mono); }
-.sigil-inspector-identity > strong small { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-current-replacement, .sigil-set-effect { display: grid; gap: 4px; padding: 8px; border-left: 2px solid var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 6%, var(--ui-panel)); }
-.sigil-current-replacement span { color: var(--ui-warning); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-current-replacement strong { color: var(--ui-text); font-size: var(--text-xs); }
-.sigil-inspector-section { display: grid; gap: 6px; padding-bottom: 9px; border-bottom: 1px solid var(--ui-border); }
-.sigil-inspector-stat { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-inspector-stat b { color: var(--ui-text); font-family: var(--font-mono); }
-.sigil-inspector-muted { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-trait-detail { padding: 7px; border-radius: 5px; background: var(--ui-panel); }
-.sigil-trait-detail strong { display: flex; justify-content: space-between; gap: 6px; color: var(--ui-accent); font-size: var(--text-xs); }
-.sigil-trait-detail p, .sigil-set-effect p { margin: 4px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
-.sigil-set-effect strong { color: var(--ui-text); font: 700 var(--text-xs) var(--font-mono); }
-.sigil-roll-history { display: grid; gap: 5px; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-roll-history b { color: var(--ui-accent); font-family: var(--font-mono); }
-.sigil-vault-inspector .sigil-inspector-actions { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding: 9px; border-top: 1px solid var(--ui-border); background: var(--ui-panel-strong); }
-.sigil-vault-inspector .sigil-inspector-actions > button:first-child { flex: 1 1 130px; }
-.sigil-next-enhancement { display: flex; gap: 6px; align-items: center; padding: 0 10px 9px; color: var(--ui-warning); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-comparison-identity, .sigil-comparison-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(45px, auto) minmax(45px, auto) minmax(50px, auto); gap: 5px; align-items: center; }
-.sigil-comparison-identity { grid-template-columns: 1fr 1fr; color: var(--ui-text-muted); font-size: var(--text-micro); }
-.sigil-comparison-rows { display: grid; gap: 4px; }
-.sigil-comparison-row { color: var(--ui-text-muted); font-size: var(--text-micro); }
-.sigil-comparison-row > :not(:first-child) { text-align: right; font-family: var(--font-mono); }
-.sigil-comparison-row b.positive { color: var(--ui-success); }.sigil-comparison-row b.negative { color: var(--ui-danger); }
-.sigil-comparison-sets { display: grid; gap: 4px; padding-top: 5px; color: var(--ui-text-muted); font-size: var(--text-micro); }
-.sigil-comparison-sets .changed { color: var(--ui-warning); }.sigil-comparison-sets .trait-change { color: var(--ui-accent); }
-@media (max-width: 1180px) {
-  .sigil-vault-body { grid-template-columns: minmax(190px, .7fr) minmax(310px, 1.3fr); overflow: auto; }
-  .sigil-vault-inspector { grid-column: 1 / -1; max-height: 340px; }
-  .sigil-vault-array { min-height: 300px; }
-}
 @media (max-width: 720px) {
   .equipment-sigil-heading { align-items: flex-start; flex-direction: column; }
   .equipment-sigil-sockets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sigil-vault-backdrop { padding: 0; }
-  .modal-portal-surface.sigil-vault-modal { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
   .sigil-vault-header { padding: 14px; }
   .sigil-vault-header h2 { font-size: var(--text-base); }
   .sigil-vault-header p { font-size: var(--text-xs); }
@@ -115,15 +50,4 @@
   .sigil-vault-header-actions .button { max-width: 112px; white-space: normal; }
   .sigil-vault-metrics { gap: 4px; }
   .sigil-vault-metrics > span { padding: 4px 5px; font-size: var(--text-micro); }
-  .sigil-vault-body { display: flex; flex-direction: column; gap: 9px; padding: 9px; overflow: auto; }
-  .sigil-vault-array { min-height: 0; }
-  .sigil-vault-sockets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sigil-vault-storage { min-height: 420px; }
-  .sigil-vault-inspector { min-height: 300px; max-height: none; }
-  .sigil-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 420px) {
-  .equipment-loadout-status { display: none; }
-  .sigil-filter-row { grid-template-columns: 1fr; }
-  .sigil-vault-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

@@ -32,7 +32,7 @@ describe('EquipmentScreen', () => {
     expect(screen.queryByRole('tab', { name: 'SIGILS' })).toBeNull()
     fireEvent.click(container.querySelector('.equipment-sigil-sockets .sigil-socket') as HTMLElement)
     expect(screen.getByRole('dialog', { name: /ARCANE SIGIL VAULT/i })).toBeTruthy()
-    expect(screen.getByText('CHOOSING FOR SLOT I')).toBeTruthy()
+    expect(screen.getByText('REPLACING SLOT I')).toBeTruthy()
   })
 
   it('consumes a Sigil loot deep link into the exact Vault slot while retaining normal Equipment panels', () => {
@@ -45,9 +45,9 @@ describe('EquipmentScreen', () => {
 
     expect(container.querySelectorAll('.equipment-slot-card')).toHaveLength(3)
     expect(screen.getByRole('heading', { name: 'ARMORY' })).toBeTruthy()
-    expect(screen.getByText('CHOOSING FOR SLOT IV')).toBeTruthy()
+    expect(screen.getByText('REPLACING SLOT IV')).toBeTruthy()
     expect(screen.getByRole('heading', { name: /ECHO SIGIL IV/i })).toBeTruthy()
-    expect(document.querySelector('.sigil-vault-card.selected')).toBeTruthy()
+    expect(document.querySelector('.sigil-card.selected')).toBeTruthy()
     expect(getNavigationIntent().openSigilVault).toBe(false)
   })
 
@@ -60,7 +60,7 @@ describe('EquipmentScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Sigil Slot III, Precision/i }))
 
-    expect(screen.getByText('CHOOSING FOR SLOT III')).toBeTruthy()
+    expect(screen.getByText('REPLACING SLOT III')).toBeTruthy()
     expect(screen.getByRole('heading', { name: /PRECISION SIGIL III/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'UNEQUIP' })).toBeTruthy()
   })
@@ -87,8 +87,8 @@ describe('EquipmentScreen', () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]') as HTMLElement)
     expect(screen.getByRole('heading', { name: 'Ember Staff' })).toBeTruthy()
-    expect(screen.getByText(/T1 ARTIFACT · RANKS 0 \/ 50/)).toBeTruthy()
-    expect(screen.getByText('EQUIPPED · Weapon')).toBeTruthy()
+    expect(screen.getByText(/T1 ARTIFACT Â· RANKS 0 \/ 50/)).toBeTruthy()
+    expect(screen.getByText('EQUIPPED Â· Weapon')).toBeTruthy()
     expect(container.querySelector('.equipment-copy-availability')?.textContent?.replace(/\s+/g, '')).toContain('OWNED1')
   })
 

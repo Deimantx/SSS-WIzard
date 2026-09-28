@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+﻿import { useSyncExternalStore } from "react";
 import type {
   ArtificingRecipeId,
   DungeonId,
@@ -19,6 +19,7 @@ export interface NavigationIntent {
   equipmentSigilInstanceId: string | null;
   equipmentSigilSlot: SigilSlot | null;
   artificingSigilInstanceId: string | null;
+  artificingSigilTab: 'refinement' | 'forge' | 'attunement' | null;
   artificingRecipeId: ArtificingRecipeId | null;
   transmutationRecipeId: TransmutationRecipeId | null;
   researchItemId: ItemId | null;
@@ -39,6 +40,7 @@ const emptyIntent: NavigationIntent = {
   equipmentSigilInstanceId: null,
   equipmentSigilSlot: null,
   artificingSigilInstanceId: null,
+  artificingSigilTab: null,
   artificingRecipeId: null,
   transmutationRecipeId: null,
   researchItemId: null,

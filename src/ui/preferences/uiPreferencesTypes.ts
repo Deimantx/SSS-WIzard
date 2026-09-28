@@ -1,4 +1,4 @@
-import type { ArtificingKindFilter, ArtificingTierFilter, ChronicleObjectiveId, ChronicleTrack, ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
+﻿import type { ArtificingKindFilter, ArtificingTierFilter, ChronicleObjectiveId, ChronicleTrack, ItemId, RecipeCategory, SchoolId, TransmutationCategoryFilter, TransmutationTierFilter } from '../../game/types'
 import type { CombatDetailsMode } from '../../game/presentation/combat/combatDetailsPresentation'
 import type { DungeonStatisticsMode } from '../../game/telemetry/dungeon/dungeonStatisticsTypes'
 
@@ -44,6 +44,7 @@ export interface TransmutationScreenPreferences {
 }
 export interface ArtificingScreenPreferences {
   mode: 'artifacts' | 'sigils'
+  sigilTab: 'refinement' | 'forge' | 'attunement'
   selectedRecipeId: import('../../game/types').ArtificingRecipeId | null
   pinnedRecipeIds: import('../../game/types').ArtificingRecipeId[]
   pinsCollapsed: boolean

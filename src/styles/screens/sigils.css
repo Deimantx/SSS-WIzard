@@ -1,4 +1,4 @@
-.artificing-mode-switch { display: flex; gap: 6px; margin: 0 0 12px; padding: 4px; width: fit-content; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); }
+﻿.artificing-mode-switch { display: flex; gap: 6px; margin: 0 0 12px; padding: 4px; width: fit-content; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); }
 .collection-primary-tabs { display: flex; gap: 6px; margin: 0 0 12px; }
 .collection-primary-tabs button { padding: 7px 12px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .collection-primary-tabs button.active, .collection-primary-tabs button:hover, .collection-primary-tabs button:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
@@ -31,94 +31,171 @@
 .sigil-collection-open { justify-self: start; padding: 8px 11px; border: 1px solid var(--ui-accent); border-radius: 6px; color: var(--ui-text); background: var(--ui-accent-soft); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); }
 .artificing-mode-switch button { padding: 7px 12px; border: 1px solid transparent; border-radius: 5px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
 .artificing-mode-switch button:hover, .artificing-mode-switch button:focus-visible, .artificing-mode-switch button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
+.artificing-mode-switch { display: flex; gap: 5px; margin: 0 0 12px; padding: 4px; width: fit-content; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 86%, transparent); }
+.artificing-mode-switch > .button { min-height: 34px; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.artificing-mode-switch > .button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .sigils-workspace { display: grid; gap: 12px; min-width: 0; }
-.sigils-open-equipment { align-self: start; padding: 8px 12px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
-.sigils-open-equipment:hover { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
-.sigils-mode-tabs { display: flex; gap: 5px; width: fit-content; padding: 4px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel); }
-.sigils-mode-tabs button { padding: 6px 10px; border: 1px solid transparent; border-radius: 5px; color: var(--ui-text-muted); background: transparent; cursor: pointer; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
-.sigils-mode-tabs button:hover, .sigils-mode-tabs button:focus-visible, .sigils-mode-tabs button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
-.sigils-cap-readout { display: grid; gap: 3px; padding: 8px 10px; border-left: 2px solid var(--ui-warning); color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-warning) 6%, var(--ui-panel)); font: var(--text-micro) var(--font-mono); }
-.sigils-cap-readout b { color: var(--ui-text); }
-.sigils-clear-filters { justify-self: start; padding: 6px 9px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-panel); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); }
-.sigils-clear-filters:hover, .sigils-clear-filters:focus-visible { border-color: var(--ui-accent); color: var(--ui-text); }
-.sigils-workspace[data-mode="array"] .sigils-main-grid, .sigils-workspace[data-mode="array"] .sigils-forge { display: none; }
-.sigils-workspace[data-mode="storage"] .sigils-loadout, .sigils-workspace[data-mode="storage"] .sigils-controls, .sigils-workspace[data-mode="storage"] .sigils-forge { display: none; }
-.sigils-workspace[data-mode="forge"] .sigils-loadout, .sigils-workspace[data-mode="forge"] .sigils-main-grid { display: none; }
-.sigils-mode-rail { display: flex; justify-content: space-between; gap: 18px; min-width: 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); border-radius: 9px; background: linear-gradient(115deg, color-mix(in srgb, var(--ui-accent) 12%, var(--ui-panel-strong)), var(--ui-panel)); box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
-.sigils-mode-rail > div:first-child { display: grid; gap: 3px; min-width: 0; }
-.sigils-mode-rail strong { color: var(--ui-text); font: 700 var(--text-base) var(--font-display); letter-spacing: .02em; }
-.sigils-mode-rail small, .sigils-resource-readout small { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigils-resource-readout { display: grid; align-content: center; justify-items: end; gap: 2px; min-width: 120px; }
-.sigils-resource-readout span { color: var(--ui-accent); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .12em; }
-.sigils-resource-readout b { color: var(--ui-text); font: 700 var(--text-lg) var(--font-mono); }
-.sigils-loadout .card-head, .sigils-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.sigils-loadout h2, .sigils-controls h2 { margin: 3px 0 0; color: var(--ui-text); font-size: var(--text-base); }
-.sigils-loadout-count { color: var(--ui-accent); font: 700 var(--text-sm) var(--font-mono); }
-.sigils-slot-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; margin-top: 12px; }
-.sigil-slot { display: grid; gap: 4px; min-width: 0; padding: 9px 7px; border: 1px dashed var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 76%, transparent); cursor: pointer; text-align: left; }
-.sigil-slot:hover, .sigil-slot:focus-visible, .sigil-slot.filled { border-style: solid; border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
-.sigil-slot > span { color: var(--ui-accent); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-slot strong { overflow: hidden; font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
-.sigil-slot small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.sigils-set-summary { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.sigils-set-summary span.active { color: var(--ui-success); }
-.sigils-main-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(290px, .85fr); gap: 12px; min-width: 0; }
-.sigils-storage, .sigils-inspector, .sigils-inspector-stack, .sigils-comparison { min-width: 0; min-height: 0; }
-.sigils-inspector-stack { display: grid; gap: 12px; align-content: start; }
-.sigil-comparison-head { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
-.sigil-comparison-head span, .sigil-comparison-sets { display: grid; gap: 3px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.sigil-comparison-head strong { color: var(--ui-text); font: 700 var(--text-small) var(--font-display); overflow-wrap: anywhere; }
-.sigil-comparison-head small { color: var(--ui-text-faint); }
-.sigil-comparison-stats { display: grid; gap: 4px; }
-.sigil-comparison-stats .positive { color: var(--ui-success); }
-.sigil-comparison-stats .negative { color: var(--ui-danger); }
-.sigil-comparison-sets { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
-.sigil-comparison-sets .changed { color: var(--ui-accent); }
-.sigils-storage-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(142px, 1fr)); gap: 7px; max-height: 480px; overflow: auto; padding: 10px 2px 2px 0; }
-.sigil-card { position: relative; display: grid; gap: 5px; min-width: 0; min-height: 102px; padding: 10px 9px; border: 1px solid var(--ui-border); border-radius: 8px; color: var(--ui-text-muted); background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel-strong) 86%, transparent), var(--ui-panel)); cursor: pointer; text-align: left; }
-.sigil-card:hover, .sigil-card:focus-visible, .sigil-card.selected { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 55%, transparent); }
-.sigil-card.quality-common { --sigil-quality-color: var(--sigil-quality-common); border-color: color-mix(in srgb, var(--sigil-quality-color) 48%, var(--ui-border)); }
-.sigil-card.quality-refined { --sigil-quality-color: var(--sigil-quality-refined); border-color: color-mix(in srgb, var(--sigil-quality-color) 48%, var(--ui-border)); }
-.sigil-card.quality-perfect { --sigil-quality-color: var(--sigil-quality-perfect); border-color: color-mix(in srgb, var(--sigil-quality-color) 48%, var(--ui-border)); }
-.sigil-card.quality-legendary { --sigil-quality-color: var(--sigil-quality-legendary); border-color: color-mix(in srgb, var(--sigil-quality-color) 68%, var(--ui-border)); }
-.sigil-card-top { display: flex; justify-content: space-between; gap: 4px; color: var(--ui-accent); font: 700 var(--text-micro) var(--font-mono); }
-.sigil-card-top i { color: var(--ui-text-muted); font-style: normal; font-size: .58rem; }
-.sigil-card > strong { overflow-wrap: anywhere; color: var(--ui-text); font-size: var(--text-xs); }
-.sigil-card > small, .sigil-card > span:not(.sigil-card-top) { font: var(--text-micro) var(--font-mono); }
-.sigils-empty { display: grid; place-items: center; gap: 8px; min-height: 180px; padding: 18px; color: var(--ui-text-muted); text-align: center; }
-.sigils-empty strong { color: var(--ui-text); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .1em; }
-.sigils-empty p { max-width: 34ch; margin: 0; font-size: var(--text-xs); line-height: 1.5; }
-.sigil-inspector { display: grid; align-content: start; gap: 12px; }
-.sigil-inspector-hero { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 11px; border-bottom: 1px solid var(--ui-border); }
-.sigil-inspector-hero h2 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-base); }
-.sigil-inspector-hero p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
-.sigil-rank { color: var(--ui-accent); font: 700 var(--text-lg) var(--font-mono); white-space: nowrap; }
-.sigil-detail-section, .sigil-history { display: grid; gap: 7px; min-width: 0; }
-.sigil-detail-section > strong { color: var(--ui-text); font-size: var(--text-sm); }
-.sigil-detail-section > small, .sigil-history > small { color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-stat-row { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigil-stat-row b { color: var(--ui-text); font-family: var(--font-mono); }
-.sigil-trait { padding: 6px 8px; border-left: 2px solid var(--ui-warning); color: var(--ui-text); background: color-mix(in srgb, var(--ui-warning) 8%, transparent); font: var(--text-xs) var(--font-mono); text-transform: capitalize; }
-.sigil-detail-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 3px; }
-.sigil-detail-actions button, .sigils-control-actions button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text); background: var(--ui-panel); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); }
-.sigil-detail-actions button:hover:not(:disabled), .sigil-detail-actions button:focus-visible { border-color: var(--ui-accent); background: var(--ui-accent-soft); }
-.sigil-detail-actions button:disabled { opacity: .5; cursor: not-allowed; }
-.sigil-detail-actions button.danger { color: var(--ui-warning); }
-.sigil-history { padding-top: 10px; border-top: 1px solid var(--ui-border); }
-.sigil-history > span:not(.eyebrow) { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.sigils-control-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 14px; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigils-control-actions label { display: inline-flex; align-items: center; gap: 6px; }
-.sigils-control-actions select { margin-left: 4px; padding: 5px 7px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text); background: var(--ui-panel); }
-.sigils-craft-note { display: inline-flex; align-items: center; gap: 5px; color: var(--ui-accent); font: var(--text-micro) var(--font-mono); }
-.sigils-forge { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-.sigils-forge h2 { margin: 3px 0; color: var(--ui-text); font-size: var(--text-base); }
-.sigils-forge p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.sigils-forge-controls { display: flex; flex-wrap: wrap; align-items: end; justify-content: flex-end; gap: 8px; }
-.sigils-forge-controls label { display: grid; gap: 4px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.sigils-forge-controls select { min-width: 92px; padding: 6px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text); background: var(--ui-panel); }
-.sigils-forge-controls button { padding: 7px 9px; border: 1px solid var(--ui-accent); border-radius: 6px; color: var(--ui-text); background: var(--ui-accent-soft); cursor: pointer; font: 700 var(--text-micro) var(--font-mono); }
-@media (max-width: 820px) { .sigils-main-grid { grid-template-columns: minmax(0, 1fr); } .sigils-controls, .sigils-mode-rail { align-items: flex-start; flex-direction: column; } .sigils-control-actions { justify-content: flex-start; } }
-@media (max-width: 560px) { .sigils-slot-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sigils-storage-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .sigil-collection-metrics, .sigil-collection-set-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sigils-open-equipment { align-self: start; }
+.sigil-artificing-workspace { display: grid; gap: 10px; min-width: 0; }
+.sigil-artificing-heading { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--ui-accent) 36%, var(--ui-border)); border-radius: 9px; background: linear-gradient(112deg, color-mix(in srgb, var(--ui-accent) 10%, var(--ui-panel-strong)), var(--ui-panel)); }
+.sigil-artificing-heading h2 { margin: 4px 0; color: var(--ui-text); font: 700 var(--text-lg) var(--font-display); letter-spacing: .045em; }
+.sigil-artificing-heading p, .sigil-forge-settings p, .sigil-attunement-settings p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.sigil-workshop-resources { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.sigil-workshop-resources > span { display: grid; gap: 3px; min-width: 82px; padding: 7px 9px; border-left: 1px solid var(--ui-border); }
+.sigil-workshop-resources small, .sigil-forge-resource > span:first-child { color: var(--ui-text-muted); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.sigil-workshop-resources b { color: var(--ui-accent); font: 700 var(--text-base) var(--font-mono); }
+.sigil-artificing-tabs { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px; width: fit-content; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel); }
+.sigil-artificing-tabs > .button { min-height: 34px; padding-inline: 13px; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .09em; }
+.sigil-artificing-tabs > .button.active, .sigil-artificing-tabs > .button[aria-selected="true"] { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
+.sigil-workshop-tab-note { margin: -5px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.sigil-refinement-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 10px; min-width: 0; align-items: stretch; }
+.sigil-browser { display: flex; flex-direction: column; gap: 9px; min-width: 0; min-height: 0; padding: 12px; border: 1px solid var(--ui-border); border-radius: 9px; background: linear-gradient(155deg, color-mix(in srgb, var(--ui-panel-strong) 90%, transparent), var(--ui-panel)); }
+.sigil-browser-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sigil-browser-heading h3 { margin: 3px 0 0; color: var(--ui-text); font: 700 var(--text-base) var(--font-display); letter-spacing: .045em; }
+.sigil-browser-count { color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); }
+.sigil-browser-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.sigil-quality-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.sigil-quality-chips > .quality-chip { min-height: 27px; padding: 3px 7px; border-radius: 5px; color: var(--ui-text-muted); font: 700 9px var(--font-mono); letter-spacing: .04em; }
+.sigil-quality-chips > .quality-chip.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
+.sigil-quality-chips > .quality-chip.quality-common.active { border-color: var(--sigil-quality-common); color: var(--sigil-quality-common); }
+.sigil-quality-chips > .quality-chip.quality-refined.active { border-color: var(--sigil-quality-refined); color: var(--sigil-quality-refined); }
+.sigil-quality-chips > .quality-chip.quality-perfect.active { border-color: var(--sigil-quality-perfect); color: var(--sigil-quality-perfect); }
+.sigil-quality-chips > .quality-chip.quality-legendary.active { border-color: var(--sigil-quality-legendary); color: var(--sigil-quality-legendary); }
+.sigil-browser-actions { display: flex; align-items: center; gap: 4px; }
+.sigil-browser-actions > .select-menu { width: 110px; }
+.sigil-filter-trigger { white-space: nowrap; font: 700 9px var(--font-mono); letter-spacing: .04em; }
+.sigil-filter-clear { padding-inline: 7px; }
+.sigil-filter-popover { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel-strong); }
+.sigil-filter-popover > * { min-width: 0; }
+.sigil-target-banner { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 9px; border: 1px solid color-mix(in srgb, var(--ui-warning) 45%, var(--ui-border)); border-radius: 5px; color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 7%, var(--ui-panel)); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.sigil-browser-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); align-content: start; gap: 7px; min-height: 150px; max-height: min(62vh, 600px); padding: 2px 3px 8px 0; overflow: auto; }
+.sigil-browser-grid > .game-tooltip-trigger { min-width: 0; }
+.sigil-card.button { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; width: 100%; min-width: 0; min-height: 112px; padding: 9px; border: 1px solid color-mix(in srgb, var(--sigil-quality-color, var(--ui-accent)) 48%, var(--ui-border)); border-radius: 7px; color: var(--ui-text); background: linear-gradient(145deg, color-mix(in srgb, var(--sigil-quality-color, var(--ui-accent)) 8%, var(--ui-panel-strong)), var(--ui-panel)); text-align: left; }
+.sigil-card.quality-common { --sigil-quality-color: var(--sigil-quality-common); }
+.sigil-card.quality-refined { --sigil-quality-color: var(--sigil-quality-refined); }
+.sigil-card.quality-perfect { --sigil-quality-color: var(--sigil-quality-perfect); }
+.sigil-card.quality-legendary { --sigil-quality-color: var(--sigil-quality-legendary); }
+.sigil-card.button:hover, .sigil-card.button:focus-visible, .sigil-card.button.selected { border-color: var(--sigil-quality-color, var(--ui-accent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sigil-quality-color, var(--ui-accent)) 48%, transparent); }
+.sigil-card-head, .sigil-card-foot, .sigil-card-stat { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; }
+.sigil-card-head { color: var(--sigil-quality-color, var(--ui-accent)); font: 700 var(--text-micro) var(--font-mono); }
+.sigil-card > strong { overflow: hidden; color: var(--ui-text); font: 700 var(--text-xs) var(--font-display); text-overflow: ellipsis; white-space: nowrap; }
+.sigil-card-stat { color: var(--ui-text-muted); font-size: var(--text-micro); }
+.sigil-card-stat b, .sigil-card-foot { color: var(--ui-text-soft); font: 700 var(--text-micro) var(--font-mono); }
+.sigil-card-foot span:nth-child(2) { color: var(--ui-success); }
+.sigil-inspector-transition { min-width: 0; min-height: 0; }
+.sigil-shared-inspector { display: grid; align-content: start; gap: 10px; min-width: 0; min-height: 0; max-height: min(72vh, 700px); padding: 13px; overflow: auto; border: 1px solid var(--ui-border); border-radius: 9px; background: linear-gradient(150deg, color-mix(in srgb, var(--sigil-quality-color, var(--ui-accent)) 7%, var(--ui-panel-strong)), var(--ui-panel)); }
+.sigil-shared-inspector.quality-common { --sigil-quality-color: var(--sigil-quality-common); }
+.sigil-shared-inspector.quality-refined { --sigil-quality-color: var(--sigil-quality-refined); }
+.sigil-shared-inspector.quality-perfect { --sigil-quality-color: var(--sigil-quality-perfect); }
+.sigil-shared-inspector.quality-legendary { --sigil-quality-color: var(--sigil-quality-legendary); }
+.sigil-inspector-empty { display: grid; place-items: center; align-content: center; gap: 8px; min-height: 200px; color: var(--ui-text-muted); text-align: center; }
+.sigil-inspector-empty > span { color: var(--ui-accent); font-size: 26px; }
+.sigil-inspector-empty strong { color: var(--ui-text); font: 700 var(--text-sm) var(--font-mono); letter-spacing: .07em; }
+.sigil-inspector-empty p { max-width: 32ch; margin: 0; font-size: var(--text-xs); line-height: 1.45; }
+.sigil-inspector-identity { display: grid; gap: 4px; padding-bottom: 9px; border-bottom: 1px solid var(--ui-border); }
+.sigil-inspector-identity h2 { margin: 2px 0; color: var(--ui-text); font: 700 var(--text-base) var(--font-display); }
+.sigil-inspector-identity p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
+.sigil-inspector-identity > strong { color: var(--sigil-quality-color, var(--ui-accent)); font: 700 var(--text-lg) var(--font-mono); }
+.sigil-inspector-identity > strong small { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.sigil-refinement-preview { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }
+.sigil-refinement-preview > span { padding: 4px 6px; border-radius: 4px; color: var(--ui-text-muted); background: var(--ui-panel-strong); font: 700 9px var(--font-mono); }
+.sigil-refinement-preview > b { margin-left: auto; color: var(--ui-warning); font: 700 var(--text-xs) var(--font-mono); }
+.sigil-milestone { display: grid; gap: 5px; }
+.sigil-milestone > div { height: 5px; overflow: hidden; border-radius: 5px; background: var(--ui-panel-strong); }
+.sigil-milestone > div > i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--ui-accent), var(--ui-warning)); }
+.sigil-milestone > span { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.sigil-milestone > span b { color: var(--ui-warning); text-align: right; }.sigil-inspector-section { display: grid; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--ui-border); }
+.sigil-inspector-section > small { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.sigil-inspector-stat { display: flex; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.sigil-inspector-stat b { color: var(--ui-text); font-family: var(--font-mono); }
+.sigil-trait-detail { padding: 7px; border-left: 2px solid var(--sigil-quality-color, var(--ui-accent)); background: color-mix(in srgb, var(--sigil-quality-color, var(--ui-accent)) 7%, var(--ui-panel)); }
+.sigil-trait-detail strong { display: flex; justify-content: space-between; gap: 6px; color: var(--ui-text); font-size: var(--text-xs); }
+.sigil-trait-detail p { margin: 4px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.4; }
+.sigil-roll-entry { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.sigil-roll-entry b { color: var(--ui-accent); font-family: var(--font-mono); }
+.sigil-inspector-footer { display: grid; gap: 8px; }
+.sigil-refinement-actions, .sigil-inspector-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sigil-refinement-actions > .button:nth-child(2) { margin-left: auto; }
+.sigil-forge-workspace, .sigil-attunement-workspace { display: grid; gap: 10px; min-width: 0; }
+.sigil-forge-settings, .sigil-attunement-settings { display: grid; gap: 9px; min-width: 0; padding: 14px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel); }
+.sigil-forge-settings h3, .sigil-attunement-settings h3, .sigil-forge-recipe h3 { margin: 2px 0; color: var(--ui-text); font: 700 var(--text-base) var(--font-display); }
+.sigil-forge-pickers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; max-width: 760px; }
+.sigil-forge-pickers > * { min-width: 0; }
+.sigil-forge-recipes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sigil-forge-recipe { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 15px; border: 1px solid var(--ui-border); border-radius: 9px; background: linear-gradient(150deg, color-mix(in srgb, var(--ui-panel-strong) 90%, transparent), var(--ui-panel)); }
+.sigil-forge-recipe.focused { border-color: color-mix(in srgb, var(--ui-accent) 52%, var(--ui-border)); background: linear-gradient(145deg, color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel-strong)), var(--ui-panel)); }
+.sigil-forge-recipe p { margin: 4px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.sigil-quality-odds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.sigil-quality-odds > span { display: grid; gap: 3px; padding: 6px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-text-muted); background: var(--ui-panel); font: var(--text-micro) var(--font-mono); text-transform: capitalize; }
+.sigil-quality-odds b { color: var(--ui-text); font-size: var(--text-xs); }
+.sigil-quality-odds .quality-common b { color: var(--sigil-quality-common); }
+.sigil-quality-odds .quality-refined b { color: var(--sigil-quality-refined); }
+.sigil-quality-odds .quality-perfect b { color: var(--sigil-quality-perfect); }
+.sigil-quality-odds .quality-legendary b { color: var(--sigil-quality-legendary); }
+.sigil-forge-recipe > .game-tooltip-trigger { justify-self: start; }
+.sigil-forge-resource { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border-left: 2px solid var(--ui-warning); color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-warning) 5%, var(--ui-panel)); font-size: var(--text-xs); }
+.sigil-forge-resource b { color: var(--ui-warning); font: 700 var(--text-sm) var(--font-mono); }
+.sigil-attunement-settings { max-width: 860px; }
+.sigil-attunement-settings > .select-menu { max-width: 420px; }
+.ui-toggle { display: flex; justify-content: flex-start; align-items: center; gap: 10px; width: min(100%, 460px); padding: 9px 11px; text-align: left; }
+.ui-toggle-indicator { position: relative; width: 30px; height: 17px; flex: 0 0 auto; border: 1px solid var(--ui-border); border-radius: 12px; background: var(--ui-panel-strong); transition: background-color .16s cubic-bezier(.2,.8,.2,1), border-color .16s cubic-bezier(.2,.8,.2,1); }
+.ui-toggle-indicator::after { position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--ui-text-muted); content: ''; transition: transform .16s cubic-bezier(.2,.8,.2,1), background-color .16s cubic-bezier(.2,.8,.2,1); }
+.ui-toggle.active .ui-toggle-indicator { border-color: var(--ui-accent); background: var(--ui-accent-soft); }
+.ui-toggle.active .ui-toggle-indicator::after { transform: translateX(13px); background: var(--ui-accent); }
+.ui-toggle > span:last-of-type { flex: 1 1 auto; }
+.ui-toggle > b { color: var(--ui-text-muted); font: 700 var(--text-micro) var(--font-mono); }
+.ui-toggle.active > b { color: var(--ui-accent); }
+.sigils-forge { display: none; }
+.sigil-all-control { width: 100%; justify-content: center; }
+.sigil-vault-body { grid-template-columns: minmax(205px, .72fr) minmax(340px, 1.22fr) minmax(290px, .96fr); }
+.sigil-vault-sockets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sigil-vault-body > .sigil-browser { overflow: hidden; }
+.sigil-vault-inspector { min-height: 0; padding: 0; overflow: hidden; }
+.sigil-vault-inspector .sigil-inspector-transition, .sigil-vault-inspector .sigil-shared-inspector { height: 100%; max-height: none; }
+.sigil-vault-inspector .sigil-shared-inspector { padding-bottom: 12px; }
+.sigil-current-replacement { display: grid; gap: 4px; padding: 8px; border-left: 2px solid var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 6%, var(--ui-panel)); }
+.sigil-current-replacement span { color: var(--ui-warning); font: 700 var(--text-micro) var(--font-mono); }
+.sigil-current-replacement strong { color: var(--ui-text); font-size: var(--text-xs); }
+.sigil-next-enhancement { display: flex; gap: 6px; align-items: center; color: var(--ui-warning); font: 700 var(--text-micro) var(--font-mono); }
+.sigil-inspector-actions > .button:first-child { flex: 1 1 120px; }
+.sigil-comparison-card { display: grid; gap: 7px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); }
+.sigil-comparison-identity { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; color: var(--ui-text-muted); font-size: var(--text-micro); }
+.sigil-comparison-rows { display: grid; gap: 4px; }
+.sigil-comparison-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, auto); align-items: center; gap: 6px; color: var(--ui-text-muted); font-size: var(--text-micro); }
+.sigil-comparison-row > :not(:first-child) { text-align: right; font-family: var(--font-mono); }
+.sigil-comparison-row b.positive { color: var(--ui-success); }
+.sigil-comparison-row b.negative { color: var(--ui-danger); }
+.sigil-comparison-sets { display: grid; gap: 3px; padding-top: 5px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-micro); }
+.sigil-comparison-sets .changed, .sigil-comparison-sets .trait-change { color: var(--ui-accent); }
+@media (max-width: 1180px) {
+  .sigil-vault-body { grid-template-columns: minmax(190px, .68fr) minmax(310px, 1.32fr); overflow: auto; }
+  .sigil-vault-inspector { grid-column: 1 / -1; min-height: 310px; }
+}
+@media (max-width: 900px) {
+  .sigil-refinement-layout { grid-template-columns: minmax(0, 1fr); }
+  .sigil-shared-inspector { max-height: none; }
+  .sigil-forge-recipes { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .sigil-artificing-heading { align-items: flex-start; flex-direction: column; }
+  .sigil-workshop-resources { justify-content: flex-start; }
+  .sigil-vault-backdrop { padding: 0; }
+  .modal-portal-surface.sigil-vault-modal { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+  .sigil-vault-header { padding: 14px; }
+  .sigil-vault-header h2 { font-size: var(--text-base); }
+  .sigil-vault-body { display: flex; flex-direction: column; gap: 9px; padding: 9px; overflow: auto; }
+  .sigil-vault-array { min-height: 0; }
+  .sigil-vault-sockets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sigil-vault-body > .sigil-browser { min-height: 420px; overflow: visible; }
+  .sigil-vault-inspector { min-height: 340px; }
+  .sigil-browser-grid { max-height: 420px; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); }
+}
+@media (max-width: 600px) {
+  .sigil-browser-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .sigil-browser-actions { justify-content: space-between; }
+  .sigil-forge-pickers { grid-template-columns: minmax(0, 1fr); }
+  .sigil-quality-odds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sigil-workshop-resources > span { min-width: 70px; padding-inline: 6px; }
+}@media (max-width: 760px) { .sigil-collection-metrics, .sigil-collection-set-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .sigil-collection-source-selector { grid-template-columns: 1fr; } .sigil-source-location-list { justify-content: flex-start; } }
 @media (max-width: 820px) { .sigils-forge { align-items: flex-start; flex-direction: column; } .sigils-forge-controls { justify-content: flex-start; } }

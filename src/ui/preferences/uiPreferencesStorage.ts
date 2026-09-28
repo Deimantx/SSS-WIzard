@@ -1,4 +1,4 @@
-import { customFromPreset, THEME_PRESETS } from '../theme/themePresets'
+﻿import { customFromPreset, THEME_PRESETS } from '../theme/themePresets'
 import { TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../game/content/recipes/recipes'
 import { ARTIFICING_RECIPE_ORDER } from '../../game/content/recipes/artificingRecipes'
 import type { ArtificingRecipeId, TransmutationRecipeId } from '../../game/types'
@@ -14,7 +14,7 @@ export const defaultScreenPreferences = (): ScreenPreferences => ({
   inventory: { sourceOpen: false, researchValueOpen: false },
   collection: { primaryTab: 'items' },
   transmutation: { selectedRecipeId: RECIPE_ORDER[0], pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } },
-  artificing: { mode: 'artifacts', selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
+  artificing: { mode: 'artifacts', sigilTab: 'refinement', selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
   chronicles: { hideCompleted: true, showLocked: true, showOptional: true, statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'region', 'equipment'], sort: 'recommended', group: 'track', view: 'compact', trackedObjectiveIds: [], collapsedGroups: [] },
@@ -80,6 +80,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const pinnedRecipeIds = Array.from(new Set(pinnedRecipeSource.filter((id): id is ArtificingRecipeId => typeof id === 'string' && ARTIFICING_RECIPE_ORDER.includes(id as ArtificingRecipeId)))).slice(0, MAX_ARTIFICING_RECIPE_PINS)
   const artificing: ScreenPreferences['artificing'] = {
     mode: a.mode === 'sigils' ? 'sigils' : 'artifacts',
+    sigilTab: oneOf(a.sigilTab, ['refinement', 'forge', 'attunement'] as const, 'refinement'),
     selectedRecipeId: typeof a.selectedRecipeId === 'string' && ARTIFICING_RECIPE_ORDER.includes(a.selectedRecipeId as ArtificingRecipeId) ? a.selectedRecipeId as ArtificingRecipeId : null,
     pinnedRecipeIds,
     pinsCollapsed: a.pinsCollapsed === true,

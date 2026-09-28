@@ -1,4 +1,4 @@
-import type { HTMLInputTypeAttribute } from 'react'
+﻿import type { HTMLInputTypeAttribute } from 'react'
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react'
 import { GameTooltip } from './tooltip/Tooltip'
 import type { ReactNode as TooltipNode } from 'react'
@@ -30,3 +30,7 @@ export { FilterBar, type FilterOption } from './FilterBar'
 export { SelectMenu, type SelectMenuOption, type SelectMenuPortalLayer } from './SelectMenu'
 export { ModalPortal } from './ModalPortal'
 export { EquipmentCombatDetails } from './item/EquipmentCombatDetails'
+
+export function Toggle({ label, description, checked, onChange, className = '' }: { label: string; description: string; checked: boolean; onChange: (checked: boolean) => void; className?: string }) {
+  return <GameTooltip content={description}><Button type="button" variant="secondary" role="switch" aria-checked={checked} ariaPressed={checked} className={['ui-toggle', checked ? 'active' : '', className].filter(Boolean).join(' ')} onClick={() => onChange(!checked)}><span className="ui-toggle-indicator" /><span>{label}</span><b>{checked ? 'ON' : 'OFF'}</b></Button></GameTooltip>
+}

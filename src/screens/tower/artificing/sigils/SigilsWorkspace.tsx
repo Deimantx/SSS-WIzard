@@ -1,101 +1,124 @@
 import { useEffect, useMemo, useState } from 'react'
-import { LockKeyhole, PackageOpen, ShieldCheck, Sparkles, Trash2, Unlock, WandSparkles } from 'lucide-react'
-import { GameTooltip } from '../../../../components/ui/tooltip/Tooltip'
+import { LockKeyhole, Sparkles, Trash2, Unlock } from 'lucide-react'
+import { Button, GameTooltip, SelectMenu, Toggle } from '../../../../components/ui'
+import { SigilBrowser } from '../../../../components/sigils/browser/SigilBrowser'
+import { SigilInspector } from '../../../../components/sigils/SigilInspector'
+import { SigilSetSummary } from '../../../../components/sigils/SigilPresentation'
 import { SIGIL_QUALITIES } from '../../../../game/content/sigils/sigilQualities'
-import { SIGIL_SETS, SIGIL_SET_IDS } from '../../../../game/content/sigils/sigilSets'
+import { SIGIL_CRAFT_QUALITY_WEIGHTS } from '../../../../game/content/sigils/sigilDropConfig'
 import { getHighestCraftableSigilTier, SIGIL_TIERS } from '../../../../game/content/sigils/sigilTiers'
-import { SIGIL_MAIN_STAT_POOLS, SIGIL_STAT_DEFINITIONS } from '../../../../game/content/sigils/sigilStats'
-import { SIGIL_TRAITS } from '../../../../game/content/sigils/sigilTraits'
 import { getSigilCraftCost } from '../../../../game/systems/sigils/sigilCrafting'
-import { getSigilMainStatLabel, getSigilStatLabel, getSigilEnhancementCap, getSigilEnhancementCapView, getSigilEnhancementCost, getSigilLabel, resolveSigilStatsForInstance, getEquippedSigilSetCounts, getSigilSetActivation } from '../../../../game/systems/sigils'
-import type { SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier } from '../../../../game/types'
+import { SIGIL_SETS } from '../../../../game/content/sigils/sigilSets'
+import { getEquippedSigilSetCounts, getSigilEnhancementCap, getSigilEnhancementCapView, getSigilEnhancementCost } from '../../../../game/systems/sigils/sigilRuntime'
+import type { SigilInstance, SigilSetId, SigilSlot } from '../../../../game/types'
 import { useGameStore } from '../../../../store/gameStore'
+import { InspectorTransition } from '../../../../ui/game-feel/InspectorTransition'
+import { setNavigationIntent, useNavigationIntent } from '../../../../ui/navigation/navigationIntent'
+import { setUiPreferences, useUiPreferences } from '../../../../ui/preferences/uiPreferencesStore'
 
-const roman = ['I', 'II', 'III', 'IV', 'V', 'VI']
-const formatStat = (statId: Parameters<typeof getSigilStatLabel>[0], value: number) => statId.endsWith('Pct') || statId === 'critChance' || statId === 'critDamage' ? `${(value * 100).toFixed(1)}%` : Math.round(value).toLocaleString()
-const formatTrait = (traitId: keyof typeof SIGIL_TRAITS) => SIGIL_TRAITS[traitId]?.name ?? traitId
+const TABS = [{ value: 'refinement', label: 'REFINEMENT', note: 'Enhance and protect owned Sigils.' }, { value: 'forge', label: 'FORGE', note: 'Craft targeted Sigils with Sigil Dust.' }, { value: 'attunement', label: 'ATTUNEMENT', note: 'Tune Set resonance and salvage rules.' }] as const
+type SigilTab = typeof TABS[number]['value']
 
-export function SigilsWorkspace({ initialMode = 'array', initialSelectedId = null, hideModeTabs = false, allowForge = true }: { initialMode?: 'array' | 'storage' | 'forge'; initialSelectedId?: string | null; hideModeTabs?: boolean; allowForge?: boolean }) {
+export function SigilsWorkspace() {
   const state = useGameStore()
-  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId && state.sigils.storage[initialSelectedId] ? initialSelectedId : Object.keys(state.sigils.equipped).map((slot) => state.sigils.equipped[Number(slot) as SigilSlot]).find(Boolean) ?? Object.keys(state.sigils.storage).slice(-1)[0] ?? null)
-  const [qualityFilter, setQualityFilter] = useState<SigilQuality | 'all'>('all')
-  const [setFilter, setSetFilter] = useState<SigilSetId | 'all'>('all')
-  const [slotFilter, setSlotFilter] = useState<SigilSlot | 'all'>('all')
-  const [tierFilter, setTierFilter] = useState<SigilTier | 'all'>('all')
-  const [mainStatFilter, setMainStatFilter] = useState<SigilStatId | 'all'>('all')
-  const [stateFilter, setStateFilter] = useState<'all' | 'equipped' | 'locked' | 'unlocked'>('all')
-  const [sortMode, setSortMode] = useState<'quality' | 'tier' | 'rank'>('quality')
-  const [mode, setMode] = useState<'array' | 'storage' | 'forge'>(initialMode)
-  const maxCraftTier = getHighestCraftableSigilTier(state.sigils.highestSourcePowerDefeated)
-  const [craftTier, setCraftTier] = useState<SigilTier>(maxCraftTier)
-  useEffect(() => { if (craftTier > maxCraftTier) setCraftTier(maxCraftTier) }, [craftTier, maxCraftTier])
+  const preferences = useUiPreferences().screenState.artificing
+  const navigation = useNavigationIntent()
+  const [revealId, setRevealId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => Object.values(state.sigils.equipped).find((id): id is string => Boolean(id)) ?? Object.keys(state.sigils.storage).slice(-1)[0] ?? null)
   const selected = selectedId ? state.sigils.storage[selectedId] : undefined
-  const stored = useMemo(() => Object.values(state.sigils.storage)
-    .filter((sigil) => qualityFilter === 'all' || sigil.quality === qualityFilter)
-    .filter((sigil) => setFilter === 'all' || sigil.setId === setFilter)
-    .filter((sigil) => slotFilter === 'all' || sigil.slot === slotFilter)
-    .filter((sigil) => tierFilter === 'all' || sigil.tier === tierFilter)
-    .filter((sigil) => mainStatFilter === 'all' || sigil.mainStatId === mainStatFilter)
-    .filter((sigil) => stateFilter === 'all' || stateFilter === 'equipped' && Object.values(state.sigils.equipped).includes(sigil.instanceId) || stateFilter === 'locked' && sigil.locked || stateFilter === 'unlocked' && !sigil.locked)
-    .sort((a, b) => sortMode === 'tier' ? b.tier - a.tier || b.rank - a.rank : sortMode === 'rank' ? b.rank - a.rank || b.tier - a.tier : SIGIL_QUALITIES.findIndex((quality) => quality.id === b.quality) - SIGIL_QUALITIES.findIndex((quality) => quality.id === a.quality) || b.tier - a.tier || b.rank - a.rank), [state.sigils.storage, state.sigils.equipped, qualityFilter, setFilter, slotFilter, tierFilter, mainStatFilter, stateFilter, sortMode])
-  const setCounts = getEquippedSigilSetCounts(state)
-  const equipped = state.sigils.equipped
   const cap = getSigilEnhancementCap(state)
   const capView = getSigilEnhancementCapView(state)
-  const clearFilters = () => { setQualityFilter('all'); setSetFilter('all'); setSlotFilter('all'); setTierFilter('all'); setMainStatFilter('all'); setStateFilter('all'); setSortMode('quality') }
-  const show = (message: string, tone: 'info' | 'success' | 'warning' = 'warning') => useGameStore.getState().notifySigil(message, tone)
+  const tab = preferences.sigilTab
 
-  return <div className="sigils-workspace" data-mode={mode}>
-    <div className="sigils-mode-rail"><div><span className="eyebrow">ARTIFICING · SIGILS</span><strong>Arcane Sigil Array</strong><small>Combat-born equipment for six build-defining slots.</small></div><div className="sigils-resource-readout"><span>DUST</span><b>{state.sigils.dust.toLocaleString()}</b><small>{Object.keys(state.sigils.storage).length} stored · global cap +{cap}</small></div></div>
-    <section className="sigils-loadout card"><div className="card-head"><div><span className="eyebrow">EQUIPPED ARRAY</span><h2>Six active channels</h2></div><span className="sigils-loadout-count">{Object.values(equipped).filter(Boolean).length} / 6</span></div><div className="sigils-slot-row">{([1, 2, 3, 4, 5, 6] as SigilSlot[]).map((slot) => { const sigil = equipped[slot] ? state.sigils.storage[equipped[slot]!] : undefined; return <GameTooltip key={slot} block content={sigil ? getSigilLabel(sigil) : `Slot ${roman[slot - 1]} is empty`}><button className={`sigil-slot ${sigil ? 'filled' : ''}`} onClick={() => sigil && setSelectedId(sigil.instanceId)}><span>{roman[slot - 1]}</span><strong>{sigil ? SIGIL_SETS[sigil.setId].name : 'EMPTY'}</strong>{sigil && <small>T{sigil.tier} · +{sigil.rank}</small>}</button></GameTooltip> })}</div><div className="sigils-set-summary">{SIGIL_SET_IDS.filter((setId) => (setCounts[setId] ?? 0) > 0).map((setId) => <span key={setId} className={(setCounts[setId] ?? 0) >= SIGIL_SETS[setId].piecesRequired ? 'active' : ''}><b>{SIGIL_SETS[setId].name}</b> {setCounts[setId]} / {SIGIL_SETS[setId].piecesRequired}</span>)}{Object.keys(setCounts).length === 0 && <small>Equip Sigils to activate Set bonuses.</small>}</div></section>
-    {!hideModeTabs && <nav className="sigils-mode-tabs" aria-label="Sigil workspace modes" role="tablist"><button role="tab" aria-selected={mode === 'array'} className={mode === 'array' ? 'active' : ''} onClick={() => setMode('array')}>ARRAY</button><button role="tab" aria-selected={mode === 'storage'} className={mode === 'storage' ? 'active' : ''} onClick={() => setMode('storage')}>STORAGE</button>{allowForge && <button role="tab" aria-selected={mode === 'forge'} className={mode === 'forge' ? 'active' : ''} onClick={() => setMode('forge')}>FORGE</button>}</nav>}
-    <div className="sigils-cap-readout"><span><b>GLOBAL ENHANCEMENT CAP</b> +{capView.current}</span>{capView.next ? <small>Next cap +{capView.next} · {capView.requirement}</small> : <small>Maximum authored cap reached.</small>}</div>
-    {mode === 'storage' && <button type="button" className="sigils-clear-filters" onClick={clearFilters}>CLEAR STORAGE FILTERS</button>}
-    <div className="sigils-main-grid">
-      <section className="sigils-storage card"><div className="card-head"><div><span className="eyebrow">STORAGE · {stored.length} / 500</span><h2>Find the roll</h2></div><PackageOpen size={18} aria-hidden="true" /></div><div className="sigil-storage-filters"><label>QUALITY<select aria-label="Filter Sigil quality" value={qualityFilter} onChange={(event) => setQualityFilter(event.target.value as SigilQuality | 'all')}><option value="all">All qualities</option>{SIGIL_QUALITIES.map((quality) => <option key={quality.id} value={quality.id}>{quality.label}</option>)}</select></label><label>TIER<select aria-label="Filter Sigil tier" value={tierFilter} onChange={(event) => setTierFilter(event.target.value === 'all' ? 'all' : Number(event.target.value))}><option value="all">All tiers</option>{SIGIL_TIERS.map(({ tier, label }) => <option key={tier} value={tier}>{label}</option>)}</select></label><label>SET<select aria-label="Filter Sigil set" value={setFilter} onChange={(event) => setSetFilter(event.target.value as SigilSetId | 'all')}><option value="all">All sets</option>{SIGIL_SET_IDS.map((id) => <option key={id} value={id}>{SIGIL_SETS[id].name}</option>)}</select></label><label>SLOT<select aria-label="Filter Sigil slot" value={slotFilter} onChange={(event) => setSlotFilter(event.target.value === 'all' ? 'all' : Number(event.target.value) as SigilSlot)}><option value="all">All slots</option>{[1, 2, 3, 4, 5, 6].map((slot) => <option key={slot} value={slot}>{roman[slot - 1]}</option>)}</select></label><label>MAIN STAT<select aria-label="Filter Sigil main stat" value={mainStatFilter} onChange={(event) => setMainStatFilter(event.target.value as SigilStatId | 'all')}><option value="all">All main stats</option>{Array.from(new Set(Object.values(SIGIL_MAIN_STAT_POOLS).flat())).map((id) => <option key={id} value={id}>{SIGIL_STAT_DEFINITIONS[id].label}</option>)}</select></label><label>STATE<select aria-label="Filter Sigil state" value={stateFilter} onChange={(event) => setStateFilter(event.target.value as typeof stateFilter)}><option value="all">All states</option><option value="equipped">Equipped</option><option value="locked">Locked</option><option value="unlocked">Unlocked</option></select></label><label>SORT<select aria-label="Sort Sigils" value={sortMode} onChange={(event) => setSortMode(event.target.value as typeof sortMode)}><option value="quality">Quality</option><option value="tier">Tier</option><option value="rank">Rank</option></select></label></div><div className="sigils-storage-list">{stored.length === 0 ? <div className="sigils-empty"><Sparkles size={24} /><strong>NO SIGILS MATCH</strong><p>Adjust the filters or keep fighting.</p></div> : stored.map((sigil) => <GameTooltip key={sigil.instanceId} block content={<>{getSigilLabel(sigil)}<br />Select to inspect stats, traits, and roll history.</>}><button className={`sigil-card ${selectedId === sigil.instanceId ? 'selected' : ''} quality-${sigil.quality}`} onClick={() => setSelectedId(sigil.instanceId)}><span className="sigil-card-top"><b>T{sigil.tier}</b><i>{sigil.quality.toUpperCase()}</i></span><strong>{SIGIL_SETS[sigil.setId].name} · {roman[sigil.slot - 1]}</strong><small>+{sigil.rank} / +{SIGIL_QUALITIES.find((quality) => quality.id === sigil.quality)?.maxRank}</small><span>{getSigilMainStatLabel(sigil)}</span>{sigil.locked && <LockKeyhole size={13} aria-label="Locked" />}</button></GameTooltip>)}</div></section>
-      <div className="sigils-inspector-stack"><SigilInspector sigil={selected} onMessage={show} onSelect={setSelectedId} /><SigilComparison sigil={selected} /></div>
-    </div>
-    <section className="sigils-controls card"><div><span className="eyebrow">ARRAY CONTROLS</span><h2>Shape the chase</h2></div><div className="sigils-control-actions"><GameTooltip content="Common drops are discovered first, then converted into Sigil Dust."><label><input type="checkbox" checked={state.sigils.autoSalvage.common} onChange={(event) => useGameStore.getState().setSigilAutoSalvage('common', event.target.checked)} /> Auto-salvage Common</label></GameTooltip><GameTooltip content="Refined drops are discovered first, then converted into Sigil Dust."><label><input type="checkbox" checked={state.sigils.autoSalvage.refined} onChange={(event) => useGameStore.getState().setSigilAutoSalvage('refined', event.target.checked)} /> Auto-salvage Refined</label></GameTooltip><label>ATTUNEMENT<select aria-label="Set Attunement" value={state.sigils.attunedSetId ?? ''} onChange={(event) => useGameStore.getState().setSigilAttunement((event.target.value || null) as SigilSetId | null)}><option value="">None</option>{SIGIL_SET_IDS.filter((setId) => state.sigils.discovery.discoveredSets[setId]).map((setId) => <option key={setId} value={setId}>{SIGIL_SETS[setId].name}</option>)}</select></label><label>TIER<select aria-label="Craft Sigil tier" value={craftTier} onChange={(event) => setCraftTier(Number(event.target.value))}>{SIGIL_TIERS.filter(({ minEnemyPower }) => minEnemyPower <= state.sigils.highestSourcePowerDefeated).map(({ tier, label }) => <option key={tier} value={tier}>{label}</option>)}</select></label><span className="sigils-craft-note"><WandSparkles size={14} /> Crafting unlocked through Power {SIGIL_TIERS.find(({ tier }) => tier === craftTier)?.minEnemyPower ?? 0} evidence.</span></div></section>
-    <SigilForgePanel tier={craftTier} onMessage={show} />
+  useEffect(() => {
+    const instanceId = navigation.artificingSigilInstanceId
+    if (!instanceId) return
+    setSelectedId(state.sigils.storage[instanceId] ? instanceId : null)
+    setRevealId(state.sigils.storage[instanceId] ? instanceId : null)
+    setUiPreferences({ screenState: { artificing: { mode: 'sigils', sigilTab: navigation.artificingSigilTab ?? 'refinement' } } })
+    setNavigationIntent({ artificingSigilTab: null, artificingSigilInstanceId: null })
+  }, [navigation.artificingSigilInstanceId, navigation.artificingSigilTab, state.sigils.storage])
+
+  const setTab = (next: SigilTab) => setUiPreferences({ screenState: { artificing: { sigilTab: next } } })
+  const title = TABS.find(({ value }) => value === tab)?.note ?? TABS[0].note
+  return <section className="sigil-artificing-workspace">
+    <header className="sigil-artificing-heading">
+      <div><span className="eyebrow">ARTIFICING · SIGILS</span><h2>ARCANE SIGIL WORKSHOP</h2><p>Forge, refine, and attune combat-born Sigils.</p></div>
+      <div className="sigil-workshop-resources"><span><small>SIGIL DUST</small><b>{state.sigils.dust.toLocaleString()}</b></span><span><small>STORED</small><b>{Object.keys(state.sigils.storage).length}</b></span><span><small>GLOBAL CAP</small><b>+{capView.current}</b></span></div>
+    </header>
+    <nav className="sigil-artificing-tabs" role="tablist" aria-label="Sigil workshop">
+      {TABS.map(({ value, label }) => <Button key={value} type="button" variant="ghost" role="tab" aria-selected={tab === value} ariaPressed={tab === value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</Button>)}
+    </nav>
+    <p className="sigil-workshop-tab-note">{title}</p>
+    {tab === 'refinement' && <RefinementWorkspace selected={selected} selectedId={selectedId} revealId={revealId} onSelect={setSelectedId} onRevealConsumed={() => setRevealId(null)} cap={cap} onOpenEquipment={() => { setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: null, equipmentSigilSlot: null }); useGameStore.getState().setScreen('equipment') }} />}
+    {tab === 'forge' && <ForgeWorkspace />}
+    {tab === 'attunement' && <AttunementWorkspace />}
+  </section>
+}
+
+function RefinementWorkspace({ selected, selectedId, revealId, onSelect, onRevealConsumed, cap, onOpenEquipment }: { selected?: SigilInstance; selectedId: string | null; revealId: string | null; onSelect: (instanceId: string | null) => void; onRevealConsumed: () => void; cap: number; onOpenEquipment: () => void }) {
+  const state = useGameStore()
+  const equippedIds = useMemo(() => new Set(Object.values(state.sigils.equipped).filter((id): id is string => Boolean(id))), [state.sigils.equipped])
+  const equipped = selected ? equippedIds.has(selected.instanceId) : false
+  const setCount = selected ? getEquippedSigilSetCounts(state)[selected.setId] ?? 0 : 0
+  const maxRank = selected ? SIGIL_QUALITIES.find(({ id }) => id === selected.quality)?.maxRank ?? 0 : 0
+  const nextCost = selected ? getSigilEnhancementCost(selected, selected.rank + 1) : 0
+  const atCap = !selected || selected.rank >= maxRank || selected.rank >= cap
+  const insufficientDust = Boolean(selected && state.sigils.dust < nextCost)
+  const notify = (message: string, tone: 'success' | 'warning' = 'warning') => useGameStore.getState().notifySigil(message, tone)
+  const enhance = () => { if (!selected) return; const result = useGameStore.getState().enhanceSigil(selected.instanceId); if (!result.ok) notify(result.reason ?? 'Unable to enhance.'); else notify('Enhanced to +' + result.rank + '.', 'success') }
+  const salvage = () => { if (!selected) return; const result = useGameStore.getState().salvageSigil(selected.instanceId); if (!result.ok) notify(result.reason ?? 'Unable to salvage.'); else onSelect(null) }
+  const toggleLock = () => { if (!selected) return; const result = useGameStore.getState().toggleSigilLock(selected.instanceId); if (!result.ok) notify(result.reason ?? 'Unable to change salvage protection.') }
+
+  const footer = selected && <div className="sigil-refinement-actions">
+    <GameTooltip content={equipped ? 'Unequip this Sigil in the Equipment Vault before salvage.' : selected.locked ? 'Unlock this Sigil before salvage.' : 'Convert this Sigil into Sigil Dust.'}><Button type="button" variant="danger" disabled={equipped || selected.locked} onClick={salvage}><Trash2 size={14} /> SALVAGE</Button></GameTooltip>
+    <GameTooltip content={atCap ? selected.rank >= maxRank ? 'This quality has reached its maximum rank.' : 'Global enhancement cap is +' + cap + '.' : insufficientDust ? 'Requires ' + nextCost + ' Sigil Dust.' : 'Spend ' + nextCost + ' Sigil Dust for the next roll.'}><Button type="button" variant="primary" disabled={atCap || insufficientDust} onClick={enhance}><Sparkles size={14} /> ENHANCE · {nextCost}</Button></GameTooltip>
+    <GameTooltip content={selected.locked ? 'Unlock this Sigil before changing salvage protection.' : 'Protect this Sigil from accidental salvage.'}><Button type="button" variant="ghost" onClick={toggleLock}>{selected.locked ? <Unlock size={14} /> : <LockKeyhole size={14} />}{selected.locked ? 'UNLOCK' : 'LOCK'}</Button></GameTooltip>
+    <Button type="button" variant="secondary" onClick={onOpenEquipment}>OPEN IN EQUIPMENT</Button>
+  </div>
+
+  return <div className="sigil-refinement-layout">
+    <SigilBrowser storage={state.sigils.storage} equipped={state.sigils.equipped} selectedId={selectedId} onSelect={onSelect} revealInstanceId={revealId} onRevealConsumed={onRevealConsumed} label="SIGIL STORAGE" />
+    <SigilInspector sigil={selected} cap={cap} setCount={setCount} footer={footer} className="sigil-refinement-inspector" />
   </div>
 }
 
-function SigilForgePanel({ tier, onMessage }: { tier: SigilTier; onMessage: (message: string, tone?: 'info' | 'success' | 'warning') => void }) {
+function ForgeWorkspace() {
+  const state = useGameStore()
+  const maxTier = getHighestCraftableSigilTier(state.sigils.highestSourcePowerDefeated)
+  const [tier, setTier] = useState<number>(maxTier)
   const [setId, setSetId] = useState<SigilSetId>('arcane')
   const [slot, setSlot] = useState<SigilSlot>(1)
-  const store = useGameStore()
-  const basicCost = getSigilCraftCost('basic', tier)
-  const focusedCost = getSigilCraftCost('focused', tier)
-  const craft = (mode: 'basic' | 'focused') => { const result = store.craftSigil(mode, tier, setId, mode === 'focused' ? slot : undefined); if (!result.ok) onMessage(result.reason ?? 'Unable to craft.'); else onMessage('Sigil forged and added to storage.', 'success') }
-  return <section className="sigils-forge card"><div><span className="eyebrow">SIGIL FORGE · T{tier}</span><h2>Target the chase</h2><p>Crafting is bad-luck protection. Main Stat and Quality remain random.</p></div><div className="sigils-forge-controls"><label>SET<select value={setId} onChange={(event) => setSetId(event.target.value as SigilSetId)}>{SIGIL_SET_IDS.map((id) => <option key={id} value={id}>{SIGIL_SETS[id].name}</option>)}</select></label><label>SLOT<select value={slot} onChange={(event) => setSlot(Number(event.target.value) as SigilSlot)}>{[1, 2, 3, 4, 5, 6].map((value) => <option key={value} value={value}>{roman[value - 1]}</option>)}</select></label><GameTooltip content={`Random slot · ${basicCost} Sigil Dust at T${tier}.`}><button onClick={() => craft('basic')}>BASIC CRAFT · {basicCost}</button></GameTooltip><GameTooltip content={`Focused Slot ${roman[slot - 1]} · ${focusedCost} Sigil Dust at T${tier}.`}><button onClick={() => craft('focused')}>FOCUSED CRAFT · {focusedCost}</button></GameTooltip></div></section>
+  useEffect(() => { if (tier > maxTier) setTier(maxTier) }, [tier, maxTier])
+  const costs = { basic: getSigilCraftCost('basic', tier), focused: getSigilCraftCost('focused', tier) }
+  const craft = (mode: 'basic' | 'focused') => {
+    const result = useGameStore.getState().craftSigil(mode, tier, setId, mode === 'focused' ? slot : undefined)
+    if (!result.ok) useGameStore.getState().notifySigil(result.reason ?? 'Unable to craft.')
+    else useGameStore.getState().notifySigil('Sigil forged and added to storage.', 'success')
+  }
+  const weights = SIGIL_CRAFT_QUALITY_WEIGHTS[tier]
+  return <div className="sigil-forge-workspace">
+    <div className="sigil-forge-settings">
+      <div><span className="eyebrow">CRAFTING PARAMETERS</span><h3>Choose your target</h3><p>Focused crafting fixes the Slot. Main Stat and Quality remain random.</p></div>
+      <div className="sigil-forge-pickers">
+        <SelectMenu options={SIGIL_TIERS.filter((definition) => definition.tier <= maxTier).map((definition) => ({ value: String(definition.tier), label: 'Tier ' + definition.tier }))} value={String(tier)} onChange={(value) => setTier(Number(value))} ariaLabel="Craft Tier" prefix="TIER · " />
+        <SelectMenu options={Object.entries(SIGIL_SETS).map(([id, set]) => ({ value: id, label: set.name }))} value={setId} onChange={(value) => setSetId(value as SigilSetId)} ariaLabel="Target Set" prefix="SET · " />
+        <SelectMenu options={[1, 2, 3, 4, 5, 6].map((value) => ({ value: String(value), label: 'Slot ' + ['I', 'II', 'III', 'IV', 'V', 'VI'][value - 1] }))} value={String(slot)} onChange={(value) => setSlot(Number(value) as SigilSlot)} ariaLabel="Focused Slot" prefix="SLOT · " />
+      </div>
+    </div>
+    <div className="sigil-forge-recipes">
+      <article className="sigil-forge-recipe"><div><span className="eyebrow">BASIC CRAFT</span><h3>Random Slot</h3><p>Craft a {SIGIL_SETS[setId].name} Sigil at Tier {tier}. Slot, Main Stat, and Quality are rolled.</p></div><div className="sigil-quality-odds">{Object.entries(weights).map(([quality, chance]) => <span key={quality} className={'quality-' + quality}>{quality}<b>{chance}%</b></span>)}</div><GameTooltip content={state.sigils.dust < costs.basic ? 'Requires ' + costs.basic + ' Sigil Dust.' : costs.basic + ' Sigil Dust · random Slot.'}><Button type="button" variant="secondary" disabled={state.sigils.dust < costs.basic} onClick={() => craft('basic')}>CRAFT · {costs.basic} DUST</Button></GameTooltip></article>
+      <article className="sigil-forge-recipe focused"><div><span className="eyebrow">FOCUSED CRAFT</span><h3>Slot {['I', 'II', 'III', 'IV', 'V', 'VI'][slot - 1]}</h3><p>Fix the Slot and Set. Main Stat and Quality remain random.</p></div><div className="sigil-quality-odds">{Object.entries(weights).map(([quality, chance]) => <span key={quality} className={'quality-' + quality}>{quality}<b>{chance}%</b></span>)}</div><GameTooltip content={state.sigils.dust < costs.focused ? 'Requires ' + costs.focused + ' Sigil Dust.' : costs.focused + ' Sigil Dust · Slot ' + ['I', 'II', 'III', 'IV', 'V', 'VI'][slot - 1] + '.'}><Button type="button" variant="primary" disabled={state.sigils.dust < costs.focused} onClick={() => craft('focused')}>FOCUSED · {costs.focused} DUST</Button></GameTooltip></article>
+    </div>
+    <div className="sigil-forge-resource"><span>AVAILABLE DUST</span><b>{state.sigils.dust.toLocaleString()}</b><span>Crafted Sigils are added to Storage and can be enhanced in Refinement.</span></div>
+  </div>
 }
 
-function SigilInspector({ sigil, onMessage, onSelect }: { sigil?: SigilInstance; onMessage: (message: string, tone?: 'info' | 'success' | 'warning') => void; onSelect: (id: string | null) => void }) {
-  const store = useGameStore()
-  if (!sigil) return <section className="sigils-inspector card"><div className="sigils-empty"><ShieldCheck size={28} /><strong>SELECT A SIGIL</strong><p>Your inspector will show real stat values and upgrade history here.</p></div></section>
-  const stats = resolveSigilStatsForInstance(sigil)
-  const isEquipped = Object.values(store.sigils.equipped).includes(sigil.instanceId)
-  const nextCost = getSigilEnhancementCost(sigil, sigil.rank + 1)
-  const maxRank = SIGIL_QUALITIES.find((quality) => quality.id === sigil.quality)?.maxRank ?? 0
-  const cap = getSigilEnhancementCap(store)
-  const atCap = sigil.rank >= maxRank || sigil.rank + 1 > cap
-  const enhance = () => { const result = store.enhanceSigil(sigil.instanceId); if (!result.ok) onMessage(result.reason ?? 'Unable to enhance.'); else onMessage(`Enhanced to +${result.rank}.`, 'success') }
-  const salvage = () => { const result = store.salvageSigil(sigil.instanceId); if (!result.ok) onMessage(result.reason ?? 'Unable to salvage.'); else onSelect(null) }
-  return <section className={`sigils-inspector card quality-${sigil.quality}`}><div className="sigil-inspector-hero"><div><span className="eyebrow">T{sigil.tier} · {sigil.quality.toUpperCase()}</span><h2>{SIGIL_SETS[sigil.setId].name} Sigil {roman[sigil.slot - 1]}</h2><p>{SIGIL_SETS[sigil.setId].description}</p></div><span className="sigil-rank">+{sigil.rank}</span></div><div className="sigil-detail-section"><span className="eyebrow">MAIN STAT</span><strong>{getSigilMainStatLabel(sigil)} · {formatStat(sigil.mainStatId, stats[sigil.mainStatId] ?? 0)}</strong></div><div className="sigil-detail-section"><span className="eyebrow">SECONDARIES</span>{sigil.secondaries.length === 0 ? <small>Milestones at +3 / +6 / +9 will begin the roll table.</small> : sigil.secondaries.map((secondary) => <div className="sigil-stat-row" key={secondary.statId}><span>{getSigilStatLabel(secondary.statId)}</span><b>{formatStat(secondary.statId, stats[secondary.statId] ?? 0)}</b></div>)}</div><div className="sigil-detail-section"><span className="eyebrow">TRAITS</span>{sigil.traitIds.length ? sigil.traitIds.map((traitId) => <span key={traitId} className="sigil-trait">{traitId.replaceAll('-', ' ')}</span>) : <small>Quality unlocks Traits at their authored milestones.</small>}</div><div className="sigil-detail-actions"><GameTooltip content={isEquipped ? 'Unequip this Sigil first.' : 'Put this Sigil into its matching array slot.'}><button disabled={isEquipped} onClick={() => { const result = store.equipSigil(sigil.instanceId); if (!result.ok) onMessage(result.reason ?? 'Unable to equip.') }}><ShieldCheck size={14} /> {isEquipped ? 'EQUIPPED' : 'EQUIP'}</button></GameTooltip><GameTooltip content={sigil.rank >= maxRank ? 'This quality has reached its maximum rank.' : sigil.rank + 1 > cap ? `Global enhancement cap is +${cap}.` : `Spend ${nextCost} Sigil Dust.`}><button onClick={enhance} disabled={atCap}><Sparkles size={14} /> ENHANCE · {nextCost}</button></GameTooltip><GameTooltip content={sigil.locked ? 'Unlock before changing salvage protection.' : 'Protect this Sigil from accidental salvage.'}><button onClick={() => store.toggleSigilLock(sigil.instanceId)}>{sigil.locked ? <Unlock size={14} /> : <LockKeyhole size={14} />} {sigil.locked ? 'UNLOCK' : 'LOCK'}</button></GameTooltip><GameTooltip content={isEquipped ? 'Unequip before salvage.' : sigil.locked ? 'Unlock before salvage.' : 'Convert this Sigil into Dust.'}><button className="danger" disabled={isEquipped || sigil.locked} onClick={salvage}><Trash2 size={14} /> SALVAGE</button></GameTooltip></div><div className="sigil-history"><span className="eyebrow">ROLL HISTORY</span>{sigil.rollHistory.length === 0 ? <small>No enhancement milestones reached.</small> : sigil.rollHistory.map((entry, index) => <span key={`${entry.rank}-${index}`}>+{entry.rank} · {entry.kind === 'trait' ? `Trait ${entry.traitId?.replaceAll('-', ' ')}` : entry.kind === 'new-secondary' ? `New ${entry.statId}` : `Improved ${entry.statId}`}</span>)}</div></section>
-}
-
-function SigilComparison({ sigil }: { sigil?: SigilInstance }) {
+function AttunementWorkspace() {
   const state = useGameStore()
-  if (!sigil) return null
-  const equippedId = state.sigils.equipped[sigil.slot]
-  const equipped = equippedId && equippedId !== sigil.instanceId ? state.sigils.storage[equippedId] : undefined
-  if (!equipped) return null
-  const selectedStats = resolveSigilStatsForInstance(sigil)
-  const equippedStats = resolveSigilStatsForInstance(equipped)
-  const statIds = Object.keys(SIGIL_STAT_DEFINITIONS).filter((id) => selectedStats[id as SigilStatId] !== undefined || equippedStats[id as SigilStatId] !== undefined) as SigilStatId[]
-  const counts = getEquippedSigilSetCounts(state)
-  counts[equipped.setId] = Math.max(0, (counts[equipped.setId] ?? 0) - 1)
-  counts[sigil.setId] = (counts[sigil.setId] ?? 0) + 1
-  const activationChanges = Array.from(new Set([equipped.setId, sigil.setId])).map((setId) => { const afterPieces = counts[setId] ?? 0; const after = SIGIL_SETS[setId].piecesRequired === 2 ? Math.floor(afterPieces / 2) > 0 : afterPieces >= 4; return { setId, before: getSigilSetActivation(state, setId).active, after } })
-  return <section className="sigils-comparison card"><div className="card-head"><div><span className="eyebrow">ARRAY COMPARISON</span><h2>Against equipped</h2></div></div><div className="sigil-comparison-head"><span><small>CURRENT</small><strong>{getSigilLabel(equipped)}</strong></span><span><small>SELECTED</small><strong>{getSigilLabel(sigil)}</strong></span></div><div className="sigil-comparison-stats">{statIds.map((statId) => { const delta = (selectedStats[statId] ?? 0) - (equippedStats[statId] ?? 0); return <div className="sigil-stat-row" key={statId}><span>{getSigilStatLabel(statId)}</span><b className={delta > 0 ? 'positive' : delta < 0 ? 'negative' : ''}>{delta === 0 ? '—' : `${delta > 0 ? '+' : ''}${formatStat(statId, delta)}`}</b></div> })}</div><div className="sigil-comparison-sets">{activationChanges.map(({ setId, before, after }) => <span key={setId} className={before !== after ? 'changed' : ''}>{SIGIL_SETS[setId].name}: {after ? 'ACTIVE' : 'inactive'}{before !== after ? ` · was ${before ? 'active' : 'inactive'}` : ''}</span>)}</div></section>
+  const discoveredSets = Object.keys(state.sigils.discovery.discoveredSets).filter((id) => state.sigils.discovery.discoveredSets[id as SigilSetId]) as SigilSetId[]
+  return <div className="sigil-attunement-workspace">
+    <section className="sigil-attunement-settings"><span className="eyebrow">SET RESONANCE</span><h3>Attuned Set</h3><p>Attunement increases the chance of finding Sigils from a discovered Set.</p><SelectMenu options={[{ value: 'none', label: 'No attunement' }, ...discoveredSets.map((id) => ({ value: id, label: SIGIL_SETS[id].name }))]} value={state.sigils.attunedSetId ?? 'none'} onChange={(value) => { useGameStore.getState().setSigilAttunement(value === 'none' ? null : value as SigilSetId) }} ariaLabel="Attuned Sigil Set" prefix="SET · " /></section>
+    <section className="sigil-attunement-settings"><span className="eyebrow">SALVAGE PROTECTION</span><h3>Auto-salvage</h3><p>First discoveries are added to your collection before automatic salvage runs.</p><Toggle label="Common Sigils" description="Convert new Common Sigils to Sigil Dust." checked={state.sigils.autoSalvage.common} onChange={(value) => useGameStore.getState().setSigilAutoSalvage('common', value)} /><Toggle label="Refined Sigils" description="Convert new Refined Sigils to Sigil Dust." checked={state.sigils.autoSalvage.refined} onChange={(value) => useGameStore.getState().setSigilAutoSalvage('refined', value)} /></section>
+  </div>
 }

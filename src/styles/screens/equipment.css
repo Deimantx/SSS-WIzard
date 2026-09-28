@@ -132,7 +132,7 @@
 /* Equipment V2: compact metadata, transient row feedback, and readable filters. */
 .equipment-armory-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .equipment-armory-controls .select-menu { min-width: 132px; }
-.equipment-availability-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 8px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel); font: var(--text-micro) var(--font-mono); letter-spacing: .05em; cursor: pointer; }
+.equipment-availability-toggle { width: auto; min-height: 32px; padding: 5px 8px; gap: 6px; font: 700 var(--text-micro) var(--font-mono); letter-spacing: .05em; }
 .equipment-availability-toggle:has(input:checked) { border-color: color-mix(in srgb, var(--ui-accent) 62%, var(--ui-border)); color: var(--ui-text); background: var(--ui-accent-soft); }
 .equipment-availability-toggle input { accent-color: var(--ui-accent); }
 .equipment-filter-bar button { display: inline-flex; align-items: center; gap: 5px; }

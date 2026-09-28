@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+﻿import { beforeEach, describe, expect, it } from 'vitest'
 import { defaultUiPreferences, loadUiPreferences, normalizeUiPreferences } from './uiPreferencesStorage'
 import { getUiPreferences, resetAllUiPreferences, resetAppearance, setCustomThemeColor, setUiPreferences, toggleChronicleObjectiveTracking } from './uiPreferencesStore'
 
@@ -133,5 +133,11 @@ describe('screen UI preferences', () => {
     setUiPreferences({ screenState: { guild: { activeTab: 'skills' } } })
     expect(loadUiPreferences().screenState.guild.activeTab).toBe('skills')
     expect(normalizeUiPreferences({ screenState: { guild: { activeTab: 'invalid' } } }).screenState.guild.activeTab).toBe('overview')
+  })
+
+  it('defaults Sigil workshop navigation to Refinement and persists valid local tab choices', () => {
+    expect(normalizeUiPreferences({ screenState: { artificing: { mode: 'sigils' } } }).screenState.artificing.sigilTab).toBe('refinement')
+    expect(normalizeUiPreferences({ screenState: { artificing: { sigilTab: 'attunement' } } }).screenState.artificing.sigilTab).toBe('attunement')
+    expect(normalizeUiPreferences({ screenState: { artificing: { sigilTab: 'hidden-mode' } } }).screenState.artificing.sigilTab).toBe('refinement')
   })
 })

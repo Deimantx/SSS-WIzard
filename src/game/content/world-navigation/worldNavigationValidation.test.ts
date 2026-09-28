@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DUNGEON_ORDER, DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
+import { COMBAT_LOCATION_TYPE_METADATA } from './worldNavigationTypes'
 import { validateCombatWorldNavigation, type CombatWorldNavigationContent } from './worldNavigationValidation'
 
 const validContent = (): CombatWorldNavigationContent => ({
@@ -11,6 +12,10 @@ const validContent = (): CombatWorldNavigationContent => ({
 })
 
 describe('combat world navigation content', () => {
+  it('defines Hunting Ground as an explicit location type', () => {
+    expect(COMBAT_LOCATION_TYPE_METADATA['hunting-ground']).toEqual({ label: 'HUNTING GROUND', actionLabel: 'ENTER HUNTING GROUND' })
+    expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ id: 'hunters-ground', name: 'Gloamridge', type: 'hunting-ground', encounterMode: 'targeted' })
+  })
   it('validates the authored registry and preserves every gameplay dungeon', () => {
     expect(validateCombatWorldNavigation(validContent())).toEqual([])
     expect(new Set(Object.values(COMBAT_LOCATIONS).filter((location) => location.dungeonId).map((location) => location.dungeonId))).toEqual(new Set(DUNGEON_ORDER))
@@ -30,7 +35,7 @@ describe('combat world navigation content', () => {
       ['moonblind-jackal', 'hard', 5],
       ['den-stalker', 'apex', 6],
     ])
-    expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'hunters-ground', order: 3 })
+    expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ regionId: 'first-frontier', type: 'hunting-ground', dungeonId: 'hunters-ground', order: 3 })
     expect(COMBAT_LOCATIONS['abandoned-catacombs']).toMatchObject({ encounterMode: 'sequence', dungeonId: 'abandoned-catacombs', firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },
       { id: 'dark-portal', label: 'Dark Portal' },
@@ -100,7 +105,8 @@ describe('combat world navigation content', () => {
     expect(COMBAT_REGIONS['shattered-meridian'].locationIds).toEqual(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian'])
     expect(COMBAT_REGIONS['black-sigil-reach'].locationIds).toEqual(['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])
     expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(16)
-    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(6)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(5)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'hunting-ground')).toHaveLength(1)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'elite-zone')).toHaveLength(5)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'dungeon')).toHaveLength(5)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'special-zone' || location.type === 'tower')).toHaveLength(0)

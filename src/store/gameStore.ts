@@ -517,6 +517,7 @@ export interface RecentAcquisition {
 export interface GameActions {
   tick: (deltaMs: number) => void;
   setScreen: (screen: ScreenId) => void;
+  consumeLegacyArchiveRoute: () => void;
   chooseStartingSchool: (schoolId: SchoolId) => boolean;
   debugChooseStartingSchool: (schoolId: SchoolId) => boolean;
   resetTutorialForDebug: () => void;
@@ -992,6 +993,9 @@ export const useGameStore = create<GameStore>()(
         state.ui.screen = isScreenNavigationAllowed(state, screen) ? screen : "home";
         return state;
       });
+    },
+    consumeLegacyArchiveRoute: () => {
+      set((state) => { state.ui.legacyArchiveRoute = null })
     },
     chooseStartingSchool: (schoolId) => {
       let chosen = false;

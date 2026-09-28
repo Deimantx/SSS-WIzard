@@ -58,5 +58,5 @@ export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
   { id: 'transmute-materials', category: 'transmutation', target: 5, baseReputation: 100, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
   { id: 'produce-fire-fragments', category: 'production', itemId: 'fire-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
   { id: 'produce-water-fragments', category: 'production', itemId: 'water-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
-  { id: 'mixed-ember-study', category: 'mixed', target: 10, baseReputation: 160, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.7, components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'research', target: 2 }] },
+  { id: 'mixed-ember-study', category: 'mixed', target: 14, baseReputation: 160, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.7, components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'transmutation', target: 4 }, { category: 'research', target: 2 }] },
 ]

@@ -14,6 +14,7 @@ export type ChronicleSortMode = 'recommended' | 'progress' | 'track' | 'reward' 
 export type ChronicleGroupMode = 'none' | 'track' | 'status'
 export type ChronicleViewMode = 'compact' | 'detailed'
 export type GuildScreenTab = 'overview' | 'contracts' | 'skills' | 'registry' | 'projects' | 'chains'
+export type HuntersOrderScreenTab = 'contracts' | 'rank' | 'upgrades' | 'bestiary' | 'grounds'
 
 export interface CustomThemeColors {
   background: string
@@ -85,6 +86,9 @@ export interface ChroniclesScreenPreferences {
 export interface GuildScreenPreferences {
   activeTab: GuildScreenTab
 }
+export interface HuntersOrderScreenPreferences {
+  activeTab: HuntersOrderScreenTab
+}
 
 export interface ScreenPreferences {
   inventory: InventoryScreenPreferences
@@ -95,6 +99,7 @@ export interface ScreenPreferences {
   combat: CombatScreenPreferences
   chronicles: ChroniclesScreenPreferences
   guild: GuildScreenPreferences
+  huntersOrder: HuntersOrderScreenPreferences
 }
 
 export interface UiPreferences {

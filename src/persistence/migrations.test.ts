@@ -90,6 +90,7 @@ describe('save navigation migration', () => {
     const initial = createInitialState()
     const migratedCollection = migrateSave({ ...initial, saveVersion: 50, ui: { screen: 'collection' }, progress: { ...initial.progress, discoveredItems: ['fire-fragment', 'ember-staff'], discoveredMonsters: ['ashen-tracker'], bossKillsByBoss: { 'corrupted-greatbear': 1 }, huntersOrder: { ...initial.progress.huntersOrder, hunterMarks: 12, purchasedUpgrades: { 'trail-kit': 1 } } } } as any)
     expect(migratedCollection.ui.screen).toBe('arcane-guild')
+    expect(migratedCollection.ui.legacyArchiveRoute).toBe('registry')
     expect(migratedCollection.progress.arcaneRegistry.registeredEntries).toEqual({})
     expect(migratedCollection.progress.discoveredItems).toContain('fire-fragment')
     expect(migratedCollection.progress.discoveredMonsters).toContain('ashen-tracker')
@@ -97,7 +98,53 @@ describe('save navigation migration', () => {
     expect(migratedCollection.progress.huntersOrder.hunterMarks).toBe(12)
     const migratedBestiary = migrateSave({ ...initial, saveVersion: 50, ui: { screen: 'bestiary' }, progress: { ...initial.progress, discoveredMonsters: ['ashen-tracker'], bossKillsByBoss: { 'corrupted-greatbear': 1 } } } as any)
     expect(migratedBestiary.ui.screen).toBe('hunters-order')
+    expect(migratedBestiary.ui.legacyArchiveRoute).toBe('bestiary')
     expect(migratedBestiary.progress.discoveredMonsters).toContain('ashen-tracker')
+  })
+
+  it('preserves independently tracked Mixed Guild commission components during migration', () => {
+    const initial = createInitialState()
+    const activeCommission = {
+      id: 'guild-mixed-saved', templateId: 'mixed-ember-study', category: 'mixed', quality: 'special',
+      target: 21, progress: 7, reputationReward: 120, advancementPointReward: 0,
+      components: [
+        { category: 'production', itemId: 'fire-fragment', target: 12, progress: 5 },
+        { category: 'transmutation', target: 6, progress: 1 },
+        { category: 'research', target: 3, progress: 1 },
+      ],
+    }
+    const migrated = migrateSave({ ...initial, saveVersion: 52, progress: { ...initial.progress, guildUnlocked: true, arcaneGuild: { ...initial.progress.arcaneGuild, activeCommission } } } as any)
+    expect(migrated.saveVersion).toBe(SAVE_VERSION)
+    expect(migrated.progress.arcaneGuild.activeCommission).toMatchObject({
+      templateId: 'mixed-ember-study', target: 21, progress: 7,
+      components: [
+        { category: 'production', itemId: 'fire-fragment', target: 12, progress: 5 },
+        { category: 'transmutation', target: 6, progress: 1 },
+        { category: 'research', target: 3, progress: 1 },
+      ],
+    })
+  })
+
+  it('normalizes legacy and generalized Hunter contracts without changing stable Hunter IDs', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 52,
+      progress: {
+        ...initial.progress,
+        huntersOrder: {
+          ...initial.progress.huntersOrder,
+          reputation: 100000,
+          activeContract: { id: 'legacy-hunt', targetMonsterId: 'ashen-tracker', target: 4, progress: 2, tier: 'special', reputationReward: 140, marksReward: 6 },
+          availableContracts: [{ id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 500, marksReward: 12 }],
+          rngState: 8675309,
+        },
+      },
+    } as any)
+    expect(migrated.progress.huntersOrder.activeContract).toMatchObject({ targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 4, progress: 2 })
+    expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' } })
+    expect(migrated.progress.huntersOrder.rankId).toBe('master-hunter')
+    expect(migrated.progress.huntersOrder.rngState).toBe(8675309)
   })
 
   it('maps the old aggregate Tower screen to Channeling', () => {

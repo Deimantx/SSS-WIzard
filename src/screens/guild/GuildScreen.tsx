@@ -21,7 +21,13 @@ export function GuildScreen() {
   const promotion = getGuildPromotionProgress(state)
   const setActiveTab = (tab: GuildScreenTab) => setUiPreferences({ screenState: { guild: { activeTab: tab } } })
 
-  if (!state.progress.guildUnlocked) return <GuildLockedState state={state} />
+  if (!state.progress.guildUnlocked) {
+    if (activeTab !== 'registry') return <GuildLockedState state={state} />
+    return <div className="screen-content guild-v3-screen">
+      <div className="screen-header"><div><div className="eyebrow">ARCANE GUILD</div><h1>Registry archive</h1><p>Previously discovered items remain available to browse. Defeat the Forest Heart to register new entries.</p></div></div>
+      <ScreenGrid screen="guild" panels={[{ id: 'guild-registry', content: <ArcaneRegistryTab /> }]} />
+    </div>
+  }
 
   const panels = [
     { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },

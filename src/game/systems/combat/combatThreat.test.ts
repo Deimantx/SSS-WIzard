@@ -35,6 +35,7 @@ describe('Power-based Boss Threat', () => {
   it('uses enemy Power at the captured encounter tier for targeted kills', () => {
     const state = prepareCombat()
     expect(usesPowerBasedThreat(getCombatLocationByDungeonId('whispering-woods'))).toBe(true)
+    expect(usesPowerBasedThreat(getCombatLocationByDungeonId('hunters-ground'))).toBe(true)
     expect(resolveThreatGainForKill(state, 'forest-wisp', 1)).toBe(resolveEnemyPowerRating('forest-wisp', 1))
     expect(resolveThreatGainForKill(state, 'tempest-stag', 1)).toBeGreaterThan(resolveThreatGainForKill(state, 'forest-wisp', 1))
     expect(resolveThreatGainForKill(state, 'forest-wisp', 2)).toBe(resolveEnemyPowerRating('forest-wisp', 2))
@@ -62,6 +63,29 @@ describe('Power-based Boss Threat', () => {
     const sequence = prepareCombat('abandoned-catacombs')
     expect(resolveThreatGainForKill(sequence, 'restless-skeleton', 1)).toBe(0)
     expect(resolveThreatGainForKill(prepareCombat('fractured-approach'), 'warded-husk', 1)).toBe(0)
+  })
+
+  it('announces the Guild and Hunter Order on their first unlock kills only', () => {
+    const forest = createInitialState()
+    forest.combat.active = true
+    forest.combat.dungeonId = 'whispering-woods'
+    forest.combat.enemyId = 'forest-heart'
+    forest.combat.enemyHp = 0
+    finishEnemy(forest)
+    expect(forest.notifications.map((notification) => notification.text)).toContain('ARCANE GUILD UNLOCKED')
+
+    const greatbear = createInitialState()
+    greatbear.combat.active = true
+    greatbear.combat.dungeonId = 'howling-den'
+    greatbear.combat.enemyId = 'corrupted-greatbear'
+    greatbear.combat.enemyHp = 0
+    finishEnemy(greatbear)
+    expect(greatbear.notifications.map((notification) => notification.text)).toContain('HUNTER’S ORDER UNLOCKED')
+    greatbear.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    greatbear.combat.enemyId = 'corrupted-greatbear'
+    greatbear.combat.enemyHp = 0
+    finishEnemy(greatbear)
+    expect(greatbear.notifications.map((notification) => notification.text).filter((text) => text === 'HUNTER’S ORDER UNLOCKED')).toHaveLength(1)
   })
 
   it('caps overshoot and emits readiness once while Auto Hunt queues immediately', () => {

@@ -270,14 +270,17 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       ensureGuildCommissionChoices(state)
       state.progress.emberStaffUnlocked = true
       state.progress.forestHeartUnlocked = true
-      pushNotification(state, 'Forest Heart defeated - Guild unlocked', 'success')
+      pushNotification(state, 'ARCANE GUILD UNLOCKED', 'success')
     }
     if (bossId === 'forest-heart' && !state.progress.permanentManaBonuses['forest-heart']) {
       state.progress.permanentManaBonuses['forest-heart'] = 10
       recalculateDerivedStats(state)
       pushNotification(state, 'WHISPERING WOODS COMPLETE / +10 permanent Max Mana.', 'success')
     }
-    if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
+    if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) {
+      pushNotification(state, 'HUNTER’S ORDER UNLOCKED', 'success')
+      pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
+    }
     if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {
       pushNotification(state, 'FIRST CHAPTER COMPLETE', 'success')
       if (state.progress.magicLevelCap < BALANCE.schoolProgression.tutorialCompleteCap) {

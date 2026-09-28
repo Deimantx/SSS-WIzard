@@ -859,6 +859,8 @@ export interface UiState {
   screen: ScreenId
   /** The last dungeon the player successfully entered, not a world browse selection. */
   lastEnteredCombatDungeonId?: DungeonId
+  /** One-shot destination for pre-embedded Collection / Bestiary save routes. */
+  legacyArchiveRoute?: 'registry' | 'bestiary' | null
 }
 export interface GameState {
   saveVersion: number

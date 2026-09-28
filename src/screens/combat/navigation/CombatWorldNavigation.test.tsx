@@ -63,6 +63,41 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByRole('button', { name: /START FARMING|SWITCH TARGET|RETURN TO COMBAT/ })).toBeNull()
   })
 
+  it('keeps an unauthorized Gloamridge target inspectable while blocking entry with the contract reason', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.reputation = 10000
+    state.progress.huntersOrder.activeContract = { id: 'ashen-only', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 5, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    useGameStore.setState(state)
+    renderNavigation()
+
+    const target = screen.getByRole('button', { name: /Gloamfang Stalker/ })
+    fireEvent.click(target)
+    expect(target).toBeTruthy()
+    expect(screen.getByText('ACTIVE CONTRACT DOES NOT MATCH THIS TARGET')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /HUNT TARGET/ }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('shows Apex rank and Boss Contract requirements when Gloamridge Threat is ready', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.reputation = 1000
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    state.combat.threatCleared = Number.MAX_SAFE_INTEGER
+    useGameStore.setState(state)
+    renderNavigation()
+
+    expect(screen.getByText('APEX HUNT')).toBeTruthy()
+    expect(screen.getByText('MASTER HUNTER RANK AND APEX / BOSS CONTRACT REQUIRED')).toBeTruthy()
+    expect(screen.getByText('APEX HUNT LOCKED')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'ENGAGE BOSS' })).toBeNull()
+  })
+
   it('distinguishes the selected target from the target currently being hunted', () => {
     const state = createInitialState()
     state.combat.active = true

@@ -10,7 +10,7 @@ export type CombatBossHuntState = 'building' | 'ready' | 'queued' | 'fighting'
 export interface CombatBossHuntPresentation {
   bossId: DungeonDefinition['boss']
   bossName: string
-  bossLabel: 'ZONE BOSS' | 'ELITE BOSS' | 'FINAL BOSS'
+  bossLabel: 'ZONE BOSS' | 'ELITE BOSS' | 'FINAL BOSS' | 'APEX HUNT'
   threatCurrent: number
   threatRequired: number
   remainingThreat: number
@@ -38,7 +38,7 @@ export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, loc
   const ready = active && threatCurrent >= threatRequired && !fighting && !queued
   const autoHuntUnlocked = isAutoHuntUnlocked(progress)
   const autoHuntEnabled = isAutoHuntEnabledForDungeon({ progress }, dungeon.id)
-  const bossLabel: CombatBossHuntPresentation['bossLabel'] = locationType === 'elite-zone' ? 'ELITE BOSS' : locationType === 'dungeon' ? 'FINAL BOSS' : 'ZONE BOSS'
+  const bossLabel: CombatBossHuntPresentation['bossLabel'] = locationType === 'hunting-ground' ? 'APEX HUNT' : locationType === 'elite-zone' ? 'ELITE BOSS' : locationType === 'dungeon' ? 'FINAL BOSS' : 'ZONE BOSS'
   return {
     bossId: dungeon.boss,
     bossName: MONSTERS[dungeon.boss]?.name ?? dungeon.boss,

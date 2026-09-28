@@ -93,22 +93,36 @@ export const acceptGuildCommission = (state: GameState, commissionId: string) =>
   return true
 }
 
-const updateCommissionProgress = (state: GameState, commission: GuildCommissionState, category: GuildCommissionCategory, amount: number, itemId?: GameState['progress']['discoveredItems'][number]) => {
-  const matchedCategory = category === 'transmutation' ? 'production' : category
+export interface GuildCommissionProgressEvent { category: GuildCommissionCategory; amount?: number; itemId?: GameState['progress']['discoveredItems'][number] }
+
+const updateCommissionProgress = (commission: GuildCommissionState, category: GuildCommissionCategory, amount: number, itemId?: GameState['progress']['discoveredItems'][number]) => {
   if (commission.components) {
     for (const component of commission.components) {
-      if (component.category !== matchedCategory || (component.itemId && component.itemId !== itemId)) continue
+      if (component.category !== category || (component.itemId && component.itemId !== itemId)) continue
       component.progress = Math.min(component.target, component.progress + amount)
     }
     commission.progress = commission.components.reduce((sum, component) => sum + component.progress, 0)
-    if (commission.components.every((component) => component.progress >= component.target)) finishCommission(state, commission)
-    return true
+    return commission.components.some((component) => component.category === category && (!component.itemId || component.itemId === itemId))
   }
-  const matches = commission.category === category || (commission.category === 'production' && category === 'transmutation')
+  const matches = commission.category === category
   if (!matches || (commission.category === 'production' && commission.itemId && commission.itemId !== itemId)) return false
   commission.progress = Math.min(commission.target, commission.progress + amount)
-  if (commission.progress >= commission.target) finishCommission(state, commission)
   return true
+}
+
+export const recordGuildCommissionProgressBatch = (state: GameState, events: readonly GuildCommissionProgressEvent[]) => {
+  const commission = state.progress.arcaneGuild.activeCommission
+  let changed = false
+  for (const event of events) {
+    const amount = safeInt(event.amount ?? 1)
+    if (amount <= 0) continue
+    changed = recordGuildCommissionChainProgress(state, event.category, amount, event.itemId) || changed
+    if (commission) changed = updateCommissionProgress(commission, event.category, amount, event.itemId) || changed
+  }
+  if (commission && (commission.components
+    ? commission.components.every((component) => component.progress >= component.target)
+    : commission.progress >= commission.target)) finishCommission(state, commission)
+  return changed
 }
 
 export const deliverGuildCommissionItems = (state: GameState, amount: number | 'max') => {
@@ -127,11 +141,7 @@ export const deliverGuildCommissionItems = (state: GameState, amount: number | '
 }
 
 export const recordGuildCommissionProgress = (state: GameState, category: GuildCommissionCategory, amount = 1, itemId?: GameState['progress']['discoveredItems'][number]) => {
-  if (amount <= 0) return false
-  const chainAdvanced = recordGuildCommissionChainProgress(state, category === 'production' ? 'transmutation' : category, amount, itemId)
-  const commission = state.progress.arcaneGuild.activeCommission
-  if (!commission) return chainAdvanced
-  return updateCommissionProgress(state, commission, category, safeInt(amount), itemId) || chainAdvanced
+  return recordGuildCommissionProgressBatch(state, [{ category, amount, itemId }])
 }
 
 export const refreshGuildCommissionChoices = (state: GameState) => {

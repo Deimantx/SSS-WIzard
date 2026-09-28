@@ -15,7 +15,7 @@ import { createEmptySigilState } from '../game/systems/sigils/sigilStateNormaliz
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 52
+export const SAVE_VERSION = 53
 
 export const createInitialSigilState = createEmptySigilState
 
@@ -50,7 +50,7 @@ export const createInitialState = (): GameState => {
   storyProgress: { pendingEventIds: [], completedEventIds: [] },
   darkPortal: { recoveredShards: [] },
   spellPresets: { presets: [], selectedPresetId: null },
-  ui: { screen: 'home', lastEnteredCombatDungeonId: undefined },
+  ui: { screen: 'home', lastEnteredCombatDungeonId: undefined, legacyArchiveRoute: null },
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],

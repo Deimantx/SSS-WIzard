@@ -21,9 +21,17 @@ describe('combat world navigation read model', () => {
 
     expect(view.selectedContinent.name).toBe('Continent I')
     expect(view.selectedRegion.name).toBe('First Frontier')
-    expect(view.selectedRegion.locations.map((location) => location.name)).toEqual(['Whispering Woods', 'Howling Den', 'Gloamridge Hunting Ground', 'Abandoned Catacombs'])
+    expect(view.selectedRegion.locations.map((location) => location.name)).toEqual(['Whispering Woods', 'Howling Den', 'Gloamridge', 'Abandoned Catacombs'])
     expect(view.selectedRegion.locations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'elite-zone', state: 'locked', unlockText: 'Defeat Forest Heart' })
     expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
+  })
+
+  it('models Gloamridge as a first-class targeted Hunting Ground with Apex Hunt presentation', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    const ground = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'hunters-ground' }).selectedLocation
+    expect(ground).toMatchObject({ id: 'hunters-ground', name: 'Gloamridge', type: 'hunting-ground', typeLabel: 'HUNTING GROUND', encounterMode: 'targeted', bossHunt: { bossLabel: 'APEX HUNT' } })
   })
 
   it('shows authored combat identities and power before Bestiary discovery', () => {

@@ -332,12 +332,30 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawAvailableCommissions = Array.isArray(rawGuild.availableCommissions) ? rawGuild.availableCommissions.filter(isRecord).slice(0, 3) : []
   const normalizeGuildCommission = (value: Record<string, any>): GameState['progress']['arcaneGuild']['activeCommission'] => {
     const category = (['delivery', 'production', 'research', 'transmutation', 'mixed'] as const).find((entry) => entry === value.category) ?? null
-    const templateId = typeof value.templateId === 'string' && GUILD_COMMISSION_TEMPLATES.some((template) => template.id === value.templateId) ? value.templateId : null
-    if (!category || !templateId || typeof value.id !== 'string') return null
+    const template = typeof value.templateId === 'string' ? GUILD_COMMISSION_TEMPLATES.find((entry) => entry.id === value.templateId) : undefined
+    if (!category || !template || template.category !== category || typeof value.id !== 'string') return null
     const quality = value.quality === 'special' || value.quality === 'prestigious' ? value.quality : 'routine'
     const itemId = typeof value.itemId === 'string' && itemIds.includes(value.itemId) ? value.itemId as ItemId : undefined
-    const target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
-    return { id: value.id.slice(0, 100), templateId, category, quality, itemId, target, progress: Math.min(target, nonNegativeInteger(value.progress) ?? 0), reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, advancementPointReward: nonNegativeInteger(value.advancementPointReward) ?? 0 }
+    let target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
+    let progress = Math.min(target, nonNegativeInteger(value.progress) ?? 0)
+    let components: NonNullable<GameState['progress']['arcaneGuild']['activeCommission']>['components']
+    if (category === 'mixed' && template.components?.length) {
+      const rawComponents = Array.isArray(value.components) ? value.components.filter(isRecord) : []
+      const rawProgress = progress
+      let remainingLegacyProgress = rawProgress
+      components = template.components.map((definition, index) => {
+        const component = rawComponents.find((entry) => entry.category === definition.category && (entry.itemId ?? undefined) === definition.itemId) ?? rawComponents[index]
+        const fallbackTarget = Math.max(1, Math.ceil(definition.target * BALANCE.arcaneGuild.qualityTargetMultipliers[quality as keyof typeof BALANCE.arcaneGuild.qualityTargetMultipliers]))
+        const componentTarget = Math.max(1, nonNegativeInteger(component?.target) ?? fallbackTarget)
+        const knownComponentProgress = component ? nonNegativeInteger(component.progress) ?? 0 : undefined
+        const componentProgress = Math.min(componentTarget, knownComponentProgress ?? Math.min(componentTarget, remainingLegacyProgress))
+        if (!component) remainingLegacyProgress = Math.max(0, remainingLegacyProgress - componentProgress)
+        return { category: definition.category, itemId: definition.itemId, target: componentTarget, progress: componentProgress }
+      })
+      target = components.reduce((sum, component) => sum + component.target, 0)
+      progress = components.reduce((sum, component) => sum + component.progress, 0)
+    }
+    return { id: value.id.slice(0, 100), templateId: template.id, category, quality, itemId, target, progress, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, advancementPointReward: nonNegativeInteger(value.advancementPointReward) ?? 0, ...(components ? { components } : {}) }
   }
   const rawProjectProgress = isRecord(rawGuild.projects) ? rawGuild.projects : {}
   const projects = Object.fromEntries(GUILD_PROJECTS.flatMap((project) => { const rawProject: Record<string, any> = isRecord(rawProjectProgress[project.id]) ? rawProjectProgress[project.id] as Record<string, any> : {}; const values = Object.fromEntries(project.requirements.flatMap((requirement) => { const amount = Math.min(requirement.quantity, nonNegativeInteger(rawProject[requirement.itemId]) ?? 0); return amount > 0 ? [[requirement.itemId, amount]] : [] })); return Object.keys(values).length ? [[project.id, values]] : [] }))
@@ -1028,6 +1046,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)
   const rawUi = isRecord(raw.ui) ? raw.ui : {}
   migrated.ui.screen = normalizeScreen(rawUi.screen, migrated.ui.screen)
+  migrated.ui.legacyArchiveRoute = rawUi.screen === 'collection' ? 'registry' : rawUi.screen === 'bestiary' ? 'bestiary' : null
   migrated.ui.lastEnteredCombatDungeonId = normalizeLastEnteredCombatDungeonId(rawUi.lastEnteredCombatDungeonId ?? migrated.ui.lastEnteredCombatDungeonId)
   normalizeDynamicRecords(migrated, raw)
   normalizeSigils(migrated, raw)

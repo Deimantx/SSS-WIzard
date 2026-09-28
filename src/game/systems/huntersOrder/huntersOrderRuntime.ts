@@ -57,6 +57,7 @@ export const getHunterAuthorization = (state: Pick<GameState, 'progress'>, monst
   if (!active) return { authorized: false, reason: 'contract-required' }
   const contractTier = tierOrder[active.tier]
   if (contractTier < monsterTier || rank.reputation < requiredRankForTier(active.tier)) return { authorized: false, reason: 'contract-tier-locked' }
+  if (isBossMonster(MONSTERS[monsterId]) && active.targetSpec.type !== 'boss') return { authorized: false, reason: 'contract-target-mismatch' }
   return doesMonsterMatchHunterContract(active, monsterId, dungeonId) ? { authorized: true } : { authorized: false, reason: 'contract-target-mismatch' }
 }
 export const canHuntMonster = (state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId?: DungeonId | null) => getHunterAuthorization(state, monsterId, dungeonId).authorized
@@ -81,12 +82,28 @@ const makeTargetSpecs = (state: Pick<GameState, 'progress'>): HunterContractTarg
 
 const chooseQuality = (state: Pick<GameState, 'progress'>) => {
   const reputation = orderFor(state).reputation
-  const weights = BALANCE.arcaneGuild.qualityWeights
+  const weights = BALANCE.huntersOrder.qualityWeights
   const choices = (['routine', 'special', 'prestigious'] as const).filter((tier) => reputation >= requiredRankForTier(tier))
   const total = choices.reduce((sum, tier) => sum + weights[tier], 0)
   let roll = nextHunterRandom(state) * total
   for (const tier of choices) { roll -= weights[tier]; if (roll < 0) return tier }
   return 'routine' as const
+}
+
+const chooseWeightedTargetSpec = (state: Pick<GameState, 'progress'>, available: HunterContractTarget[]) => {
+  const weights = BALANCE.huntersOrder.archetypeWeights
+  const grouped = new Map<HunterContractTarget['type'], HunterContractTarget[]>()
+  available.forEach((spec) => grouped.set(spec.type, [...(grouped.get(spec.type) ?? []), spec]))
+  const eligibleTypes = [...grouped.entries()].filter(([type]) => weights[type] > 0)
+  const totalWeight = eligibleTypes.reduce((sum, [type]) => sum + weights[type], 0)
+  if (totalWeight <= 0) return available[Math.floor(nextHunterRandom(state) * available.length)]
+  let roll = nextHunterRandom(state) * totalWeight
+  for (const [type, specs] of eligibleTypes) {
+    roll -= weights[type]
+    if (roll < 0) return specs[Math.floor(nextHunterRandom(state) * specs.length)]
+  }
+  const fallback = eligibleTypes[eligibleTypes.length - 1]?.[1] ?? available
+  return fallback[Math.floor(nextHunterRandom(state) * fallback.length)]
 }
 
 export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>): HunterContractState[] => {
@@ -99,13 +116,11 @@ export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>
   for (let index = 0; index < count; index += 1) {
     const available = pool.filter((spec) => !seen.has(specKey(spec)))
     if (!available.length) break
-    const spec = available[Math.floor(nextHunterRandom(state) * available.length)]
+    const spec = chooseWeightedTargetSpec(state, available)
     const quality = spec.type === 'boss' ? 'prestigious' : chooseQuality(state)
     const range = BALANCE.huntersOrder.targetRanges[quality]
     const baseTarget = range[0] + Math.floor(nextHunterRandom(state) * (range[1] - range[0] + 1))
     const target = Math.max(1, baseTarget - (order.purchasedUpgrades['trail-kit'] ?? 0))
-    const members = eligibleMembers(spec)
-    const primary = 'monsterId' in spec ? spec.monsterId : members[0]
     const rewardMultiplier = BALANCE.huntersOrder.reputationMultipliers[quality]
     const reward = Math.round(target * BALANCE.huntersOrder.reputationPerKill * rewardMultiplier)
     const serial = order.generationCount * 3 + index
@@ -154,17 +169,18 @@ export const recordHunterKill = (state: GameState, monsterId: MonsterId, dungeon
   stats.contractKills += 1
   if (contract.progress < contract.target) return true
   const reputationReward = Math.round(contract.reputationReward * (1 + BALANCE.huntersOrder.markedQuarryBonusPerRank * (order.purchasedUpgrades['marked-quarry'] ?? 0)))
+  const marksAwarded = contract.marksReward + BALANCE.huntersOrder.deepPocketsMarksPerRank * (order.purchasedUpgrades['deep-pockets'] ?? 0)
   order.reputation = safeInt(order.reputation) + reputationReward
-  order.hunterMarks = safeInt(order.hunterMarks) + contract.marksReward + BALANCE.huntersOrder.deepPocketsMarksPerRank * (order.purchasedUpgrades['deep-pockets'] ?? 0)
+  order.hunterMarks = safeInt(order.hunterMarks) + marksAwarded
   order.totalContractsCompleted = safeInt(order.totalContractsCompleted) + 1
   stats.contractsCompleted += 1
-  stats.marksEarned += contract.marksReward + BALANCE.huntersOrder.deepPocketsMarksPerRank * (order.purchasedUpgrades['deep-pockets'] ?? 0)
+  stats.marksEarned += marksAwarded
   const nextRank = getHunterRank(order.reputation)
   if (nextRank.id !== order.rankId) { order.rankId = nextRank.id; pushNotification(state, `Hunter Rank raised to ${nextRank.name}.`, 'success') }
   order.activeContract = null
   order.generationCount += 1
   order.availableContracts = generateHunterContractChoices(state)
-  pushNotification(state, `Hunt Contract complete - +${reputationReward} Reputation - +${contract.marksReward} Hunter Marks.`, 'success')
+  pushNotification(state, `Hunt Contract complete - +${reputationReward} Reputation - +${marksAwarded} Hunter Marks.`, 'success')
   return true
 }
 

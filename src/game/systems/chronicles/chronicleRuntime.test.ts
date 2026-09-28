@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { CHRONICLE_OBJECTIVES } from '../../content/chronicles/chronicles'
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
 
 describe('Chronicle runtime', () => {
+  it('keeps first Arcane Guild Commission as one objective and gives the Tower milestone a distinct condition', () => {
+    const commissionObjectives = CHRONICLE_OBJECTIVES.filter((objective) => objective.condition.type === 'guild-commissions-completed' && objective.condition.count === 1)
+    expect(commissionObjectives.map((objective) => objective.id)).toEqual(['g2-first-guild-contract'])
+    expect(CHRONICLE_OBJECTIVES.find((objective) => objective.id === 't4-answer-verdant-circle')).toMatchObject({ title: 'Focus an Arcane Core Node', condition: { type: 'arcane-core-invested-nodes', count: 1 }, navigateTo: 'arcane-core' })
+  })
   it('latches objectives and does not duplicate one-time rewards', () => {
     const state = createInitialState()
     state.progress.startingSchoolId = 'fire'

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
-import { resetAllUiPreferences } from '../../ui/preferences/uiPreferencesStore'
+import { resetAllUiPreferences, setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { GuildScreen } from './GuildScreen'
 
 const renderGuild = () => render(<TooltipProvider><GuildScreen /></TooltipProvider>)
@@ -21,6 +21,19 @@ describe('Guild V3 screen', () => {
     expect(screen.getByRole('heading', { name: 'Invitation Sealed' })).toBeTruthy()
     expect(screen.getByText('FOREST HEART')).toBeTruthy()
     expect(screen.getByRole('button', { name: /Open Combat/ })).toBeTruthy()
+  })
+
+  it('keeps a legacy Collection route browsable while registration remains locked', async () => {
+    const user = userEvent.setup()
+    useGameStore.setState((state) => { state.inventory['fire-fragment'] = 1 })
+    setUiPreferences({ screenState: { guild: { activeTab: 'registry' } } })
+    renderGuild()
+
+    expect(screen.getByRole('heading', { name: 'Registry archive' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Items to register' })).toBeTruthy()
+    expect(screen.getByText(/Browsing only/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Fire Fragment/ }))
+    expect((screen.getByRole('button', { name: 'Guild Locked' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('switches between Guild-owned Registry, Commissions, and Advancement without changing gameplay state', async () => {

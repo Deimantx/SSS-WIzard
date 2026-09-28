@@ -8,6 +8,7 @@ export type CombatLocationId = string
 export type CombatLocationType =
   | 'combat-zone'
   | 'elite-zone'
+  | 'hunting-ground'
   | 'special-zone'
   | 'dungeon'
   | 'tower'
@@ -64,6 +65,7 @@ export interface CombatLocationDefinition {
 export const COMBAT_LOCATION_TYPE_METADATA: Record<CombatLocationType, { label: string; actionLabel: string }> = {
   'combat-zone': { label: 'COMBAT ZONE', actionLabel: 'ENTER ZONE' },
   'elite-zone': { label: 'ELITE ZONE', actionLabel: 'ENTER ELITE ZONE' },
+  'hunting-ground': { label: 'HUNTING GROUND', actionLabel: 'ENTER HUNTING GROUND' },
   'special-zone': { label: 'SPECIAL ZONE', actionLabel: 'ENTER SPECIAL ZONE' },
   dungeon: { label: 'DUNGEON', actionLabel: 'ENTER DUNGEON' },
   tower: { label: 'TOWER', actionLabel: 'ENTER TOWER' },

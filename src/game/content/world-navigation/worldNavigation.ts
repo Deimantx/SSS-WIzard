@@ -94,7 +94,7 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       'den-stalker': { difficulty: 'apex', order: 6 },
     },
   },
-  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'combat-zone', 3), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 } } },
+  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 3), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 } } },
   'abandoned-catacombs': {
     ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 4),
     encounterMode: 'sequence',
@@ -258,7 +258,7 @@ export const getCombatLocationByDungeonId = (dungeonId: DungeonId | null | undef
 export const getCombatEncounterMode = (location: CombatLocationDefinition | null | undefined): CombatEncounterMode => location?.encounterMode ?? 'random-pool'
 
 export const usesPowerBasedThreat = (location: CombatLocationDefinition | null | undefined) => Boolean(
-  location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone'),
+  location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone' || location.type === 'hunting-ground'),
 )
 
 export const isCombatTargetForLocation = (location: CombatLocationDefinition | null | undefined, dungeonId: DungeonId | null | undefined, targetEnemyId: string | null | undefined) => {

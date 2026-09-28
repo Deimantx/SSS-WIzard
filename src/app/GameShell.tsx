@@ -42,6 +42,8 @@ import { useUITuning } from '../ui/config/uiTuningResolver'
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
   const setScreen = useGameStore((state) => state.setScreen)
+  const legacyArchiveRoute = useGameStore((state) => state.ui.legacyArchiveRoute ?? null)
+  const consumeLegacyArchiveRoute = useGameStore((state) => state.consumeLegacyArchiveRoute)
   const tick = useGameStore((state) => state.tick)
   const saveGame = useGameStore((state) => state.saveGame)
   const preferences = useUiPreferences()
@@ -61,6 +63,16 @@ export function GameShell() {
     const group = navigation.group.id
     if (group !== 'overview' && preferences.navigationGroups[group] === true) setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [group]: false } })
   }, [navigation.group.id, preferences.navigationGroups, screen])
+
+  useEffect(() => {
+    if (legacyArchiveRoute === 'registry' && screen === 'arcane-guild') {
+      setUiPreferences({ screenState: { guild: { activeTab: 'registry' } } })
+      consumeLegacyArchiveRoute()
+    } else if (legacyArchiveRoute === 'bestiary' && screen === 'hunters-order') {
+      setUiPreferences({ screenState: { huntersOrder: { activeTab: 'bestiary' } } })
+      consumeLegacyArchiveRoute()
+    }
+  }, [consumeLegacyArchiveRoute, legacyArchiveRoute, screen])
 
   useEffect(() => {
     if (!lastOfflineBankReport) return

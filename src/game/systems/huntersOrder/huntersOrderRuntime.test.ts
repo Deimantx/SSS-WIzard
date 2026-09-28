@@ -3,6 +3,7 @@ import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
 import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade } from './huntersOrderRuntime'
+import { BALANCE } from '../../core/balance/balance'
 import type { HunterContractState } from '../../types'
 
 const contract = (targetSpec: HunterContractState['targetSpec'], tier: HunterContractState['tier'] = 'routine'): HunterContractState => ({ id: 'test-contract', targetSpec, target: 1, progress: 0, tier, reputationReward: 100, marksReward: 3 })
@@ -21,6 +22,32 @@ describe('Hunter Order hardened runtime', () => {
     const nextA = generateHunterContractChoices(a)
     const continued = unlock(); continued.progress.huntersOrder = saved
     expect(generateHunterContractChoices(continued)).toEqual(nextA)
+  })
+
+  it('uses seeded archetype weights rather than the number of candidates per archetype', () => {
+    const counts: Record<HunterContractState['targetSpec']['type'], number> = { monster: 0, family: 0, region: 0, alignment: 0, boss: 0 }
+    for (let seed = 1; seed <= 400; seed += 1) {
+      const state = unlock()
+      state.progress.huntersOrder.reputation = 10000
+      state.progress.huntersOrder.rngState = seed
+      generateHunterContractChoices(state).forEach((offer) => { counts[offer.targetSpec.type] += 1 })
+    }
+    expect(counts.monster).toBeGreaterThan(counts.family)
+    expect(counts.family).toBeGreaterThan(counts.alignment)
+    expect(counts.boss).toBeGreaterThan(0)
+  })
+
+  it('uses Hunter-owned quality weights independently from Arcane Guild weights', () => {
+    const huntersBalance = BALANCE.huntersOrder as unknown as { qualityWeights: { routine: number; special: number; prestigious: number } }
+    const previous = huntersBalance.qualityWeights
+    try {
+      huntersBalance.qualityWeights = { routine: 0, special: 1, prestigious: 0 }
+      const state = unlock()
+      state.progress.huntersOrder.reputation = 1000
+      expect(generateHunterContractChoices(state).every((offer) => offer.tier === 'special')).toBe(true)
+    } finally {
+      huntersBalance.qualityWeights = previous
+    }
   })
 
   it('matches specific monster, family, region, alignment, and boss objectives', () => {
@@ -100,6 +127,26 @@ describe('Hunter Order hardened runtime', () => {
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-tier-locked' })
     state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
     expect(canHuntMonster(state, 'nightglass-alpha', 'hunters-ground')).toBe(true)
+  })
+
+  it('requires a matching explicit Boss contract for Nightglass Alpha at Master Hunter', () => {
+    const state = unlock()
+    state.progress.huntersOrder.reputation = 10000
+    state.progress.huntersOrder.activeContract = contract({ type: 'region', dungeonId: 'hunters-ground' }, 'prestigious')
+    expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-target-mismatch' })
+    state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
+    expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: true })
+  })
+
+  it('reports and records the same Deep Pockets Marks award', () => {
+    const state = unlock()
+    const order = state.progress.huntersOrder
+    order.activeContract = contract({ type: 'monster', monsterId: 'ashen-tracker' })
+    order.purchasedUpgrades['deep-pockets'] = 2
+    expect(recordHunterKill(state, 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(order.hunterMarks).toBe(5)
+    expect(order.monsterHunterStats['ashen-tracker']?.marksEarned).toBe(5)
+    expect(state.notifications[state.notifications.length - 1]?.text).toContain('+5 Hunter Marks')
   })
 
   it('progresses and rewards generalized matching targets only', () => {

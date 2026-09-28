@@ -16,6 +16,7 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
     expect(preferences.screenState.guild).toEqual({ activeTab: 'overview' })
+    expect(preferences.screenState.huntersOrder).toEqual({ activeTab: 'contracts' })
   })
 
   it('validates the Full Combat Log font preference independently of gameplay', () => {
@@ -29,6 +30,12 @@ describe('screen UI preferences', () => {
   it('migrates the previous Dungeon Statistics Loot mode to Drops', () => {
     const preferences = normalizeUiPreferences({ screenState: { combat: { dungeonStatisticsMode: 'loot' } } })
     expect(preferences.screenState.combat.dungeonStatisticsMode).toBe('drops')
+  })
+
+  it('persists and validates the embedded Hunter Bestiary tab', () => {
+    setUiPreferences({ screenState: { huntersOrder: { activeTab: 'bestiary' } } })
+    expect(loadUiPreferences().screenState.huntersOrder.activeTab).toBe('bestiary')
+    expect(normalizeUiPreferences({ screenState: { huntersOrder: { activeTab: 'invalid' } } }).screenState.huntersOrder.activeTab).toBe('contracts')
   })
 
   it('normalizes malformed screen preferences without affecting gameplay', () => {

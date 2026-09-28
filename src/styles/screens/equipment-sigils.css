@@ -1,4 +1,4 @@
-﻿.equipment-loadout-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.equipment-loadout-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .equipment-sigil-loadout { display: grid; gap: 10px; min-width: 0; margin-top: 14px; padding: 14px; border: 1px solid color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); border-radius: 9px; background: linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 8%, var(--ui-panel-strong)), var(--ui-panel)); }
 .equipment-sigil-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
 .equipment-sigil-heading > div { min-width: 0; }
@@ -29,25 +29,7 @@
 .equipment-sigil-loadout .sigil-set-summary-item small { display: none; }
 .equipment-sigil-loadout .sigil-active-traits { display: flex; flex-wrap: wrap; gap: 6px; }
 .equipment-sigil-loadout .sigil-active-trait { min-width: 0; }
-.sigil-vault-backdrop { z-index: 1300; padding: 3vh 2vw; }
-.modal-portal-surface.sigil-vault-modal { display: flex; flex-direction: column; width: min(1600px, 96vw); max-width: 1600px; height: min(900px, 94vh); max-height: 94vh; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, var(--ui-border)); background: radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--ui-accent) 13%, transparent), transparent 42%), var(--ui-panel-strong); box-shadow: 0 30px 100px #000b, inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
-.sigil-vault-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex: 0 0 auto; padding: 20px 24px 15px; border-bottom: 1px solid var(--ui-border); background: color-mix(in srgb, var(--ui-panel) 70%, transparent); }
-.sigil-vault-header h2 { margin: 5px 0; color: var(--ui-text); font: 700 var(--text-xl) var(--font-display); letter-spacing: .075em; }
-.sigil-vault-header p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-sm); }
-.sigil-vault-header-actions { display: flex; align-items: center; gap: 9px; }
-.sigil-vault-close { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text); background: var(--ui-panel); cursor: pointer; }
-.sigil-vault-close:hover, .sigil-vault-close:focus-visible { border-color: var(--ui-accent); color: var(--ui-accent); }
-.sigil-vault-metrics { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
-.sigil-vault-metrics > span { display: flex; gap: 6px; align-items: baseline; padding: 5px 8px; border: 1px solid var(--ui-border); border-radius: 5px; color: var(--ui-accent); background: var(--ui-panel); font: 700 var(--text-xs) var(--font-mono); }
-.sigil-vault-metrics small { color: var(--ui-text-muted); font-size: var(--text-micro); }
 @media (max-width: 720px) {
   .equipment-sigil-heading { align-items: flex-start; flex-direction: column; }
   .equipment-sigil-sockets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sigil-vault-header { padding: 14px; }
-  .sigil-vault-header h2 { font-size: var(--text-base); }
-  .sigil-vault-header p { font-size: var(--text-xs); }
-  .sigil-vault-header-actions { align-items: flex-start; }
-  .sigil-vault-header-actions .button { max-width: 112px; white-space: normal; }
-  .sigil-vault-metrics { gap: 4px; }
-  .sigil-vault-metrics > span { padding: 4px 5px; font-size: var(--text-micro); }
 }

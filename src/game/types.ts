@@ -277,7 +277,7 @@ export interface SigilState {
   traitsUnlockedLifetime: number
   discovery: SigilDiscoveryState
   hasDefeatedWorldTier2Boss: boolean
-  autoSalvage: { common: boolean; refined: boolean }
+  autoSalvage: Record<SigilQuality, boolean>
 }
 
 export type ArcaneCoreBranchId = 'power' | 'vitality' | 'mana' | 'control'

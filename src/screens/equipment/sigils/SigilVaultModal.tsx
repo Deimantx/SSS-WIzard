@@ -1,4 +1,4 @@
-﻿import type { MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { LockKeyhole, Sparkles, Unlock, X } from 'lucide-react'
 import { Button, GameTooltip, ModalPortal } from '../../../components/ui'
@@ -18,13 +18,14 @@ import { useGameContextMenu } from '../../../ui/context-menu/GameContextMenuProv
 import { setNavigationIntent } from '../../../ui/navigation/navigationIntent'
 import { setUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 
-export function SigilVaultModal({ open, onClose, initialSigilInstanceId = null, initialSlot = null, onSelectedInstanceChange, onOpenArtificing }: {
+export function SigilVaultModal({ open, onClose, initialSigilInstanceId = null, initialSlot = null, onSelectedInstanceChange, onOpenArtificing, onBulkSalvage }: {
   open: boolean
   onClose: () => void
   initialSigilInstanceId?: string | null
   initialSlot?: SigilSlot | null
   onSelectedInstanceChange?: (instanceId: string | null) => void
   onOpenArtificing: (instanceId: string | null) => void
+  onBulkSalvage: () => void
 }) {
   const sigils = useGameStore((state) => state.sigils)
   const progress = useGameStore((state) => state.progress)
@@ -112,7 +113,7 @@ export function SigilVaultModal({ open, onClose, initialSigilInstanceId = null, 
   return <ModalPortal open={open} onClose={onClose} backdropClassName="sigil-vault-backdrop" surfaceClassName="sigil-vault-modal" ariaLabel="Arcane Sigil Vault" ariaLabelledBy="sigil-vault-title">
     <header className="sigil-vault-header">
       <div><span className="eyebrow">EQUIPMENT · SIGIL MANAGEMENT</span><h2 id="sigil-vault-title">ARCANE SIGIL VAULT</h2><p>Shape and manage the six engraved channels of your build.</p><div className="sigil-vault-metrics"><span>{equippedCount}/6 <small>EQUIPPED</small></span><span>{storedCount} <small>STORED</small></span><span>{sigils.dust.toLocaleString()} <small>DUST</small></span><span>+{cap} <small>GLOBAL CAP</small></span></div></div>
-      <div className="sigil-vault-header-actions"><Button variant="secondary" onClick={() => openArtificing(null)}>ARTIFICING</Button><GameTooltip content={<TooltipContent title="Close Sigil Vault" description="Return to your Equipment loadout." />}><Button type="button" variant="ghost" icon className="sigil-vault-close" ariaLabel="Close Sigil Vault" onClick={onClose}><X size={18} /></Button></GameTooltip></div>
+      <div className="sigil-vault-header-actions"><Button variant="secondary" onClick={onBulkSalvage}>BULK SALVAGE</Button><Button variant="secondary" onClick={() => openArtificing(null)}>ARTIFICING</Button><GameTooltip content={<TooltipContent title="Close Sigil Vault" description="Return to your Equipment loadout." />}><Button type="button" variant="ghost" icon className="sigil-vault-close" ariaLabel="Close Sigil Vault" onClick={onClose}><X size={18} /></Button></GameTooltip></div>
     </header>
     <div className="sigil-vault-body">
       <aside className="sigil-vault-array">

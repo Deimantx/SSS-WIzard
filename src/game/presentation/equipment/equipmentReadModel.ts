@@ -9,7 +9,7 @@ import { formatEquipmentStat, getEquipmentStatLabel, isMeaningfulEquipmentStatVa
 import { EQUIPMENT_ITEM_SLOT_LABELS, getDefaultEquipmentPosition, getItemPositions } from '../../core/equipment/equipmentRules'
 import type { DamageType, EquipmentBuildTag, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
-export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress' | 'arcaneCore' | 'crystals'> & Partial<Pick<GameState, 'debug'>>
+export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress' | 'arcaneCore' | 'crystals'> & Partial<Pick<GameState, 'debug' | 'sigils'>>
 
 export interface EquipmentStatSnapshot {
   maxHealth: number
@@ -110,7 +110,7 @@ export function getEquipmentPrimarySummary(itemId: ItemId, state?: Pick<GameStat
   if (combatSummary) return combatSummary
   const stats = getEquipmentSearchStats(itemId, state)
   const entries = Object.entries(stats).filter(([, value]) => typeof value === 'number' && isMeaningfulEquipmentStatValue(value)).slice(0, 2)
-  return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' · ') : null
+  return entries.length ? entries.map(([key, value]) => `${formatEquipmentStat(key, Number(value))} ${getEquipmentStatLabel(key)}`).join(' Ã‚Â· ') : null
 }
 
 export interface EquipmentPreviewTargetOptions {

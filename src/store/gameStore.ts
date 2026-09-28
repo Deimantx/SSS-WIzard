@@ -122,7 +122,7 @@ import {
   toggleItemProtectionAction,
 } from "./actions/inventoryActions";
 import { equipItemAction, unequipItemAction } from "./actions/equipmentActions";
-import { craftSigilAction, enhanceSigilAction, equipSigilAction, salvageSigilAction, setSigilAttunementAction, setSigilAutoSalvageAction, toggleSigilLockAction, unequipSigilAction } from './actions/sigilActions';
+import { craftSigilAction, enhanceSigilAction, equipSigilAction, salvageSigilAction, bulkSalvageSigilsAction, setSigilAttunementAction, setSigilAutoSalvageAction, toggleSigilLockAction, unequipSigilAction } from './actions/sigilActions';
 import { generateSigil, generateCraftedSigil } from '../game/systems/sigils/sigilGeneration';
 import { configureSigilForDebug } from '../game/systems/sigils/sigilRuntime';
 import { getSigilTierDefinition } from '../game/content/sigils/sigilTiers';
@@ -790,8 +790,9 @@ export interface GameActions {
   toggleSigilLock: (instanceId: string) => { ok: boolean; reason?: string };
   enhanceSigil: (instanceId: string, options?: import('./actions/sigilActions').SigilEnhancementOptions) => { ok: boolean; reason?: string; rank?: number };
   salvageSigil: (instanceId: string) => { ok: boolean; reason?: string; dust?: number };
+  bulkSalvageSigils: (instanceIds: readonly string[]) => ReturnType<typeof bulkSalvageSigilsAction>;
   setSigilAttunement: (setId: import('../game/types').SigilSetId | null) => void;
-  setSigilAutoSalvage: (quality: 'common' | 'refined', enabled: boolean) => void;
+  setSigilAutoSalvage: (quality: import('../game/types').SigilQuality, enabled: boolean) => void;
   craftSigil: (mode: import('../game/systems/sigils/sigilCrafting').SigilCraftMode, tier: import('../game/types').SigilTier, setId: import('../game/types').SigilSetId, slot?: import('../game/types').SigilSlot) => { ok: boolean; reason?: string; instanceId?: string; cost?: number };
   unlockAllSpells: () => void;
   debugUnlockSpellRankOne: (spellId: SpellId) => void;
@@ -2975,6 +2976,11 @@ export const useGameStore = create<GameStore>()(
       return result;
     },
     setSigilAttunement: (setId) => set((state) => { setSigilAttunementAction(state, setId); return state; }),
+    bulkSalvageSigils: (instanceIds) => {
+      let result: ReturnType<typeof bulkSalvageSigilsAction> = { ok: false, salvagedCount: 0, dustGranted: 0, skippedLocked: 0, skippedEquipped: 0, missing: 0 }
+      set((state) => { result = bulkSalvageSigilsAction(state, instanceIds); return state; })
+      return result
+    },
     setSigilAutoSalvage: (quality, enabled) => set((state) => { setSigilAutoSalvageAction(state, quality, enabled); return state; }),
     craftSigil: (mode, tier, setId, slot) => {
       let result: ReturnType<typeof craftSigilAction> = { ok: false, reason: 'Unable to craft Sigil.' };

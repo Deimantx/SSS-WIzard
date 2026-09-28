@@ -2,6 +2,7 @@ import { SIGIL_SET_IDS } from '../../content/sigils/sigilSets'
 import { getEligibleSigilTraits, SIGIL_TRAIT_IDS } from '../../content/sigils/sigilTraits'
 import { SIGIL_MAIN_STAT_POOLS, SIGIL_STAT_DEFINITIONS } from '../../content/sigils/sigilStats'
 import { SIGIL_TIERS, isSigilTier } from '../../content/sigils/sigilTiers'
+import { SIGIL_AUTO_SALVAGE_DEFAULTS } from '../../content/sigils/sigilDropConfig'
 import { SIGIL_QUALITIES, isSigilQuality, getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
 import type { SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilState, SigilStatId, SigilTier, SigilTraitId } from '../../types'
 
@@ -25,7 +26,7 @@ export const createEmptySigilState = (): SigilState => ({
   traitsUnlockedLifetime: 0,
   discovery: { discoveredSets: {}, discoveredSlotsBySet: {}, bestQualityBySet: {}, bestTierBySet: {}, discoveredTraits: {}, qualitiesFound: {}, tiersFound: {} },
   hasDefeatedWorldTier2Boss: false,
-  autoSalvage: { common: false, refined: false },
+  autoSalvage: { ...SIGIL_AUTO_SALVAGE_DEFAULTS },
 })
 
 export const normalizeSigilInstance = (key: string, value: unknown): SigilInstance | null => {
@@ -148,6 +149,6 @@ export const normalizeSigilState = (input: unknown): SigilState => {
     traitsUnlockedLifetime: Math.max(0, safeInteger(source.traitsUnlockedLifetime)),
     discovery,
     hasDefeatedWorldTier2Boss: source.hasDefeatedWorldTier2Boss === true,
-    autoSalvage: { common: isRecord(source.autoSalvage) && source.autoSalvage.common === true, refined: isRecord(source.autoSalvage) && source.autoSalvage.refined === true },
+    autoSalvage: Object.fromEntries(SIGIL_QUALITIES.map(({ id }) => [id, isRecord(source.autoSalvage) && source.autoSalvage[id] === true])) as Record<SigilQuality, boolean>,
   }
 }

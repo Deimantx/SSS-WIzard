@@ -87,8 +87,8 @@ describe('EquipmentScreen', () => {
     const { container } = render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
     fireEvent.click(container.querySelector('.equipment-armory-card[data-item-id="ember-staff"]') as HTMLElement)
     expect(screen.getByRole('heading', { name: 'Ember Staff' })).toBeTruthy()
-    expect(screen.getByText(/T1 ARTIFACT Â· RANKS 0 \/ 50/)).toBeTruthy()
-    expect(screen.getByText('EQUIPPED Â· Weapon')).toBeTruthy()
+    expect(screen.getByText(/T1 ARTIFACT.*RANKS 0 . 50/)).toBeTruthy()
+    expect(screen.getByText(/EQUIPPED.*Weapon/)).toBeTruthy()
     expect(container.querySelector('.equipment-copy-availability')?.textContent?.replace(/\s+/g, '')).toContain('OWNED1')
   })
 

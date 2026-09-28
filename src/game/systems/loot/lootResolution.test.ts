@@ -46,6 +46,21 @@ describe('monster loot resolution', () => {
     })
   })
 
+  it.each([
+    ['common', .25], ['refined', .85], ['perfect', .98], ['legendary', .999],
+  ] as const)('auto-salvages a future %s Combat drop when enabled', (quality, roll) => {
+    const state = createInitialState()
+    state.sigils.firstDropPityKills = 4
+    state.sigils.autoSalvage[quality] = true
+    let result: { quality: string; instanceId: string; autoSalvaged: boolean; dustGranted: number } | undefined
+
+    resolveMonsterLoot(state, 'forest-wisp', undefined, () => roll, (drop) => { result = drop })
+
+    expect(result).toMatchObject({ quality, autoSalvaged: true })
+    expect(state.sigils.storage[result!.instanceId]).toBeUndefined()
+    expect(result!.dustGranted).toBeGreaterThan(0)
+    expect(state.sigils.discovery.qualitiesFound[quality]).toBe(true)
+  })
   it('emits a structured Sigil loot result for live and offline consumers', () => {
     const state = createInitialState()
     let result: { quality: string; tier: number; instanceId: string; autoSalvaged: boolean } | undefined

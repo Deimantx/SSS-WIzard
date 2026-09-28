@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LockKeyhole, Sparkles, Trash2, Unlock } from 'lucide-react'
-import { Button, GameTooltip, SelectMenu, Toggle } from '../../../../components/ui'
+import { Button, GameTooltip, ModalPortal, SelectMenu, Toggle } from '../../../../components/ui'
 import { SigilBrowser } from '../../../../components/sigils/browser/SigilBrowser'
+import { SigilBulkSalvageModal } from '../../../../components/sigils/SigilBulkSalvageModal'
 import { SigilInspector } from '../../../../components/sigils/SigilInspector'
 import { SigilSetSummary } from '../../../../components/sigils/SigilPresentation'
-import { SIGIL_QUALITIES } from '../../../../game/content/sigils/sigilQualities'
+import { SIGIL_QUALITIES, type SigilQuality } from '../../../../game/content/sigils/sigilQualities'
 import { SIGIL_CRAFT_QUALITY_WEIGHTS } from '../../../../game/content/sigils/sigilDropConfig'
 import { getHighestCraftableSigilTier, SIGIL_TIERS } from '../../../../game/content/sigils/sigilTiers'
 import { getSigilCraftCost } from '../../../../game/systems/sigils/sigilCrafting'
@@ -58,6 +59,7 @@ export function SigilsWorkspace() {
 
 function RefinementWorkspace({ selected, selectedId, revealId, onSelect, onRevealConsumed, cap, onOpenEquipment }: { selected?: SigilInstance; selectedId: string | null; revealId: string | null; onSelect: (instanceId: string | null) => void; onRevealConsumed: () => void; cap: number; onOpenEquipment: () => void }) {
   const state = useGameStore()
+  const [bulkSalvageOpen, setBulkSalvageOpen] = useState(false)
   const equippedIds = useMemo(() => new Set(Object.values(state.sigils.equipped).filter((id): id is string => Boolean(id))), [state.sigils.equipped])
   const equipped = selected ? equippedIds.has(selected.instanceId) : false
   const setCount = selected ? getEquippedSigilSetCounts(state)[selected.setId] ?? 0 : 0
@@ -69,7 +71,6 @@ function RefinementWorkspace({ selected, selectedId, revealId, onSelect, onRevea
   const enhance = () => { if (!selected) return; const result = useGameStore.getState().enhanceSigil(selected.instanceId); if (!result.ok) notify(result.reason ?? 'Unable to enhance.'); else notify('Enhanced to +' + result.rank + '.', 'success') }
   const salvage = () => { if (!selected) return; const result = useGameStore.getState().salvageSigil(selected.instanceId); if (!result.ok) notify(result.reason ?? 'Unable to salvage.'); else onSelect(null) }
   const toggleLock = () => { if (!selected) return; const result = useGameStore.getState().toggleSigilLock(selected.instanceId); if (!result.ok) notify(result.reason ?? 'Unable to change salvage protection.') }
-
   const footer = selected && <div className="sigil-refinement-actions">
     <GameTooltip content={equipped ? 'Unequip this Sigil in the Equipment Vault before salvage.' : selected.locked ? 'Unlock this Sigil before salvage.' : 'Convert this Sigil into Sigil Dust.'}><Button type="button" variant="danger" disabled={equipped || selected.locked} onClick={salvage}><Trash2 size={14} /> SALVAGE</Button></GameTooltip>
     <GameTooltip content={atCap ? selected.rank >= maxRank ? 'This quality has reached its maximum rank.' : 'Global enhancement cap is +' + cap + '.' : insufficientDust ? 'Requires ' + nextCost + ' Sigil Dust.' : 'Spend ' + nextCost + ' Sigil Dust for the next roll.'}><Button type="button" variant="primary" disabled={atCap || insufficientDust} onClick={enhance}><Sparkles size={14} /> ENHANCE · {nextCost}</Button></GameTooltip>
@@ -77,12 +78,15 @@ function RefinementWorkspace({ selected, selectedId, revealId, onSelect, onRevea
     <Button type="button" variant="secondary" onClick={onOpenEquipment}>OPEN IN EQUIPMENT</Button>
   </div>
 
-  return <div className="sigil-refinement-layout">
-    <SigilBrowser storage={state.sigils.storage} equipped={state.sigils.equipped} selectedId={selectedId} onSelect={onSelect} revealInstanceId={revealId} onRevealConsumed={onRevealConsumed} label="SIGIL STORAGE" />
-    <SigilInspector sigil={selected} cap={cap} setCount={setCount} footer={footer} className="sigil-refinement-inspector" />
+  return <div className="sigil-refinement-workspace">
+    <div className="sigil-refinement-tools"><span className="eyebrow">STORAGE MANAGEMENT</span><Button variant="secondary" onClick={() => setBulkSalvageOpen(true)}>BULK SALVAGE</Button></div>
+    <div className="sigil-refinement-layout">
+      <SigilBrowser storage={state.sigils.storage} equipped={state.sigils.equipped} selectedId={selectedId} onSelect={onSelect} revealInstanceId={revealId} onRevealConsumed={onRevealConsumed} label="SIGIL STORAGE" />
+      <SigilInspector sigil={selected} cap={cap} setCount={setCount} footer={footer} className="sigil-refinement-inspector" />
+    </div>
+    <SigilBulkSalvageModal open={bulkSalvageOpen} onClose={() => setBulkSalvageOpen(false)} />
   </div>
 }
-
 function ForgeWorkspace() {
   const state = useGameStore()
   const maxTier = getHighestCraftableSigilTier(state.sigils.highestSourcePowerDefeated)
@@ -116,9 +120,22 @@ function ForgeWorkspace() {
 
 function AttunementWorkspace() {
   const state = useGameStore()
+  const [pendingAutoSalvage, setPendingAutoSalvage] = useState<SigilQuality | null>(null)
   const discoveredSets = Object.keys(state.sigils.discovery.discoveredSets).filter((id) => state.sigils.discovery.discoveredSets[id as SigilSetId]) as SigilSetId[]
+  const toggleAutoSalvage = (quality: SigilQuality, enabled: boolean) => {
+    if (enabled && (quality === 'perfect' || quality === 'legendary')) { setPendingAutoSalvage(quality); return }
+    useGameStore.getState().setSigilAutoSalvage(quality, enabled)
+  }
+  const confirmAutoSalvage = () => {
+    if (pendingAutoSalvage) useGameStore.getState().setSigilAutoSalvage(pendingAutoSalvage, true)
+    setPendingAutoSalvage(null)
+  }
+  const pendingDefinition = pendingAutoSalvage ? SIGIL_QUALITIES.find(({ id }) => id === pendingAutoSalvage) : undefined
   return <div className="sigil-attunement-workspace">
     <section className="sigil-attunement-settings"><span className="eyebrow">SET RESONANCE</span><h3>Attuned Set</h3><p>Attunement increases the chance of finding Sigils from a discovered Set.</p><SelectMenu options={[{ value: 'none', label: 'No attunement' }, ...discoveredSets.map((id) => ({ value: id, label: SIGIL_SETS[id].name }))]} value={state.sigils.attunedSetId ?? 'none'} onChange={(value) => { useGameStore.getState().setSigilAttunement(value === 'none' ? null : value as SigilSetId) }} ariaLabel="Attuned Sigil Set" prefix="SET · " /></section>
-    <section className="sigil-attunement-settings"><span className="eyebrow">SALVAGE PROTECTION</span><h3>Auto-salvage</h3><p>First discoveries are added to your collection before automatic salvage runs.</p><Toggle label="Common Sigils" description="Convert new Common Sigils to Sigil Dust." checked={state.sigils.autoSalvage.common} onChange={(value) => useGameStore.getState().setSigilAutoSalvage('common', value)} /><Toggle label="Refined Sigils" description="Convert new Refined Sigils to Sigil Dust." checked={state.sigils.autoSalvage.refined} onChange={(value) => useGameStore.getState().setSigilAutoSalvage('refined', value)} /></section>
+    <section className="sigil-attunement-settings sigil-auto-salvage-settings"><span className="eyebrow">SALVAGE PROTECTION</span><h3>Auto-salvage</h3><p>Incoming Combat Sigils of enabled qualities are converted directly into Sigil Dust. This does not affect Sigils already in Storage.</p><div className="sigil-auto-salvage-toggles">{SIGIL_QUALITIES.map(({ id, label }) => <Toggle key={id} label={label + ' Sigils'} description={'Convert future ' + label + ' Combat drops directly into Sigil Dust before they enter Storage.'} checked={state.sigils.autoSalvage[id]} onChange={(enabled) => toggleAutoSalvage(id, enabled)} />)}</div></section>
+    <ModalPortal open={pendingAutoSalvage !== null} onClose={() => setPendingAutoSalvage(null)} backdropClassName="sigil-auto-salvage-confirm-backdrop" surfaceClassName="sigil-auto-salvage-confirm" ariaLabel="Confirm high-quality Sigil auto-salvage" ariaLabelledBy="sigil-auto-salvage-confirm-title">
+      <span className={'eyebrow quality-' + pendingAutoSalvage}>HIGH-QUALITY SALVAGE RULE</span><h2 id="sigil-auto-salvage-confirm-title">AUTO-SALVAGE {pendingDefinition?.label.toUpperCase()} SIGILS?</h2><p>Future {pendingDefinition?.label} Combat drops will be converted directly into Sigil Dust before entering Storage.</p>{pendingAutoSalvage === 'legendary' && <p>Legendary is the highest current Sigil Quality.</p>}<div className="sigil-auto-salvage-confirm-actions"><Button variant="secondary" onClick={() => setPendingAutoSalvage(null)}>CANCEL</Button><Button variant="danger" onClick={confirmAutoSalvage}>ENABLE</Button></div>
+    </ModalPortal>
   </div>
 }

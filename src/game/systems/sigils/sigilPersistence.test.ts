@@ -3,6 +3,7 @@ import { createInitialState } from '../../../store/initialState'
 import { loadProfileGame, saveProfileGame, serializeGameState } from '../../../persistence/profileSaveManager'
 import { validateSerializedSave } from '../../../persistence/saveIntegrity'
 import { generateSigil } from './sigilGeneration'
+import { normalizeSigilState } from './sigilStateNormalization'
 import { resolveMonsterLoot } from '../loot/lootResolution'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { spawnEnemy } from '../combat/combatRuntime'
@@ -10,6 +11,10 @@ import { spawnEnemy } from '../combat/combatRuntime'
 const validateState = (state: ReturnType<typeof createInitialState>) => validateSerializedSave(JSON.stringify(serializeGameState(state)), state)
 
 describe('Sigil save invariants', () => {
+  it('normalizes legacy two-quality Auto-Salvage settings into all authored qualities', () => {
+    const normalized = normalizeSigilState({ autoSalvage: { common: true, refined: false } })
+    expect(normalized.autoSalvage).toEqual({ common: true, refined: false, perfect: false, legendary: false })
+  })
   it('round-trips a newly generated +0 Sigil with starting Secondary rolls at rank 0', () => {
     const state = createInitialState()
     const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'legendary', rng: () => .4 })

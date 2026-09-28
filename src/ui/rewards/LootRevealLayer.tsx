@@ -1,6 +1,7 @@
 import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from 'react'
 import { ItemIcon } from '../../components/ui/item'
 import { ITEMS } from '../../game/content/items/items'
+import { SIGIL_QUALITIES } from '../../game/content/sigils/sigilQualities'
 import { useGameStore } from '../../store/gameStore'
 import { setUiPreferences } from '../preferences/uiPreferencesStore'
 import { setNavigationIntent } from '../navigation/navigationIntent'
@@ -34,13 +35,14 @@ export function LootRevealLayer() {
 function LootRevealCard({ reveal, onOpenInventory, onOpenSigil }: { reveal: LootRevealEvent; onOpenInventory: () => void; onOpenSigil: () => void }) {
   const isNew = reveal.items.some((item) => item.isNewDiscovery)
   const hasSigils = reveal.sigils.length > 0
+  const hasStorableSigil = reveal.sigils.some((sigil) => !sigil.autoSalvaged)
   const visibleItems = reveal.items.slice(0, 4)
   const accent = ITEMS[reveal.items[0]?.itemId]?.color ?? 'var(--ui-accent)'
   return <div className={`loot-reveal-card ${isNew || hasSigils ? 'is-new' : ''}`} style={{ '--loot-accent': accent } as CSSProperties} onMouseEnter={() => pauseLootReveal(reveal.id)} onMouseLeave={() => resumeLootReveal(reveal.id)} onFocus={() => pauseLootReveal(reveal.id)} onBlur={() => resumeLootReveal(reveal.id)}>
-    <span className="loot-reveal-heading"><span>✦ {isNew ? 'NEW DISCOVERY' : 'LOOT ACQUIRED'}</span><small>{hasSigils ? 'VIEW SIGIL' : 'VIEW INVENTORY'}</small></span>
-    <span className="loot-reveal-items">{visibleItems.map((item) => <span className="loot-reveal-item" key={item.itemId}><ItemIcon itemId={item.itemId} size="tiny" /><strong>{ITEMS[item.itemId].name}</strong><b>+{item.quantity.toLocaleString()}</b></span>)}{reveal.items.length > visibleItems.length && <span className="loot-reveal-more">+{reveal.items.length - visibleItems.length} more</span>}{reveal.sigils.map((sigil) => <span className="loot-reveal-item loot-reveal-sigil" key={sigil.instanceId}><strong>T{sigil.tier} {sigil.quality} Sigil</strong><b>{sigil.autoSalvaged ? `+${sigil.dustGranted} Dust` : 'Added to Storage'}</b></span>)}</span>
+    <span className="loot-reveal-heading"><span>✦ {isNew ? 'NEW DISCOVERY' : 'LOOT ACQUIRED'}</span><small>{hasSigils ? hasStorableSigil ? 'VIEW SIGIL' : 'VIEW SET' : 'VIEW INVENTORY'}</small></span>
+    <span className="loot-reveal-items">{visibleItems.map((item) => <span className="loot-reveal-item" key={item.itemId}><ItemIcon itemId={item.itemId} size="tiny" /><strong>{ITEMS[item.itemId].name}</strong><b>+{item.quantity.toLocaleString()}</b></span>)}{reveal.items.length > visibleItems.length && <span className="loot-reveal-more">+{reveal.items.length - visibleItems.length} more</span>}{reveal.sigils.map((sigil) => <span className="loot-reveal-item loot-reveal-sigil" key={sigil.instanceId}><strong>T{sigil.tier} {SIGIL_QUALITIES.find(({ id }) => id === sigil.quality)?.label ?? sigil.quality} Sigil</strong><b>{sigil.autoSalvaged ? `AUTO-SALVAGED · +${sigil.dustGranted} DUST` : 'Added to Storage'}</b></span>)}</span>
     {isNew && <span className="loot-reveal-discovery">Added to Collection</span>}
     <span className="loot-reveal-source">{reveal.sourceLabel} · {reveal.sourceDetail}</span>
-    <span className="loot-reveal-actions"><button type="button" className="loot-reveal-action primary" onClick={hasSigils ? onOpenSigil : onOpenInventory}>{hasSigils ? 'VIEW SIGIL' : 'VIEW INVENTORY'}</button>{hasSigils && reveal.items.length > 0 && <button type="button" className="loot-reveal-action" onClick={onOpenInventory}>VIEW INVENTORY</button>}</span>
+    <span className="loot-reveal-actions"><button type="button" className="loot-reveal-action primary" onClick={hasSigils ? onOpenSigil : onOpenInventory}>{hasSigils ? hasStorableSigil ? 'VIEW SIGIL' : 'VIEW SET' : 'VIEW INVENTORY'}</button>{hasSigils && reveal.items.length > 0 && <button type="button" className="loot-reveal-action" onClick={onOpenInventory}>VIEW INVENTORY</button>}</span>
   </div>
 }

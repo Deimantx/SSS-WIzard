@@ -1270,6 +1270,7 @@ export const useGameStore = create<GameStore>()(
     clearCombatDebugOverrides: () =>
       set((state) => {
         resetCombatDebugState(state);
+        recalculateDerivedStats(state);
         return state;
       }),
     resetDebugOverrides: () =>

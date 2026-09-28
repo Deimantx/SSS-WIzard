@@ -1,18 +1,10 @@
 import { clamp } from '../../game/utils'
 import type { DebugOverrides, GameState } from '../../game/types'
-import type { DamageType, ModifierKey } from '../../game/systems/combat/combatTypes'
+import { createDefaultPlayerStatOverrides } from '../../game/systems/combat/playerStatLabOverrides'
+export { createDefaultPlayerStatOverrides } from '../../game/systems/combat/playerStatLabOverrides'
 
 export const COMBAT_TIME_SCALES = [0.25, 0.5, 1, 2, 5, 10] as const
 export type CombatTimeScale = typeof COMBAT_TIME_SCALES[number]
-
-export const createDefaultPlayerStatOverrides = () => ({
-  maxHealthFlat: 0, maxHealthPercent: 0, healthRegenFlat: 0,
-  maxManaFlat: 0, maxManaPercent: 0, manaRegenFlat: 0, manaRegenPercent: 0,
-  spellPowerFlat: 0, spellPowerPercent: 0, manaCostReductionPercent: 0,
-  modifiers: {} as Partial<Record<ModifierKey, number>>,
-  spellDamageByType: {} as Partial<Record<DamageType, number>>,
-  resistanceByType: {} as Partial<Record<DamageType, number>>,
-})
 
 export const createDefaultDebugOverrides = (): DebugOverrides => ({
   playerStats: createDefaultPlayerStatOverrides(),

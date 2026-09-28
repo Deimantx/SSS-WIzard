@@ -17,15 +17,15 @@ describe('Spell Power foundation', () => {
   it('derives one Spell Power total from the balance base and equipped flat bonuses', () => {
     const state = createInitialState()
     expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower)
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 0, total: BALANCE.player.baseSpellPower })
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 0, developerFlat: 0, equipmentPercent: 0, developerPercent: 0, total: BALANCE.player.baseSpellPower })
 
     state.equipment.weapon = 'ember-staff'
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 15, total: BALANCE.player.baseSpellPower + 15 })
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 15, developerFlat: 0, equipmentPercent: 0, developerPercent: 0, total: BALANCE.player.baseSpellPower + 15 })
     expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 15)
     expect(getSpellEquipmentBonusPreview(state, 'flame-burst')).toMatchObject({ spellPower: 15, totalPercent: 0 })
 
     state.artifactProgress['ember-staff'] = { minorRanks: { 'arcane-embers': 10 } }
-    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 37, total: BALANCE.player.baseSpellPower + 37 })
+    expect(getSpellPowerBreakdown(state)).toEqual({ base: BALANCE.player.baseSpellPower, equipment: 37, developerFlat: 0, equipmentPercent: 0, developerPercent: 0, total: BALANCE.player.baseSpellPower + 37 })
     expect(getSpellPower(state)).toBe(BALANCE.player.baseSpellPower + 37)
   })
 
@@ -35,6 +35,22 @@ describe('Spell Power foundation', () => {
     expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, spellSource, 'enemy')).toBe(BALANCE.player.baseSpellPower + 15)
     expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 0.8 }, spellSource, 'player')).toBe((BALANCE.player.baseSpellPower + 15) * 0.8)
     expect(resolveMagnitude(state, { type: 'spell-power', coefficient: 1 }, { actor: 'enemy', kind: 'action', sourceId: 'enemy-action' }, 'player')).toBe(0)
+  })
+
+  it('keeps Developer flat and percentage Spell Power separate from equipment diagnostics', () => {
+    const state = createInitialState()
+    state.equipment.weapon = 'ember-staff'
+    state.debug.playerStats.spellPowerFlat = 40
+    state.debug.playerStats.spellPowerPercent = 0.25
+
+    expect(getSpellPowerBreakdown(state)).toEqual({
+      base: BALANCE.player.baseSpellPower,
+      equipment: 15,
+      developerFlat: 40,
+      equipmentPercent: 0,
+      developerPercent: 0.25,
+      total: (BALANCE.player.baseSpellPower + 55) * 1.25,
+    })
   })
 
   it('authors direct, heal, barrier, and total periodic coefficients without flat spell power', () => {

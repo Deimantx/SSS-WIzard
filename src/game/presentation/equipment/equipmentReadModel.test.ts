@@ -68,6 +68,25 @@ describe('Equipment read model', () => {
     expect(preview.current.critDamageMultiplier).toBe(preview.preview?.critDamageMultiplier)
   })
 
+  it('keeps Player Stat Lab bonuses out of the Equipment sheet and item preview', () => {
+    const state = createInitialState()
+    state.inventory['tideglass-wand'] = 1
+    state.debug.playerStats.maxHealthFlat = 500
+    state.debug.playerStats.maxManaPercent = 0.5
+    state.debug.playerStats.spellPowerFlat = 500
+    state.debug.playerStats.modifiers['crit-chance'] = 0.5
+
+    const clean = createInitialState()
+    const snapshot = getEquipmentStatSnapshot(state, state.equipment)
+    const baseline = getEquipmentStatSnapshot(clean, clean.equipment)
+    const preview = getEquipmentPreview(state, 'tideglass-wand')
+
+    expect(snapshot).toEqual(baseline)
+    expect(preview.current).toEqual(baseline)
+    expect(preview.preview?.spellPower).toBe(baseline.spellPower + 15)
+    expect(preview.impact.spellPower).toBe(15)
+  })
+
   it('ranks compact key changes from preview impact', () => {
     const changes = getEquipmentKeyChanges({ maxHealth: 10, spellPower: 17, maxMana: -42, defense: 3, critChance: 0.04 })
     expect(changes.map(({ key }) => key)).toEqual(['maxHealth', 'spellPower', 'maxMana', 'defense', 'critChance'])

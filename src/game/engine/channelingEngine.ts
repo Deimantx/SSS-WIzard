@@ -33,6 +33,7 @@ export interface ManaCapacityBreakdown {
   equipmentBonus: number
   futureFlatBonus: number
   developerCapacityBonus: number
+  developerCapacityPercent: number
   preAmplification: number
   astralExpansionMultiplier: number
   total: number
@@ -52,8 +53,9 @@ export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCa
   const equipmentBonus = stats.maxMana ?? 0
   const futureFlatBonus = 0
   const developerCapacityBonus = state.debug?.playerStats?.maxManaFlat ?? 0
+  const developerCapacityPercent = state.debug?.playerStats?.maxManaPercent ?? 0
   const rawCapacity = state.player.baseMaxMana + arcaneReservoirBonus + deepReservoirBonus + equipmentBonus + futureFlatBonus + developerCapacityBonus
-  const preAmplification = rawCapacity * (1 + (stats.maxManaPct ?? 0))
+  const preAmplification = rawCapacity * (1 + (stats.maxManaPct ?? 0) + developerCapacityPercent)
   const astralExpansionMultiplier = 1 + pillarLevel(state, 'astral-expansion') * 0.01
   return {
     base: state.player.baseMaxMana,
@@ -64,6 +66,7 @@ export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCa
     preAmplification,
     astralExpansionMultiplier,
     developerCapacityBonus,
+    developerCapacityPercent,
     total: Math.floor(preAmplification * astralExpansionMultiplier),
   }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { advanceArcaneFlux, getArcaneFluxProductionPerSecond } from './channelingRuntime'
 import { advancePlayerMana } from '../mana/playerMana'
+import { getManaCapacityBreakdown } from '../../engine/channelingEngine'
 
 describe('Arcane Flux and Player Mana separation', () => {
   it('generates Flux from Channeling Acolytes and clamps at capacity', () => {
@@ -26,5 +27,14 @@ describe('Arcane Flux and Player Mana separation', () => {
 
     expect(state.player.mana).toBe(10)
     expect(state.tower.resources.arcaneFlux).toBe(0)
+  })
+
+  it('shows Developer Max Mana percentage as a distinct capacity contribution', () => {
+    const state = createInitialState()
+    state.debug.playerStats.maxManaFlat = 25
+    state.debug.playerStats.maxManaPercent = 0.5
+
+    expect(getManaCapacityBreakdown(state)).toMatchObject({ developerCapacityBonus: 25, developerCapacityPercent: 0.5 })
+    expect(getManaCapacityBreakdown(state).total).toBe(Math.floor((state.player.baseMaxMana + 25) * 1.5))
   })
 })

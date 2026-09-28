@@ -19,18 +19,19 @@ export interface PlayerManaCapacityBreakdown {
   base: number
   equipment: number
   equipmentPercent: number
-  developer: number
+  developerFlat: number
+  developerPercent: number
   total: number
 }
 
 export const getPlayerManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>): PlayerManaCapacityBreakdown => {
   const equipment = getEquipmentStats(state).maxMana ?? 0
   const equipmentPercent = getEquipmentStats(state).maxManaPct ?? 0
-  const developer = state.debug?.playerStats?.maxManaFlat ?? 0
+  const developerFlat = state.debug?.playerStats?.maxManaFlat ?? 0
   const permanent = Object.values((state as Partial<GameState>).progress?.permanentManaBonuses ?? {}).reduce((sum, value) => sum + Math.max(0, value), 0)
   const developerPercent = state.debug?.playerStats?.maxManaPercent ?? 0
-  const total = Math.max(0, Math.floor((state.player.baseMaxMana + equipment + developer + permanent) * (1 + equipmentPercent + developerPercent)))
-  return { base: state.player.baseMaxMana, equipment, equipmentPercent, developer, total }
+  const total = Math.max(0, Math.floor((state.player.baseMaxMana + equipment + developerFlat + permanent) * (1 + equipmentPercent + developerPercent)))
+  return { base: state.player.baseMaxMana, equipment, equipmentPercent, developerFlat, developerPercent, total }
 }
 
 export const getPlayerManaRegenBreakdown = (state: Pick<GameState, 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'player' | 'combat' | 'debug' | 'arcaneCore'>>): PlayerManaRegenBreakdown => {

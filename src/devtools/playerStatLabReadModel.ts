@@ -44,7 +44,8 @@ export const getDeveloperPlayerStatLab = (state: GameState) => {
       resistanceBuild: getResistance(buildState, 'player', type),
       resistanceResolved: getResistance(state, 'player', type),
     })),
-    rawModifiers: [
+    activeOverrides: [
+      ...Object.entries(state.debug.playerStats).flatMap(([key, value]) => typeof value === 'number' && value !== 0 ? [{ key, value, actor: 'player' as const, section: 'core' as const }] : []),
       ...Object.entries(state.debug.playerStats.modifiers).filter(([, value]) => value !== 0).map(([key, value]) => ({ key, value, actor: 'player' })),
       ...Object.entries(state.debug.playerStats.spellDamageByType).filter(([, value]) => value !== 0).map(([damageType, value]) => ({ key: 'spell-damage-percent', value, actor: 'player', damageTypes: [damageType] })),
       ...Object.entries(state.debug.playerStats.resistanceByType).filter(([, value]) => value !== 0).map(([damageType, value]) => ({ key: 'resistance-percent', value, actor: 'player', damageTypes: [damageType] })),

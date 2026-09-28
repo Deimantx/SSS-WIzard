@@ -201,6 +201,10 @@
 .developer-command-results small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .developer-command-results > button > span:last-child { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); }
 .developer-scenario-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.developer-scenario-intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; }
+.developer-scenario-intro p { margin: 8px 0 0; max-width: 780px; }
+.developer-snapshot-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.developer-scenario-lab .developer-scenario-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .developer-scenario-card { display: grid; gap: 12px; align-content: space-between; min-width: 0; padding: 12px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel) 82%, transparent); }
 .developer-scenario-card h3 { margin: 5px 0 8px; color: var(--ui-text); font-size: var(--text-md); }
 .developer-scenario-card ul { display: grid; gap: 4px; margin: 0; padding-left: 16px; color: var(--ui-text-muted); font-size: var(--text-xs); }
@@ -217,6 +221,9 @@
   .developer-tools-body { grid-template-columns: 132px minmax(0, 1fr); }
   .developer-tools-content { padding: 13px; }
   .developer-tab-grid, .developer-scenario-grid { grid-template-columns: 1fr; }
+  .developer-scenario-lab .developer-scenario-grid { grid-template-columns: 1fr; }
+  .developer-scenario-intro { grid-template-columns: 1fr; }
+  .developer-snapshot-actions { justify-content: flex-start; }
   .developer-tools-header-actions { gap: 3px; }
   .developer-browser-layout { grid-template-columns: 1fr; }
   .developer-browser-panel, .developer-inspector-panel { max-height: 360px; min-height: 190px; }

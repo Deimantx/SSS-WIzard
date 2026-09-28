@@ -7,6 +7,7 @@ import { getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifac
 import { getEquipmentPrimaryCombatSummary } from './equipmentCombatPresentation'
 import { formatEquipmentStat, getEquipmentStatLabel, isMeaningfulEquipmentStatValue } from './equipmentStatPresentation'
 import { EQUIPMENT_ITEM_SLOT_LABELS, getDefaultEquipmentPosition, getItemPositions } from '../../core/equipment/equipmentRules'
+import { createDefaultPlayerStatOverrides } from '../../systems/combat/playerStatLabOverrides'
 import type { DamageType, EquipmentBuildTag, EquipmentStats, EquipmentPosition, GameState, ItemId } from '../../types'
 
 export type EquipmentSheetState = Pick<GameState, 'player' | 'progress' | 'activities' | 'equipment' | 'inventory' | 'artifactProgress' | 'arcaneCore' | 'crystals'> & Partial<Pick<GameState, 'debug' | 'sigils'>>
@@ -142,9 +143,10 @@ const getStableEquipmentModifiers = (state: EquipmentSheetState, equipment: Game
 })
 
 export const getEquipmentStatSnapshot = (state: EquipmentSheetState, equipment: GameState['equipment']): EquipmentStatSnapshot => {
-  const runtimeState = { ...state, equipment }
+  const buildState = state.debug ? { ...state, debug: { ...state.debug, playerStats: createDefaultPlayerStatOverrides() } } : state
+  const runtimeState = { ...buildState, equipment }
   const sheet = getPlayerSheetCombatStats(runtimeState)
-  const equipmentModifiers = getStableEquipmentModifiers(state, equipment)
+  const equipmentModifiers = getStableEquipmentModifiers(buildState, equipment)
   return {
     maxHealth: sheet.maxHealth,
     healthRegen: sheet.healthRegen,

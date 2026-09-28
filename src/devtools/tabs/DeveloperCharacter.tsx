@@ -40,10 +40,10 @@ export function DeveloperCharacter() {
   const resetLab = state.resetDebugPlayerStats
   const lab = getDeveloperPlayerStatLab(state)
   const effectiveEquipment = getEquipmentStatSnapshot(state, state.equipment)
-  const active = lab.rawModifiers.length > 0 || Object.values(debug.playerStats).some((value) => typeof value === 'number' ? value !== 0 : Object.values(value).some((nested) => nested !== 0))
+  const active = lab.activeOverrides.length > 0
   const setCore = (key: string, value: number) => setValue(`core.${key}`, value)
   const setPercent = (path: string, value: number) => setValue(path, value / 100)
-  const setModifier = (key: string, value: number) => setValue(`modifiers.${key}`, ['crit-chance', 'crit-damage'].includes(key) ? value / 100 : value / 100)
+  const setModifier = (key: string, value: number) => setValue(`modifiers.${key}`, value / 100)
   const resetSection = (section: keyof typeof SECTION_BY_PATH) => SECTION_BY_PATH[section].forEach((path) => setValue(path, 0))
   const setHealthPercent = (value: number) => setPlayer({ health: Math.round(player.maxHealth * value / 100) })
   const setManaPercent = (value: number) => setPlayer({ mana: Math.round(player.maxMana * value / 100) })
@@ -83,7 +83,7 @@ export function DeveloperCharacter() {
           {SUSTAIN_FIELDS.map(([key, label]) => <NumberField key={key} label={label} value={key === 'barrier-received-flat' ? debug.playerStats.modifiers[key] ?? 0 : (debug.playerStats.modifiers[key] ?? 0) * 100} onChange={(value) => key === 'barrier-received-flat' ? setValue(`modifiers.${key}`, value) : setPercent(`modifiers.${key}`, value)} />)}
         </div><p className="developer-debug-note">Status definitions and active status browsing remain in Combat → Status Lab.</p></section>
       </div>
-      <details className="developer-diagnostics"><summary>Advanced · raw scoped debug modifiers ({lab.rawModifiers.length})</summary><pre>{JSON.stringify(lab.rawModifiers, null, 2)}</pre></details>
+      <details className="developer-diagnostics"><summary>Advanced · active Player Stat Lab overrides ({lab.activeOverrides.length})</summary><pre>{JSON.stringify(lab.activeOverrides, null, 2)}</pre></details>
     </Card>
 
     <Card title="Player values & live controls" className="developer-debug-card">

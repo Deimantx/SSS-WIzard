@@ -10,7 +10,7 @@ describe('Player Stat Lab runtime read model', () => {
   it('starts at zero, separates the authored build from debug bonuses, and resets derived resources', () => {
     const state = createInitialState()
     const clean = getDeveloperPlayerStatLab(state)
-    expect(clean.rawModifiers).toEqual([])
+    expect(clean.activeOverrides).toEqual([])
     state.debug.playerStats.maxHealthFlat = 500
     state.debug.playerStats.maxManaFlat = 200
     state.debug.playerStats.spellPowerFlat = 500
@@ -19,7 +19,11 @@ describe('Player Stat Lab runtime read model', () => {
     expect(lab.resolved.maxHealth - lab.build.maxHealth).toBe(500)
     expect(lab.resolved.maxMana - lab.build.maxMana).toBe(200)
     expect(lab.resolved.spellPower - lab.build.spellPower).toBe(500)
-    expect(lab.rawModifiers).toEqual([])
+    expect(lab.activeOverrides).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'maxHealthFlat', value: 500, section: 'core' }),
+      expect.objectContaining({ key: 'maxManaFlat', value: 200, section: 'core' }),
+      expect.objectContaining({ key: 'spellPowerFlat', value: 500, section: 'core' }),
+    ]))
   })
 
   it('injects modifiers for the player only and scopes elemental damage and resistance by type', () => {

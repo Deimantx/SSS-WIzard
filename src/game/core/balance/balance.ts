@@ -8,7 +8,7 @@ export const BALANCE = {
   research: { maxPreparedSlots: 4, arcaneFluxPerItem: 5, durationPerItemMs: 10000, matchingXp: 12, nonMatchingXp: 8 },
   transmutation: {},
   dungeon: { encounterDelayMs: 5000, whisperingWoodsThreatRequired: 5000 },
-  huntersOrder: { rerollMarkCost: 1, skipMarkCost: 3, baseBlockSlots: 1,
+  huntersOrder: { rerollMarkCost: 4, skipMarkCost: 6, baseBlockSlots: 1, baseContractChoices: 3,
     targetRanges: { routine: [12, 18], special: [18, 28], prestigious: [25, 40] },
     reputationPerKill: 25, reputationMultipliers: { routine: 1, special: 1.8, prestigious: 3.5 }, markRewards: { routine: 3, special: 6, prestigious: 12 }, markedQuarryBonusPerRank: 0.1, deepPocketsMarksPerRank: 1,
     tierMinimumReputation: { routine: 0, special: 250, prestigious: 3500 },

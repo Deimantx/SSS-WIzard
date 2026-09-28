@@ -30,11 +30,44 @@ import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
-import { ensureHunterContractChoices, recordHunterKill, getHunterAuthorization } from '../huntersOrder/huntersOrderRuntime'
+import { ensureHunterContractChoices, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage } from '../huntersOrder/huntersOrderRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
 export const applyBarrier = (state: GameState, amount: number) => gainBarrierRuntime(state, amount, { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] }, 'player', ['barrier'], { mode: 'replace', durationMs: 9000 })
+
+const isHunterGround = (dungeonId: DungeonId) => getCombatLocationByDungeonId(dungeonId)?.type === 'hunting-ground'
+
+export const canQueueDungeonBoss = (state: GameState, dungeonId: DungeonId) => {
+  const dungeon = DUNGEONS[dungeonId]
+  if (!dungeon || !isHunterGround(dungeonId)) return Boolean(dungeon)
+  return getHunterAuthorization(state, dungeon.boss, dungeonId).authorized
+}
+
+export const queueAutoHuntBoss = (state: GameState, dungeonId: DungeonId) => {
+  const dungeon = DUNGEONS[dungeonId]
+  if (!dungeon || !state.progress.autoHuntBossByDungeon[dungeonId] || !canQueueDungeonBoss(state, dungeonId)) return false
+  const requirement = resolveBossThreatRequirement(dungeonId, state.worldTier.current)
+  const currentEnemyId = state.combat.enemyId
+  if (state.combat.threatCleared < requirement || state.combat.pendingBossId || (currentEnemyId && isBossMonster(MONSTERS[currentEnemyId]))) return false
+  state.combat.pendingBossId = dungeon.boss
+  pushNotification(state, `Auto Hunt Boss queued ${MONSTERS[dungeon.boss].name}`, 'info')
+  return true
+}
+
+/** Parks contract-gated Hunting Ground combat without resolving the current enemy as a kill. */
+export const stopHunterContractCombat = (state: GameState, notification?: string) => {
+  const dungeonId = state.combat.dungeonId
+  if (!dungeonId || !isHunterGround(dungeonId)) return false
+  if (state.combat.enemyId) abandonCurrentEncounter(state)
+  state.combat.active = false
+  state.combat.targetEnemyId = null
+  state.combat.pendingBossId = null
+  state.combat.encounterTimerMs = 0
+  clearCombatSpellRuntime(state)
+  if (notification) pushNotification(state, notification, 'info', { key: 'hunter-contract-combat-stopped', cooldownMs: 1000 })
+  return true
+}
 
 /** DEV-only status fixture routed through the same application/trigger path as combat. */
 export const debugApplyStatus = (state: GameState, actor: 'player' | 'enemy', statusId: StatusId, durationMs?: number | null, stacks?: number) => {
@@ -80,8 +113,7 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
   const authorization = getHunterAuthorization(state, enemyId, state.combat.dungeonId)
   if (!authorization.authorized) {
-    const messages = { 'order-locked': 'Unlock Hunters Order before hunting this creature.', 'contract-required': 'Accept a matching Hunt Contract before engaging this creature.', 'contract-target-mismatch': 'Your active Hunt Contract does not authorize this target.', 'contract-tier-locked': 'Your Hunter Rank does not authorize this contract tier.', 'target-not-authorized': 'This creature is not authorized for the active Hunt Contract.' }
-    pushNotification(state, messages[authorization.reason], 'warning', { key: `hunter-authorization:${authorization.reason}:${enemyId}`, cooldownMs: 1000 })
+    pushNotification(state, getHunterAuthorizationMessage(authorization, MONSTERS[enemyId]?.name), 'warning', { key: `hunter-authorization:${authorization.reason}:${enemyId}`, cooldownMs: 1000 })
     return false
   }
   const monster = MONSTERS[enemyId]
@@ -168,14 +200,20 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
     if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
     return spawned
   }
+  if (state.combat.pendingBossId && (state.combat.pendingBossId !== dungeon.boss || !canQueueDungeonBoss(state, dungeon.id))) {
+    state.combat.pendingBossId = null
+    if (isHunterGround(dungeon.id)) pushNotification(state, 'Auto Hunt paused: the active Hunt Contract does not authorize the Apex.', 'warning', { key: 'hunter-apex-auto-hunt-unauthorized', cooldownMs: 1000 })
+  }
+  queueAutoHuntBoss(state, dungeon.id)
   if (state.combat.pendingBossId) {
     const boss = state.combat.pendingBossId
     state.combat.pendingBossId = null
     if (MONSTERS[boss]) {
       const spawned = spawnEnemy(state, boss, uiEvents)
-      if (!spawned) state.combat.pendingBossId = boss
-      else pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
-      if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
+      if (!spawned && canQueueDungeonBoss(state, dungeon.id)) state.combat.pendingBossId = boss
+      else if (spawned) pushNotification(state, `${MONSTERS[boss].name} arrives via Auto Hunt`, 'warning')
+      if (!spawned && !canQueueDungeonBoss(state, dungeon.id)) stopHunterContractCombat(state)
+      else if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
       return spawned
     }
   }
@@ -186,7 +224,8 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
   }
   const nextEnemyId = targetedEnemyId ?? chooseMonster(dungeon.monsterPool, () => nextCombatRandom(state))
   const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
-  if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
+  if (!spawned && !getHunterAuthorization(state, nextEnemyId, dungeon.id).authorized) stopHunterContractCombat(state)
+  else if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
   return spawned
 }
 
@@ -323,15 +362,16 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
     if (beforeThreat < requirement && afterThreat >= requirement) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
-    if (state.progress.autoHuntBossByDungeon[dungeon.id] && afterThreat >= requirement && !state.combat.pendingBossId) {
-      state.combat.pendingBossId = dungeon.boss
-      pushNotification(state, `Auto Hunt Boss queued ${MONSTERS[dungeon.boss].name}`, 'info')
-    }
+    if (afterThreat >= requirement) queueAutoHuntBoss(state, dungeon.id)
   }
   if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
   if (encounterWorldTier === 2 && state.worldTier.highestUnlocked >= 2) state.progress.chronicle.eventFlags['first-wt2-kill'] = true
   recordGuildEnemyKill(state, enemyId, state.combat.dungeonId ?? 'whispering-woods', bossDefeated)
+  const hadHunterContract = Boolean(state.progress.huntersOrder.activeContract)
   recordHunterKill(state, enemyId, state.combat.dungeonId)
+  if (hadHunterContract && !state.progress.huntersOrder.activeContract && isHunterGround(dungeon.id)) {
+    stopHunterContractCombat(state, 'HUNT CONTRACT COMPLETE / Accept a new Contract to continue hunting in Gloamridge.')
+  }
   reconcileChronicleProgress(state)
 }
 

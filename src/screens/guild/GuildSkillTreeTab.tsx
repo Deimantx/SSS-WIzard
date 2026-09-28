@@ -20,5 +20,5 @@ export function GuildSkillBranches({ state }: { state: GameStore }) {
 }
 
 export function GuildSkillNote() {
-  return <div className="guild-v3-skill-note"><Sparkles size={15} /><span>Advancement Points come from Guild rank promotions and completed Registry Sets. Your order of investment never permanently locks another node.</span></div>
+  return <div className="guild-v3-skill-note"><Sparkles size={15} /><span>Advancement Points come from Guild rank promotions, completed Registry Sets, Guild Projects, and the first completion of eligible Commission Chains. Each Chain awards these points only once. Your order of investment never permanently locks another node.</span></div>
 }

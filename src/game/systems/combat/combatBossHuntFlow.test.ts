@@ -51,4 +51,37 @@ describe('targeted Boss and Auto Hunt flow', () => {
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
     expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(false)
   })
+
+  it('does not queue a Hunter Apex without its matching Boss Contract', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    state.combat.targetEnemyId = 'ashen-tracker'
+    state.combat.threatCleared = DUNGEONS['hunters-ground'].threatRequired
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
+    state.progress.autoHuntBossUnlocked = true
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.activeContract = { id: 'normal-hunt', targetSpec: { type: 'region', dungeonId: 'hunters-ground' }, target: 2, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 3 }
+    useGameStore.setState(state)
+
+    useGameStore.getState().toggleAutoHunt('hunters-ground')
+    expect(useGameStore.getState().combat.pendingBossId).toBeNull()
+  })
+
+  it('queues the Hunter Apex once a matching Boss Contract authorizes it', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    state.combat.targetEnemyId = 'ashen-tracker'
+    state.combat.threatCleared = DUNGEONS['hunters-ground'].threatRequired
+    state.progress.autoHuntBossUnlocked = true
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.reputation = 7000
+    state.progress.huntersOrder.activeContract = { id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 12 }
+    useGameStore.setState(state)
+
+    useGameStore.getState().toggleAutoHunt('hunters-ground')
+
+    expect(useGameStore.getState().combat.pendingBossId).toBe('nightglass-alpha')
+  })
 })

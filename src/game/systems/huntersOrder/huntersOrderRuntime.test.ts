@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade } from './huntersOrderRuntime'
+import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade } from './huntersOrderRuntime'
 import { BALANCE } from '../../core/balance/balance'
 import type { HunterContractState } from '../../types'
 
@@ -82,7 +82,7 @@ describe('Hunter Order hardened runtime', () => {
     state.combat.pendingBossId = 'nightglass-alpha'
     expect(spawnNextEnemy(state)).toBe(false)
     expect(state.combat.enemyId).toBeNull()
-    expect(state.combat.pendingBossId).toBe('nightglass-alpha')
+    expect(state.combat.pendingBossId).toBeNull()
     expect(DUNGEONS['hunters-ground'].boss).toBe('nightglass-alpha')
   })
 
@@ -106,7 +106,7 @@ describe('Hunter Order hardened runtime', () => {
     const offer = state.progress.huntersOrder.availableContracts[0]
     expect(acceptHunterContract(state, offer.id)).toBe(true)
     expect(skipHunterContract(state)).toBe(true)
-    expect(state.progress.huntersOrder.hunterMarks).toBe(costAfterReroll - 3)
+    expect(state.progress.huntersOrder.hunterMarks).toBe(costAfterReroll - 6)
     expect(purchaseHunterUpgrade(state, 'trail-kit')).toBe(true)
     expect(purchaseHunterUpgrade(state, 'trail-kit')).toBe(true)
     expect(state.progress.huntersOrder.purchasedUpgrades['trail-kit']).toBe(2)
@@ -127,6 +127,33 @@ describe('Hunter Order hardened runtime', () => {
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-tier-locked' })
     state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
     expect(canHuntMonster(state, 'nightglass-alpha', 'hunters-ground')).toBe(true)
+  })
+
+  it('gates authored upgrades by Hunter Rank and adds the Contract Portfolio choices', () => {
+    const state = unlock()
+    const order = state.progress.huntersOrder
+    order.hunterMarks = 100
+    expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices)
+    expect(getHunterUpgradePurchaseStatus(state, 'contract-portfolio')).toMatchObject({ canPurchase: false, reason: 'rank-required', requiredRank: { id: 'scout' } })
+    expect(purchaseHunterUpgrade(state, 'contract-portfolio')).toBe(false)
+
+    order.reputation = 250
+    expect(purchaseHunterUpgrade(state, 'contract-portfolio')).toBe(true)
+    expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices + 1)
+    expect(order.availableContracts).toHaveLength(Math.min(getHunterContractChoiceCount(state), 5))
+  })
+
+  it('reduces Reroll and Skip costs through their authored upgrades', () => {
+    const state = unlock()
+    const order = state.progress.huntersOrder
+    order.reputation = 6500
+    order.hunterMarks = 200
+    expect(getHunterRerollMarkCost(state)).toBe(BALANCE.huntersOrder.rerollMarkCost)
+    expect(getHunterSkipMarkCost(state)).toBe(BALANCE.huntersOrder.skipMarkCost)
+    expect(purchaseHunterUpgrade(state, 'negotiated-rerolls')).toBe(true)
+    expect(purchaseHunterUpgrade(state, 'order-privilege')).toBe(true)
+    expect(getHunterRerollMarkCost(state)).toBe(BALANCE.huntersOrder.rerollMarkCost - 1)
+    expect(getHunterSkipMarkCost(state)).toBe(BALANCE.huntersOrder.skipMarkCost - 1)
   })
 
   it('requires a matching explicit Boss contract for Nightglass Alpha at Master Hunter', () => {

@@ -19,6 +19,16 @@ const prepare = () => {
   return state
 }
 
+const prepareHunter = (targetSpec: { type: 'monster'; monsterId: 'ashen-tracker' | 'gloamfang-stalker' } = { type: 'monster', monsterId: 'ashen-tracker' }) => {
+  const state = prepare()
+  state.combat.dungeonId = 'hunters-ground'
+  state.combat.targetEnemyId = 'ashen-tracker'
+  state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+  state.progress.huntersOrder.activeContract = { id: 'test-hunt', targetSpec, target: 1, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
+  spawnEnemy(state, 'ashen-tracker')
+  return state
+}
+
 const installStoreState = (state: ReturnType<typeof prepare>) => {
   useGameStore.setState({ ...useGameStore.getState(), ...state })
 }
@@ -143,6 +153,86 @@ describe('Whispering Woods targeted farming', () => {
     expect(next.progress.lifetimeKills).toBe(killsBefore)
     expect(next.resonance).toEqual(resonanceBefore)
     expect(next.arcaneCore.totalPointsEarned).toBe(arcanePointsBefore)
+  })
+
+  it('does not abandon a valid Gloamridge encounter when the requested quarry is unauthorized', () => {
+    const state = prepareHunter()
+    state.combat.enemyHp = 123
+    state.combat.encounterTimerMs = 456
+    installStoreState(state)
+    const locationId = getCombatLocationByDungeonId('hunters-ground')!.id
+
+    expect(useGameStore.getState().huntCombatTarget(locationId, 'gloamfang-stalker')).toBe(false)
+    const next = useGameStore.getState()
+    expect(next.combat.enemyId).toBe('ashen-tracker')
+    expect(next.combat.targetEnemyId).toBe('ashen-tracker')
+    expect(next.combat.enemyHp).toBe(123)
+    expect(next.combat.encounterTimerMs).toBe(456)
+    expect(next.notifications[next.notifications.length - 1]?.text).toContain('does not authorize this target')
+  })
+
+  it('rejects an unauthorized setCombatTarget request without changing the target', () => {
+    const state = prepareHunter()
+    state.combat.enemyHp = 123
+    state.combat.encounterTimerMs = 456
+    installStoreState(state)
+
+    expect(useGameStore.getState().setCombatTarget('gloamfang-stalker')).toBe(false)
+    const next = useGameStore.getState()
+    expect(next.combat.enemyId).toBe('ashen-tracker')
+    expect(next.combat.targetEnemyId).toBe('ashen-tracker')
+    expect(next.combat.enemyHp).toBe(123)
+    expect(next.combat.encounterTimerMs).toBe(456)
+  })
+
+  it('parks Gloamridge after the kill that completes the active Contract', () => {
+    const state = prepareHunter()
+    state.combat.pendingBossId = 'nightglass-alpha'
+    state.combat.enemyHp = 0
+
+    finishEnemy(state)
+
+    expect(state.progress.huntersOrder.activeContract).toBeNull()
+    expect(state.progress.huntersOrder.totalContractsCompleted).toBe(1)
+    expect(state.progress.lifetimeKillsByMonster['ashen-tracker']).toBe(1)
+    expect(state.combat.active).toBe(false)
+    expect(state.combat.dungeonId).toBe('hunters-ground')
+    expect(state.combat.targetEnemyId).toBeNull()
+    expect(state.combat.pendingBossId).toBeNull()
+    expect(state.notifications.some((note) => note.text.includes('HUNT CONTRACT COMPLETE') && note.text.includes('Gloamridge'))).toBe(true)
+  })
+
+  it('stops an offline Gloamridge simulation as soon as its Contract completes', async () => {
+    const state = prepareHunter()
+    state.offlineBankMs = 5_000
+    state.combat.enemyHp = 0
+    const { advanceWithOfflineBank } = await import('../offline-bank/offlineBankSimulation')
+
+    const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), () => {}, undefined, {})
+
+    expect(result.ok).toBe(true)
+    expect(state.progress.huntersOrder.totalContractsCompleted).toBe(1)
+    expect(state.progress.lifetimeKillsByMonster['ashen-tracker']).toBe(1)
+    expect(state.combat.active).toBe(false)
+    expect(state.combat.targetEnemyId).toBeNull()
+    expect(state.combat.pendingBossId).toBeNull()
+  })
+
+  it('shuts down active Gloamridge combat when the current Contract is skipped', () => {
+    const state = prepareHunter()
+    state.progress.huntersOrder.hunterMarks = 10
+    state.combat.enemyHp = 123
+    state.combat.threatCleared = 456
+    installStoreState(state)
+
+    expect(useGameStore.getState().skipHunterContract()).toBe(true)
+    const next = useGameStore.getState()
+    expect(next.combat.active).toBe(false)
+    expect(next.combat.dungeonId).toBe('hunters-ground')
+    expect(next.combat.enemyId).toBeNull()
+    expect(next.combat.targetEnemyId).toBeNull()
+    expect(next.combat.pendingBossId).toBeNull()
+    expect(next.combat.threatCleared).toBe(456)
   })
 
   it('keeps the same active target instance intact when HUNT TARGET is repeated', () => {

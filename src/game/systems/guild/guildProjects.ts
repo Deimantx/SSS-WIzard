@@ -23,7 +23,7 @@ export const contributeGuildProject = (state: GameState, projectId: string, item
     guild.completedProjectIds.push(projectId)
     state.progress.guildReputation = safe(state.progress.guildReputation) + project.reputationReward
     state.progress.guildPointsEarned = safe(state.progress.guildPointsEarned) + project.advancementPointsReward
-    pushNotification(state, `${project.name} completed ? +${project.reputationReward} Guild Reputation ? +${project.advancementPointsReward} Advancement Point.`, 'success')
+    pushNotification(state, `${project.name} completed · +${project.reputationReward} Guild Reputation · +${project.advancementPointsReward} Advancement Point.`, 'success')
     reconcileChronicleProgress(state)
   }
   return true

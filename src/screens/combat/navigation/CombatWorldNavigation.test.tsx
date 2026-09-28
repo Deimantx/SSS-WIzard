@@ -81,6 +81,42 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('button', { name: /HUNT TARGET/ }).hasAttribute('disabled')).toBe(true)
   })
 
+  it('requires a Hunt Contract before entering any Hunter quarry', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    useGameStore.setState(state)
+    renderNavigation()
+
+    fireEvent.click(screen.getByRole('button', { name: /Ashen Tracker/ }))
+    expect(screen.getByText('HUNT CONTRACT REQUIRED')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /HUNT TARGET/ })).toHaveProperty('disabled', true)
+  })
+
+  it.each([
+    ['monster', { type: 'monster', monsterId: 'ashen-tracker' }, ['Ashen Tracker']],
+    ['family', { type: 'family', familyId: 'Gloamridge Predators' }, ['Ashen Tracker', 'Gloamfang Stalker']],
+    ['alignment', { type: 'alignment', alignmentId: 'Wild' }, ['Ashen Tracker', 'Gloamfang Stalker']],
+    ['region', { type: 'region', dungeonId: 'hunters-ground' }, ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute']],
+  ] as const)('enables the canonical eligible quarry list for a %s Contract', (_kind, targetSpec, eligibleNames) => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.activeContract = { id: 'integration-contract', targetSpec, target: 5, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    useGameStore.setState(state)
+    renderNavigation()
+
+    for (const name of ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute']) {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }))
+      const hunt = screen.getByRole('button', { name: /HUNT TARGET/ })
+      expect(hunt).toHaveProperty('disabled', !eligibleNames.some((eligibleName) => eligibleName === name))
+    }
+  })
+
   it('shows Apex rank and Boss Contract requirements when Gloamridge Threat is ready', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
@@ -96,6 +132,25 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByText('MASTER HUNTER RANK AND APEX / BOSS CONTRACT REQUIRED')).toBeTruthy()
     expect(screen.getByText('APEX HUNT LOCKED')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'ENGAGE BOSS' })).toBeNull()
+  })
+
+  it('keeps a ready Apex disabled for a normal Region Contract and enables the matching Boss Contract', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.reputation = 7000
+    state.progress.huntersOrder.activeContract = { id: 'region-hunt', targetSpec: { type: 'region', dungeonId: 'hunters-ground' }, target: 5, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 12 }
+    state.combat.active = true
+    state.combat.dungeonId = 'hunters-ground'
+    state.combat.threatCleared = Number.MAX_SAFE_INTEGER
+    useGameStore.setState(state)
+    const { rerender } = renderNavigation()
+    expect(screen.getByText('ACTIVE CONTRACT MUST BE A MATCHING BOSS CONTRACT')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'ENGAGE BOSS' })).toBeNull()
+
+    useGameStore.setState((current) => { current.progress.huntersOrder.activeContract = { id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 12 }; return current })
+    rerender(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+    expect(screen.getByRole('button', { name: 'ENGAGE BOSS' })).toBeTruthy()
   })
 
   it('distinguishes the selected target from the target currently being hunted', () => {

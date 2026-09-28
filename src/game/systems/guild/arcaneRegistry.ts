@@ -42,7 +42,7 @@ export const registerArcaneRegistryEntry = (state: GameState, itemId: ItemId) =>
     state.progress.arcaneRegistry.completedSetIds.push(set.id)
     state.progress.guildReputation = safeInt(state.progress.guildReputation) + set.reputationReward
     state.progress.guildPointsEarned = safeInt(state.progress.guildPointsEarned) + set.advancementPointsReward
-    pushNotification(state, `${set.name} completed ? +${set.reputationReward} Reputation ? +${set.advancementPointsReward} Advancement Point.`, 'success')
+    pushNotification(state, `${set.name} completed · +${set.reputationReward} Reputation · +${set.advancementPointsReward} Advancement Point.`, 'success')
   }
   return true
 }

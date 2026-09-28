@@ -779,7 +779,7 @@ export interface ArcaneRegistryProgress {
 
 export type HunterRankId = 'tracker' | 'scout' | 'stalker' | 'warden' | 'veteran' | 'master-hunter'
 export type HunterContractTier = 'routine' | 'special' | 'prestigious'
-export type HunterUpgradeId = 'trail-kit' | 'marked-quarry' | 'extended-trails' | 'deep-pockets'
+export type HunterUpgradeId = 'trail-kit' | 'marked-quarry' | 'extended-trails' | 'deep-pockets' | 'contract-portfolio' | 'negotiated-rerolls' | 'order-privilege'
 export type HunterContractTarget =
   | { type: 'monster'; monsterId: MonsterId }
   | { type: 'family'; familyId: string }

@@ -233,6 +233,37 @@ const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
       },
     ],
   },
+  "ashen-tracker-pursuit": {
+    id: "ashen-tracker-pursuit",
+    name: "Relentless Pursuit",
+    description: "Opens with a short burst of Haste, then pressures the quarry with a bleeding rake.",
+    rules: [{ id: "ashen-tracker-pursuit-start", event: "on-combat-start", effects: [applyStatus("haste", 5000)], oncePerEncounter: true }],
+  },
+  "gloamfang-shadowstep": {
+    id: "gloamfang-shadowstep",
+    name: "Shadowstep",
+    description: "Begins each hunt veiled, then exposes its quarry before a heavy pounce.",
+    rules: [{ id: "gloamfang-shadowstep-start", event: "on-combat-start", effects: [applyStatus("spectral-fade", 3500)], oncePerEncounter: true }],
+  },
+  "runehorn-leyplate": {
+    id: "runehorn-leyplate",
+    name: "Leyplate",
+    description: "Fortification hardens its rune-marked hide against incoming damage.",
+    modifiers: [{ key: "damage-taken-percent", value: -0.12, condition: { type: "self-has-status", statusId: "fortified" } }],
+  },
+  "nightglass-alpha-hide": {
+    id: "nightglass-alpha-hide",
+    name: "Nightglass Hide",
+    description: "Its mirrored hide turns aside 18% of damage while above half Health.",
+    modifiers: [{ key: "damage-taken-percent", value: -0.18, condition: { type: "self-hp-above-percent", percent: 50 } }],
+  },
+  "nightglass-alpha-frenzy": {
+    id: "nightglass-alpha-frenzy",
+    name: "Nightglass Frenzy",
+    description: "Deals 25% more damage to Vulnerable quarry. Below half Health, gains Haste and accelerates into its Frenzy pattern.",
+    modifiers: [{ key: "damage-dealt-percent", value: 0.25, condition: { type: "target-has-status", statusId: "vulnerable" } }],
+    rules: [{ id: "nightglass-alpha-frenzy-threshold", event: "on-hp-threshold", condition: { type: "self-hp-below-percent", percent: 50 }, effects: [applyStatus("haste"), { type: "set-action-pattern", target: "self", patternId: "frenzy" }], oncePerEncounter: true }],
+  },
 };
 
 export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {

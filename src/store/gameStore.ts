@@ -39,8 +39,11 @@ import {
   debugApplyStatus,
   spawnEnemy,
   spawnNextEnemy,
+  queueAutoHuntBoss,
+  stopHunterContractCombat,
   type CombatLootObserver,
 } from "../game/systems/combat/combatRuntime";
+import { getHunterAuthorization, getHunterAuthorizationMessage } from "../game/systems/huntersOrder/huntersOrderRuntime";
 import {
   canManuallyEngageDungeonBoss,
   isAutoHuntEnabledForDungeon,
@@ -1993,8 +1996,9 @@ export const useGameStore = create<GameStore>()(
         });
         return false;
       }
-      if (dungeonId === 'hunters-ground' && !currentState.progress.huntersOrder.activeContract) {
-        set((state) => { pushNotification(state, 'Accept a Hunt Contract before engaging Hunter-exclusive creatures.', 'warning', { key: 'hunter-contract-required', cooldownMs: 1000 }); return state; });
+      const authorization = getHunterAuthorization(currentState, targetEnemyId, dungeonId)
+      if (!authorization.authorized) {
+        set((state) => { pushNotification(state, getHunterAuthorizationMessage(authorization, MONSTERS[targetEnemyId]?.name), 'warning', { key: `hunter-authorization:${authorization.reason}:${targetEnemyId}`, cooldownMs: 1000 }); return state; })
         return false;
       }
       const sameLocation = Boolean(
@@ -2075,8 +2079,9 @@ export const useGameStore = create<GameStore>()(
           );
           return state;
         }
-        if (dungeonId === 'hunters-ground' && !state.progress.huntersOrder.activeContract) {
-          pushNotification(state, 'Accept a Hunt Contract before engaging Hunter-exclusive creatures.', 'warning', { key: 'hunter-contract-required', cooldownMs: 1000 });
+        const authorization = getHunterAuthorization(state, enemyId, dungeonId)
+        if (!authorization.authorized) {
+          pushNotification(state, getHunterAuthorizationMessage(authorization, MONSTERS[enemyId]?.name), 'warning', { key: `hunter-authorization:${authorization.reason}:${enemyId}`, cooldownMs: 1000 })
           return state;
         }
         if (state.combat.targetEnemyId === enemyId) {
@@ -2218,20 +2223,7 @@ export const useGameStore = create<GameStore>()(
             `Auto Hunt disabled. ${MONSTERS[dungeon.boss].name} will not be queued.`,
           );
         }
-        if (
-          enabled &&
-          activeLocation &&
-          state.combat.threatCleared >= threatRequired &&
-          !bossActive &&
-          !state.combat.pendingBossId
-        ) {
-          state.combat.pendingBossId = dungeon.boss;
-          pushNotification(
-            state,
-            `Auto Hunt Boss queued ${MONSTERS[dungeon.boss].name}`,
-            "info",
-          );
-        }
+        if (enabled && activeLocation && state.combat.threatCleared >= threatRequired && !bossActive) queueAutoHuntBoss(state, dungeonId);
         return state;
       }),
     killCurrentEnemy: () =>
@@ -3067,7 +3059,7 @@ export const useGameStore = create<GameStore>()(
     debugGrantHunterMarks: (amount) => set((state) => { debugGrantHunterMarksAction(state, amount); return state; }),
     debugCompleteActiveHunterContract: () => { let ok = false; set((state) => { ok = debugCompleteActiveHunterContractAction(state); reconcileChronicleProgress(state); return state; }); return ok; },
     acceptHunterContract: (contractId) => { let ok = false; set((state) => { ok = acceptHunterContractAction(state, contractId); return state; }); return ok; },
-    skipHunterContract: () => { let ok = false; set((state) => { ok = skipHunterContractAction(state); return state; }); return ok; },
+    skipHunterContract: () => { let ok = false; set((state) => { ok = skipHunterContractAction(state); if (ok) stopHunterContractCombat(state); return state; }); return ok; },
     rerollHunterContracts: () => { let ok = false; set((state) => { ok = rerollHunterContractsAction(state); return state; }); return ok; },
     purchaseHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = purchaseHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
     setHunterTargetBlocked: (monsterId, blocked) => { let ok = false; set((state) => { ok = setHunterTargetBlockedAction(state, monsterId, blocked); return state; }); return ok; },

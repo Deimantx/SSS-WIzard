@@ -359,6 +359,7 @@ export type ModifierKey =
   | 'damage-over-time-percent'
   | 'resistance-percent'
   | 'health-regen-flat'
+  | 'mana-cost-reduction-percent'
 
 export interface CombatModifier {
   key: ModifierKey

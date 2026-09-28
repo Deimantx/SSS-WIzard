@@ -16,6 +16,6 @@ describe('developer override presentation', () => {
     debug.combatTimeScale = 1
     const active = getActiveDebugOverrides(debug)
     expect(active.map((override) => override.key)).toEqual(['arcaneCoreFreeCosts', 'arcaneCoreIgnorePrerequisites'])
-    expect(DEBUG_OVERRIDE_KEYS).toHaveLength(22)
+    expect(DEBUG_OVERRIDE_KEYS).toHaveLength(21)
   })
 })

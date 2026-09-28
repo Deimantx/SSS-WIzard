@@ -69,6 +69,8 @@ import {
   runCombatTriggers,
 } from "../game/systems/combat/triggerRuntime";
 import { createCombatResolutionContext } from "../game/systems/combat/combatTypes";
+import { COMBAT_MODIFIER_KEYS, DAMAGE_TYPES } from "../game/systems/combat/combatEffectValidation";
+import { getCritChance, MAX_CRIT_CHANCE } from "../game/systems/combat/combatStats";
 import {
   loadProfileGame,
   resetProfileGame,
@@ -111,6 +113,7 @@ import type {
 } from "../game/types";
 import { clamp } from "../game/utils";
 import {
+  createDefaultPlayerStatOverrides,
   createDefaultDebugOverrides,
   resetCombatDebugState,
   resetDebugState,
@@ -552,6 +555,10 @@ export interface GameActions {
   ) => void;
   setDebugManaRegenBonus: (amount: number) => void;
   setDebugMaxManaBonus: (amount: number) => void;
+  setDebugPlayerStatValue: (path: string, value: number) => void;
+  resetDebugPlayerStats: () => void;
+  applyDebugPlayerStatPreset: (preset: 'crit-cap' | 'spell-power' | 'fast-caster' | 'tank' | 'dot-status' | 'healer-barrier' | 'clear') => void;
+  setPlayerBarrierForDebug: (amount: number) => void;
   setDebugAllowManaOverCap: (enabled: boolean) => void;
   setDebugAcolyteBonus: (amount: number) => void;
   setDebugAcolyteTotalOverride: (amount: number | null) => void;
@@ -1118,15 +1125,47 @@ export const useGameStore = create<GameStore>()(
       }),
     setDebugManaRegenBonus: (amount) =>
       set((state) => {
-        state.debug.bonusManaRegenFlat = sanitizeDebugNumber(amount);
+        state.debug.playerStats.manaRegenFlat = Number.isFinite(amount) ? Math.max(-1_000_000, Math.min(1_000_000, amount)) : 0;
         return state;
       }),
     setDebugMaxManaBonus: (amount) =>
       set((state) => {
-        state.debug.bonusMaxManaFlat = sanitizeDebugNumber(amount);
+        state.debug.playerStats.maxManaFlat = Number.isFinite(amount) ? Math.max(-1_000_000, Math.min(1_000_000, amount)) : 0;
         recalculateDerivedStats(state);
         return state;
       }),
+    setDebugPlayerStatValue: (path, amount) =>
+      set((state) => {
+        const value = Number.isFinite(amount) ? Math.max(-1_000_000, Math.min(1_000_000, amount)) : 0;
+        const [section, key] = path.split('.');
+        const coreKeys = ['maxHealthFlat', 'maxHealthPercent', 'healthRegenFlat', 'maxManaFlat', 'maxManaPercent', 'manaRegenFlat', 'manaRegenPercent', 'spellPowerFlat', 'spellPowerPercent', 'manaCostReductionPercent'];
+        if (section === 'core' && key && coreKeys.includes(key)) (state.debug.playerStats as unknown as Record<string, number>)[key] = value;
+        else if (section === 'modifiers' && key && COMBAT_MODIFIER_KEYS.includes(key as (typeof COMBAT_MODIFIER_KEYS)[number])) state.debug.playerStats.modifiers[key as import('../game/systems/combat/combatTypes').ModifierKey] = value;
+        else if (section === 'spellDamageByType' && key && DAMAGE_TYPES.includes(key as (typeof DAMAGE_TYPES)[number])) state.debug.playerStats.spellDamageByType[key as import('../game/systems/combat/combatTypes').DamageType] = value;
+        else if (section === 'resistanceByType' && key && DAMAGE_TYPES.includes(key as (typeof DAMAGE_TYPES)[number])) state.debug.playerStats.resistanceByType[key as import('../game/systems/combat/combatTypes').DamageType] = value;
+        recalculateDerivedStats(state);
+        return state;
+      }),
+    resetDebugPlayerStats: () => set((state) => { state.debug.playerStats = createDefaultDebugOverrides().playerStats; recalculateDerivedStats(state); return state; }),
+    applyDebugPlayerStatPreset: (preset) => set((state) => {
+      const stats = createDefaultPlayerStatOverrides();
+      if (preset === 'crit-cap') {
+        const baseline = { ...state, debug: { ...state.debug, playerStats: stats } };
+        stats.modifiers['crit-chance'] = Math.max(0, MAX_CRIT_CHANCE - getCritChance(baseline, 'player'));
+      }
+      if (preset === 'spell-power') stats.spellPowerFlat = 500;
+      if (preset === 'fast-caster') { stats.modifiers['cooldown-recovery-percent'] = 1; stats.modifiers['spell-cast-time-percent'] = -0.5; }
+      if (preset === 'tank') {
+        stats.maxHealthFlat = 500; stats.modifiers['defense-flat'] = 200;
+        for (const type of ['physical', 'arcane', 'fire', 'water', 'earth', 'air'] as const) stats.resistanceByType[type] = 0.25;
+      }
+      if (preset === 'dot-status') { stats.modifiers['damage-over-time-percent'] = 1; stats.modifiers['status-duration-dealt-percent'] = 1; }
+      if (preset === 'healer-barrier') { stats.modifiers['healing-done-percent'] = 1; stats.modifiers['healing-received-percent'] = 1; stats.modifiers['barrier-power-percent'] = 1; stats.modifiers['barrier-received-percent'] = 1; }
+      state.debug.playerStats = stats;
+      recalculateDerivedStats(state);
+      return state;
+    }),
+    setPlayerBarrierForDebug: (amount) => set((state) => { state.combat.playerBarrier = Math.max(0, Number.isFinite(amount) ? amount : 0); return state; }),
     setDebugAllowManaOverCap: (enabled) =>
       set((state) => {
         state.debug.allowManaOverCap = enabled;

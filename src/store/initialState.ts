@@ -12,6 +12,7 @@ import { createInitialCrystalState } from '../game/systems/crystals/crystalRunti
 import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcaneCore/arcaneCoreBalance'
 import { createInitialChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
 import { createEmptySigilState } from '../game/systems/sigils/sigilStateNormalization'
+import { createDefaultDebugOverrides } from './actions/debugActions'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
@@ -54,7 +55,7 @@ export const createInitialState = (): GameState => {
   offlineBankMs: 0,
   lastSavedAt: Date.now(),
   notifications: [],
-    debug: { bonusManaRegenFlat: 0, bonusMaxManaFlat: 0, allowManaOverCap: false, showLockedTransmutationRecipes: false, showLockedArtificingRecipes: false, playerImmortal: false, enemyImmortal: false, infiniteMana: false, ignoreSpellCooldowns: false, disableAutoCast: false, freezePlayerActions: false, freezeEnemyActions: false, combatPaused: false, combatTimeScale: 1, artifactFreeRankPurchase: false, artifactIgnoreOwnership: false, arcaneCoreFreeCosts: false, arcaneCoreIgnorePrerequisites: false, bonusAcolytes: 0, acolyteTotalOverride: null, ignoreAcolyteLimit: false, arcaneFluxCapacityOverride: null },
+    debug: createDefaultDebugOverrides(),
   }) as unknown as GameState
   state.combat.sigilRuntime = { spellCastCount: 0, predatorCriticalStacks: 0, predatorStacksExpireAtMs: 0, secondSkinUsed: false, criticalFlowAvailableAtMs: 0 }
   state.combat.arcaneCoreRuntime.lastCastOrigin = null

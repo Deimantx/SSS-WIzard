@@ -19,10 +19,11 @@ export type SpellPowerState = EquipmentStatsState & {
 export const getSpellPowerBreakdown = (state: SpellPowerState): SpellPowerBreakdown => {
   const base = BALANCE.player.baseSpellPower
   const stats = getEquipmentStats(state)
+  const debug = (state as SpellPowerState & Partial<Pick<GameState, 'debug'>>).debug?.playerStats
   const equipment = stats.spellPower ?? 0
-  const raw = Math.max(0, base + equipment)
-  const spellPowerPct = stats.spellPowerPct ?? 0
-  return { base, equipment, total: Math.max(0, raw * (1 + spellPowerPct)) }
+  const raw = Math.max(0, base + equipment + (debug?.spellPowerFlat ?? 0))
+  const spellPowerPct = (stats.spellPowerPct ?? 0) + (debug?.spellPowerPercent ?? 0)
+  return { base, equipment: equipment + (debug?.spellPowerFlat ?? 0), total: Math.max(0, raw * (1 + spellPowerPct)) }
 }
 
 export const getSpellPower = (state: EquipmentStatsState) => getSpellPowerBreakdown(state).total

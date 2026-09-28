@@ -165,6 +165,7 @@ const modifierLabels: Record<ModifierKey, string> = {
   'block-chance': 'Block chance',
   'damage-over-time-percent': 'Damage over time',
   'resistance-percent': 'Resistance',
+  'mana-cost-reduction-percent': 'Mana cost reduction',
 }
 
 const modifierValue = (modifier: CombatModifier) => modifier.key.endsWith('-percent') || ['crit-chance', 'crit-damage', 'block-chance'].includes(modifier.key)

@@ -29,6 +29,7 @@ const MODIFIER_LABELS: Record<ModifierKey, string> = {
   'damage-over-time-percent': 'Damage over Time',
   'resistance-percent': 'Resistance',
   'health-regen-flat': 'Health Regeneration',
+  'mana-cost-reduction-percent': 'Mana Cost Reduction',
 }
 
 const PERCENT_MODIFIERS = new Set<ModifierKey>([
@@ -45,6 +46,7 @@ const PERCENT_MODIFIERS = new Set<ModifierKey>([
   'barrier-power-percent',
   'barrier-received-percent',
   'mana-regen-percent',
+  'mana-cost-reduction-percent',
   'cooldown-recovery-percent',
   'spell-cast-time-percent',
   'control-duration-received-percent',

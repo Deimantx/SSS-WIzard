@@ -57,14 +57,15 @@ export const getDefenseReductionFromRating = (defense: number) => {
 const playerEquipmentStat = (state: EquipmentStatsState, key: keyof EquipmentStats) => finite(getEquipmentStats(state)[key] as number | undefined)
 const playerBaseMaxHealth = (state: PlayerSheetState) => {
   const equipment = getEquipmentStats(state)
-  return (finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + finite(equipment.maxHealth)) * (1 + finite(equipment.maxHealthPct))
+  const debug = (state as PlayerSheetState & Partial<Pick<GameState, 'debug'>>).debug?.playerStats
+  return Math.max(1, (finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + finite(equipment.maxHealth) + finite(debug?.maxHealthFlat)) * (1 + finite(equipment.maxHealthPct) + finite(debug?.maxHealthPercent)))
 }
 const getPlayerSheetStats = (state: PlayerSheetState): PlayerCombatStats => {
   const equipment = getEquipmentStats(state)
   const defense = Math.max(0, BALANCE.player.baseDefense + finite(equipment.defense))
   return {
     maxHealth: playerBaseMaxHealth(state),
-    healthRegen: BALANCE.player.healthRegenPerSecond + playerEquipmentStat(state, 'healthRegen'),
+    healthRegen: BALANCE.player.healthRegenPerSecond + playerEquipmentStat(state, 'healthRegen') + finite((state as PlayerSheetState & Partial<Pick<GameState, 'debug'>>).debug?.playerStats?.healthRegenFlat),
     maxMana: getPlayerManaCapacityBreakdown(state).total,
     manaRegen: getPlayerManaRegenBreakdown(state).total,
     spellPower: getSpellPower(state),
@@ -100,6 +101,7 @@ const getPlayerRuntimeStats = (state: GameState): PlayerCombatStats => {
     cooldownRecovery: getCooldownRecoveryMultiplier(state, 'player'),
     healingDoneBonus: getHealingDoneBonus(state, 'player'),
     barrierPowerBonus: getBarrierPowerBonus(state, 'player'),
+    manaCostReduction: getManaCostReduction(state),
   }
 }
 
@@ -173,10 +175,14 @@ export const getHealingDoneBonus = (state: GameState, actor: CombatActor, source
 export const getBarrierPowerBonus = (state: GameState, actor: CombatActor, source?: CombatSource) => getCombatModifiers(state, actor, 'barrier-power-percent', { source, sourceTags: source?.tags })
 export const getCooldownRecoveryMultiplier = (state: CombatModifierState, actor: CombatActor = 'player') => Math.max(0, Math.min(10, 1 + getCombatModifiers(state, actor, 'cooldown-recovery-percent')))
 
-export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => {
+export const getManaCostReduction = (state: EquipmentStatsState) => {
   const combat = (state as Partial<Pick<GameState, 'combat'>>).combat
   const nextCommittedSpell = (combat?.sigilRuntime?.spellCastCount ?? 0) + 1
   const efficientCycle = Boolean(state.sigils && getActiveSigilTraitIds(state as Pick<GameState, 'sigils'>).includes('efficient-cycle') && nextCommittedSpell % 6 === 0)
-  const reduction = clampPercent(playerEquipmentStat(state, 'manaCostReductionPct'), 0, 0.8) + (efficientCycle ? 0.2 : 0)
-  return Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - Math.min(0.95, reduction))))
+  const fullState = state as Partial<GameState>
+  const debugReduction = fullState.combat ? getCombatModifiers(state as never, 'player', 'mana-cost-reduction-percent') : fullState.debug?.playerStats?.manaCostReductionPercent ?? 0
+  const reduction = clampPercent(playerEquipmentStat(state, 'manaCostReductionPct') + debugReduction, 0, 0.8) + (efficientCycle ? 0.2 : 0)
+  return Math.min(0.95, reduction)
 }
+
+export const getEffectiveManaCost = (state: EquipmentStatsState, baseManaCost: number) => Math.max(1, Math.ceil(Math.max(0, baseManaCost) * (1 - getManaCostReduction(state))))

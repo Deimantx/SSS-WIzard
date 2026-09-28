@@ -21,7 +21,7 @@ export type CombatModifierState = {
   combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'dungeonId' | 'targetEnemyId' | 'guardian'>>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
-} & Partial<Pick<GameState, 'arcaneCore' | 'crystals' | 'sigils'>>
+} & Partial<Pick<GameState, 'arcaneCore' | 'crystals' | 'sigils'>> & { debug?: Partial<Pick<GameState['debug'], 'playerStats' | 'allowManaOverCap'>> }
 export type CombatModifierEvaluation = 'active' | 'unconditional' | 'all'
 
 export interface ModifierContext {
@@ -38,7 +38,7 @@ export interface ModifierContext {
 export interface CombatModifierContribution {
   modifier: CombatModifier
   value: number
-  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian' | 'arcane-core' | 'sigil'
+  sourceType: 'status' | 'trait' | 'equipment' | 'equipment-stats' | 'artifact' | 'guardian' | 'arcane-core' | 'sigil' | 'debug'
   sourceId?: string
   sourceName?: string
 }
@@ -111,6 +111,18 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
   getArcaneCoreCombatModifierProviders(state.arcaneCore).forEach(({ node, modifier }) => add(modifier, 'arcane-core', node.id, node.name))
   if (actor === 'player' && state.sigils) getActiveSigilCombatProviders(state as GameState).forEach((provider) => provider.modifiers.forEach((modifier) => add(modifier, 'sigil', provider.id, provider.name)))
   if (actor === 'player') {
+    const debugStats = state.debug?.playerStats
+    if (debugStats?.manaRegenPercent) add({ key: 'mana-regen-percent', value: debugStats.manaRegenPercent, actor: 'player' }, 'debug', 'mana-regen-percent', 'Player Stat Lab')
+    if (debugStats?.manaCostReductionPercent) add({ key: 'mana-cost-reduction-percent', value: debugStats.manaCostReductionPercent, actor: 'player' }, 'debug', 'mana-cost-reduction-percent', 'Player Stat Lab')
+    Object.entries(debugStats?.modifiers ?? {}).forEach(([modifierKey, value]) => {
+      if (typeof value === 'number' && value !== 0) add({ key: modifierKey as ModifierKey, value, actor: 'player' }, 'debug', modifierKey, 'Player Stat Lab')
+    })
+    Object.entries(debugStats?.spellDamageByType ?? {}).forEach(([damageType, value]) => {
+      if (typeof value === 'number' && value !== 0) add({ key: 'spell-damage-percent', value, actor: 'player', damageTypes: [damageType as DamageType] }, 'debug', `spell-${damageType}`, 'Player Stat Lab')
+    })
+    Object.entries(debugStats?.resistanceByType ?? {}).forEach(([damageType, value]) => {
+      if (typeof value === 'number' && value !== 0) add({ key: 'resistance-percent', value, actor: 'player', damageTypes: [damageType as DamageType] }, 'debug', `resistance-${damageType}`, 'Player Stat Lab')
+    })
     Object.values(state.equipment).forEach((itemId) => {
       if (!itemId) return
       ITEMS[itemId]?.combat?.modifiers?.forEach((modifier) => {

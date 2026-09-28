@@ -2,6 +2,7 @@ import type { PortalShardId } from './content/darkPortal/portalShards'
 import type { ResonanceState } from './content/resonance/resonance'
 export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
 import type { WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
+import type { DamageType, ModifierKey } from './systems/combat/combatTypes'
 export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
@@ -891,8 +892,7 @@ export interface GameState {
   debug: DebugOverrides
 }
 export interface DebugOverrides {
-  bonusManaRegenFlat: number
-  bonusMaxManaFlat: number
+  playerStats: DebugPlayerStatOverrides
   allowManaOverCap: boolean
   showLockedTransmutationRecipes: boolean
   showLockedArtificingRecipes: boolean
@@ -914,6 +914,22 @@ export interface DebugOverrides {
   acolyteTotalOverride: number | null
   ignoreAcolyteLimit: boolean
   arcaneFluxCapacityOverride: number | null
+}
+/** Transient Character Lab values. Modifier values use the runtime decimal convention (0.25 = 25%). */
+export interface DebugPlayerStatOverrides {
+  maxHealthFlat: number
+  maxHealthPercent: number
+  healthRegenFlat: number
+  maxManaFlat: number
+  maxManaPercent: number
+  manaRegenFlat: number
+  manaRegenPercent: number
+  spellPowerFlat: number
+  spellPowerPercent: number
+  manaCostReductionPercent: number
+  modifiers: Partial<Record<ModifierKey, number>>
+  spellDamageByType: Partial<Record<DamageType, number>>
+  resistanceByType: Partial<Record<DamageType, number>>
 }
 export interface NotificationItem { id: string; text: string; tone: 'info' | 'success' | 'warning'; key?: string; createdAt?: number }
 

@@ -61,10 +61,11 @@ const MODIFIER_LABELS: Record<ModifierKey, string> = {
   'block-chance': 'Block Chance',
   'damage-over-time-percent': 'Damage over Time',
   'resistance-percent': 'Resistance',
+  'mana-cost-reduction-percent': 'Mana Cost Reduction',
 }
 
 const PERCENT_MODIFIERS = new Set<ModifierKey>([
-  'damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent',
+  'damage-dealt-percent', 'damage-taken-percent', 'basic-attack-damage-percent', 'basic-attack-speed-percent', 'action-speed-percent', 'spell-damage-percent', 'melee-damage-percent', 'ranged-damage-percent', 'healing-done-percent', 'healing-received-percent', 'barrier-power-percent', 'barrier-received-percent', 'mana-regen-percent', 'mana-cost-reduction-percent', 'cooldown-recovery-percent', 'control-duration-received-percent', 'status-duration-dealt-percent', 'status-duration-received-percent', 'crit-chance', 'crit-damage', 'block-chance', 'damage-over-time-percent', 'resistance-percent',
 ])
 
 const titleCase = (value: string) => value.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())

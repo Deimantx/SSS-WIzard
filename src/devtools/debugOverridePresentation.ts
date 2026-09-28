@@ -19,15 +19,14 @@ type DebugOverrideDefinition = {
 // Exhaustive by design: a new runtime override must get an explicit label and
 // active-state rule before the presentation compiles.
 export const DEBUG_OVERRIDE_KEYS = [
-  'bonusManaRegenFlat', 'bonusMaxManaFlat', 'allowManaOverCap', 'showLockedTransmutationRecipes', 'showLockedArtificingRecipes',
+  'playerStats', 'allowManaOverCap', 'showLockedTransmutationRecipes', 'showLockedArtificingRecipes',
   'playerImmortal', 'enemyImmortal', 'infiniteMana', 'ignoreSpellCooldowns', 'disableAutoCast', 'freezePlayerActions',
   'freezeEnemyActions', 'combatPaused', 'combatTimeScale', 'artifactFreeRankPurchase', 'artifactIgnoreOwnership',
   'arcaneCoreFreeCosts', 'arcaneCoreIgnorePrerequisites', 'bonusAcolytes', 'acolyteTotalOverride', 'ignoreAcolyteLimit', 'arcaneFluxCapacityOverride',
 ] as const satisfies readonly (keyof DebugOverrides)[]
 
 const definitions: readonly DebugOverrideDefinition[] = [
-  { key: 'bonusManaRegenFlat', label: (value) => `+${value} MANA REGEN`, group: 'resource', active: (value) => value !== 0 },
-  { key: 'bonusMaxManaFlat', label: (value) => `+${value} MAX MANA`, group: 'resource', active: (value) => value !== 0 },
+  { key: 'playerStats', label: 'PLAYER STAT LAB', group: 'combat', active: (value) => Object.values(value as object).some((entry) => typeof entry === 'number' ? entry !== 0 : Object.values(entry as object).some((nested) => typeof nested === 'number' && nested !== 0)) },
   { key: 'allowManaOverCap', label: 'MANA OVERCAP', group: 'resource', active: Boolean },
   { key: 'showLockedTransmutationRecipes', label: 'SHOW LOCKED TRANSMUTATION', group: 'system', active: Boolean },
   { key: 'showLockedArtificingRecipes', label: 'SHOW LOCKED ARTIFICING', group: 'system', active: Boolean },

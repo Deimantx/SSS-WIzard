@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../store/initialState'
 import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
+import { createDefaultPlayerStatOverrides } from '../store/actions/debugActions'
 
 describe('Combat debug save safety', () => {
   it('does not serialize runtime overrides or legacy godMode', () => {
@@ -9,9 +10,12 @@ describe('Combat debug save safety', () => {
     state.debug.playerImmortal = true
     state.debug.enemyImmortal = true
     state.debug.combatTimeScale = 10
+    state.debug.playerStats.modifiers['damage-dealt-percent'] = 5
+    state.debug.playerStats.resistanceByType.fire = 0.5
     ;(state.player as unknown as Record<string, unknown>).godMode = true
     const serialized = serializeGameState(state)
     expect(serialized).not.toHaveProperty('debug')
+    expect(serialized).not.toHaveProperty('playerStats')
     expect(serialized.player).not.toHaveProperty('godMode')
   })
 
@@ -21,5 +25,6 @@ describe('Combat debug save safety', () => {
     expect(migrated.player).not.toHaveProperty('godMode')
     expect(migrated.debug.playerImmortal).toBe(false)
     expect(migrated.debug.enemyImmortal).toBe(false)
+    expect(migrated.debug.playerStats).toEqual(createDefaultPlayerStatOverrides())
   })
 })

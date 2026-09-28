@@ -27,13 +27,11 @@ Combat-content debt is tracked separately in [KNOWN_COMBAT_CONTENT_DEBT.md](./KN
 
 ## Final progression hardening audit
 
-**Audit base:** `f9024e99114d910c70986ade17c18edc25a7ebfb`
+**Audited implementation commit:** `e1185d833ddd48b3d3e0ba21fb0c4b99c6a49476`
 
 **Verification:** complete on 2026-09-28. Full Vitest passed (276 files, 1,473 tests); `npm run build` succeeded. The build reports the existing >500 kB bundle advisory. The test run printed repeated jsdom CSS parsing warnings but no test failures.
 
-**Verified source snapshot SHA-256 (excluding this document):** `5bb322ed85c189b41c20b0aedc38d26c3abbdd61e6ca33d4dae1af746bf94c18`
-
-The verified changes remain uncommitted. `f9024e99114d910c70986ade17c18edc25a7ebfb` is the base commit, not the new source snapshot hash.
+The verified implementation is committed as `e1185d833ddd48b3d3e0ba21fb0c4b99c6a49476`.
 
 ### Arcane Guild Advancement Point economy
 

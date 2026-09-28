@@ -17,8 +17,9 @@ export const equipmentStats = getEquipmentStats
 
 export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)
-  const rawMaxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0)
-  state.player.maxHealth = rawMaxHealth * (1 + (stats.maxHealthPct ?? 0))
+  const debug = state.debug.playerStats
+  const rawMaxHealth = state.player.baseMaxHealth + (stats.maxHealth ?? 0) + debug.maxHealthFlat
+  state.player.maxHealth = Math.max(1, rawMaxHealth * (1 + (stats.maxHealthPct ?? 0) + debug.maxHealthPercent))
   state.player.maxMana = getPlayerManaCapacityBreakdown(state).total
   state.player.health = clamp(state.player.health, 0, state.player.maxHealth)
   state.player.mana = stabilizeResourceValue(state.debug.allowManaOverCap ? Math.max(0, state.player.mana) : clamp(state.player.mana, 0, state.player.maxMana))

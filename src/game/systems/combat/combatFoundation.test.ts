@@ -19,6 +19,7 @@ import { getEnemySkillActionRate } from './actionRuntime'
 import { getTimedActionState } from './actionTiming'
 import { BALANCE } from '../../core/balance/balance'
 import { getDefenseReductionFromRating } from './combatStats'
+import { advancePlayerMana } from '../mana/playerMana'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'test-spell', school: 'fire', tags: ['spell', 'magic'] }
 const playerDefenseReduction = getDefenseReductionFromRating(BALANCE.player.baseDefense)
@@ -48,6 +49,46 @@ const withTemporaryTrait = (trait: TraitDefinition, test: () => void) => {
 }
 
 describe('universal combat effects', () => {
+  it('applies Player Stat Lab damage, healing, and mana changes in the real runtime pipelines', () => {
+    const baseline = stateWithEnemy()
+    const boosted = stateWithEnemy()
+    boosted.debug.playerStats.modifiers['damage-dealt-percent'] = 0.5
+    boosted.debug.playerStats.spellDamageByType.fire = 0.25
+    const fireHit = [{ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'fire' as const, magnitude: { type: 'flat' as const, value: 10 } }], tags: ['spell' as const, 'direct' as const] }]
+    executeCombatEffects(baseline, fireHit, { ...playerSpell, school: 'fire' })
+    executeCombatEffects(boosted, fireHit, { ...playerSpell, school: 'fire' })
+    const baselineDamage = baseline.combat.enemyHp - baseline.combat.enemyMaxHp
+    const boostedDamage = boosted.combat.enemyHp - boosted.combat.enemyMaxHp
+    expect(boostedDamage).toBeCloseTo(baselineDamage * 1.875)
+
+    const healing = stateWithEnemy()
+    healing.player.health = 50
+    healing.debug.playerStats.modifiers['healing-done-percent'] = 1
+    healing.debug.playerStats.modifiers['healing-received-percent'] = 1
+    executeCombatEffects(healing, [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 10 } }], playerSpell)
+    expect(healing.player.health).toBe(90)
+
+    const incomingBaseline = stateWithEnemy()
+    const incomingReduced = stateWithEnemy()
+    incomingReduced.debug.playerStats.modifiers['damage-taken-percent'] = -0.5
+    incomingReduced.debug.playerStats.resistanceByType.fire = 0.25
+    const fireAttack = [{ type: 'deal-damage' as const, target: 'self' as const, components: [{ damageType: 'fire' as const, magnitude: { type: 'flat' as const, value: 20 } }] }]
+    executeCombatEffects(incomingBaseline, fireAttack, enemyAttack(incomingBaseline))
+    executeCombatEffects(incomingReduced, fireAttack, enemyAttack(incomingReduced))
+    const baselineHealthLoss = incomingBaseline.player.maxHealth - incomingBaseline.player.health
+    const reducedHealthLoss = incomingReduced.player.maxHealth - incomingReduced.player.health
+    expect(reducedHealthLoss).toBeCloseTo(baselineHealthLoss * 0.375)
+
+    const mana = createCombatTestState()
+    const baselineMana = createCombatTestState()
+    mana.player.mana = 0
+    baselineMana.player.mana = 0
+    mana.debug.playerStats.manaRegenFlat = 10
+    advancePlayerMana(baselineMana, 1_000)
+    advancePlayerMana(mana, 1_000)
+    expect(mana.player.mana - baselineMana.player.mana).toBe(10)
+  })
+
   it('resolves damage, healing, barriers, mana, delay, and cooldowns', () => {
     const state = stateWithEnemy()
     state.combat.playerBarrier = 10
@@ -249,7 +290,7 @@ describe('post-implementation combat audit regressions', () => {
     expect(state.notifications.some((notification) => notification.text === 'Cannot cast while Stunned.')).toBe(false)
 
     state.notifications = []
-    state.debug.bonusManaRegenFlat = -5
+    state.debug.playerStats.manaRegenFlat = -5
     state.activities.autoCast['fire-bolt'] = true
     state.combat.spellCooldowns['fire-bolt'] = 1000
     advanceGameState(state, 1000, { mode: 'live' })

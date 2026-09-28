@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { Bug, Check, Command, PanelRight, RotateCcw, Search, X } from 'lucide-react'
-import { GameTooltip, Status } from '../components/ui'
+import { Button, GameTooltip, Status } from '../components/ui'
 import { useGameStore } from '../store/gameStore'
 import { clampDeveloperToolsToViewport, closeDeveloperTools, dockDeveloperTools, resetDeveloperToolsWindow, setDeveloperToolsDockedPosition, setDeveloperToolsGeometry, setDeveloperToolsTab, setDeveloperWorkspace, useDeveloperToolsStore, workspaceDeveloperTools } from './developerToolsStore'
 import { DeveloperTab } from './DeveloperToolTabs'
@@ -40,8 +40,7 @@ export function DeveloperToolsWindow() {
   const clearOverride = (override: ActiveDebugOverride) => {
     const state = useGameStore.getState()
     const key = override.key
-    if (key === 'bonusManaRegenFlat') return state.setDebugManaRegenBonus(0)
-    if (key === 'bonusMaxManaFlat') return state.setDebugMaxManaBonus(0)
+    if (key === 'playerStats') return state.resetDebugPlayerStats()
     if (key === 'allowManaOverCap') return state.setDebugAllowManaOverCap(false)
     if (key === 'showLockedTransmutationRecipes') return state.setDebugShowLockedTransmutationRecipes(false)
     if (key === 'showLockedArtificingRecipes') return state.setDebugShowLockedArtificingRecipes(false)
@@ -110,7 +109,7 @@ export function DeveloperToolsWindow() {
         <div className="developer-tools-header-status">{activeOverrides.length > 0 && <GameTooltip content={`${activeOverrides.length} active debug override${activeOverrides.length === 1 ? '' : 's'}`}><Status tone="warning">{`${activeOverrides.length} ACTIVE OVERRIDE${activeOverrides.length === 1 ? '' : 'S'}`}</Status></GameTooltip>}{copied && <Status tone={copied === 'Clipboard unavailable' ? 'warning' : 'success'}>{copied === 'Clipboard unavailable' ? copied : <><Check size={13} /> {copied} copied</>}</Status>}</div>
         <div className="developer-tools-header-actions">
           {!workspace && <GameTooltip content="Reset docked window position and size"><button className="icon-button" onClick={resetDeveloperToolsWindow} aria-label="Reset Developer Tools window position and size"><RotateCcw size={15} /></button></GameTooltip>}
-          <GameTooltip content="Clear all debug overrides"><button className="icon-button" onClick={resetDebug} disabled={activeOverrides.length === 0} aria-label="Clear all debug overrides"><span className="developer-clear-label">CLEAR ALL</span></button></GameTooltip>
+          <GameTooltip content="Clear all debug overrides"><Button variant="ghost" className="developer-clear-all-button" onClick={resetDebug} disabled={activeOverrides.length === 0} ariaLabel="Clear all debug overrides"><span>CLEAR ALL</span></Button></GameTooltip>
           <GameTooltip content="Search registered tools and tester surfaces"><button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Open Developer command palette"><Search size={16} /></button></GameTooltip>
           <GameTooltip content={workspace ? 'Move Developer Tools into a docked window' : 'Open full Developer Workspace'}><button className="icon-button" onClick={workspace ? dockDeveloperTools : workspaceDeveloperTools} aria-label={workspace ? 'Dock Developer Tools' : 'Open full Developer Workspace'}><PanelRight size={16} /></button></GameTooltip>
           <GameTooltip content="Close Developer Tools"><button className="icon-button" onClick={closeDeveloperTools} aria-label="Close Developer Tools"><X size={18} /></button></GameTooltip>

@@ -26,9 +26,10 @@ export interface PlayerManaCapacityBreakdown {
 export const getPlayerManaCapacityBreakdown = (state: Pick<GameState, 'player' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'arcaneCore'>>): PlayerManaCapacityBreakdown => {
   const equipment = getEquipmentStats(state).maxMana ?? 0
   const equipmentPercent = getEquipmentStats(state).maxManaPct ?? 0
-  const developer = state.debug?.bonusMaxManaFlat ?? 0
+  const developer = state.debug?.playerStats?.maxManaFlat ?? 0
   const permanent = Object.values((state as Partial<GameState>).progress?.permanentManaBonuses ?? {}).reduce((sum, value) => sum + Math.max(0, value), 0)
-  const total = Math.floor((state.player.baseMaxMana + equipment + developer + permanent) * (1 + equipmentPercent))
+  const developerPercent = state.debug?.playerStats?.maxManaPercent ?? 0
+  const total = Math.max(0, Math.floor((state.player.baseMaxMana + equipment + developer + permanent) * (1 + equipmentPercent + developerPercent)))
   return { base: state.player.baseMaxMana, equipment, equipmentPercent, developer, total }
 }
 
@@ -36,7 +37,7 @@ export const getPlayerManaRegenBreakdown = (state: Pick<GameState, 'equipment' |
   const stats = getEquipmentStats(state)
   const base = BALANCE.mana.baseRegenPerSecond
   const equipment = stats.manaRegen ?? 0
-  const developer = state.debug?.bonusManaRegenFlat ?? 0
+  const developer = state.debug?.playerStats?.manaRegenFlat ?? 0
   const combatMultiplier = state.player && state.combat ? Math.max(0, 1 + getCombatModifiers(state as never, 'player', 'mana-regen-percent')) : 1
   const arcaneCore = 0
   const coreMultiplier = state.player ? getArcaneCoreManaRegenMultiplier(state as never) : 1

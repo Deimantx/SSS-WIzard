@@ -48,7 +48,7 @@ describe('research next-level ETA', () => {
   it('returns no ETA for blocked research states', () => {
     const waitingMana = withResearchJob(2, 5_000)
     waitingMana.player.mana = 0
-    waitingMana.debug.bonusManaRegenFlat = -5
+    waitingMana.debug.playerStats.manaRegenFlat = -5
     expect(getResearchNextLevelEtaMs(waitingMana, 'research-1')).toEqual({ etaMs: null, beyondBatch: true })
     const protectedItem = withResearchJob(2)
     protectedItem.protectedItems['fire-fragment'] = true

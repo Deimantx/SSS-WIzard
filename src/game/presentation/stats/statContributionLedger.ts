@@ -56,7 +56,11 @@ const sigilSetProvider: StatContributionProvider = { id: 'sigil-set-bonuses', co
   return bundle(bonuses, key, 'sigil-set', setId, `${SIGIL_SETS[setId].name} - ${count}/${SIGIL_SETS[setId].piecesRequired}`)
 }) }
 const progressionProvider: StatContributionProvider = { id: 'progression', collect: (state, key) => key === 'maxMana' ? Object.entries(state.progress.permanentManaBonuses).flatMap(([id, value]) => safe(value) > 0 ? [entry(key, id === 'guild-apprentice' ? 'guild' : 'progression', id, id === 'guild-apprentice' ? 'Guild Apprentice Training' : id === 'forest-heart' ? 'Forest Heart Blessing' : 'Permanent Mana Bonus', 'flat', safe(value))] : []) : [] }
-const debugProvider: StatContributionProvider = { id: 'debug', collect: (state, key) => key === 'maxMana' && state.debug.bonusMaxManaFlat ? [entry(key, 'debug', 'max-mana', 'Developer Max Mana Override', 'flat', safe(state.debug.bonusMaxManaFlat))] : key === 'manaRegen' && state.debug.bonusManaRegenFlat ? [entry(key, 'debug', 'mana-regen', 'Developer Mana Regen Override', 'flat', safe(state.debug.bonusManaRegenFlat))] : [] }
+const debugProvider: StatContributionProvider = { id: 'debug', collect: (state, key) => {
+  if (key === 'maxMana' && state.debug.playerStats.maxManaFlat) return [entry(key, 'debug', 'max-mana', 'Developer Max Mana Override', 'flat', safe(state.debug.playerStats.maxManaFlat))]
+  if (key === 'manaRegen' && state.debug.playerStats.manaRegenFlat) return [entry(key, 'debug', 'mana-regen', 'Developer Mana Regen Override', 'flat', safe(state.debug.playerStats.manaRegenFlat))]
+  return []
+} }
 
 const SPECIAL: Partial<Record<PlayerBreakdownStatKey, { key: import('../../systems/combat/combatTypes').ModifierKey; context?: { damageType?: 'fire' | 'air'; statusTags?: import('../../systems/combat/combatTypes').CombatTag[]; originSourceKind?: import('../../systems/combat/combatTypes').CombatSource['kind']; sourceTags?: import('../../systems/combat/combatTypes').CombatTag[] } }>> = {
   fireSpellDamage: { key: 'spell-damage-percent', context: { damageType: 'fire', originSourceKind: 'spell', sourceTags: ['direct'] } }, airSpellDamage: { key: 'spell-damage-percent', context: { damageType: 'air', originSourceKind: 'spell', sourceTags: ['direct'] } }, barrierReceivedFlat: { key: 'barrier-received-flat' }, negativeStatusDurationReceived: { key: 'status-duration-received-percent', context: { statusTags: ['debuff'] } },

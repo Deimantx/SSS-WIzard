@@ -29,10 +29,13 @@ const nextGuildRandom = (state: GameState) => {
 const objectiveKey = (template: GuildCommissionTemplate) => template.category === 'mixed'
   ? `mixed:${(template.components ?? []).map((component) => `${component.category}:${component.itemId ?? ''}`).sort().join('|')}`
   : `${template.category}:${template.itemId ?? ''}`
-const chooseQuality = (state: GameState): GuildCommissionQuality => {
+const qualityOrder: GuildCommissionQuality[] = ['routine', 'special', 'prestigious']
+const chooseQuality = (state: GameState, available: ReadonlySet<GuildCommissionQuality>): GuildCommissionQuality | null => {
   const qualityRanks: Record<GuildCommissionQuality, string> = BALANCE.arcaneGuild.rankMinimumQuality
-  const eligible = (['routine', 'special', 'prestigious'] as const).filter((quality) => rankOrder(state.progress.guildRank) >= GUILD_RANKS.findIndex((rank) => rank.id === qualityRanks[quality]))
+  const qualityOffset = getGuildProgressionBonuses(state).specialCommissionAccess ? 1 : 0
+  const eligible = qualityOrder.filter((quality) => available.has(quality) && BALANCE.arcaneGuild.qualityWeights[quality] > 0 && rankOrder(state.progress.guildRank) + qualityOffset >= GUILD_RANKS.findIndex((rank) => rank.id === qualityRanks[quality]))
   const total = eligible.reduce((sum, quality) => sum + BALANCE.arcaneGuild.qualityWeights[quality], 0)
+  if (total <= 0) return null
   let roll = nextGuildRandom(state) * total
   for (const quality of eligible) { roll -= BALANCE.arcaneGuild.qualityWeights[quality]; if (roll < 0) return quality }
   return 'routine'
@@ -44,16 +47,21 @@ export const generateGuildCommissionChoices = (state: GameState): GuildCommissio
   const eligible = GUILD_COMMISSION_TEMPLATES.filter((template) => templateIsAccessible(state, template))
   const unique = [...new Map(eligible.map((template) => [objectiveKey(template), template])).values()]
   if (!unique.length) return []
-  const choiceCount = Math.min(unique.length, 3 + getGuildProgressionBonuses(state).commissionChoiceBonus)
+  const choiceCount = Math.min(unique.length, BALANCE.arcaneGuild.baseCommissionChoices + getGuildProgressionBonuses(state).commissionChoiceBonus)
   const selected: GuildCommissionState[] = []
   const remaining = [...unique]
   for (let index = 0; index < choiceCount && remaining.length; index += 1) {
-    const totalWeight = remaining.reduce((sum, template) => sum + Math.max(0, template.weight ?? 1), 0)
+    const availableQualities = new Set(remaining.map((template) => template.complexity ?? 'routine'))
+    const quality = chooseQuality(state, availableQualities)
+    if (!quality) break
+    const tierPool = remaining.filter((template) => (template.complexity ?? 'routine') === quality)
+    if (!tierPool.length) break
+    const totalWeight = tierPool.reduce((sum, template) => sum + Math.max(0, template.weight ?? 1), 0)
     let roll = nextGuildRandom(state) * totalWeight
     let chosenIndex = 0
-    for (; chosenIndex < remaining.length - 1; chosenIndex += 1) { roll -= Math.max(0, remaining[chosenIndex].weight ?? 1); if (roll < 0) break }
-    const template = remaining.splice(chosenIndex, 1)[0]
-    const quality = chooseQuality(state)
+    for (; chosenIndex < tierPool.length - 1; chosenIndex += 1) { roll -= Math.max(0, tierPool[chosenIndex].weight ?? 1); if (roll < 0) break }
+    const template = tierPool[chosenIndex]
+    remaining.splice(remaining.findIndex((entry) => entry.id === template.id), 1)
     const multiplier = BALANCE.arcaneGuild.qualityTargetMultipliers[quality]
     const bonuses = getGuildProgressionBonuses(state)
     const components = template.components?.map((component) => ({ category: component.category, itemId: component.itemId, target: scaled(component.target, quality), progress: 0 }))
@@ -128,15 +136,20 @@ export const recordGuildCommissionProgressBatch = (state: GameState, events: rea
 export const deliverGuildCommissionItems = (state: GameState, amount: number | 'max') => {
   const guild = state.progress.arcaneGuild
   const commission = guild.activeCommission
-  if (!commission || commission.category !== 'delivery' || !commission.itemId) return false
-  const remaining = Math.max(0, commission.target - commission.progress)
+  const deliveryComponent = commission?.category === 'mixed' ? commission.components?.find((component) => component.category === 'delivery' && component.itemId && component.progress < component.target) : undefined
+  const itemId = commission?.category === 'delivery' ? commission.itemId : deliveryComponent?.itemId
+  if (!commission || !itemId || (commission.category !== 'delivery' && !deliveryComponent)) return false
+  const remaining = Math.max(0, (deliveryComponent?.target ?? commission.target) - (deliveryComponent?.progress ?? commission.progress))
   const wanted = amount === 'max' ? remaining : Math.min(remaining, safeInt(amount))
-  const quantity = Math.min(wanted, getConsumableQuantity(state, commission.itemId))
-  if (quantity < 1 || state.protectedItems[commission.itemId]) return false
-  state.inventory[commission.itemId] = Math.max(0, (state.inventory[commission.itemId] ?? 0) - quantity)
-  commission.progress += quantity
-  recordGuildCommissionChainProgress(state, 'delivery', quantity, commission.itemId)
-  if (commission.progress >= commission.target) finishCommission(state, commission)
+  const quantity = Math.min(wanted, getConsumableQuantity(state, itemId))
+  if (quantity < 1 || state.protectedItems[itemId]) return false
+  state.inventory[itemId] = Math.max(0, (state.inventory[itemId] ?? 0) - quantity)
+  if (commission.category === 'mixed') recordGuildCommissionProgressBatch(state, [{ category: 'delivery', amount: quantity, itemId }])
+  else {
+    commission.progress += quantity
+    recordGuildCommissionChainProgress(state, 'delivery', quantity, itemId)
+    if (commission.progress >= commission.target) finishCommission(state, commission)
+  }
   return true
 }
 

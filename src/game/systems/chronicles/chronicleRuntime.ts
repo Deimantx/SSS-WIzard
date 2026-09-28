@@ -48,6 +48,9 @@ export const getChronicleConditionValue = (state: GameState, condition: Chronicl
     case 'hunter-contracts-completed': return { current: safeCount(state.progress.huntersOrder.totalContractsCompleted), target: condition.count }
     case 'hunter-contracts-accepted': return { current: safeCount(state.progress.huntersOrder.totalContractsAccepted), target: condition.count }
     case 'guild-project-completed': return { current: state.progress.arcaneGuild.completedProjectIds.includes(condition.projectId) ? 1 : 0, target: 1 }
+    case 'guild-registry-sets-completed': return { current: state.progress.arcaneRegistry.completedSetIds.length, target: condition.count }
+    case 'guild-points-spent': return { current: Object.values(state.progress.guildSkillNodeRanks).reduce((sum, rank) => sum + safeCount(rank), 0), target: condition.count }
+    case 'hunter-upgrades-purchased': return { current: Object.values(state.progress.huntersOrder.purchasedUpgrades).reduce((sum, rank) => sum + safeCount(rank), 0), target: condition.count }
     case 'guardian-selected': return { current: state.guardians.selectedGuardianId ? 1 : 0, target: 1 }
     case 'guardian-combat-completed': return { current: state.progress.chronicle.eventFlags['first-guardian-combat-completed'] ? 1 : 0, target: 1 }
     case 'crystal-equipped': return { current: state.crystals.equippedSlots.filter(Boolean).length, target: condition.count }
@@ -88,6 +91,9 @@ export const evaluateChronicleCondition = (state: GameState, condition: Chronicl
     case 'hunter-contracts-completed': return safeCount(state.progress.huntersOrder.totalContractsCompleted) >= condition.count
     case 'hunter-contracts-accepted': return safeCount(state.progress.huntersOrder.totalContractsAccepted) >= condition.count
     case 'guild-project-completed': return state.progress.arcaneGuild.completedProjectIds.includes(condition.projectId)
+    case 'guild-registry-sets-completed': return state.progress.arcaneRegistry.completedSetIds.length >= condition.count
+    case 'guild-points-spent': return Object.values(state.progress.guildSkillNodeRanks).reduce((sum, rank) => sum + safeCount(rank), 0) >= condition.count
+    case 'hunter-upgrades-purchased': return Object.values(state.progress.huntersOrder.purchasedUpgrades).reduce((sum, rank) => sum + safeCount(rank), 0) >= condition.count
     case 'guardian-selected': return state.guardians.selectedGuardianId !== null
     case 'guardian-combat-completed': return state.progress.chronicle.eventFlags['first-guardian-combat-completed'] === true
     case 'crystal-equipped': return state.crystals.equippedSlots.filter(Boolean).length >= condition.count

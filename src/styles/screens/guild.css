@@ -65,6 +65,11 @@
 .guild-v3-promotion-reward { display: grid; gap: 4px; margin-top: 17px; padding: 12px 14px; border: 1px solid rgba(112, 205, 163, .18); border-radius: 8px; background: rgba(112, 205, 163, .05); }
 .guild-v3-promotion-reward strong { color: var(--green); font-size: 14px; }
 .guild-v3-promotion-reward > span:last-child { color: #9a95a8; font-size: 12px; }
+.guild-v3-next-unlocks { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel-strong); }
+.guild-v3-next-unlocks > .guild-v3-label { color: var(--ui-accent); }
+.guild-project-effect { margin: 0; color: var(--green); font-size: 12px; }
+.guild-project-lock-reason { padding: 8px 10px; border: 1px solid var(--ui-border); border-radius: 6px; color: var(--ui-text-muted); background: var(--ui-panel-strong); font-size: 12px; }
+.guild-project-card.is-locked { border-color: color-mix(in srgb, var(--ui-border) 65%, var(--ui-text-muted)); }
 .guild-v3-rank-ladder { margin-top: 22px; padding-top: 17px; border-top: 1px solid var(--line); }
 .guild-v3-rank-ladder > div { display: flex; gap: 0; overflow-x: auto; margin-top: 11px; padding-bottom: 4px; }
 .guild-v3-rank-step { position: relative; display: grid; gap: 6px; min-width: 86px; color: #78748f; font-size: 11px; }

@@ -32,6 +32,9 @@
 .hunter-empty-state > svg { color: var(--gold); }
 .hunter-empty-state h3 { margin: 0; color: var(--ui-text); }
 .hunter-rank-card { display: grid; gap: 15px; }
+.hunter-rank-unlocks { padding: 12px 14px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel-strong); }
+.hunter-rank-unlocks > span { color: var(--ui-accent); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.hunter-rank-unlocks ul, .guild-v3-next-unlocks ul { display: grid; gap: 5px; margin: 9px 0 0; padding-left: 18px; color: var(--ui-text-muted); font-size: 12px; }
 .hunter-stat-row { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 10px; padding-top: 14px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-xs); }
 .hunter-stat-row strong { color: var(--ui-text); font-family: var(--font-mono); }
 .hunter-ground-panel { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 12px; }

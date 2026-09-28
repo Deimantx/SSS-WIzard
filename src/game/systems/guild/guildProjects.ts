@@ -4,13 +4,26 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { pushNotification } from '../../engine'
 import type { GameState, ItemId } from '../../types'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
+import { GUILD_RANKS } from '../../content/guild/guildRanks'
 
 const safe = (value: number) => Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
+export const getGuildProjectStatus = (state: Pick<GameState, 'progress'>, projectId: string) => {
+  const guild = state.progress.arcaneGuild
+  const project = GUILD_PROJECTS.find((entry) => entry.id === projectId)
+  if (!project) return { project: null, complete: false, available: false, reason: 'unknown-project' as const, missingProjects: [] as string[] }
+  const currentRank = GUILD_RANKS.find((rank) => rank.id === state.progress.guildRank)?.order ?? 0
+  const requiredRank = GUILD_RANKS.find((rank) => rank.id === project.minimumGuildRank)?.order ?? 0
+  const complete = guild.completedProjectIds.includes(projectId)
+  const missingProjects = (project.prerequisiteProjectIds ?? []).filter((id) => !guild.completedProjectIds.includes(id))
+  const reason = complete ? 'complete' as const : !state.progress.guildUnlocked ? 'guild-locked' as const : currentRank < requiredRank ? 'rank-required' as const : missingProjects.length ? 'prerequisite-required' as const : null
+  return { project, complete, available: reason === null, reason, missingProjects }
+}
+
 export const contributeGuildProject = (state: GameState, projectId: string, itemId: ItemId, amount: number | 'max') => {
   const guild = state.progress.arcaneGuild
   const project = GUILD_PROJECTS.find((entry) => entry.id === projectId)
   const requirement = project?.requirements.find((entry) => entry.itemId === itemId)
-  if (!state.progress.guildUnlocked || !project || !requirement || guild.completedProjectIds.includes(projectId) || state.protectedItems[itemId]) return false
+  if (!getGuildProjectStatus(state, projectId).available || !project || !requirement || state.protectedItems[itemId]) return false
   const contributed = guild.projects[projectId]?.[itemId] ?? 0
   const remaining = Math.max(0, requirement.quantity - contributed)
   const wanted = amount === 'max' ? remaining : Math.min(remaining, safe(amount))

@@ -108,14 +108,20 @@ const makeTargetSpecs = (state: Pick<GameState, 'progress'>): HunterContractTarg
   return candidates.filter((spec) => eligibleMembers(spec).some((id) => !blocked.has(id)))
 }
 
-const chooseQuality = (state: Pick<GameState, 'progress'>) => {
+const chooseQuality = (state: Pick<GameState, 'progress'>, availableTypes: ReadonlySet<HunterContractTarget['type']>) => {
   const reputation = orderFor(state).reputation
   const weights = BALANCE.huntersOrder.qualityWeights
-  const choices = (['routine', 'special', 'prestigious'] as const).filter((tier) => reputation >= requiredRankForTier(tier))
+  const choices = (['routine', 'special', 'prestigious'] as const).filter((tier) => reputation >= requiredRankForTier(tier) && archetypesByTier[tier].some((type) => availableTypes.has(type)))
   const total = choices.reduce((sum, tier) => sum + weights[tier], 0)
   let roll = nextHunterRandom(state) * total
   for (const tier of choices) { roll -= weights[tier]; if (roll < 0) return tier }
   return 'routine' as const
+}
+
+const archetypesByTier: Record<HunterContractState['tier'], readonly HunterContractTarget['type'][]> = {
+  routine: ['monster', 'family'],
+  special: ['monster', 'family', 'alignment', 'region'],
+  prestigious: ['family', 'alignment', 'region', 'boss'],
 }
 
 const chooseWeightedTargetSpec = (state: Pick<GameState, 'progress'>, available: HunterContractTarget[]) => {
@@ -142,10 +148,12 @@ export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>
   const seen = new Set<string>()
   const count = Math.min(getHunterContractChoiceCount(state), pool.length)
   for (let index = 0; index < count; index += 1) {
-    const available = pool.filter((spec) => !seen.has(specKey(spec)))
+    const unselected = pool.filter((spec) => !seen.has(specKey(spec)))
+    const quality = chooseQuality(state, new Set(unselected.map((spec) => spec.type)))
+    const allowedTypes = archetypesByTier[quality]
+    const available = unselected.filter((spec) => allowedTypes.includes(spec.type))
     if (!available.length) break
     const spec = chooseWeightedTargetSpec(state, available)
-    const quality = spec.type === 'boss' ? 'prestigious' : chooseQuality(state)
     const range = BALANCE.huntersOrder.targetRanges[quality]
     const baseTarget = range[0] + Math.floor(nextHunterRandom(state) * (range[1] - range[0] + 1))
     const target = Math.max(1, baseTarget - (order.purchasedUpgrades['trail-kit'] ?? 0))

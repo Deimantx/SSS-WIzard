@@ -8,12 +8,45 @@ import { SIGIL_SETS } from '../../content/sigils/sigilSets'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
+export type BestiaryMetadataFilter = 'all' | 'hunter-only' | 'boss' | 'discovered' | `region:${string}` | `family:${string}` | `alignment:${string}` | `tier:${string}`
+export interface BestiaryMetadataFilterOption { value: BestiaryMetadataFilter; label: string }
 export const BESTIARY_CATEGORY_LABELS = { monster: 'Monsters', boss: 'Bosses' } as const satisfies Record<BestiaryCategory, string>
 export const BESTIARY_ENTRY_CATEGORY_LABELS = { monster: 'Monster', boss: 'Boss' } as const satisfies Record<BestiaryCategory, string>
 
 export const getBestiaryEntries = () => Object.values(MONSTERS)
 export const getMonstersByBestiaryCategory = (category: BestiaryCategory) => getBestiaryEntries().filter((monster) => monster.bestiaryCategory === category)
 export const getBestiaryEntriesByCategory = (category: BestiaryCategoryFilter) => category === 'all' ? getBestiaryEntries() : getMonstersByBestiaryCategory(category)
+
+export const getBestiaryMetadataFilterOptions = (): BestiaryMetadataFilterOption[] => {
+  const options: BestiaryMetadataFilterOption[] = [
+    { value: 'all', label: 'All entries' },
+    { value: 'hunter-only', label: 'Hunter-only' },
+    { value: 'boss', label: 'Bosses' },
+    { value: 'discovered', label: 'Discovered' },
+  ]
+  const hunterEntries = getBestiaryEntries().filter((monster) => monster.hunter)
+  const unique = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b))
+  unique(getBestiaryEntries().flatMap((monster) => getMonsterLocationEntries(monster.id).map((location) => location.id))).forEach((id) => options.push({ value: `region:${id}`, label: `Region · ${DUNGEONS[id as keyof typeof DUNGEONS]?.name ?? id}` }))
+  unique(hunterEntries.map((monster) => monster.hunter!.family)).forEach((family) => options.push({ value: `family:${family}`, label: `Family · ${family}` }))
+  unique(hunterEntries.map((monster) => monster.hunter!.alignment)).forEach((alignment) => options.push({ value: `alignment:${alignment}`, label: `Alignment · ${alignment}` }))
+  unique(hunterEntries.map((monster) => monster.hunter!.contractTier)).forEach((tier) => options.push({ value: `tier:${tier}`, label: `Contract Tier · ${tier}` }))
+  return options
+}
+
+export const matchesBestiaryMetadataFilter = (monster: MonsterDefinition, progress: GameState['progress'], filter: BestiaryMetadataFilter) => {
+  if (filter === 'all') return true
+  if (filter === 'hunter-only') return Boolean(monster.hunter?.exclusive)
+  if (filter === 'boss') return monster.bestiaryCategory === 'boss'
+  if (filter === 'discovered') return progress.discoveredMonsters.includes(monster.id)
+  const separator = filter.indexOf(':')
+  const kind = filter.slice(0, separator)
+  const value = filter.slice(separator + 1)
+  if (kind === 'region') return getMonsterLocationEntries(monster.id).some((location) => location.id === value)
+  if (kind === 'family') return monster.hunter?.family === value
+  if (kind === 'alignment') return monster.hunter?.alignment === value
+  if (kind === 'tier') return monster.hunter?.contractTier === value
+  return false
+}
 
 export const getMonsterDefeatCount = (state: Pick<GameState, 'progress'>, monsterId: MonsterId) => {
   const monster = MONSTERS[monsterId]

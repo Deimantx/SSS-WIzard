@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { acceptGuildCommission, deliverGuildCommissionItems, generateGuildCommissionChoices, recordGuildCommissionProgressBatch } from './guildCommissions'
+import { acceptGuildCommission, deliverGuildCommissionItems, generateGuildCommissionChoices, recordGuildCommissionProgressBatch, refreshGuildCommissionChoices } from './guildCommissions'
 import { registerArcaneRegistryEntry } from './arcaneRegistry'
 import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
+import { BALANCE } from '../../core/balance/balance'
 
 describe('Arcane Guild services', () => {
   it('generates only accessible noncombat work orders', () => {
@@ -14,6 +15,24 @@ describe('Arcane Guild services', () => {
     expect(offers.length).toBeGreaterThan(0)
     expect(offers.every((offer) => offer.category === 'delivery')).toBe(true)
     expect(offers.every((offer) => !('monsterId' in offer))).toBe(true)
+  })
+
+  it('generates seeded boards deterministically and keeps objective complexity aligned to quality', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.guildRank = 'magister'
+    state.progress.tutorialStage = 'complete'
+    state.progress.discoveredItems = ['life-essence', 'fire-fragment', 'water-fragment', 'earth-fragment', 'air-fragment', 'prismatic-fragment']
+    state.progress.arcaneGuild.rngState = 12345
+    const same = structuredClone(state)
+    const offers = generateGuildCommissionChoices(state)
+    expect(offers).toEqual(generateGuildCommissionChoices(same))
+    for (const offer of offers) {
+      if (offer.quality === 'routine') expect(offer.components).toBeUndefined()
+      if (offer.quality === 'special') expect(offer.components).toHaveLength(2)
+      if (offer.quality === 'prestigious') expect(offer.components?.length).toBeGreaterThanOrEqual(3)
+    }
+    expect(offers.every((offer) => offer.quality !== 'prestigious' || state.progress.guildRank === 'magister')).toBe(true)
   })
 
   it('keeps Production item-specific and counts actual replicated output quantity', () => {
@@ -57,6 +76,34 @@ describe('Arcane Guild services', () => {
     recordGuildCommissionProgressBatch(state, [{ category: 'research', amount: 2 }, { category: 'transmutation', amount: 3 }, { category: 'production', amount: 5, itemId: 'fire-fragment' }])
     expect(state.progress.arcaneGuild.completedCommissions).toBe(1)
     expect(state.progress.arcaneGuild.activeCommission).toBeNull()
+  })
+
+  it('supports item delivery as an independent Mixed Commission component', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.discoveredItems = ['life-essence']
+    state.inventory['life-essence'] = 12
+    state.progress.arcaneGuild.activeCommission = { id: 'mixed-delivery-research', templateId: 'mixed-materials-research', category: 'mixed', quality: 'special', target: 15, progress: 0, reputationReward: 100, advancementPointReward: 0, components: [{ category: 'delivery', itemId: 'life-essence', target: 12, progress: 0 }, { category: 'research', target: 3, progress: 0 }] }
+    expect(deliverGuildCommissionItems(state, 'max')).toBe(true)
+    expect(state.progress.arcaneGuild.activeCommission?.components?.[0].progress).toBe(12)
+    expect(state.progress.arcaneGuild.activeCommission?.progress).toBe(12)
+    recordGuildCommissionProgressBatch(state, [{ category: 'research', amount: 3 }])
+    expect(state.progress.arcaneGuild.completedCommissions).toBe(1)
+    expect(state.progress.arcaneGuild.activeCommission).toBeNull()
+  })
+
+  it('keeps the active Commission when refreshing and honors the capped free refresh balance', () => {
+    const state = createInitialState()
+    state.progress.guildUnlocked = true
+    state.progress.discoveredItems = ['life-essence']
+    state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state)
+    const offer = state.progress.arcaneGuild.availableCommissions[0]
+    state.inventory['life-essence'] = offer.target
+    acceptGuildCommission(state, offer.id)
+    state.progress.arcaneGuild.freeRefreshes = BALANCE.arcaneGuild.maxFreeRefreshes
+    expect(refreshGuildCommissionChoices(state)).toBe(true)
+    expect(state.progress.arcaneGuild.freeRefreshes).toBe(BALANCE.arcaneGuild.maxFreeRefreshes - 1)
+    expect(state.progress.arcaneGuild.activeCommission).not.toBeNull()
   })
 
   it('completes a delivery commission, grants Reputation, and refreshes the board', () => {

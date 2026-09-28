@@ -5,7 +5,7 @@ import { Button, GameTooltip } from '../../components/ui'
 import { useGameStore } from '../../store/gameStore'
 import type { DungeonId, MonsterId } from '../../game/types'
 import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { getBestiaryEntriesByCategory, getBestiarySearchText, type BestiaryCategoryFilter } from '../../game/systems/bestiary/bestiarySelectors'
+import { getBestiaryEntriesByCategory, getBestiarySearchText, getBestiaryMetadataFilterOptions, matchesBestiaryMetadataFilter, type BestiaryCategoryFilter, type BestiaryMetadataFilter } from '../../game/systems/bestiary/bestiarySelectors'
 import { BestiaryIndex } from './BestiaryIndex'
 import { BestiaryInspector } from './BestiaryInspector'
 import { BestiarySummary } from './BestiarySummary'
@@ -19,6 +19,8 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
   const progress = useGameStore((state) => state.progress)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<BestiaryCategoryFilter>('all')
+  const [metadataFilter, setMetadataFilter] = useState<BestiaryMetadataFilter>('all')
+  const metadataFilterOptions = useMemo(() => getBestiaryMetadataFilterOptions(), [])
   const navigationIntent = useNavigationIntent()
   const [scopedDungeonId, setScopedDungeonId] = useState<DungeonId | null>(() => navigationIntent.combatDungeonId)
   const [selected, setSelected] = useState<MonsterId | null>(() => navigationIntent.combatMonsterId)
@@ -30,8 +32,8 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
   }, [scopedDungeonId])
   const visibleIds = useMemo(() => getBestiaryEntriesByCategory(category).filter((monster) => {
     const discovered = progress.discoveredMonsters.includes(monster.id)
-    return (!scopeIds || scopeIds.has(monster.id)) && (!search.trim() || discovered && getBestiarySearchText(monster).includes(search.trim().toLowerCase()))
-  }).map((monster) => monster.id), [progress, category, scopeIds, search])
+    return matchesBestiaryMetadataFilter(monster, progress, metadataFilter) && (!scopeIds || scopeIds.has(monster.id)) && (!search.trim() || discovered && getBestiarySearchText(monster).includes(search.trim().toLowerCase()))
+  }).map((monster) => monster.id), [progress, category, metadataFilter, scopeIds, search])
 
   useEffect(() => {
     const dungeonId = navigationIntent.combatDungeonId
@@ -55,7 +57,7 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
     setSelected((current) => current && visibleIds.includes(current) ? current : discoveredVisibleId)
   }, [visibleIds.join('|'), progress.discoveredMonsters.join('|')])
 
-  const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
+  const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} metadataFilter={metadataFilter} metadataFilterOptions={metadataFilterOptions} onMetadataFilter={setMetadataFilter} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
   return <div className={`screen-content bestiary-screen ${embedded ? 'bestiary-embedded' : ''}`}>{!embedded && <div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div>}<ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
 }

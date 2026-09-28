@@ -45,7 +45,8 @@ export interface GuildCommissionTemplate {
   baseAdvancementPoints: number
   minimumProgressStage: 'guild' | 'research' | 'transmutation'
   weight?: number
-  components?: readonly { category: 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number }[]
+  components?: readonly { category: 'delivery' | 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number }[]
+  complexity?: 'routine' | 'special' | 'prestigious'
 }
 
 export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
@@ -58,5 +59,8 @@ export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
   { id: 'transmute-materials', category: 'transmutation', target: 5, baseReputation: 100, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
   { id: 'produce-fire-fragments', category: 'production', itemId: 'fire-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
   { id: 'produce-water-fragments', category: 'production', itemId: 'water-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
-  { id: 'mixed-ember-study', category: 'mixed', target: 14, baseReputation: 160, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.7, components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'transmutation', target: 4 }, { category: 'research', target: 2 }] },
+  { id: 'mixed-ember-study', category: 'mixed', target: 14, baseReputation: 160, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.7, complexity: 'prestigious', components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'transmutation', target: 4 }, { category: 'research', target: 2 }] },
+  { id: 'mixed-materials-research', category: 'mixed', target: 10, baseReputation: 150, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.9, complexity: 'special', components: [{ category: 'delivery', itemId: 'life-essence', target: 8 }, { category: 'research', target: 2 }] },
+  { id: 'mixed-output-research', category: 'mixed', target: 10, baseReputation: 165, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.8, complexity: 'special', components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'research', target: 2 }] },
+  { id: 'mixed-leyline-practice', category: 'mixed', target: 13, baseReputation: 205, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.6, complexity: 'prestigious', components: [{ category: 'production', itemId: 'air-fragment', target: 8 }, { category: 'transmutation', target: 3 }, { category: 'research', target: 2 }] },
 ]

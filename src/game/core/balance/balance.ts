@@ -14,7 +14,7 @@ export const BALANCE = {
     tierMinimumReputation: { routine: 0, special: 250, prestigious: 3500 },
     archetypeWeights: { monster: 5, family: 3, region: 1, alignment: 2, boss: 1 },
     qualityWeights: { routine: 75, special: 20, prestigious: 5 } },
-  arcaneGuild: { maxFreeRefreshes: 2, qualityTargetMultipliers: { routine: 1, special: 1.5, prestigious: 2.2 }, rankMinimumQuality: { routine: 'outsider', special: 'apprentice', prestigious: 'magister' },
+  arcaneGuild: { baseCommissionChoices: 3, maxFreeRefreshes: 2, qualityTargetMultipliers: { routine: 1, special: 1.5, prestigious: 2.2 }, rankMinimumQuality: { routine: 'outsider', special: 'apprentice', prestigious: 'magister' },
     qualityWeights: { routine: 75, special: 20, prestigious: 5 } },
   schoolProgression: { startingCap: 20, tutorialCompleteCap: 40 },
 } as const

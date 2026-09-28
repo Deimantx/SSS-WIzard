@@ -1,6 +1,7 @@
 import { GUILD_REQUESTS, LEGACY_GUILD_REQUESTS, type GuildRequestId } from '../../content/guild/guildRequests'
 import { GUILD_RANKS, GUILD_RANK_BY_ID, type GuildRankDefinition } from '../../content/guild/guildRanks'
 import { GUILD_SKILL_NODES, type GuildSkillNodeDefinition } from '../../content/guild/guildSkills'
+import { GUILD_PROJECTS } from '../../content/guild/guildProjects'
 import type { GameState, GuildRankId, GuildSkillNodeId } from '../../types'
 
 const rankOrder: GuildRankId[] = ['outsider', 'initiate', 'apprentice', 'adept', 'magister', 'circle-master']
@@ -33,15 +34,16 @@ export const getGuildProgressionBonuses = (state: Pick<GameState, 'progress'>): 
   const majorEfficiency = majorPurchased(state, 'major-arcane-efficiency') ? 0.02 : 0
   const coordination = majorPurchased(state, 'major-coordination') ? 0.02 : 0
   const grandStanding = majorPurchased(state, 'major-grand-standing') ? 0.03 : 0
+  const projectBonus = (type: 'guild-reputation' | 'research-speed' | 'transmutation-speed') => GUILD_PROJECTS.reduce((sum, project) => state.progress.arcaneGuild.completedProjectIds.includes(project.id) && project.effect?.type === type ? sum + project.effect.amount : sum, 0)
   return {
     combatArcanePointMultiplier: 1, combatResonanceMultiplier: 1, lifeEssenceMultiplier: 1,
     artifactEssenceMultiplier: 1, bossEssenceMultiplier: 1, crystalCacheChanceMultiplier: 1,
-    researchSpeedMultiplier: 1 + rankForEffect(state, 'research-speed') * 0.005 + majorEfficiency + coordination,
+    researchSpeedMultiplier: 1 + rankForEffect(state, 'research-speed') * 0.005 + majorEfficiency + coordination + projectBonus('research-speed'),
     researchXpMultiplier: 1 + rankForEffect(state, 'research-xp') * 0.01,
-    guildReputationMultiplier: 1 + rankForEffect(state, 'guild-reputation') * 0.01 + grandStanding,
+    guildReputationMultiplier: 1 + rankForEffect(state, 'guild-reputation') * 0.01 + grandStanding + projectBonus('guild-reputation'),
     transmutationOutputChance: Math.min(0.25, rankForEffect(state, 'transmutation-output') * 0.01),
     arcaneFluxMultiplier: 1 + rankForEffect(state, 'arcane-flux') * 0.01 + grandStanding,
-    transmutationSpeedMultiplier: 1 + rankForEffect(state, 'transmutation-speed') * 0.01 + majorEfficiency + coordination,
+    transmutationSpeedMultiplier: 1 + rankForEffect(state, 'transmutation-speed') * 0.01 + majorEfficiency + coordination + projectBonus('transmutation-speed'),
     bonusAcolytes: rankForEffect(state, 'bonus-acolyte'),
     commissionChoiceBonus: majorPurchased(state, 'major-favored-contractor') ? 1 : 0,
     deliveryQuantityMultiplier: majorPurchased(state, 'major-efficient-procurement') ? 0.95 : 1,

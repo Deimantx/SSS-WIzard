@@ -36,6 +36,9 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'hunter-contracts-completed': return `Complete ${condition.count} Hunt Contract${condition.count === 1 ? '' : 's'}`
     case 'hunter-contracts-accepted': return `Accept ${condition.count} Hunt Contract${condition.count === 1 ? '' : 's'}`
     case 'guild-project-completed': return `Complete the ${formatReadableId(condition.projectId)} Guild Project`
+    case 'guild-registry-sets-completed': return `Complete ${condition.count} Arcane Registry Set${condition.count === 1 ? '' : 's'}`
+    case 'guild-points-spent': return `Spend ${condition.count} Guild Advancement Point${condition.count === 1 ? '' : 's'}`
+    case 'hunter-upgrades-purchased': return `Purchase ${condition.count} Hunter upgrade${condition.count === 1 ? '' : 's'}`
     case 'guardian-selected': return 'Select an elemental Guardian'
     case 'guardian-combat-completed': return 'Complete an encounter with an active Guardian'
     case 'crystal-equipped': return `Equip ${condition.count} Crystal${condition.count === 1 ? '' : 's'}`

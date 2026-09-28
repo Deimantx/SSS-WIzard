@@ -1,13 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { CHRONICLE_OBJECTIVES } from '../../content/chronicles/chronicles'
-import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
+import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, evaluateChronicleCondition, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, getChronicleConditionValue, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
 
 describe('Chronicle runtime', () => {
   it('keeps first Arcane Guild Commission as one objective and gives the Tower milestone a distinct condition', () => {
     const commissionObjectives = CHRONICLE_OBJECTIVES.filter((objective) => objective.condition.type === 'guild-commissions-completed' && objective.condition.count === 1)
     expect(commissionObjectives.map((objective) => objective.id)).toEqual(['g2-first-guild-contract'])
     expect(CHRONICLE_OBJECTIVES.find((objective) => objective.id === 't4-answer-verdant-circle')).toMatchObject({ title: 'Focus an Arcane Core Node', condition: { type: 'arcane-core-invested-nodes', count: 1 }, navigateTo: 'arcane-core' })
+  })
+  it('keeps accepting a Hunt Contract distinct from completing one and tracks Guild investments', () => {
+    const state = createInitialState()
+    const accepted = CHRONICLE_OBJECTIVES.find((objective) => objective.id === 'g13-accept-a-hunt')!
+    const completed = CHRONICLE_OBJECTIVES.find((objective) => objective.id === 'g5-first-hunt-contract')!
+    state.progress.huntersOrder.totalContractsAccepted = 1
+    expect(evaluateChronicleCondition(state, accepted.condition)).toBe(true)
+    expect(evaluateChronicleCondition(state, completed.condition)).toBe(false)
+    state.progress.huntersOrder.totalContractsCompleted = 1
+    state.progress.arcaneRegistry.completedSetIds = ['ember-fundamentals']
+    state.progress.guildSkillNodeRanks['hunter-arcane-quarry'] = 1
+    expect(evaluateChronicleCondition(state, completed.condition)).toBe(true)
+    expect(getChronicleConditionValue(state, { type: 'guild-registry-sets-completed', count: 2 })).toEqual({ current: 1, target: 2 })
+    expect(evaluateChronicleCondition(state, { type: 'guild-points-spent', count: 1 })).toBe(true)
   })
   it('latches objectives and does not duplicate one-time rewards', () => {
     const state = createInitialState()

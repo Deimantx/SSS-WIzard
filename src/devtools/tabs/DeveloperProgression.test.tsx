@@ -9,11 +9,14 @@ import { DeveloperProgression } from './DeveloperProgression'
 describe('Developer progression tester actions', () => {
   beforeEach(() => useGameStore.setState(createInitialState()))
   it('uses shared progression services to unlock and prepare Guild and Hunter test state', async () => {
+    useGameStore.setState((state) => ({ progress: { ...state.progress, discoveredItems: ['life-essence'] } }))
     const user = userEvent.setup()
     render(<TooltipProvider><DeveloperProgression /></TooltipProvider>)
     await user.click(screen.getByRole('button', { name: 'Unlock Arcane Guild' }))
     expect(useGameStore.getState().progress.guildUnlocked).toBe(true)
     expect(useGameStore.getState().progress.arcaneGuild.availableCommissions.length).toBeGreaterThan(0)
+    await user.click(screen.getByRole('button', { name: /Accept/ }))
+    expect(useGameStore.getState().progress.arcaneGuild.activeCommission).not.toBeNull()
     await user.click(screen.getByRole('button', { name: '+5 Advancement Points' }))
     expect(useGameStore.getState().progress.guildPointsEarned).toBe(5)
     await user.click(screen.getByRole('button', { name: 'Unlock Hunter’s Order' }))

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
-import { formatDefeats, getBestiaryCompletion, getBestiaryEntries, getBestiarySearchText, getMonsterDefeatCount, getMonsterLocations } from './bestiarySelectors'
+import { formatDefeats, getBestiaryCompletion, getBestiaryEntries, getBestiarySearchText, getBestiaryMetadataFilterOptions, matchesBestiaryMetadataFilter, getMonsterDefeatCount, getMonsterLocations } from './bestiarySelectors'
 
 describe('Bestiary selectors', () => {
   it('derives all authored categories from monster content', () => {
@@ -43,5 +43,20 @@ describe('Bestiary selectors', () => {
     expect(getBestiarySearchText(MONSTERS['corrupted-greatbear'])).toContain('vulnerable')
     expect(getBestiarySearchText(MONSTERS['archmage-edrin-shade'])).toContain('arcane disruption')
     expect(getBestiarySearchText(MONSTERS['archmage-edrin-shade'])).toContain('final incantation')
+  })
+
+  it('offers data-driven Bestiary filters for Hunter metadata, locations, bosses, and discovery', () => {
+    const state = createInitialState()
+    state.progress.discoveredMonsters = ['ashen-tracker', 'nightglass-alpha', 'forest-wisp']
+    const filters = getBestiaryMetadataFilterOptions()
+    expect(filters.some((entry) => entry.value === 'region:hunters-ground')).toBe(true)
+    expect(filters.some((entry) => entry.value === 'family:Gloamridge Predators')).toBe(true)
+    expect(filters.some((entry) => entry.value === 'alignment:Wild')).toBe(true)
+    expect(filters.some((entry) => entry.value === 'tier:prestigious')).toBe(true)
+    expect(matchesBestiaryMetadataFilter(MONSTERS['ashen-tracker'], state.progress, 'hunter-only')).toBe(true)
+    expect(matchesBestiaryMetadataFilter(MONSTERS['nightglass-alpha'], state.progress, 'boss')).toBe(true)
+    expect(matchesBestiaryMetadataFilter(MONSTERS['forest-wisp'], state.progress, 'discovered')).toBe(true)
+    expect(matchesBestiaryMetadataFilter(MONSTERS['gloamfang-stalker'], state.progress, 'discovered')).toBe(false)
+    expect(matchesBestiaryMetadataFilter(MONSTERS['ashen-tracker'], state.progress, 'family:Gloamridge Predators')).toBe(true)
   })
 })

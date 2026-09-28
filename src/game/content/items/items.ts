@@ -27,6 +27,9 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
       inventoryCategory,
       ...(inventoryCategory === 'material' ? { materialSubtype: item.materialSubtype ?? (item.category === 'elemental' ? 'elemental' : 'creature') } : {}),
       sellValue: isArtifact ? null : item.sellValue ?? (item.kind === 'equipment' ? 180 : null),
+      registryMode: item.registryMode ?? (isArtifact || item.kind === 'equipment' ? 'own' : item.canDestroy === false ? 'discover' : 'consume'),
+      registryCategory: item.registryCategory ?? (item.kind === 'equipment' ? 'Equipment' : item.category === 'elemental' ? 'Resonance' : item.researchSchool ? 'Research' : item.materialSubtype === 'creature' ? 'Materials' : 'Magical Components'),
+      registryQuantity: Math.max(1, Math.floor(item.registryQuantity ?? 1)),
       canDestroy: isArtifact ? false : item.canDestroy ?? true,
       ...(isArtifact || item.actionRestrictionReason ? {
         actionRestrictionReason: isArtifact ? 'Artifact Equipment cannot be sold or destroyed.' : item.actionRestrictionReason,

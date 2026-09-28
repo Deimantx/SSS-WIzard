@@ -1,11 +1,10 @@
 import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
 import { useGameStore } from '../store/gameStore'
 import type { ScreenId } from '../game/types'
-import { CollectionScreen } from './collection/CollectionScreen'
-import { BestiaryScreen } from './bestiary/BestiaryScreen'
 import { CombatScreenV2 } from './combat/CombatScreen'
 import { EquipmentScreenV2 } from './equipment/EquipmentScreen'
 import { GuildScreen } from './guild/GuildScreen'
+import { HuntersOrderScreen } from './huntersOrder/HuntersOrderScreen'
 import { HomeScreenV2 } from './home/HomeScreen'
 import { InventoryScreenV2 } from './inventory/InventoryScreen'
 import { MagicSchoolsScreenV2 } from './schools/MagicSchoolsScreen'
@@ -33,9 +32,10 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'equipment') return <EquipmentScreenV2 />
   if (screen === 'arcane-core') return <ArcaneCoreScreen />
   if (screen === 'crystals') return <CrystalsScreen />
-  if (screen === 'guild') return <GuildScreen />
-  if (screen === 'collection') return <CollectionScreen />
-  if (screen === 'bestiary') return <BestiaryScreen />
+  if (screen === 'guild' || screen === 'arcane-guild') return <GuildScreen />
+  if (screen === 'hunters-order') return <HuntersOrderScreen />
+  if (screen === 'collection') return <GuildScreen />
+  if (screen === 'bestiary') return <HuntersOrderScreen />
   return <SettingsScreenV2 />
 }
 

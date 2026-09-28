@@ -26,7 +26,7 @@ export function SigilCard({ sigil, selected, equipped, onSelect, cardRef, onCont
     <Button ref={cardRef} type="button" variant="secondary" className={classes} disabled={disabled} ariaPressed={selected} onClick={onSelect} onContextMenu={onContextMenu}>
       <span className="sigil-card-head"><span>T{sigil.tier}</span><span className={'sigil-quality-badge quality-' + sigil.quality}>{quality.label.toUpperCase()}</span></span>
       <strong>{SIGIL_SETS[sigil.setId].name} · {getSigilSlotRoman(sigil.slot)}</strong>
-      <span className="sigil-card-stat">{SIGIL_STAT_DEFINITIONS[sigil.mainStatId].label}<b>{formatSigilStatValue(sigil.mainStatId, stats[sigil.mainStatId] ?? 0, true)}</b></span>
+      <span className="sigil-card-stat"><span>{SIGIL_STAT_DEFINITIONS[sigil.mainStatId].label}</span><b>{formatSigilStatValue(sigil.mainStatId, stats[sigil.mainStatId] ?? 0, true)}</b></span>
       <span className="sigil-card-foot"><span>+{sigil.rank} / +{quality.maxRank}</span>{equipped && <span>IN ARRAY</span>}{sigil.locked && <LockKeyhole size={13} aria-label="Protected from salvage" />}</span>
     </Button>
   </GameTooltip>

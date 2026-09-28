@@ -6,7 +6,7 @@ export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'arcane-guild' | 'hunters-order' | 'settings'
 export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'completed' | 'locked' | 'recovering'
 
 export type ChronicleChapterId = 'first-frontier' | 'shattered-frontier'
@@ -16,7 +16,7 @@ export type ChronicleObjectiveId =
   | 'c1-enter-whispering-woods' | 'c2-auto-cast'
   | 'mg1-strengthen-artifact' | 'mg2-expand-spellbook' | 'mg3-four-spell-arsenal'
   | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle' | 't5-read-a-sigil'
-  | 'g1-join-verdant-circle' | 'g2-first-guild-contract' | 'g3-guild-apprentice'
+  | 'g1-join-verdant-circle' | 'g2-first-guild-contract' | 'g3-guild-apprentice' | 'g4-hunters-calling' | 'g5-first-hunt-contract' | 'g6-arcane-service' | 'g7-professional-standing' | 'g8-guild-rank-two' | 'g9-restore-guild-archive'
   | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m6-world-tier-two'
   | 'sf-bind-guardian' | 'sf-fight-together' | 'sf-socket-first-crystal' | 'sf-step-into-harder-world'
   | `sigil-${string}`
@@ -27,6 +27,8 @@ export type GuildSkillNodeId =
   | 'hunter-arcane-quarry' | 'hunter-resonant-pursuit' | 'hunter-trophy-hunter'
   | 'quartermaster-careful-harvest' | 'quartermaster-relic-appraisal' | 'quartermaster-cache-appraisal'
   | 'tower-leyline-assistance' | 'tower-efficient-arrays' | 'tower-expanded-quarters'
+  | 'guild-peer-review' | 'guild-resonance-etching' | 'guild-calibrated-rota'
+  | 'major-favored-contractor' | 'major-efficient-procurement' | 'major-arcane-efficiency' | 'major-guild-connections' | 'major-coordination' | 'major-grand-standing'
 
 export interface ChronicleProgressState {
   completedObjectiveIds: ChronicleObjectiveId[]
@@ -90,7 +92,7 @@ export type CanonicalSpellId =
 export type LegacySpellId = 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellId = CanonicalSpellId | LegacySpellId
 export type SpellPresetId = string
-export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper' | 'tidefang-serpent' | 'brinebound-sentinel' | 'abyssal-archivist' | 'emberwing-harrier' | 'charred-warden' | 'pyre-colossus' | 'sporeback-brute' | 'vinebound-reaver' | 'scarwood-behemoth'
+export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper' | 'tidefang-serpent' | 'brinebound-sentinel' | 'abyssal-archivist' | 'emberwing-harrier' | 'charred-warden' | 'pyre-colossus' | 'sporeback-brute' | 'vinebound-reaver' | 'scarwood-behemoth' | 'ashen-tracker' | 'gloamfang-stalker' | 'runehorn-brute' | 'nightglass-alpha'
   | 'drowned-acolyte' | 'reliquary-slime' | 'mist-wraith' | 'rune-leech' | 'drowned-keeper'
   | 'cinder-hound' | 'ash-cultist' | 'fire-elemental' | 'lava-eel' | 'flamebound-revenant'
   | 'thorn-maw' | 'rootbound-stalker' | 'briar-sprite' | 'moss-carapace' | 'rootscar-ancient'
@@ -131,7 +133,7 @@ export interface CrystalState {
 
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
-export type DungeonId = 'whispering-woods' | 'howling-den' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate'
+export type DungeonId = 'whispering-woods' | 'howling-den' | 'hunters-ground' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate'
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet'
 export type EquipmentPosition = 'weapon' | 'armor' | 'head'
 /** Permanent Artifacts grouped by authored Act ownership. */
@@ -342,6 +344,9 @@ export interface ItemDefinition {
   materialSubtype?: InventoryMaterialSubtype
   /** Authored material progression tier; equipment must not define this field. */
   materialTier?: number
+  registryMode?: 'consume' | 'discover' | 'own'
+  registryCategory?: string
+  registryQuantity?: number
   source: string
   sourceNavigation?: ScreenId
   /** Optional authored chain for future refined-material presentations. */
@@ -722,6 +727,9 @@ export interface ProgressState {
   requestClaims: Record<string, boolean>
   guildPointsEarned: number
   guildSkillNodeRanks: Partial<Record<GuildSkillNodeId, number>>
+  huntersOrder: HuntersOrderProgress
+  arcaneRegistry: ArcaneRegistryProgress
+  arcaneGuild: ArcaneGuildProgress
   chronicle: ChronicleProgressState
   permanentManaBonuses: Record<string, number>
   startingSchoolId: SchoolId | null
@@ -731,6 +739,65 @@ export interface ProgressState {
   autoHuntBossByDungeon: Record<DungeonId, boolean>
   channeling: ChannelingProgress
   transmutation: TransmutationProgress
+}
+
+
+
+export type GuildCommissionCategory = 'delivery' | 'research' | 'transmutation'
+export type GuildCommissionQuality = 'routine' | 'special' | 'prestigious'
+export interface GuildCommissionState {
+  id: string
+  templateId: string
+  category: GuildCommissionCategory
+  quality: GuildCommissionQuality
+  itemId?: ItemId
+  target: number
+  progress: number
+  reputationReward: number
+  advancementPointReward: number
+}
+export interface GuildCommissionChainState { id: string; stageIndex: number; stageProgress: number }
+export interface ArcaneGuildProgress {
+  projects: Record<string, Partial<Record<ItemId, number>>>
+  completedProjectIds: string[]
+  activeCommissionChain: GuildCommissionChainState | null
+  availableCommissions: GuildCommissionState[]
+  activeCommission: GuildCommissionState | null
+  generationCount: number
+  completedCommissions: number
+  freeRefreshes: number
+}
+
+export interface ArcaneRegistryProgress {
+  registeredEntries: Partial<Record<ItemId, number>>
+  completedSetIds: string[]
+}
+
+export type HunterRankId = 'tracker' | 'scout' | 'stalker' | 'warden' | 'veteran' | 'master-hunter'
+export type HunterContractTier = 'routine' | 'special' | 'prestigious'
+export type HunterUpgradeId = 'trail-kit' | 'marked-quarry'
+export interface HunterContractState {
+  id: string
+  targetMonsterId: MonsterId
+  target: number
+  progress: number
+  tier: HunterContractTier
+  reputationReward: number
+  marksReward: number
+}
+export interface HuntersOrderProgress {
+  reputation: number
+  rankId: HunterRankId
+  hunterMarks: number
+  totalContractsAccepted: number
+  activeContract: HunterContractState | null
+  availableContracts: HunterContractState[]
+  blockedTargets: MonsterId[]
+  purchasedUpgrades: Record<string, number>
+  totalContractsCompleted: number
+  totalHunterKills: number
+  generationCount: number
+  monsterHunterStats: Partial<Record<MonsterId, { contractKills: number; contractsCompleted: number; marksEarned: number }>>
 }
 
 export interface TransmutationProgress {

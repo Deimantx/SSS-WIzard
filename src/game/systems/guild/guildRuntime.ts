@@ -4,6 +4,7 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { pushNotification } from '../../engine'
 import { canPurchaseGuildSkillNode, getGuildPromotionProgress } from './guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
+import { ensureGuildCommissionChoices } from './guildCommissions'
 import type { DungeonId, GameState, GuildRankId, GuildSkillNodeId, MonsterId } from '../../types'
 
 const safeAmount = (value: number) => Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
@@ -23,17 +24,8 @@ export const donateGuildRequest = (state: GameState, requestId: string, amount: 
   return true
 }
 
-export const recordGuildEnemyKill = (state: GameState, enemyId: MonsterId, dungeonId: DungeonId, boss: boolean) => {
-  if (!state.progress.guildUnlocked) return
-  const update = (requestId: GuildRequestId, amount = 1) => {
-    if (state.progress.requestClaims[requestId]) return
-    const request = GUILD_REQUESTS[requestId]
-    state.progress.requestProgress[requestId] = Math.min(request.target, (state.progress.requestProgress[requestId] ?? 0) + amount)
-  }
-  if (!boss && dungeonId === 'howling-den') update('thin-the-pack')
-  if (!boss && dungeonId === 'howling-den' && enemyId === 'den-stalker') update('den-stalker')
-  if (boss && enemyId === 'corrupted-greatbear') update('greatbear-contract')
-}
+/** @deprecated Monster-kill progression belongs to Hunter’s Order. */
+export const recordGuildEnemyKill = (_state: GameState, _enemyId: MonsterId, _dungeonId: DungeonId, _boss: boolean) => undefined
 
 export const claimGuildRequest = (state: GameState, requestId: string) => {
   const request = getRequest(requestId)
@@ -64,8 +56,10 @@ export const promoteGuild = (state: GameState) => {
 
 export const purchaseGuildSkillNode = (state: GameState, nodeId: GuildSkillNodeId, free = false) => {
   if (!GUILD_SKILL_NODES[nodeId] || (!free && !canPurchaseGuildSkillNode(state, nodeId))) return false
-  if (free && state.progress.guildSkillNodeRanks[nodeId]) return false
-  state.progress.guildSkillNodeRanks[nodeId] = 1
+  const currentRank = state.progress.guildSkillNodeRanks[nodeId] ?? 0
+  if (currentRank >= GUILD_SKILL_NODES[nodeId].maxRank) return false
+  if (free) { state.progress.guildSkillNodeRanks[nodeId] = GUILD_SKILL_NODES[nodeId].maxRank; return true }
+  state.progress.guildSkillNodeRanks[nodeId] = currentRank + 1
   return true
 }
 
@@ -85,3 +79,5 @@ const getGuildSkillTreeCapacityAfterReset = (state: GameState) => Math.max(0, Ma
 export const resetGuildRequests = (state: GameState) => { state.progress.requestProgress = {}; state.progress.requestClaims = {} }
 export const setGuildRank = (state: GameState, rank: GuildRankId) => { state.progress.guildRank = rank }
 export const grantGuildPoint = (state: GameState, amount: number) => { state.progress.guildPointsEarned = safeAmount(state.progress.guildPointsEarned) + safeAmount(amount) }
+
+export const debugSetArcaneGuildUnlocked = (state: GameState, unlocked: boolean) => { state.progress.guildUnlocked = unlocked; if (unlocked && state.progress.guildRank === 'outsider') state.progress.guildRank = 'initiate'; ensureGuildCommissionChoices(state); reconcileChronicleProgress(state) }

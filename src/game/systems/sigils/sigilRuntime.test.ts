@@ -262,7 +262,7 @@ describe('Arcane Sigils', () => {
     const state = migrateSave({ ...createInitialState(), saveVersion: 49, sigils: { storage: { bad: { instanceId: 'bad', setId: 'missing', slot: 9, tier: 99, quality: 'legendary', mainStatId: 'nope' } } } })
     expect(state.sigils.storage).toEqual({})
     expect(state.sigils.equipped).toEqual({ 1: null, 2: null, 3: null, 4: null, 5: null, 6: null })
-    expect(state.saveVersion).toBe(50)
+    expect(state.saveVersion).toBe(createInitialState().saveVersion)
   })
 
   it('preserves authored discovery evidence even when storage has been salvaged', () => {

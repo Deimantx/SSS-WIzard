@@ -86,6 +86,20 @@ describe('save navigation migration', () => {
     expect(Object.values(migrated.progress.transmutation.arrays).filter((array) => array.level === 0)).toHaveLength(4)
   })
 
+  it('moves legacy Collection and Bestiary routes and carries forward discovered archive data', () => {
+    const initial = createInitialState()
+    const migratedCollection = migrateSave({ ...initial, saveVersion: 50, ui: { screen: 'collection' }, progress: { ...initial.progress, discoveredItems: ['fire-fragment', 'ember-staff'], discoveredMonsters: ['ashen-tracker'], bossKillsByBoss: { 'corrupted-greatbear': 1 }, huntersOrder: { ...initial.progress.huntersOrder, hunterMarks: 12, purchasedUpgrades: { 'trail-kit': 1 } } } } as any)
+    expect(migratedCollection.ui.screen).toBe('arcane-guild')
+    expect(migratedCollection.progress.arcaneRegistry.registeredEntries).toEqual({})
+    expect(migratedCollection.progress.discoveredItems).toContain('fire-fragment')
+    expect(migratedCollection.progress.discoveredMonsters).toContain('ashen-tracker')
+    expect(migratedCollection.progress.huntersOrder.purchasedUpgrades['trail-kit']).toBe(1)
+    expect(migratedCollection.progress.huntersOrder.hunterMarks).toBe(12)
+    const migratedBestiary = migrateSave({ ...initial, saveVersion: 50, ui: { screen: 'bestiary' }, progress: { ...initial.progress, discoveredMonsters: ['ashen-tracker'], bossKillsByBoss: { 'corrupted-greatbear': 1 } } } as any)
+    expect(migratedBestiary.ui.screen).toBe('hunters-order')
+    expect(migratedBestiary.progress.discoveredMonsters).toContain('ashen-tracker')
+  })
+
   it('maps the old aggregate Tower screen to Channeling', () => {
     const old = { ...createInitialState(), saveVersion: 1, ui: { screen: 'tower' } }
     expect(migrateSave(old).ui.screen).toBe('tower-channeling')

@@ -3,6 +3,8 @@ import { isRecipeUnlocked } from './transmutationSelectors'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import type { GameState, ItemId, TransmutationRecipeId } from '../../types'
 import { grantItem } from '../inventory/itemAcquisition'
+import { recordGuildCommissionProgress } from '../guild/guildCommissions'
+import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { allocateTowerFlux, requestedFluxForProgress, TOWER_FLUX_EPSILON, type TowerFluxAllocation, type TowerFluxFundingResult, type TowerFluxWorkRequest } from '../simulation/towerFluxScheduler'
 import { getEffectiveTransmutationFluxCost, getEffectiveTransmutationResonanceCost, getEffectiveTransmutationStaffedWorkMultiplier, getTransmutationArrayBonuses } from './transmutationArrays'
 import { canSpendResonanceBundle, spendResonanceBundle } from '../resonance/resonanceRuntime'
@@ -136,8 +138,11 @@ export const completeTransmutationCycle = (state: GameState, recipe: (typeof REC
     })
   }
   const replicated = roll() < bonuses.replicationChance
-  const outputQuantity = recipe.output.quantity * (replicated ? 2 : 1)
+  const guildOutputChance = getGuildProgressionBonuses(state).transmutationOutputChance
+  const extraGuildOutput = guildOutputChance > 0 && roll() < guildOutputChance ? 1 : 0
+  const outputQuantity = recipe.output.quantity * (replicated ? 2 : 1) + extraGuildOutput
   grantItem(state, recipe.output.itemId, outputQuantity)
+  recordGuildCommissionProgress(state, 'transmutation', 1)
   context.onItemAcquired?.(recipe.output.itemId, outputQuantity)
   context.report?.recordTransmutation(recipe.id, recipe.output.itemId, outputQuantity, consumedIngredients)
   context.onTransmutationComplete?.(recipe.id)

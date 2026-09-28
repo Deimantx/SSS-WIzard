@@ -7,7 +7,7 @@ import {
 } from "../../content/crystals/crystals";
 import { MONSTER_IDS } from "../../content/monsters";
 import { resolveEnemyPowerRating } from "../../presentation/combat/enemyPowerRating";
-import { createInitialState } from "../../../store/initialState";
+import { createInitialState, SAVE_VERSION } from "../../../store/initialState";
 import {
   bulkCrushCrystals,
   crushCrystals,
@@ -221,7 +221,7 @@ describe("Crystal System V1", () => {
       progress: { bossKillsByBoss: { "meridian-splitter": 1 } },
       inventory: { "tier-1-crystal-cache": 0 },
     });
-    expect(migrated.saveVersion).toBe(50);
+    expect(migrated.saveVersion).toBe(SAVE_VERSION);
     expect(migrated.crystals.equippedSlots).toHaveLength(15);
     expect(migrated.crystals.unlockedSlots).toBe(5);
     expect(migrated.inventory["tier-1-crystal-cache"]).toBe(0);

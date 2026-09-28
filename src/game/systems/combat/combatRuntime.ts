@@ -28,7 +28,9 @@ import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combat
 import { resolveCrystalCacheDrop } from '../crystals/crystalRuntime'
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
+import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
+import { ensureHunterContractChoices, recordHunterKill, canHuntMonster } from '../huntersOrder/huntersOrderRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -172,6 +174,11 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
     }
   }
   const targetedEnemyId = isCombatTargetForLocation(location, dungeon.id, state.combat.targetEnemyId) ? state.combat.targetEnemyId : null
+  if (dungeon.id === 'hunters-ground' && !canHuntMonster(state, targetedEnemyId ?? dungeon.boss)) {
+    state.combat.active = false
+    pushNotification(state, 'An active Hunter Contract is required to hunt in this Ground.', 'warning', { key: 'hunter-contract-required', cooldownMs: 1000 })
+    return false
+  }
   if (getCombatEncounterMode(location) === 'targeted' && !targetedEnemyId) {
     pushNotification(state, 'Select a Hunt Target before starting this Location.', 'warning', { key: `combat-target-required:${dungeon.id}`, cooldownMs: 1000 })
     return false
@@ -259,6 +266,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.progress.firstBossKill = true
       state.progress.guildUnlocked = true
       state.progress.guildRank = 'initiate'
+      ensureGuildCommissionChoices(state)
       state.progress.emberStaffUnlocked = true
       state.progress.forestHeartUnlocked = true
       pushNotification(state, 'Forest Heart defeated - Guild unlocked', 'success')
@@ -319,6 +327,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
   if (encounterWorldTier === 2 && state.worldTier.highestUnlocked >= 2) state.progress.chronicle.eventFlags['first-wt2-kill'] = true
   recordGuildEnemyKill(state, enemyId, state.combat.dungeonId ?? 'whispering-woods', bossDefeated)
+  recordHunterKill(state, enemyId)
   reconcileChronicleProgress(state)
 }
 

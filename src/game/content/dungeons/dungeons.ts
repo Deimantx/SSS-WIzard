@@ -1,5 +1,5 @@
 import { MONSTERS, isBossMonster } from '../monsters'
-import { ABANDONED_CATACOMBS_DUNGEON, HOWLING_DEN_DUNGEON, WHISPERING_WOODS_DUNGEON } from './act0'
+import { ABANDONED_CATACOMBS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, WHISPERING_WOODS_DUNGEON } from './act0'
 import { ACT1_DUNGEONS } from './act1'
 import type { DungeonId, GameState, MonsterId } from '../../types'
 
@@ -21,7 +21,7 @@ export interface DungeonDefinition {
   ui?: { description: string }
 }
 
-const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, ABANDONED_CATACOMBS_DUNGEON] as const
+const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, ABANDONED_CATACOMBS_DUNGEON] as const
 export const DUNGEON_ORDER: DungeonId[] = [...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => dungeon.id)
 export const DUNGEONS: Record<DungeonId, DungeonDefinition> = Object.fromEntries([...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => [dungeon.id, dungeon])) as Record<DungeonId, DungeonDefinition>
 

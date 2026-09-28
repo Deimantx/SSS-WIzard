@@ -250,7 +250,7 @@
 .sigil-bulk-card-wrap .sigil-card { width: 100%; min-width: 0; min-height: 112px; padding: 8px; }
 .sigil-bulk-card-wrap.is-selected .sigil-card { border-color: var(--ui-accent); box-shadow: inset 0 0 0 1px var(--ui-accent), 0 0 14px color-mix(in srgb, var(--ui-accent) 18%, transparent); }
 .sigil-bulk-card-wrap .sigil-card:disabled { cursor: not-allowed; opacity: .58; }
-.sigil-bulk-check { position: absolute; top: 7px; right: 7px; display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid var(--ui-border-strong); border-radius: 50%; color: var(--ui-text-muted); background: var(--ui-bg-elevated); font: 700 var(--text-xs) var(--font-mono); pointer-events: none; }
+.sigil-bulk-check { position: absolute; right: 7px; bottom: 7px; display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid var(--ui-border-strong); border-radius: 50%; color: var(--ui-text-muted); background: var(--ui-bg-elevated); font: 700 var(--text-xs) var(--font-mono); pointer-events: none; }
 .sigil-bulk-card-wrap.is-selected .sigil-bulk-check { border-color: var(--ui-accent); color: var(--ui-bg); background: var(--ui-accent); }
 .sigil-bulk-empty { display: grid; min-height: 180px; place-content: center; justify-items: center; gap: 5px; color: var(--ui-text-muted); text-align: center; }
 .sigil-bulk-empty strong { color: var(--ui-text); font: 700 var(--text-sm) var(--font-mono); }
@@ -273,3 +273,16 @@
 .sigil-bulk-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; border-top: 1px solid var(--ui-border); }
 @media (max-width: 900px) { .sigil-bulk-header { grid-template-columns: minmax(0, 1fr) auto; }.sigil-bulk-header-metrics { grid-column: 1 / -1; justify-content: flex-start; order: 3; }.sigil-bulk-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .sigil-auto-salvage-toggles { grid-template-columns: 1fr; }.sigil-bulk-modal { width: calc(100vw - 16px); height: calc(100vh - 16px); max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); }.sigil-bulk-header { padding: 11px; gap: 8px; }.sigil-bulk-toolbar { padding: 9px; }.sigil-bulk-grid-scroll { padding: 9px; }.sigil-bulk-filters { grid-template-columns: 1fr 1fr; }.sigil-bulk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }.sigil-bulk-card-wrap .sigil-card { min-height: 106px; }.sigil-bulk-footer { padding: 9px; gap: 6px; }.sigil-bulk-footer-summary { flex: 1 1 100%; }.sigil-bulk-footer-dust { flex: 1 1 100%; }.sigil-bulk-footer .button { flex: 1 1 130px; }.sigil-bulk-confirm { padding: 16px; }.sigil-bulk-confirm .sigil-bulk-quality-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Bulk salvage uses a compact, stacked card layout so metadata never competes for one line. */
+.sigil-bulk-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 145px), 1fr)); gap: 8px; }
+.sigil-bulk-card-wrap .sigil-card.compact { display: grid; grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); align-content: center; align-items: center; justify-items: stretch; gap: 5px; min-height: 88px; padding: 7px 9px; text-align: left; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-head { width: 100%; gap: 4px; white-space: nowrap; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-head > span:first-child { flex: 0 0 auto; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-head i { color: var(--ui-text-muted); font-style: normal; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-quality-badge { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sigil-bulk-card-wrap .sigil-card.compact > strong { display: block; min-width: 0; max-width: 100%; padding-right: 16px; font-size: var(--text-xs); line-height: 1.2; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-stat { display: flex; min-width: 0; justify-content: space-between; gap: 5px; white-space: nowrap; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-stat > span { overflow: hidden; min-width: 0; text-overflow: ellipsis; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-stat b { flex: 0 0 auto; white-space: nowrap; }
+.sigil-bulk-card-wrap .sigil-card.compact .sigil-card-foot { min-width: 0; justify-content: flex-start; gap: 6px; }
+@media (max-width: 620px) { .sigil-bulk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }.sigil-bulk-card-wrap .sigil-card.compact { min-height: 86px; } }

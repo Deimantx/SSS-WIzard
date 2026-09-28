@@ -104,7 +104,7 @@ export function SigilVaultModal({ open, onClose, initialSigilInstanceId = null, 
         ] },
         { id: 'routes', actions: [
           { id: 'artificing', label: 'Refine in Artificing', onSelect: () => openArtificing(sigil.instanceId) },
-          { id: 'collection', label: 'Open Set in Collection', onSelect: () => { setNavigationIntent({ sigilSetId: sigil.setId }); setUiPreferences({ screenState: { collection: { primaryTab: 'sigils' } } }); setScreen('collection') } },
+          { id: 'collection', label: 'Open Sigil Set in Equipment', onSelect: () => { setNavigationIntent({ sigilSetId: sigil.setId }); setUiPreferences({ screenState: { collection: { primaryTab: 'sigils' } } }); setScreen('equipment') } },
         ] },
       ],
     })

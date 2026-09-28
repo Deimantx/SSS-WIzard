@@ -6,6 +6,8 @@ import { grantSchoolXp } from '../../engine'
 import type { GameState, ItemId, ResearchActivity, ResearchJobState, ResearchSlotId, SchoolId } from '../../types'
 import { allocateTowerFlux, requestedFluxForProgress, TOWER_FLUX_EPSILON, type TowerFluxAllocation, type TowerFluxFundingResult, type TowerFluxWorkRequest } from '../simulation/towerFluxScheduler'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
+import { recordGuildCommissionProgress } from '../guild/guildCommissions'
+import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 
 export interface ResearchAdvanceContext {
   mode: 'live' | 'banked'
@@ -77,6 +79,7 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
   const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
   const requests: TowerFluxWorkRequest[] = []
 
+  const cycleDurationMs = BALANCE.research.durationPerItemMs / getGuildProgressionBonuses(state).researchSpeedMultiplier
   for (const slotId of RESEARCH_SLOT_ORDER) {
     const job = research.slots[slotId]
     if (!job) continue
@@ -92,8 +95,10 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
     if (!job.acolyteAssigned) { job.status = 'prepared'; continue }
     const availableItems = Math.min(job.remainingQuantity, getRawAvailable(state, job.itemId))
     if (availableItems < 1) { stopBlocked(job, 'missing-item', context); continue }
-    const workCapacity = Math.max(0, availableItems * BALANCE.research.durationPerItemMs - progress)
-    const requestedProgressMs = Math.min(delta, workCapacity)
+    const researchSpeed = getGuildProgressionBonuses(state).researchSpeedMultiplier
+    const cycleDurationMs = BALANCE.research.durationPerItemMs / researchSpeed
+    const workCapacity = Math.max(0, availableItems * cycleDurationMs - progress)
+    const requestedProgressMs = Math.min(delta * researchSpeed, workCapacity)
     if (requestedProgressMs <= TOWER_FLUX_EPSILON) continue
     requests.push({
       key: requestKey(slotId),
@@ -101,8 +106,8 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
       sourceId: slotId,
       requestedProgressMs,
       fluxPerCycle: BALANCE.research.arcaneFluxPerItem,
-      cycleDurationMs: BALANCE.research.durationPerItemMs,
-      requestedFlux: requestedFluxForProgress(BALANCE.research.arcaneFluxPerItem, requestedProgressMs, BALANCE.research.durationPerItemMs),
+      cycleDurationMs,
+      requestedFlux: requestedFluxForProgress(BALANCE.research.arcaneFluxPerItem, requestedProgressMs, cycleDurationMs),
     })
   }
   return requests
@@ -112,8 +117,9 @@ const completeResearchCycle = (state: GameState, slotId: ResearchSlotId, job: Re
   if (isProtected(state, job.itemId)) return 'protected' as const
   if (state.schools[job.targetSchoolId].level >= state.progress.magicLevelCap) return 'level-cap' as const
   if (!consumePreparedResearchItem(state, slotId)) return 'missing-item' as const
-  const xp = getResearchXp(job.itemId, job.targetSchoolId)
+  const xp = Math.round(getResearchXp(job.itemId, job.targetSchoolId) * getGuildProgressionBonuses(state).researchXpMultiplier)
   const levels = grantSchoolXp(state, job.targetSchoolId, xp)
+  recordGuildCommissionProgress(state, 'research', 1)
   context.report?.recordResearch(job.itemId, job.targetSchoolId, xp)
   context.onResearchComplete?.()
   job.remainingQuantity -= 1
@@ -131,22 +137,23 @@ export const applyResearchAllocations = (state: GameState, requests: readonly To
     const request = requested.get(requestKey(slotId))
     const allocation = allocations[requestKey(slotId)]
     const fundedProgressMs = allocation?.fundedProgressMs ?? 0
+    const cycleDurationMs = BALANCE.research.durationPerItemMs / getGuildProgressionBonuses(state).researchSpeedMultiplier
     const progress = normalizeJobProgress(job)
     if (fundedProgressMs > TOWER_FLUX_EPSILON) job.progressMs = progress + fundedProgressMs
 
-    while (job.progressMs >= BALANCE.research.durationPerItemMs - TOWER_FLUX_EPSILON && job.remainingQuantity > 0) {
+    while (job.progressMs >= cycleDurationMs - TOWER_FLUX_EPSILON && job.remainingQuantity > 0) {
       const result = completeResearchCycle(state, slotId, job, context)
       if (result !== 'complete') {
         stopBlocked(job, result, context)
         break
       }
-      job.progressMs = Math.max(0, job.progressMs - BALANCE.research.durationPerItemMs)
+      job.progressMs = Math.max(0, job.progressMs - cycleDurationMs)
       if (job.remainingQuantity <= 0) { research.slots[slotId] = null; break }
     }
 
     const current = research.slots[slotId]
     if (!current) continue
-    current.progressMs = Math.min(BALANCE.research.durationPerItemMs - TOWER_FLUX_EPSILON, Math.max(0, current.progressMs))
+    current.progressMs = Math.min(cycleDurationMs - TOWER_FLUX_EPSILON, Math.max(0, current.progressMs))
     if (!request || request.requestedProgressMs <= TOWER_FLUX_EPSILON) {
       if (current.acolyteAssigned && current.status !== 'level-cap' && current.status !== 'protected' && current.status !== 'missing-item') current.status = 'running'
     } else if (fundedProgressMs <= TOWER_FLUX_EPSILON) {

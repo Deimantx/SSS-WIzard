@@ -1,58 +1,25 @@
-import { ClipboardList } from 'lucide-react'
-import { Button, Card, GameTooltip } from '../../components/ui'
-import { GUILD_REQUEST_IDS } from '../../game/content/guild/guildRequests'
-import { GUILD_REQUEST_KIND_LABELS, getGuildRequestPresentation } from '../../game/presentation/guild/guildPresentation'
-import type { GuildRequestKind } from '../../game/types'
+import { ClipboardList, RefreshCw, Truck } from 'lucide-react'
+import { Button, Card, GameTooltip, Progress } from '../../components/ui'
+import { GUILD_COMMISSION_TEMPLATES } from '../../game/content/guild/guildRequests'
+import { ITEMS } from '../../game/content/items/items'
 import type { GameStore } from '../../store/gameStore'
-import { GuildContractCard } from './GuildContractCard'
 
-export type GuildContractStatusFilter = 'all' | 'active' | 'ready' | 'claimed'
-export type GuildContractKindFilter = 'all' | GuildRequestKind
-
-const statusFilters: readonly { id: GuildContractStatusFilter; label: string; hint: string }[] = [
-  { id: 'all', label: 'All', hint: 'Show every authored Guild contract.' },
-  { id: 'active', label: 'Active', hint: 'Show contracts that still need progress.' },
-  { id: 'ready', label: 'Ready', hint: 'Show completed contracts waiting for reward claim.' },
-  { id: 'claimed', label: 'Claimed', hint: 'Show contracts whose rewards were already claimed.' },
-]
-
-const kindFilters: readonly { id: GuildContractKindFilter; label: string; hint: string }[] = [
-  { id: 'all', label: 'All types', hint: 'Show every contract category.' },
-  { id: 'donation', label: GUILD_REQUEST_KIND_LABELS.donation, hint: 'Material donation contracts.' },
-  { id: 'dungeon-kills', label: GUILD_REQUEST_KIND_LABELS['dungeon-kills'], hint: 'Dungeon hunt contracts.' },
-  { id: 'monster-kills', label: GUILD_REQUEST_KIND_LABELS['monster-kills'], hint: 'Monster bounty contracts.' },
-  { id: 'boss-kill', label: GUILD_REQUEST_KIND_LABELS['boss-kill'], hint: 'Boss expedition contracts.' },
-]
-
-export function GuildContractsControls({ statusFilter, kindFilter, onStatusChange, onKindChange }: { statusFilter: GuildContractStatusFilter; kindFilter: GuildContractKindFilter; onStatusChange: (filter: GuildContractStatusFilter) => void; onKindChange: (filter: GuildContractKindFilter) => void }) {
-  return <Card className="guild-v3-contract-controls">
-    <div className="guild-v3-filter-group" role="group" aria-label="Contract status">
-      <span className="guild-v3-label">STATUS</span>
-      <div className="guild-v3-filter-buttons">
-        {statusFilters.map((filter) => <GameTooltip key={filter.id} content={filter.hint} block><Button variant={statusFilter === filter.id ? 'primary' : 'ghost'} ariaPressed={statusFilter === filter.id} onClick={() => onStatusChange(filter.id)}>{filter.label}</Button></GameTooltip>)}
-      </div>
-    </div>
-    <div className="guild-v3-filter-group" role="group" aria-label="Contract category">
-      <span className="guild-v3-label">CATEGORY</span>
-      <div className="guild-v3-filter-buttons">
-        {kindFilters.map((filter) => <GameTooltip key={filter.id} content={filter.hint} block><Button variant={kindFilter === filter.id ? 'secondary' : 'ghost'} ariaPressed={kindFilter === filter.id} onClick={() => onKindChange(filter.id)}>{filter.label}</Button></GameTooltip>)}
-      </div>
-    </div>
-  </Card>
+const templateFor = (id: string) => GUILD_COMMISSION_TEMPLATES.find((template) => template.id === id)
+const qualityLabel = { routine: 'ROUTINE', special: 'SPECIAL', prestigious: 'PRESTIGIOUS' } as const
+const categoryLabel = { delivery: 'DELIVERY', research: 'RESEARCH', transmutation: 'TRANSMUTATION' } as const
+const objectiveLabel = (commission: NonNullable<GameStore['progress']['arcaneGuild']['activeCommission']>) => {
+  if (commission.category === 'delivery' && commission.itemId) return `Deliver ${commission.target.toLocaleString()} ${ITEMS[commission.itemId].name}`
+  if (commission.category === 'research') return `Complete ${commission.target.toLocaleString()} Research cycles`
+  return `Complete ${commission.target.toLocaleString()} Transmutations`
 }
 
-export function GuildContractsBoard({ state, statusFilter, kindFilter }: { state: GameStore; statusFilter: GuildContractStatusFilter; kindFilter: GuildContractKindFilter }) {
-  const visibleRequestIds = GUILD_REQUEST_IDS.filter((requestId) => {
-    const { request, complete, claimed } = getGuildRequestPresentation(state, requestId)
-    const statusMatches = statusFilter === 'all' || statusFilter === 'active' && !complete && !claimed || statusFilter === 'ready' && complete && !claimed || statusFilter === 'claimed' && claimed
-    return statusMatches && (kindFilter === 'all' || request.kind === kindFilter)
-  })
-
-  return <section className="guild-v3-tab-content guild-v3-contracts-view">
-    <div className="guild-v3-section-heading">
-      <div><span className="guild-v3-kicker">VERDANT CIRCLE · CONTRACT BOARD</span><h2>Active contracts</h2><p>Complete field work, then claim each reward once to convert progress into reputation and Guild Points.</p></div>
-      <div className="guild-v3-board-stamp"><ClipboardList size={16} /> {visibleRequestIds.length} shown / {GUILD_REQUEST_IDS.length} authored</div>
-    </div>
-    {visibleRequestIds.length > 0 ? <div className="guild-v3-contract-grid">{visibleRequestIds.map((requestId) => <GuildContractCard key={requestId} state={state} requestId={requestId} />)}</div> : <div className="guild-v3-empty-filter-state">No contracts match the selected filters.</div>}
+export function GuildContractsBoard({ state }: { state: GameStore }) {
+  const guild = state.progress.arcaneGuild
+  const active = guild.activeCommission
+  return <section className="guild-v3-tab-content guild-v3-contracts-view arcane-commission-board">
+    <div className="guild-v3-section-heading"><div><span className="guild-v3-kicker">ARCANE GUILD · WORK ORDERS</span><h2>{active ? 'Your active commission' : 'Choose a commission'}</h2><p>Accept one noncombat assignment. Registering, studying, transmuting, and delivering materials build professional standing.</p></div><div className="guild-v3-board-stamp"><ClipboardList size={16} /> {guild.completedCommissions.toLocaleString()} completed</div></div>
+    {active && <Card className="guild-commission-active"><div className="guild-commission-emblem"><Truck size={19} /></div><div className="guild-commission-active-copy"><div className="guild-commission-tags"><span>{categoryLabel[active.category]}</span><span className={`guild-commission-quality ${active.quality}`}>{qualityLabel[active.quality]}</span></div><h3>{objectiveLabel(active)}</h3><p>{active.progress.toLocaleString()} / {active.target.toLocaleString()} · +{active.reputationReward.toLocaleString()} Reputation</p><Progress value={Math.min(100, active.progress / active.target * 100)} tone="gold" />{active.category === 'delivery' && active.itemId && <div className="guild-commission-delivery"><span>Available: {(state.inventory[active.itemId] ?? 0).toLocaleString()}</span><div><GameTooltip content="Deliver one unprotected item toward this commission."><Button variant="ghost" disabled={(state.inventory[active.itemId] ?? 0) < 1} onClick={() => state.deliverGuildCommissionItems(1)}>Deliver 1</Button></GameTooltip><GameTooltip content="Deliver up to five unprotected items toward this commission."><Button variant="secondary" disabled={(state.inventory[active.itemId] ?? 0) < 1} onClick={() => state.deliverGuildCommissionItems(5)}>Deliver 5</Button></GameTooltip><GameTooltip content="Deliver as much as possible, up to the remaining requirement."><Button variant="primary" disabled={(state.inventory[active.itemId] ?? 0) < 1} onClick={() => state.deliverGuildCommissionItems('max')}>Deliver max</Button></GameTooltip></div></div>}</div></Card>}
+    <div className="guild-commission-offer-heading"><h3>Available commissions</h3><GameTooltip content={guild.freeRefreshes ? 'Use the refresh earned by completing a Commission to replace this board.' : 'Complete a Commission to earn one free board refresh.'}><Button variant="secondary" disabled={guild.freeRefreshes < 1} onClick={() => state.refreshGuildCommissionChoices()}><RefreshCw size={14} /> Refresh · {guild.freeRefreshes}</Button></GameTooltip></div>
+    {guild.availableCommissions.length ? <div className="guild-commission-grid">{guild.availableCommissions.map((commission) => { const template = templateFor(commission.templateId); return <Card className="guild-commission-offer" key={commission.id}><div className="guild-commission-tags"><span>{categoryLabel[commission.category]}</span><span className={`guild-commission-quality ${commission.quality}`}>{qualityLabel[commission.quality]}</span></div><h3>{objectiveLabel(commission)}</h3><p>{commission.category === 'delivery' ? template?.itemId ? ITEMS[template.itemId].source : 'Deliver Guild materials.' : commission.category === 'research' ? 'Any successful Research completion advances this work order.' : 'Any successful Transmutation cycle advances this work order.'}</p><div className="guild-commission-reward"><span>+{commission.reputationReward.toLocaleString()} Reputation</span>{commission.advancementPointReward > 0 && <strong>+{commission.advancementPointReward} Advancement Point</strong>}</div><GameTooltip content="Accept this noncombat work order. One Guild Commission can be active at a time."><Button variant="primary" disabled={Boolean(active)} onClick={() => state.acceptGuildCommission(commission.id)}>Accept Commission</Button></GameTooltip></Card> })}</div> : <Card className="guild-v3-empty-filter-state">No commission templates are currently available. Unlock Research or Transmutation to broaden the board.</Card>}
   </section>
 }

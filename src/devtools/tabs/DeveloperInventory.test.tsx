@@ -41,6 +41,6 @@ describe('DeveloperInventory selection safety', () => {
     expect(screen.queryByText('Artifact Essence')).toBeNull()
     expect(screen.queryByText('Life Essence')).toBeNull()
     expect(within(browser).queryByText('Fire Fragment')).toBeNull()
-    expect(within(browser).queryByText('Prismatic Fragment')).toBeNull()
+    expect(within(browser).getByText('Prismatic Fragment')).toBeTruthy()
   })
 })

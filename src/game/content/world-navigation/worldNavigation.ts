@@ -2,7 +2,7 @@ import { DUNGEONS } from '../dungeons/dungeons'
 import type { DungeonId } from '../../types'
 import type { CombatContinentDefinition, CombatContinentId, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
 
-const firstFrontierLocationIds: readonly CombatLocationId[] = ['whispering-woods', 'howling-den', 'abandoned-catacombs']
+const firstFrontierLocationIds: readonly CombatLocationId[] = ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs']
 const elementalScarLocationIds: readonly CombatLocationId[] = ['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin']
 const shatteredMeridianLocationIds: readonly CombatLocationId[] = ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian']
 const blackSigilReachLocationIds: readonly CombatLocationId[] = ['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate']
@@ -94,8 +94,9 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       'den-stalker': { difficulty: 'apex', order: 6 },
     },
   },
+  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'combat-zone', 3), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 } } },
   'abandoned-catacombs': {
-    ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 3),
+    ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 4),
     encounterMode: 'sequence',
     firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },

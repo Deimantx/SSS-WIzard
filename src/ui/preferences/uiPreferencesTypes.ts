@@ -13,7 +13,7 @@ export type ChronicleStatusFilter = 'current' | 'available' | 'locked' | 'comple
 export type ChronicleSortMode = 'recommended' | 'progress' | 'track' | 'reward' | 'authored'
 export type ChronicleGroupMode = 'none' | 'track' | 'status'
 export type ChronicleViewMode = 'compact' | 'detailed'
-export type GuildScreenTab = 'overview' | 'contracts' | 'skills'
+export type GuildScreenTab = 'overview' | 'contracts' | 'skills' | 'registry' | 'projects' | 'chains'
 
 export interface CustomThemeColors {
   background: string

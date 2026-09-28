@@ -13,6 +13,12 @@ export type ChronicleCondition =
   | { type: 'artifact-invested-ranks'; artifact: 'starting'; ranks: number }
   | { type: 'guild-request-claimed'; count: number }
   | { type: 'guild-rank'; rank: GuildRankId }
+  | { type: 'guild-commissions-completed'; count: number }
+  | { type: 'registry-items-registered'; count: number }
+  | { type: 'hunters-order-unlocked' }
+  | { type: 'hunter-contracts-completed'; count: number }
+  | { type: 'hunter-contracts-accepted'; count: number }
+  | { type: 'guild-project-completed'; projectId: string }
   | { type: 'guardian-selected' }
   | { type: 'guardian-combat-completed' }
   | { type: 'crystal-equipped'; count: number }
@@ -88,12 +94,18 @@ export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 't1-channeling-acolyte', chapterId: 'first-frontier', track: 'tower', title: 'Put an Acolyte to Work', description: 'Assign at least one Acolyte to Channeling.', prerequisiteIds: ['m2-first-blood'], condition: { type: 'channeling-acolytes', count: 1 }, navigateTo: 'tower-channeling' },
   { id: 't2-shape-resonance', chapterId: 'first-frontier', track: 'tower', title: 'Shape Resonance', description: 'Complete your first Fragment Transmutation cycle.', prerequisiteIds: ['t1-channeling-acolyte'], condition: { type: 'chronicle-event', eventId: 'first-fragment-transmuted' }, navigateTo: 'tower-transmutation' },
   { id: 't3-study-the-fragment', chapterId: 'first-frontier', track: 'tower', title: 'Study the Fragment', description: 'Complete your first Research batch.', prerequisiteIds: ['t2-shape-resonance'], condition: { type: 'chronicle-event', eventId: 'first-research-batch-completed' }, navigateTo: 'tower-research' },
-  { id: 't4-answer-verdant-circle', chapterId: 'first-frontier', track: 'tower', title: 'Answer the Verdant Circle', description: 'Claim your first Guild Request.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-request-claimed', count: 1 }, navigateTo: 'guild' },
+  { id: 't4-answer-verdant-circle', chapterId: 'first-frontier', track: 'tower', title: 'Answer the Arcane Guild', description: 'Complete your first Guild Commission.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-commissions-completed', count: 1 }, navigateTo: 'arcane-guild' },
   { id: 't5-read-a-sigil', chapterId: 'first-frontier', track: 'tower', title: 'Read the Arcane Sigils', description: 'Earn your first combat-born Sigil.', prerequisiteIds: ['m2-first-blood'], condition: { type: 'chronicle-event', eventId: 'first-sigil-earned' }, navigateTo: 'tower-artificing', optional: true },
 
-  { id: 'g1-join-verdant-circle', chapterId: 'first-frontier', track: 'guild', title: 'Join the Verdant Circle', description: 'Unlock the Guild and receive the Initiate rank.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-rank', rank: 'initiate' }, navigateTo: 'guild' },
-  { id: 'g2-first-guild-contract', chapterId: 'first-frontier', track: 'guild', title: 'Sign Your First Contract', description: 'Claim your first Guild contract.', prerequisiteIds: ['g1-join-verdant-circle'], condition: { type: 'guild-request-claimed', count: 1 }, navigateTo: 'guild' },
-  { id: 'g3-guild-apprentice', chapterId: 'first-frontier', track: 'guild', title: 'Earn Your Apprentice Sigil', description: 'Advance from Initiate to Apprentice.', prerequisiteIds: ['g2-first-guild-contract'], condition: { type: 'guild-rank', rank: 'apprentice' }, navigateTo: 'guild' },
+  { id: 'g1-join-verdant-circle', chapterId: 'first-frontier', track: 'guild', title: 'Join the Arcane Guild', description: 'Open the Registry and begin your Guild advancement.', prerequisiteIds: ['m3-heart-of-the-woods'], condition: { type: 'guild-rank', rank: 'initiate' }, navigateTo: 'arcane-guild' },
+  { id: 'g2-first-guild-contract', chapterId: 'first-frontier', track: 'guild', title: 'Commissioned Work', description: 'Complete your first Arcane Guild Commission.', prerequisiteIds: ['g1-join-verdant-circle'], condition: { type: 'guild-commissions-completed', count: 1 }, navigateTo: 'arcane-guild' },
+  { id: 'g3-guild-apprentice', chapterId: 'first-frontier', track: 'guild', title: 'Record the First Discovery', description: 'Register an item in the Arcane Registry.', prerequisiteIds: ['g1-join-verdant-circle'], condition: { type: 'registry-items-registered', count: 1 }, navigateTo: 'arcane-guild' },
+  { id: 'g4-hunters-calling', chapterId: 'first-frontier', track: 'guild', title: 'The Hunter’s Calling', description: 'Defeat Corrupted Greatbear and unlock the Hunter’s Order.', prerequisiteIds: ['m4-break-the-den'], condition: { type: 'hunters-order-unlocked' }, navigateTo: 'hunters-order' },
+  { id: 'g5-first-hunt-contract', chapterId: 'first-frontier', track: 'guild', title: 'Take the Field', description: 'Accept and complete your first Hunt Contract.', prerequisiteIds: ['g4-hunters-calling'], condition: { type: 'hunter-contracts-completed', count: 1 }, navigateTo: 'hunters-order' },
+  { id: 'g6-arcane-service', chapterId: 'first-frontier', track: 'guild', title: 'Arcane Service', description: 'Register three items in the Arcane Registry.', prerequisiteIds: ['g1-join-verdant-circle'], condition: { type: 'registry-items-registered', count: 3 }, navigateTo: 'arcane-guild' },
+  { id: 'g7-professional-standing', chapterId: 'first-frontier', track: 'guild', title: 'Professional Standing', description: 'Complete two Arcane Guild Commissions.', prerequisiteIds: ['g2-first-guild-contract'], condition: { type: 'guild-commissions-completed', count: 2 }, navigateTo: 'arcane-guild' },
+  { id: 'g8-guild-rank-two', chapterId: 'first-frontier', track: 'guild', title: 'Guild Rank II', description: 'Reach Apprentice standing in the Arcane Guild.', prerequisiteIds: ['g6-arcane-service', 'g7-professional-standing'], condition: { type: 'guild-rank', rank: 'apprentice' }, navigateTo: 'arcane-guild' },
+  { id: 'g9-restore-guild-archive', chapterId: 'first-frontier', track: 'guild', title: 'Restore the Arcane Archive', description: 'Complete the permanent Arcane Archive Guild Project.', prerequisiteIds: ['g8-guild-rank-two'], condition: { type: 'guild-project-completed', projectId: 'restore-arcane-archive' }, navigateTo: 'arcane-guild', onCompleteReward: [{ type: 'arcane-points', amount: 100 }], optional: true },
 
   { id: 'sf-m1-cross-fractured-approach', chapterId: 'shattered-frontier', track: 'main', title: 'Cross the Fractured Approach', description: 'Enter the first dungeon beyond the fallen Archmage.', prerequisiteIds: ['m5-fallen-archmage'], condition: { type: 'dungeon-entered', dungeonId: 'fractured-approach' }, navigateTo: 'combat' },
   { id: 'sf-m2-elemental-gatekeeper', chapterId: 'shattered-frontier', track: 'main', title: 'Break the Elemental Gatekeeper', description: 'Defeat the corrupted gatekeeper guarding the next frontier.', prerequisiteIds: ['sf-m1-cross-fractured-approach'], condition: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper', count: 1 }, navigateTo: 'combat' },

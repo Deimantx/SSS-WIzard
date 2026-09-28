@@ -305,11 +305,14 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'guild-recommended-contracts': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Recommended Guild contracts' }),
     'guild-specialization': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 220, overflow: 'auto', label: 'Guild specialization summary' }),
     'guild-contract-controls': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 86, overflow: 'auto', label: 'Guild contract filters' }),
-    'guild-contracts': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 1020, overflow: 'auto', label: 'Guild contract board' }),
+    'guild-contracts': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 1020, overflow: 'auto', label: 'Guild contract board' }),
     'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 200, label: 'Guild skill points summary' }),
     'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 860, overflow: 'auto', label: 'Guild skill branches' }),
     'guild-skills-note': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 5, minHeight: 0, preferredHeight: 72, label: 'Guild skill tree note' }),
     'guild-locked': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 520, label: 'Guild locked state' }),
+    'guild-registry': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 520, preferredHeight: 900, overflow: 'auto', label: 'Arcane Registry' }),
+    'guild-projects': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 500, preferredHeight: 900, overflow: 'auto', label: 'Guild Projects' }),
+    'guild-chains': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 500, preferredHeight: 900, overflow: 'auto', label: 'Guild Commission Chains' }),
   }, [
     'guild-header',
     'guild-tabs',
@@ -322,7 +325,35 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'guild-skills',
     'guild-skills-note',
     'guild-locked',
+    'guild-registry',
+    'guild-projects',
+    'guild-chains',
   ]),
+
+  'hunters-order': screen({
+    'hunter-contracts': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 380, preferredHeight: 840, overflow: 'auto', label: 'Hunter contract board' }),
+    'hunter-rank': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 240, preferredHeight: 480, label: 'Hunter rank progress' }),
+    'hunter-upgrades': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 240, preferredHeight: 420, label: 'Hunter upgrades' }),
+    'hunter-bestiary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 540, preferredHeight: 880, overflow: 'auto', label: 'Hunter Bestiary' }),
+    'hunter-grounds': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 340, preferredHeight: 570, overflow: 'auto', label: 'Hunting Grounds' }),
+  }, ['hunter-contracts', 'hunter-rank', 'hunter-upgrades', 'hunter-bestiary', 'hunter-grounds']),
+
+  'arcane-guild': screen({
+    'guild-header': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 190, label: 'Arcane Guild identity and metrics' }),
+    'guild-tabs': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 100, label: 'Arcane Guild navigation tabs' }),
+    'guild-progression': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Arcane Guild rank progression' }),
+    'guild-recommended-contracts': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Arcane Guild commissions' }),
+    'guild-specialization': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 220, overflow: 'auto', label: 'Arcane Guild advancement' }),
+    'guild-contract-controls': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 86, overflow: 'auto', label: 'Arcane Guild commission filters' }),
+    'guild-contracts': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 1020, overflow: 'auto', label: 'Arcane Guild commission board' }),
+    'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 200, label: 'Arcane Guild advancement points' }),
+    'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 860, overflow: 'auto', label: 'Arcane Guild advancement board' }),
+    'guild-skills-note': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 5, minHeight: 0, preferredHeight: 72, label: 'Arcane Guild project note' }),
+    'guild-locked': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 520, label: 'Arcane Guild locked state' }),
+    'guild-registry': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 520, preferredHeight: 900, overflow: 'auto', label: 'Arcane Registry' }),
+    'guild-projects': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 500, preferredHeight: 900, overflow: 'auto', label: 'Guild Projects' }),
+    'guild-chains': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 500, preferredHeight: 900, overflow: 'auto', label: 'Guild Commission Chains' }),
+  }, ['guild-header', 'guild-tabs', 'guild-progression', 'guild-recommended-contracts', 'guild-specialization', 'guild-contract-controls', 'guild-contracts', 'guild-skills-summary', 'guild-skills', 'guild-skills-note', 'guild-locked', 'guild-registry', 'guild-projects', 'guild-chains']),
 
   // ============================================================
   // SETTINGS / INFO

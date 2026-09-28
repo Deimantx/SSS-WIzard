@@ -1,6 +1,6 @@
 import { GUILD_REQUESTS, LEGACY_GUILD_REQUESTS, type GuildRequestId } from '../../content/guild/guildRequests'
 import { GUILD_RANKS, GUILD_RANK_BY_ID, type GuildRankDefinition } from '../../content/guild/guildRanks'
-import { GUILD_SKILL_NODES } from '../../content/guild/guildSkills'
+import { GUILD_SKILL_NODES, type GuildSkillNodeDefinition } from '../../content/guild/guildSkills'
 import type { GameState, GuildRankId, GuildSkillNodeId } from '../../types'
 
 const rankOrder: GuildRankId[] = ['outsider', 'initiate', 'apprentice', 'adept', 'magister', 'circle-master']
@@ -8,28 +8,46 @@ const rankAtLeast = (current: GuildRankId, required: GuildRankId) => rankOrder.i
 const nodePurchased = (state: Pick<GameState, 'progress'>, nodeId: GuildSkillNodeId) => (state.progress.guildSkillNodeRanks[nodeId] ?? 0) > 0
 
 export interface GuildProgressionBonuses {
+  /** Legacy consumers remain present at 1; Arcane Guild does not modify combat rewards. */
   combatArcanePointMultiplier: number
   combatResonanceMultiplier: number
   lifeEssenceMultiplier: number
   artifactEssenceMultiplier: number
   bossEssenceMultiplier: number
   crystalCacheChanceMultiplier: number
+  researchSpeedMultiplier: number
+  researchXpMultiplier: number
+  guildReputationMultiplier: number
+  transmutationOutputChance: number
   arcaneFluxMultiplier: number
   transmutationSpeedMultiplier: number
   bonusAcolytes: number
+  commissionChoiceBonus: number
+  deliveryQuantityMultiplier: number
+  specialCommissionAccess: boolean
 }
 
-export const getGuildProgressionBonuses = (state: Pick<GameState, 'progress'>): GuildProgressionBonuses => ({
-  combatArcanePointMultiplier: nodePurchased(state, 'hunter-arcane-quarry') ? 1.05 : 1,
-  combatResonanceMultiplier: nodePurchased(state, 'hunter-resonant-pursuit') ? 1.05 : 1,
-  lifeEssenceMultiplier: nodePurchased(state, 'quartermaster-careful-harvest') ? 1.05 : 1,
-  artifactEssenceMultiplier: nodePurchased(state, 'quartermaster-relic-appraisal') ? 1.05 : 1,
-  bossEssenceMultiplier: nodePurchased(state, 'hunter-trophy-hunter') ? 1.1 : 1,
-  crystalCacheChanceMultiplier: nodePurchased(state, 'quartermaster-cache-appraisal') ? 1.1 : 1,
-  arcaneFluxMultiplier: nodePurchased(state, 'tower-leyline-assistance') ? 1.05 : 1,
-  transmutationSpeedMultiplier: nodePurchased(state, 'tower-efficient-arrays') ? 1.05 : 1,
-  bonusAcolytes: nodePurchased(state, 'tower-expanded-quarters') ? 1 : 0,
-})
+const rankForEffect = (state: Pick<GameState, 'progress'>, effect: GuildSkillNodeDefinition['effect']) => Object.values(GUILD_SKILL_NODES).filter((node) => node.effect === effect).reduce((sum, node) => sum + Math.max(0, Math.min(node.maxRank, Math.floor(state.progress.guildSkillNodeRanks[node.id] ?? 0))), 0)
+const majorPurchased = (state: Pick<GameState, 'progress'>, nodeId: GuildSkillNodeId) => (state.progress.guildSkillNodeRanks[nodeId] ?? 0) > 0
+export const getGuildProgressionBonuses = (state: Pick<GameState, 'progress'>): GuildProgressionBonuses => {
+  const majorEfficiency = majorPurchased(state, 'major-arcane-efficiency') ? 0.02 : 0
+  const coordination = majorPurchased(state, 'major-coordination') ? 0.02 : 0
+  const grandStanding = majorPurchased(state, 'major-grand-standing') ? 0.03 : 0
+  return {
+    combatArcanePointMultiplier: 1, combatResonanceMultiplier: 1, lifeEssenceMultiplier: 1,
+    artifactEssenceMultiplier: 1, bossEssenceMultiplier: 1, crystalCacheChanceMultiplier: 1,
+    researchSpeedMultiplier: 1 + rankForEffect(state, 'research-speed') * 0.005 + majorEfficiency + coordination,
+    researchXpMultiplier: 1 + rankForEffect(state, 'research-xp') * 0.01,
+    guildReputationMultiplier: 1 + rankForEffect(state, 'guild-reputation') * 0.01 + grandStanding,
+    transmutationOutputChance: Math.min(0.25, rankForEffect(state, 'transmutation-output') * 0.01),
+    arcaneFluxMultiplier: 1 + rankForEffect(state, 'arcane-flux') * 0.01 + grandStanding,
+    transmutationSpeedMultiplier: 1 + rankForEffect(state, 'transmutation-speed') * 0.01 + majorEfficiency + coordination,
+    bonusAcolytes: rankForEffect(state, 'bonus-acolyte'),
+    commissionChoiceBonus: majorPurchased(state, 'major-favored-contractor') ? 1 : 0,
+    deliveryQuantityMultiplier: majorPurchased(state, 'major-efficient-procurement') ? 0.95 : 1,
+    specialCommissionAccess: majorPurchased(state, 'major-guild-connections'),
+  }
+}
 
 export const getGuildPointsSpent = (state: Pick<GameState, 'progress'>) => Object.values(state.progress.guildSkillNodeRanks).reduce((sum, rank) => sum + Math.max(0, Math.floor(Number.isFinite(rank) ? rank : 0)), 0)
 export const getGuildPointsAvailable = (state: Pick<GameState, 'progress'>) => Math.max(0, Math.floor(state.progress.guildPointsEarned) - getGuildPointsSpent(state))
@@ -37,7 +55,7 @@ export const getGuildRequestProgress = (state: Pick<GameState, 'progress'>, requ
 export const isGuildRequestComplete = (state: Pick<GameState, 'progress'>, requestId: GuildRequestId) => getGuildRequestProgress(state, requestId) >= GUILD_REQUESTS[requestId].target
 export const getGuildRankOrder = () => [...rankOrder]
 export const isGuildRankAtLeast = (current: GuildRankId, required: GuildRankId) => rankAtLeast(current, required)
-export const isGuildSkillNodePurchased = (state: Pick<GameState, 'progress'>, nodeId: GuildSkillNodeId) => nodePurchased(state, nodeId)
+export const isGuildSkillNodePurchased = (state: Pick<GameState, 'progress'>, nodeId: GuildSkillNodeId) => (state.progress.guildSkillNodeRanks[nodeId] ?? 0) > 0
 
 export interface GuildPromotionRequirement {
   id: string
@@ -57,8 +75,7 @@ export interface GuildPromotionProgress {
 
 export const getGuildContractClaimCount = (state: Pick<GameState, 'progress'>) => {
   const currentClaims = Object.values(GUILD_REQUESTS).filter((request) => Boolean(state.progress.requestClaims[request.id])).length
-  const legacyClaims = Object.values(LEGACY_GUILD_REQUESTS).filter((request) => Boolean(state.progress.requestClaims[request.id]) || (state.progress.requestProgress[request.id] ?? 0) >= request.target).length
-  return currentClaims + legacyClaims
+  return currentClaims
 }
 
 export const getGuildPromotionProgress = (state: Pick<GameState, 'progress'>): GuildPromotionProgress => {
@@ -82,7 +99,9 @@ export const getGuildPromotionProgress = (state: Pick<GameState, 'progress'>): G
 
 export const canPurchaseGuildSkillNode = (state: Pick<GameState, 'progress'>, nodeId: GuildSkillNodeId) => {
   const node = GUILD_SKILL_NODES[nodeId]
-  if (!node || getGuildPointsAvailable(state) < 1 || nodePurchased(state, nodeId)) return false
+  const currentRank = state.progress.guildSkillNodeRanks[nodeId] ?? 0
+  if (!node || getGuildPointsAvailable(state) < 1 || currentRank >= node.maxRank) return false
+  if (node.requiredInvestedPoints !== undefined && getGuildPointsSpent(state) < node.requiredInvestedPoints) return false
   if (node.prerequisiteId && !nodePurchased(state, node.prerequisiteId)) return false
   if (node.requiredRank && !rankAtLeast(state.progress.guildRank, node.requiredRank)) return false
   return true

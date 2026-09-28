@@ -137,9 +137,12 @@ import {
   resetGuildRequestsAction,
   setGuildRankAction,
   grantGuildPointAction,
+  registerArcaneRegistryEntryAction,
+  acceptGuildCommissionAction, deliverGuildCommissionItemsAction, refreshGuildCommissionChoicesAction, contributeGuildProjectAction, startGuildCommissionChainAction, contributeGuildCommissionChainDeliveryAction, debugCompleteGuildProjectAction, debugCompleteGuildCommissionChainAction, debugGrantGuildReputationAction, debugSetArcaneGuildUnlockedAction, debugCompleteRegistryEntryAction, debugCompleteRegistrySetAction,
 } from "./actions/guildActions";
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
 import type { GuildSkillNodeId, GuildRankId } from "../game/types";
+import { acceptHunterContractAction, rerollHunterContractsAction, setHunterTargetBlockedAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction } from './actions/huntersOrderActions'
 import {
   debugLockSpellAction,
   debugUnlockSpellRankOneAction,
@@ -799,6 +802,28 @@ export interface GameActions {
   debugLockSpell: (spellId: SpellId) => void;
   resetSpellCooldowns: () => void;
   donateGuildRequest: (requestId: string, amount: number | "max") => void;
+  registerArcaneRegistryEntry: (itemId: ItemId) => boolean;
+  acceptGuildCommission: (commissionId: string) => boolean;
+  deliverGuildCommissionItems: (amount: number | 'max') => boolean;
+  refreshGuildCommissionChoices: () => boolean;
+  contributeGuildProject: (projectId: string, itemId: ItemId, amount: number | 'max') => boolean;
+  startGuildCommissionChain: (chainId: string) => boolean;
+  contributeGuildCommissionChainDelivery: (amount: number | 'max') => boolean;
+  debugCompleteGuildProject: (id: string) => boolean;
+  debugCompleteGuildCommissionChain: (id: string) => boolean;
+  debugGrantGuildReputation: (amount: number) => void;
+  debugSetArcaneGuildUnlocked: (unlocked: boolean) => void;
+  debugCompleteRegistryEntry: (itemId: ItemId) => boolean;
+  debugCompleteRegistrySet: (id: string) => boolean;
+  debugSetHuntersOrderUnlocked: (unlocked: boolean) => void;
+  debugGrantHunterReputation: (amount: number) => void;
+  debugGrantHunterMarks: (amount: number) => void;
+  debugCompleteActiveHunterContract: () => boolean;
+  acceptHunterContract: (contractId: string) => boolean;
+  skipHunterContract: () => boolean;
+  rerollHunterContracts: () => boolean;
+  setHunterTargetBlocked: (monsterId: MonsterId, blocked: boolean) => boolean;
+  purchaseHunterUpgrade: (upgradeId: string) => boolean;
   claimGuildReward: (requestId: string) => void;
   promoteGuild: () => void;
   purchaseGuildSkillNode: (nodeId: GuildSkillNodeId, free?: boolean) => boolean;
@@ -1964,6 +1989,10 @@ export const useGameStore = create<GameStore>()(
         });
         return false;
       }
+      if (dungeonId === 'hunters-ground' && !currentState.progress.huntersOrder.activeContract) {
+        set((state) => { pushNotification(state, 'Accept a Hunt Contract before engaging Hunter-exclusive creatures.', 'warning', { key: 'hunter-contract-required', cooldownMs: 1000 }); return state; });
+        return false;
+      }
       const sameLocation = Boolean(
         currentState.combat.active &&
         currentState.combat.dungeonId === dungeonId,
@@ -2040,6 +2069,10 @@ export const useGameStore = create<GameStore>()(
             `${MONSTERS[enemyId]?.name ?? enemyId} is not a valid active combat target.`,
             "warning",
           );
+          return state;
+        }
+        if (dungeonId === 'hunters-ground' && !state.progress.huntersOrder.activeContract) {
+          pushNotification(state, 'Accept a Hunt Contract before engaging Hunter-exclusive creatures.', 'warning', { key: 'hunter-contract-required', cooldownMs: 1000 });
           return state;
         }
         if (state.combat.targetEnemyId === enemyId) {
@@ -3012,6 +3045,28 @@ export const useGameStore = create<GameStore>()(
         donateGuildRequestAction(state, requestId, amount);
         return state;
       }),
+    registerArcaneRegistryEntry: (itemId) => { let ok = false; set((state) => { ok = registerArcaneRegistryEntryAction(state, itemId); reconcileChronicleProgress(state); return state; }); return ok; },
+    acceptGuildCommission: (commissionId) => { let ok = false; set((state) => { ok = acceptGuildCommissionAction(state, commissionId); return state; }); return ok; },
+    deliverGuildCommissionItems: (amount) => { let ok = false; set((state) => { ok = deliverGuildCommissionItemsAction(state, amount); return state; }); return ok; },
+    refreshGuildCommissionChoices: () => { let ok = false; set((state) => { ok = refreshGuildCommissionChoicesAction(state); return state; }); return ok; },
+    contributeGuildProject: (projectId, itemId, amount) => { let ok = false; set((state) => { ok = contributeGuildProjectAction(state, projectId, itemId, amount); return state; }); return ok; },
+    startGuildCommissionChain: (chainId) => { let ok = false; set((state) => { ok = startGuildCommissionChainAction(state, chainId); return state; }); return ok; },
+    contributeGuildCommissionChainDelivery: (amount) => { let ok = false; set((state) => { ok = contributeGuildCommissionChainDeliveryAction(state, amount); return state; }); return ok; },
+    debugCompleteGuildProject: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildProjectAction(state, id); return state; }); return ok; },
+    debugCompleteGuildCommissionChain: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildCommissionChainAction(state, id); return state; }); return ok; },
+    debugGrantGuildReputation: (amount) => set((state) => { debugGrantGuildReputationAction(state, amount); return state; }),
+    debugSetArcaneGuildUnlocked: (unlocked) => set((state) => { debugSetArcaneGuildUnlockedAction(state, unlocked); return state; }),
+    debugCompleteRegistryEntry: (itemId) => { let ok = false; set((state) => { ok = debugCompleteRegistryEntryAction(state, itemId); reconcileChronicleProgress(state); return state; }); return ok; },
+    debugCompleteRegistrySet: (id) => { let ok = false; set((state) => { ok = debugCompleteRegistrySetAction(state, id); reconcileChronicleProgress(state); return state; }); return ok; },
+    debugSetHuntersOrderUnlocked: (unlocked) => set((state) => { debugSetHuntersOrderUnlockedAction(state, unlocked); return state; }),
+    debugGrantHunterReputation: (amount) => set((state) => { debugGrantHunterReputationAction(state, amount); return state; }),
+    debugGrantHunterMarks: (amount) => set((state) => { debugGrantHunterMarksAction(state, amount); return state; }),
+    debugCompleteActiveHunterContract: () => { let ok = false; set((state) => { ok = debugCompleteActiveHunterContractAction(state); reconcileChronicleProgress(state); return state; }); return ok; },
+    acceptHunterContract: (contractId) => { let ok = false; set((state) => { ok = acceptHunterContractAction(state, contractId); return state; }); return ok; },
+    skipHunterContract: () => { let ok = false; set((state) => { ok = skipHunterContractAction(state); return state; }); return ok; },
+    rerollHunterContracts: () => { let ok = false; set((state) => { ok = rerollHunterContractsAction(state); return state; }); return ok; },
+    purchaseHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = purchaseHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
+    setHunterTargetBlocked: (monsterId, blocked) => { let ok = false; set((state) => { ok = setHunterTargetBlockedAction(state, monsterId, blocked); return state; }); return ok; },
     claimGuildReward: (requestId) =>
       set((state) => {
         claimGuildRewardAction(state, requestId);

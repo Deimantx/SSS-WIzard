@@ -19,7 +19,7 @@ describe('combat world navigation content', () => {
   it('keeps continent, region, and location relationships explicit', () => {
     expect(COMBAT_CONTINENTS['continent-1'].regionIds).toEqual(['first-frontier', 'elemental-scar', 'shattered-meridian', 'black-sigil-reach'])
     expect(COMBAT_REGIONS['first-frontier'].continentId).toBe('continent-1')
-    expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['whispering-woods', 'howling-den', 'abandoned-catacombs'])
+    expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'])
     expect(COMBAT_LOCATIONS['whispering-woods']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'whispering-woods' })
     expect(COMBAT_LOCATIONS['howling-den']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', dungeonId: 'howling-den', zoneAffixId: 'frenzied' })
     expect(Object.entries(COMBAT_LOCATIONS['howling-den'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.difficulty, metadata.order])).toEqual([
@@ -30,6 +30,7 @@ describe('combat world navigation content', () => {
       ['moonblind-jackal', 'hard', 5],
       ['den-stalker', 'apex', 6],
     ])
+    expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'hunters-ground', order: 3 })
     expect(COMBAT_LOCATIONS['abandoned-catacombs']).toMatchObject({ encounterMode: 'sequence', dungeonId: 'abandoned-catacombs', firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },
       { id: 'dark-portal', label: 'Dark Portal' },
@@ -98,8 +99,8 @@ describe('combat world navigation content', () => {
     }
     expect(COMBAT_REGIONS['shattered-meridian'].locationIds).toEqual(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian'])
     expect(COMBAT_REGIONS['black-sigil-reach'].locationIds).toEqual(['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])
-    expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(15)
-    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(5)
+    expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(16)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(6)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'elite-zone')).toHaveLength(5)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'dungeon')).toHaveLength(5)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'special-zone' || location.type === 'tower')).toHaveLength(0)

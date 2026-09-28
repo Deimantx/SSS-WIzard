@@ -2,6 +2,7 @@ import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, DamageType, MonsterId } from '../../types'
 import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './act0'
 import { ACT1_MONSTERS } from './act1'
+import { HUNTERS_ORDER_MONSTERS } from './huntersOrder'
 import type { MonsterDefinition } from './monsterTypes'
 import { COMBAT_TAGS, DAMAGE_TYPES, createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
@@ -14,9 +15,10 @@ import { RESONANCE_TYPES } from '../resonance/resonance'
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './act0'
 export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './act0'
+export { HUNTERS_ORDER_MONSTERS, HUNTER_EXCLUSIVE_MONSTER_IDS } from './huntersOrder'
 export { ACT1_MONSTERS } from './act1'
 
-const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ACT1_MONSTERS] as const
+const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ACT1_MONSTERS] as const
 const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
 const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
 

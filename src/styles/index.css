@@ -48,3 +48,6 @@
 @import './components/artifacts.css';
 @import './components/story-event.css';
 @import './ui-tuning.css';
+
+@import './screens/hunters-order.css';
+@import './screens/arcane-registry.css';

@@ -126,11 +126,12 @@
 .guild-v3-points-readout strong { margin-top: 4px; color: var(--gold); font: 24px 'DM Mono', monospace; }
 .guild-v3-points-readout small { margin-top: 3px; color: #8f8aa2; font-size: 11px; }
 .guild-v3-skill-summary > .button { display: inline-flex; align-items: center; gap: 7px; }
-.guild-v3-branches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.guild-v3-branches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
 .guild-v3-skill-branch { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: rgba(20, 22, 35, .72); }
 .guild-v3-skill-branch.violet { border-top-color: rgba(168, 148, 255, .5); }
 .guild-v3-skill-branch.gold { border-top-color: rgba(239, 189, 119, .55); }
 .guild-v3-skill-branch.green { border-top-color: rgba(112, 205, 163, .55); }
+.guild-v3-skill-branch.gold { border-top-color: rgba(239, 189, 119, .6); }
 .guild-v3-skill-branch > header { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
 .guild-v3-skill-branch > header > div { display: flex; gap: 10px; align-items: center; }
 .guild-v3-branch-index { display: grid; place-items: center; width: 30px; height: 30px; color: var(--gold); border: 1px solid rgba(239, 189, 119, .28); border-radius: 8px; font: 11px 'DM Mono', monospace; }
@@ -195,3 +196,5 @@
   .guild-v3-skill-node > .button { grid-column: 2; justify-self: start; }
   .guild-v3-lock-card { min-height: 390px; }
 }
+
+.guild-project-grid, .guild-chain-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; min-width: 0; } .guild-project-card, .guild-chain-card { display: grid; gap: 11px; min-width: 0; } .guild-project-card h2, .guild-chain-card h2 { margin: 0; color: var(--ui-text); font-size: var(--text-lg); } .guild-project-card > p, .guild-chain-card > p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-sm); line-height: 1.5; } .guild-project-rewards { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); } .guild-project-rewards strong { color: var(--gold); } .guild-project-progress, .guild-chain-progress span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); } .guild-project-requirements { display: grid; gap: 6px; } .guild-project-requirements > div { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--ui-border); } .guild-project-requirements span { color: var(--ui-text-soft); font-size: var(--text-xs); } .guild-project-requirements b { margin-left: 7px; color: var(--gold); font-family: var(--font-mono); } .guild-project-complete { display: flex; align-items: center; gap: 6px; color: var(--semantic-positive); font: var(--text-micro) var(--font-mono); text-transform: uppercase; } .guild-chain-card ol { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; counter-reset: stages; } .guild-chain-card li { display: grid; gap: 4px; padding: 9px 11px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-raised); } .guild-chain-card li.current { border-color: color-mix(in srgb, var(--gold) 42%, var(--ui-border)); } .guild-chain-card li span { color: var(--gold); font: var(--text-micro) var(--font-mono); } .guild-chain-card li strong { color: var(--ui-text-soft); font-size: var(--text-xs); } .guild-chain-progress { display: grid; gap: 7px; } @media (max-width: 760px) { .guild-project-grid, .guild-chain-list { grid-template-columns: 1fr; } }

@@ -59,6 +59,7 @@ export interface MonsterDefinition {
   statusImmunities?: StatusId[];
   statusTagImmunities?: CombatTag[];
   loot: { itemId: ItemId; min: number; max: number; chance: number }[];
+  hunter?: { family: string; alignment: string; contractTier: 'routine' | 'special' | 'prestigious'; exclusive: boolean; contractRequired: boolean; huntingGroundId?: string }
   /** Optional during Phase 1 while the rest of the authored roster is converted. */
   resonanceYield?: ResonanceYield;
   actions: Record<string, CombatActionDefinition>;

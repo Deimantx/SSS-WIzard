@@ -6,6 +6,7 @@ import { getArtifactTotalInvestedRanks } from '../artifacts/artifactProgression'
 import { pushNotification } from '../../engine'
 import type { ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, GameState, GuildRankId } from '../../types'
 import { getEquippedSigilSetCounts } from '../sigils/sigilRuntime'
+import { isHuntersOrderUnlocked } from '../huntersOrder/huntersOrderRuntime'
 
 export const createInitialChronicleProgress = () => ({ completedObjectiveIds: [], grantedUnlockRewardIds: [], eventFlags: {} }) satisfies GameState['progress']['chronicle']
 
@@ -41,6 +42,12 @@ export const getChronicleConditionValue = (state: GameState, condition: Chronicl
     }
     case 'guild-request-claimed': return { current: hasCompletedGuildRequests(state), target: condition.count }
     case 'guild-rank': return { current: Math.max(0, rankOrder.indexOf(state.progress.guildRank)), target: Math.max(0, rankOrder.indexOf(condition.rank)) }
+    case 'guild-commissions-completed': return { current: safeCount(state.progress.arcaneGuild.completedCommissions), target: condition.count }
+    case 'registry-items-registered': return { current: Object.values(state.progress.arcaneRegistry.registeredEntries).filter((quantity) => safeCount(quantity) > 0).length, target: condition.count }
+    case 'hunters-order-unlocked': return { current: isHuntersOrderUnlocked(state) ? 1 : 0, target: 1 }
+    case 'hunter-contracts-completed': return { current: safeCount(state.progress.huntersOrder.totalContractsCompleted), target: condition.count }
+    case 'hunter-contracts-accepted': return { current: safeCount(state.progress.huntersOrder.totalContractsAccepted), target: condition.count }
+    case 'guild-project-completed': return { current: state.progress.arcaneGuild.completedProjectIds.includes(condition.projectId) ? 1 : 0, target: 1 }
     case 'guardian-selected': return { current: state.guardians.selectedGuardianId ? 1 : 0, target: 1 }
     case 'guardian-combat-completed': return { current: state.progress.chronicle.eventFlags['first-guardian-combat-completed'] ? 1 : 0, target: 1 }
     case 'crystal-equipped': return { current: state.crystals.equippedSlots.filter(Boolean).length, target: condition.count }
@@ -75,6 +82,12 @@ export const evaluateChronicleCondition = (state: GameState, condition: Chronicl
     }
     case 'guild-request-claimed': return hasCompletedGuildRequests(state) >= condition.count
     case 'guild-rank': return isRankAtLeast(state.progress.guildRank, condition.rank)
+    case 'guild-commissions-completed': return safeCount(state.progress.arcaneGuild.completedCommissions) >= condition.count
+    case 'registry-items-registered': return Object.values(state.progress.arcaneRegistry.registeredEntries).filter((quantity) => safeCount(quantity) > 0).length >= condition.count
+    case 'hunters-order-unlocked': return isHuntersOrderUnlocked(state)
+    case 'hunter-contracts-completed': return safeCount(state.progress.huntersOrder.totalContractsCompleted) >= condition.count
+    case 'hunter-contracts-accepted': return safeCount(state.progress.huntersOrder.totalContractsAccepted) >= condition.count
+    case 'guild-project-completed': return state.progress.arcaneGuild.completedProjectIds.includes(condition.projectId)
     case 'guardian-selected': return state.guardians.selectedGuardianId !== null
     case 'guardian-combat-completed': return state.progress.chronicle.eventFlags['first-guardian-combat-completed'] === true
     case 'crystal-equipped': return state.crystals.equippedSlots.filter(Boolean).length >= condition.count

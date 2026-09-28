@@ -4,7 +4,7 @@ import { canPromoteGuild, promoteGuild, purchaseGuildSkillNode, resetGuildSkillT
 import { getGuildPointsAvailable, getGuildProgressionBonuses, getGuildPromotionProgress } from './guildSelectors'
 
 describe('Guild progression runtime', () => {
-  it('promotes after any three claimed requests and awards one promotion point', () => {
+  it('promotes on authored reputation thresholds and awards advancement points', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
@@ -14,7 +14,7 @@ describe('Guild progression runtime', () => {
     expect(canPromoteGuild(state)).toBe(true)
     expect(promoteGuild(state)).toBe(true)
     expect(state.progress.guildRank).toBe('apprentice')
-    expect(state.progress.guildPointsEarned).toBe(4)
+    expect(state.progress.guildPointsEarned).toBe(5)
     expect(state.progress.permanentManaBonuses['guild-apprentice']).toBeUndefined()
   })
 
@@ -25,8 +25,9 @@ describe('Guild progression runtime', () => {
     expect(purchaseGuildSkillNode(state, 'hunter-arcane-quarry')).toBe(true)
     expect(purchaseGuildSkillNode(state, 'hunter-resonant-pursuit')).toBe(true)
     expect(getGuildPointsAvailable(state)).toBe(0)
-    expect(getGuildProgressionBonuses(state).combatArcanePointMultiplier).toBe(1.05)
-    expect(getGuildProgressionBonuses(state).combatResonanceMultiplier).toBe(1.05)
+    expect(getGuildProgressionBonuses(state).researchSpeedMultiplier).toBe(1.005)
+    expect(getGuildProgressionBonuses(state).researchXpMultiplier).toBe(1.01)
+    expect(getGuildProgressionBonuses(state).combatArcanePointMultiplier).toBe(1)
   })
 
   it('blocks respec while Expanded Quarters would strand an Acolyte', () => {
@@ -46,7 +47,7 @@ describe('Guild progression runtime', () => {
     state.progress.chronicle.completedObjectiveIds = ['m5-fallen-archmage']
     const promotion = getGuildPromotionProgress(state)
     expect(promotion.nextRank?.id).toBe('adept')
-    expect(promotion.contractClaims).toBe(6)
+    expect(promotion.contractClaims).toBe(1)
     expect(promotion.eligible).toBe(true)
     expect(canPromoteGuild(state)).toBe(true)
   })

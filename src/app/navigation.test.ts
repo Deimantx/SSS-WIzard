@@ -28,13 +28,13 @@ describe('Crystal navigation visibility', () => {
     expect(isNavigationItemVisible(crystalItem, state)).toBe(true)
   })
 
-  it('keeps Collection and Bestiary under World', () => {
+  it('places Arcane Guild and gated Hunter’s Order under Progression', () => {
     const world = navigationGroups.find((group) => group.id === 'world')!
-    const hero = navigationGroups.find((group) => group.id === 'hero')!
-    expect(world.items.map((item) => item.id)).toContain('collection')
-    expect(world.items.map((item) => item.id)).toContain('bestiary')
-    expect(hero.items.map((item) => item.id)).not.toContain('collection')
-    expect(hero.items.map((item) => item.id)).not.toContain('bestiary')
+    expect(world.items.map((item) => item.id)).toEqual(['arcane-guild', 'hunters-order'])
+    const state = createInitialState()
+    expect(isNavigationItemVisible(world.items[1], state)).toBe(false)
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    expect(isNavigationItemVisible(world.items[1], state)).toBe(true)
   })
 })
 

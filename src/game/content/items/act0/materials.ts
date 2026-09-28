@@ -16,6 +16,8 @@ export const ACT0_MATERIALS: AuthoredItemRegistry = {
     sourceNavigation: 'combat',
     sellValue: null,
     canDestroy: false,
+    registryMode: 'discover',
+    registryCategory: 'Magical Components',
     actionRestrictionReason: 'The shard is bound to the Dark Portal and cannot be discarded.',
   },
 }

@@ -11,9 +11,10 @@ export const GUILD_REQUEST_KIND_LABELS = {
 } as const
 
 export const GUILD_BRANCH_PRESENTATION: Record<GuildSkillBranch, { label: string; subtitle: string; accent: string }> = {
-  hunter: { label: 'Hunter', subtitle: 'Field rewards and combat resonance', accent: 'violet' },
-  quartermaster: { label: 'Quartermaster', subtitle: 'Essence and cache efficiency', accent: 'gold' },
-  tower: { label: 'Tower', subtitle: 'Flux, crafting, and Acolyte capacity', accent: 'green' },
+  hunter: { label: 'Research', subtitle: 'Study, insight, and Guild standing', accent: 'violet' },
+  quartermaster: { label: 'Transmutation', subtitle: 'Resonance and magical production', accent: 'gold' },
+  tower: { label: 'Guild Operations', subtitle: 'Flux, services, and Acolyte support', accent: 'green' },
+  milestones: { label: 'Major Standing', subtitle: 'Unlock larger Guild privileges as investment grows', accent: 'gold' },
 }
 
 export const GUILD_RANK_LABELS: Record<GuildRankId, string> = {
@@ -74,6 +75,6 @@ export const getGuildSkillBranchProgress = (state: Pick<GameState, 'progress'>, 
 
 export const getGuildSkillNodePresentation = (state: Pick<GameState, 'progress'>, nodeId: keyof typeof GUILD_SKILL_NODES) => {
   const node = GUILD_SKILL_NODES[nodeId]
-  const purchased = Boolean(state.progress.guildSkillNodeRanks[node.id])
-  return { node, purchased }
+  const rank = Math.max(0, Math.min(node.maxRank, state.progress.guildSkillNodeRanks[node.id] ?? 0))
+  return { node, rank, purchased: rank > 0, capped: rank >= node.maxRank }
 }

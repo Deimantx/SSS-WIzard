@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { LockKeyhole, Shield, Swords } from 'lucide-react'
 import { Button, GameTooltip } from '../../components/ui'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
@@ -9,8 +8,10 @@ import { useUiPreferences, setUiPreferences } from '../../ui/preferences/uiPrefe
 import type { GuildScreenTab } from '../../ui/preferences/uiPreferencesTypes'
 import { GuildHeader, GuildTabs } from './GuildHeader'
 import { GuildRecommendedContracts, GuildSpecializationSummary } from './GuildOverviewTab'
-import { GuildContractsBoard, GuildContractsControls, type GuildContractKindFilter, type GuildContractStatusFilter } from './GuildContractsTab'
+import { GuildContractsBoard } from './GuildContractsTab'
 import { GuildRankProgress } from './GuildRankProgress'
+import { ArcaneRegistryTab } from './ArcaneRegistryTab'
+import { GuildProjectsTab, GuildCommissionChainsTab } from './GuildProjectsTab'
 import { GuildSkillBranches, GuildSkillNote, GuildSkillSummary } from './GuildSkillTreeTab'
 
 export function GuildScreen() {
@@ -19,37 +20,41 @@ export function GuildScreen() {
   const activeTab = preferences.screenState.guild.activeTab
   const promotion = getGuildPromotionProgress(state)
   const setActiveTab = (tab: GuildScreenTab) => setUiPreferences({ screenState: { guild: { activeTab: tab } } })
-  const [contractStatusFilter, setContractStatusFilter] = useState<GuildContractStatusFilter>('all')
-  const [contractKindFilter, setContractKindFilter] = useState<GuildContractKindFilter>('all')
 
   if (!state.progress.guildUnlocked) return <GuildLockedState state={state} />
 
   const panels = [
     { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },
-    { id: 'guild-tabs', content: <GuildTabs activeTab={activeTab} onTabChange={setActiveTab} /> },
+    { id: 'guild-tabs', content: <GuildTabs activeTab={activeTab} onTabChange={setActiveTab} commissionCount={state.progress.arcaneGuild.availableCommissions.length} /> },
     ...(activeTab === 'overview' ? [
       { id: 'guild-progression', content: <GuildRankProgress state={state} /> },
       { id: 'guild-recommended-contracts', content: <GuildRecommendedContracts state={state} onNavigate={setActiveTab} /> },
       { id: 'guild-specialization', content: <GuildSpecializationSummary state={state} onNavigate={setActiveTab} /> },
     ] : activeTab === 'contracts' ? [
-      { id: 'guild-contract-controls', content: <GuildContractsControls statusFilter={contractStatusFilter} kindFilter={contractKindFilter} onStatusChange={setContractStatusFilter} onKindChange={setContractKindFilter} /> },
-      { id: 'guild-contracts', content: <GuildContractsBoard state={state} statusFilter={contractStatusFilter} kindFilter={contractKindFilter} /> },
-    ] : [
+      { id: 'guild-contracts', content: <GuildContractsBoard state={state} /> },
+    ] : activeTab === 'projects' ? [{ id: 'guild-projects', content: <GuildProjectsTab /> }]
+    : activeTab === 'chains' ? [{ id: 'guild-chains', content: <GuildCommissionChainsTab /> }]
+    : activeTab === 'registry' ? [] : [
       { id: 'guild-skills-summary', content: <GuildSkillSummary state={state} /> },
       { id: 'guild-skills', content: <GuildSkillBranches state={state} /> },
       { id: 'guild-skills-note', content: <GuildSkillNote /> },
     ]),
   ]
+  const registryPanels = activeTab === 'registry' ? [
+    { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },
+    { id: 'guild-tabs', content: <GuildTabs activeTab={activeTab} onTabChange={setActiveTab} commissionCount={state.progress.arcaneGuild.availableCommissions.length} /> },
+    { id: 'guild-registry', content: <ArcaneRegistryTab /> },
+  ] : panels
 
   return <div className="screen-content guild-v3-screen">
-    <main className="guild-v3-main" aria-live="polite"><ScreenGrid screen="guild" panels={panels} /></main>
+    <main className="guild-v3-main" aria-live="polite"><ScreenGrid screen="guild" panels={registryPanels} /></main>
   </div>
 }
 
 function GuildLockedState({ state }: { state: GameStore }) {
   const forestHeartDefeated = state.progress.forestHeartUnlocked ? 1 : 0
   return <div className="screen-content guild-v3-screen guild-v3-locked-screen">
-    <div className="screen-header"><div><div className="eyebrow">THE VERDANT CIRCLE</div><h1>A guild invitation, still sealed.</h1><p>Defeat the Forest Heart to unlock Requests, Reputation, and the Initiate to Apprentice progression.</p></div></div>
+    <div className="screen-header"><div><div className="eyebrow">ARCANE GUILD</div><h1>A guild invitation, still sealed.</h1><p>Defeat the Forest Heart to receive an invitation to the Arcane Guild and open its Registry and commissions.</p></div></div>
     <ScreenGrid screen="guild" panels={[{ id: 'guild-locked', content: <GuildLockedCard state={state} forestHeartDefeated={forestHeartDefeated} /> }]} />
   </div>
 }

@@ -8,6 +8,7 @@ export interface ArcaneCoreRewardDefinition {
 export const ARCANE_CORE_REWARDS: Record<DungeonId, ArcaneCoreRewardDefinition> = {
   'whispering-woods': { normalKillPoints: 1, bossKillPoints: 8 },
   'howling-den': { normalKillPoints: 1, bossKillPoints: 10 },
+  'hunters-ground': { normalKillPoints: 1, bossKillPoints: 11 },
   'abandoned-catacombs': { normalKillPoints: 2, bossKillPoints: 13 },
   'fractured-approach': { normalKillPoints: 2, bossKillPoints: 16 },
   'flooded-reliquary': { normalKillPoints: 2, bossKillPoints: 19 },

@@ -6,7 +6,13 @@ import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetFor
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
 import { CHRONICLE_OBJECTIVES } from '../game/content/chronicles/chronicles'
-import { GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
+import { GUILD_SKILL_NODES, GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
+import { ensureHunterContractChoices } from '../game/systems/huntersOrder/huntersOrderRuntime'
+import { ensureGuildCommissionChoices } from '../game/systems/guild/guildCommissions'
+import { GUILD_PROJECTS } from '../game/content/guild/guildProjects'
+import { ARCANE_REGISTRY_SETS } from '../game/content/guild/registry/registrySets'
+import { GUILD_COMMISSION_CHAINS } from '../game/content/guild/guildCommissionChains'
+import { HUNTER_UPGRADES } from '../game/content/huntersOrder/hunterUpgrades'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
 import { TRANSMUTATION_RECIPES as RECIPES } from '../game/content/recipes/recipes'
@@ -76,7 +82,9 @@ const LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS: Partial<Record<DungeonId, n
 
 const normalizeScreen = (value: unknown, fallback: GameState['ui']['screen']): GameState['ui']['screen'] => {
   if (value === 'tower') return 'tower-channeling'
-  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'crystals', 'collection', 'bestiary', 'tower-channeling', 'tower-acolytes', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'guild', 'settings']
+  if (value === 'guild' || value === 'collection') return 'arcane-guild'
+  if (value === 'bestiary') return 'hunters-order'
+  const valid = ['home', 'combat', 'schools', 'inventory', 'equipment', 'arcane-core', 'crystals', 'tower-channeling', 'tower-acolytes', 'tower-research', 'tower-transmutation', 'tower-artificing', 'tower-summoning', 'tower-dark-portal', 'arcane-guild', 'hunters-order', 'settings']
   if (value === 'tower-condensation') return 'tower-transmutation'
   return typeof value === 'string' && valid.includes(value) ? value as GameState['ui']['screen'] : fallback
 }
@@ -270,8 +278,55 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawSkillRanks = isRecord(rawProgress.guildSkillNodeRanks) ? rawProgress.guildSkillNodeRanks : {}
   migrated.progress.guildSkillNodeRanks = Object.fromEntries(GUILD_SKILL_NODE_IDS.flatMap((nodeId) => {
     const rank = nonNegativeInteger(rawSkillRanks[nodeId])
-    return rank && rank > 0 ? [[nodeId, Math.min(1, rank)]] : []
+    return rank && rank > 0 ? [[nodeId, Math.min(GUILD_SKILL_NODES[nodeId].maxRank, rank)]] : []
   })) as GameState['progress']['guildSkillNodeRanks']
+  const rawHunters = isRecord(rawProgress.huntersOrder) ? rawProgress.huntersOrder : {}
+  const hunterIds = ['ashen-tracker', 'gloamfang-stalker', 'runehorn-brute', 'nightglass-alpha'] as const
+  const normalizeContract = (value: unknown): GameState['progress']['huntersOrder']['activeContract'] => {
+    if (!isRecord(value) || typeof value.id !== 'string' || !hunterIds.includes(value.targetMonsterId as typeof hunterIds[number])) return null
+    const tier = value.tier === 'special' || value.tier === 'prestigious' ? value.tier : 'routine'
+    const target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
+    return { id: value.id.slice(0, 80), targetMonsterId: value.targetMonsterId as MonsterId, target, progress: Math.min(target, nonNegativeInteger(value.progress) ?? 0), tier, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, marksReward: nonNegativeInteger(value.marksReward) ?? 0 }
+  }
+  const hunterReputation = nonNegativeInteger(rawHunters.reputation) ?? 0
+  const hunterRankId = hunterReputation >= 6500 ? 'master-hunter' : hunterReputation >= 3500 ? 'veteran' : hunterReputation >= 1800 ? 'warden' : hunterReputation >= 800 ? 'stalker' : hunterReputation >= 250 ? 'scout' : 'tracker'
+  const rawHunterStats = isRecord(rawHunters.monsterHunterStats) ? rawHunters.monsterHunterStats : {}
+  const monsterHunterStats = Object.fromEntries(hunterIds.flatMap((id) => {
+    const stats = isRecord(rawHunterStats[id]) ? rawHunterStats[id] : {}
+    const contractKills = nonNegativeInteger(stats.contractKills) ?? 0
+    const contractsCompleted = nonNegativeInteger(stats.contractsCompleted) ?? 0
+    const marksEarned = nonNegativeInteger(stats.marksEarned) ?? 0
+    return contractKills + contractsCompleted + marksEarned > 0 ? [[id, { contractKills, contractsCompleted, marksEarned }]] : []
+  })) as GameState['progress']['huntersOrder']['monsterHunterStats']
+  const activeHunterContract = normalizeContract(rawHunters.activeContract)
+  const availableHunterContracts = Array.isArray(rawHunters.availableContracts) ? rawHunters.availableContracts.map(normalizeContract).filter((contract): contract is NonNullable<typeof contract> => Boolean(contract)).slice(0, 3) : []
+  const blockedHunterTargets = Array.isArray(rawHunters.blockedTargets) ? rawHunters.blockedTargets.filter((id): id is GameState['progress']['huntersOrder']['blockedTargets'][number] => hunterIds.includes(id as typeof hunterIds[number])) : []
+  const rawPurchasedHunterUpgrades = isRecord(rawHunters.purchasedUpgrades) ? rawHunters.purchasedUpgrades : {}
+  const purchasedHunterUpgrades = Object.fromEntries(HUNTER_UPGRADES.filter((upgrade) => rawPurchasedHunterUpgrades[upgrade.id] === 1).map((upgrade) => [upgrade.id, 1]))
+  migrated.progress.huntersOrder = { reputation: hunterReputation, rankId: hunterRankId, hunterMarks: nonNegativeInteger(rawHunters.hunterMarks) ?? 0, totalContractsAccepted: Math.max(nonNegativeInteger(rawHunters.totalContractsAccepted) ?? 0, activeHunterContract ? 1 : nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0), activeContract: activeHunterContract, availableContracts: availableHunterContracts, blockedTargets: [...new Set(blockedHunterTargets)], purchasedUpgrades: purchasedHunterUpgrades, totalContractsCompleted: nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0, totalHunterKills: nonNegativeInteger(rawHunters.totalHunterKills) ?? 0, generationCount: nonNegativeInteger(rawHunters.generationCount) ?? 0, monsterHunterStats }
+  const rawRegistry = isRecord(rawProgress.arcaneRegistry) ? rawProgress.arcaneRegistry : {}
+  const rawRegistered = isRecord(rawRegistry.registeredEntries) ? rawRegistry.registeredEntries : {}
+  const registeredEntries = Object.fromEntries(itemIds.flatMap((id) => { const quantity = nonNegativeInteger(rawRegistered[id]) ?? 0; return quantity > 0 ? [[id, quantity]] : [] })) as GameState['progress']['arcaneRegistry']['registeredEntries']
+  const savedCompletedSets = Array.isArray(rawRegistry.completedSetIds) ? rawRegistry.completedSetIds.filter((id): id is string => typeof id === 'string' && ARCANE_REGISTRY_SETS.some((set) => set.id === id)) : []
+  migrated.progress.arcaneRegistry = { registeredEntries, completedSetIds: [...new Set(savedCompletedSets)] }
+  const rawGuild = isRecord(rawProgress.arcaneGuild) ? rawProgress.arcaneGuild : {}
+  const rawAvailableCommissions = Array.isArray(rawGuild.availableCommissions) ? rawGuild.availableCommissions.filter(isRecord).slice(0, 3) : []
+  const normalizeGuildCommission = (value: Record<string, any>): GameState['progress']['arcaneGuild']['activeCommission'] => {
+    const category = value.category === 'research' || value.category === 'transmutation' ? value.category : value.category === 'delivery' ? value.category : null
+    const templateId = typeof value.templateId === 'string' && ['deliver-life-essence-small', 'deliver-life-essence-standard', 'deliver-life-essence-large', 'deliver-fire-fragments', 'deliver-water-fragments', 'study-research-cycles', 'transmute-materials'].includes(value.templateId) ? value.templateId : null
+    if (!category || !templateId || typeof value.id !== 'string') return null
+    const quality = value.quality === 'special' || value.quality === 'prestigious' ? value.quality : 'routine'
+    const itemId = typeof value.itemId === 'string' && itemIds.includes(value.itemId) ? value.itemId as ItemId : undefined
+    const target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
+    return { id: value.id.slice(0, 100), templateId, category, quality, itemId, target, progress: Math.min(target, nonNegativeInteger(value.progress) ?? 0), reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, advancementPointReward: nonNegativeInteger(value.advancementPointReward) ?? 0 }
+  }
+  const rawProjectProgress = isRecord(rawGuild.projects) ? rawGuild.projects : {}
+  const projects = Object.fromEntries(GUILD_PROJECTS.flatMap((project) => { const rawProject: Record<string, any> = isRecord(rawProjectProgress[project.id]) ? rawProjectProgress[project.id] as Record<string, any> : {}; const values = Object.fromEntries(project.requirements.flatMap((requirement) => { const amount = Math.min(requirement.quantity, nonNegativeInteger(rawProject[requirement.itemId]) ?? 0); return amount > 0 ? [[requirement.itemId, amount]] : [] })); return Object.keys(values).length ? [[project.id, values]] : [] }))
+  const completedProjectIds = Array.isArray(rawGuild.completedProjectIds) ? [...new Set(rawGuild.completedProjectIds.filter((id): id is string => GUILD_PROJECTS.some((project) => project.id === id)))] : []
+  const rawChain = isRecord(rawGuild.activeCommissionChain) ? rawGuild.activeCommissionChain : null
+  const chainDefinition = rawChain && GUILD_COMMISSION_CHAINS.find((chain) => chain.id === rawChain.id)
+  const activeCommissionChain = chainDefinition ? { id: chainDefinition.id, stageIndex: Math.min(chainDefinition.stages.length - 1, nonNegativeInteger(rawChain?.stageIndex) ?? 0), stageProgress: Math.min(chainDefinition.stages[Math.min(chainDefinition.stages.length - 1, nonNegativeInteger(rawChain?.stageIndex) ?? 0)].target, nonNegativeInteger(rawChain?.stageProgress) ?? 0) } : null
+  migrated.progress.arcaneGuild = { projects, completedProjectIds, activeCommissionChain, availableCommissions: rawAvailableCommissions.map((entry) => normalizeGuildCommission(entry)).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)), activeCommission: isRecord(rawGuild.activeCommission) ? normalizeGuildCommission(rawGuild.activeCommission) : null, generationCount: nonNegativeInteger(rawGuild.generationCount) ?? 0, completedCommissions: nonNegativeInteger(rawGuild.completedCommissions) ?? 0, freeRefreshes: nonNegativeInteger(rawGuild.freeRefreshes) ?? 0 }
   const rawChronicle = isRecord(rawProgress.chronicle) ? rawProgress.chronicle : {}
   const rawCompleted = Array.isArray(rawChronicle.completedObjectiveIds) ? rawChronicle.completedObjectiveIds : []
   const rawGranted = Array.isArray(rawChronicle.grantedUnlockRewardIds) ? rawChronicle.grantedUnlockRewardIds : []
@@ -959,6 +1014,8 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSigils(migrated, raw)
   normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
+  ensureHunterContractChoices(migrated)
+  ensureGuildCommissionChoices(migrated)
   reconcileWorldTierProgression(migrated)
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)

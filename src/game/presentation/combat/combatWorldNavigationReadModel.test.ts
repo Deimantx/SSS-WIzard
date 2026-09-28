@@ -21,7 +21,7 @@ describe('combat world navigation read model', () => {
 
     expect(view.selectedContinent.name).toBe('Continent I')
     expect(view.selectedRegion.name).toBe('First Frontier')
-    expect(view.selectedRegion.locations.map((location) => location.name)).toEqual(['Whispering Woods', 'Howling Den', 'Abandoned Catacombs'])
+    expect(view.selectedRegion.locations.map((location) => location.name)).toEqual(['Whispering Woods', 'Howling Den', 'Gloamridge Hunting Ground', 'Abandoned Catacombs'])
     expect(view.selectedRegion.locations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'elite-zone', state: 'locked', unlockText: 'Defeat Forest Heart' })
     expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })

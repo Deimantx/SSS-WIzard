@@ -38,7 +38,7 @@ describe('Guild V3 screen', () => {
 
   it('switches between Guild-owned Registry, Commissions, and Advancement without changing gameplay state', async () => {
     const user = userEvent.setup()
-    useGameStore.setState((state) => { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.guildPointsEarned = 1; state.progress.arcaneGuild.availableCommissions = [{ id: 'test-delivery', templateId: 'deliver-life-essence-small', category: 'delivery', quality: 'routine', itemId: 'life-essence', target: 8, progress: 0, reputationReward: 45, advancementPointReward: 0 }] })
+    useGameStore.setState((state) => { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.guildPointsEarned = 1; state.progress.arcaneGuild.availableCommissions = [{ id: 'test-supply', templateId: 'supply-life-essence', category: 'supply', quality: 'routine', objectives: [{ kind: 'item-supply', itemId: 'life-essence', target: 10, progress: 0 }], reputationReward: 60, advancementPointReward: 0 }] })
     renderGuild()
 
     expect(screen.getByRole('heading', { name: 'Guild Commissions' })).toBeTruthy()

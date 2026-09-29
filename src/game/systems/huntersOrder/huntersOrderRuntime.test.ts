@@ -2,20 +2,50 @@ import { describe, expect, it } from 'vitest'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, canOfferHunterApexContract, debugRegenerateHunterContractBoard } from './huntersOrderRuntime'
+import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, canOfferHunterApexContract, debugRegenerateHunterContractBoard } from './huntersOrderRuntime'
 import { BALANCE } from '../../core/balance/balance'
 import { HUNTER_APEX_CONTRACT } from '../../content/huntersOrder/hunterApex'
 import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
 import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
+import { HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/huntersOrder'
+import { MONSTERS } from '../../content/monsters'
 import type { HunterContractState } from '../../types'
 
 const contract = (targetSpec: HunterContractState['targetSpec'], tier: HunterContractState['tier'] = 'routine'): HunterContractState => ({ id: 'test-contract', targetSpec, target: 1, progress: 0, tier, reputationReward: 100, marksReward: 3 })
 const unlock = () => { const state = createInitialState(); state.progress.bossKillsByBoss['corrupted-greatbear'] = 1; return state }
 
 describe('Hunter Order hardened runtime', () => {
+  it('uses the extended authored Gloamridge roster and rank thresholds', () => {
+    expect(HUNTER_RANKS.map(({ reputation }) => reputation)).toEqual([0, 1250, 4000, 9000, 17500, 32500])
+    expect(HUNTER_REGULAR_MONSTER_IDS).toHaveLength(6)
+    expect(DUNGEONS['hunters-ground'].monsterPool).toEqual(expect.arrayContaining([...HUNTER_REGULAR_MONSTER_IDS]))
+    for (const id of ['veilwing-harrier', 'cinderback-mauler', 'gloomroot-hexer'] as const) {
+      expect(MONSTERS[id]).toMatchObject({ bestiaryCategory: 'monster', hunter: { exclusive: true, contractRequired: true, huntingGroundId: 'hunters-ground' } })
+      expect(MONSTERS[id]?.actions && Object.keys(MONSTERS[id]!.actions).length).toBeGreaterThan(0)
+      expect(MONSTERS[id]?.resonanceYield && Object.values(MONSTERS[id]!.resonanceYield!).some((amount) => amount > 0)).toBe(true)
+    }
+  })
+
+  it('applies the three Trail Kit reductions to normal targets and keeps boss targets at one', () => {
+    const withoutKit = unlock(); const withKit = unlock()
+    for (const state of [withoutKit, withKit]) { state.progress.huntersOrder.reputation = 32500; state.progress.huntersOrder.rngState = 901 }
+    withKit.progress.huntersOrder.hunterMarks = 100
+    expect(purchaseHunterUpgrade(withKit, 'trail-kit')).toBe(true)
+    expect(purchaseHunterUpgrade(withKit, 'trail-kit')).toBe(true)
+    expect(purchaseHunterUpgrade(withKit, 'trail-kit')).toBe(true)
+    withKit.progress.huntersOrder.rngState = 901
+    const raw = debugRegenerateHunterContractBoard(withoutKit, { archetype: 'monster', tier: 'prestigious' })
+    const reduced = debugRegenerateHunterContractBoard(withKit, { archetype: 'monster', tier: 'prestigious' })
+    expect(reduced.map((offer) => offer.target)).toEqual(raw.map((offer) => Math.ceil(offer.target * 0.9)))
+    expect(reduced.every((offer) => offer.reputationReward === Math.round(offer.target * 2 * 3))).toBe(true)
+    const boss = debugRegenerateHunterContractBoard(withKit, { archetype: 'boss', tier: 'prestigious' })
+    expect(boss[0]?.target).toBe(1)
+    expect(boss[0]?.reputationReward).toBe(6)
+  })
+
   it('generates unique seeded generalized offers and save state preserves the next sequence', () => {
     const a = unlock(); const b = unlock()
-    a.progress.huntersOrder.reputation = b.progress.huntersOrder.reputation = 1800
+    a.progress.huntersOrder.reputation = b.progress.huntersOrder.reputation = 20000
     a.progress.huntersOrder.rngState = b.progress.huntersOrder.rngState = 123456
     const firstA = generateHunterContractChoices(a); const firstB = generateHunterContractChoices(b)
     expect(firstA).toEqual(firstB)
@@ -27,11 +57,30 @@ describe('Hunter Order hardened runtime', () => {
     expect(generateHunterContractChoices(continued)).toEqual(nextA)
   })
 
+  it('issues the first routine Contract immediately and supports the Tracker continuation action', () => {
+    const state = unlock()
+    const order = state.progress.huntersOrder
+    expect(issueFirstHunterContract(state)).toBe(true)
+    expect(order.activeContract).toMatchObject({ tier: 'routine', targetSpec: { type: 'monster' }, marksReward: 3 })
+    expect(HUNTER_REGULAR_MONSTER_IDS).toContain((order.activeContract?.targetSpec as { monsterId: string }).monsterId)
+    expect(order.activeContract?.target).toBeGreaterThanOrEqual(BALANCE.huntersOrder.starterTargetRange[0])
+    expect(order.activeContract?.target).toBeLessThanOrEqual(BALANCE.huntersOrder.starterTargetRange[1])
+    expect(order.activeContract?.reputationReward).toBe(order.activeContract!.target * BALANCE.huntersOrder.starterReputationPerKill)
+    expect(order.totalContractsAccepted).toBe(1)
+    expect(issueFirstHunterContract(state)).toBe(false)
+
+    order.activeContract = null
+    expect(requestHunterAssignment(state)).toBe(true)
+    const nextAssignment = state.progress.huntersOrder.activeContract as HunterContractState | null
+    expect(nextAssignment?.tier).toBe('routine')
+    expect(order.totalContractsAccepted).toBe(2)
+  })
+
   it('uses seeded archetype weights rather than the number of candidates per archetype', () => {
     const counts: Record<HunterContractState['targetSpec']['type'], number> = { monster: 0, family: 0, region: 0, alignment: 0, boss: 0 }
     for (let seed = 1; seed <= 400; seed += 1) {
       const state = unlock()
-      state.progress.huntersOrder.reputation = 10000
+      state.progress.huntersOrder.reputation = 32500
       state.progress.huntersOrder.rngState = seed
       generateHunterContractChoices(state).forEach((offer) => { counts[offer.targetSpec.type] += 1 })
     }
@@ -46,7 +95,7 @@ describe('Hunter Order hardened runtime', () => {
     try {
       huntersBalance.qualityWeights = { routine: 0, special: 1, prestigious: 0 }
       const state = unlock()
-      state.progress.huntersOrder.reputation = 1000
+      state.progress.huntersOrder.reputation = 1250
       expect(generateHunterContractChoices(state).every((offer) => offer.tier === 'special')).toBe(true)
     } finally {
       huntersBalance.qualityWeights = previous
@@ -62,6 +111,8 @@ describe('Hunter Order hardened runtime', () => {
     expect(doesMonsterMatchHunterContract(contract({ type: 'region', dungeonId: 'hunters-ground' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
     expect(doesMonsterMatchHunterContract(contract({ type: 'region', dungeonId: 'hunters-ground' }), 'ashen-tracker', 'howling-den')).toBe(false)
     expect(doesMonsterMatchHunterContract(contract({ type: 'alignment', alignmentId: 'Wild' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'family', familyId: 'Gloamridge Mystics' }), 'gloomroot-hexer', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'alignment', alignmentId: 'Embermarked' }), 'cinderback-mauler', 'hunters-ground')).toBe(true)
     expect(doesMonsterMatchHunterContract(contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious'), 'nightglass-alpha', 'hunters-ground')).toBe(true)
     expect(state.progress.huntersOrder.rngState).toBeGreaterThan(0)
   })
@@ -91,6 +142,10 @@ describe('Hunter Order hardened runtime', () => {
 
   it('keeps block capacity, protects active eligibility, and permits unblocking', () => {
     const state = unlock()
+    expect(getHunterBlockSlotCount(state)).toBe(0)
+    expect(setHunterTargetBlocked(state, 'ashen-tracker', true)).toBe(false)
+    state.progress.huntersOrder.reputation = 4000
+    state.progress.huntersOrder.purchasedUpgrades['extended-trails'] = 1
     expect(getHunterBlockSlotCount(state)).toBe(1)
     expect(setHunterTargetBlocked(state, 'ashen-tracker', true)).toBe(true)
     expect(setHunterTargetBlocked(state, 'gloamfang-stalker', true)).toBe(false)
@@ -102,6 +157,7 @@ describe('Hunter Order hardened runtime', () => {
 
   it('spends Marks for reroll and skip, and applies upgrades by rank', () => {
     const state = unlock()
+    state.progress.huntersOrder.reputation = 1250
     state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
     state.progress.huntersOrder.hunterMarks = 30
     expect(rerollHunterContracts(state)).toBe(true)
@@ -117,17 +173,18 @@ describe('Hunter Order hardened runtime', () => {
 
   it('uses progress within the current rank interval', () => {
     expect(getHunterRankProgress(0).progress).toBe(0)
-    expect(getHunterRankProgress(250).progress).toBe(0)
-    expect(getHunterRankProgress(525).progress).toBe(0.5)
-    expect(getHunterRankProgress(800).progress).toBe(0)
-    expect(getHunterRankProgress(9000)).toMatchObject({ nextRank: null, progress: 1 })
+    expect(getHunterRankProgress(1250).progress).toBe(0)
+    expect(getHunterRankProgress(2625).progress).toBe(0.5)
+    expect(getHunterRankProgress(4000).progress).toBe(0)
+    expect(getHunterRankProgress(32500)).toMatchObject({ nextRank: null, progress: 1 })
   })
 
   it('does not authorize Apex targets with an unrelated or under-tier contract', () => {
     const state = unlock()
-    state.progress.huntersOrder.reputation = 7000
+    state.progress.huntersOrder.reputation = 17500
     state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'ashen-tracker' }, 'routine')
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-tier-locked' })
+    state.progress.huntersOrder.reputation = 32500
     state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
     expect(canHuntMonster(state, 'nightglass-alpha', 'hunters-ground')).toBe(true)
   })
@@ -136,11 +193,12 @@ describe('Hunter Order hardened runtime', () => {
     const state = unlock()
     const order = state.progress.huntersOrder
     order.hunterMarks = 100
-    expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices)
+    expect(getHunterContractChoiceCount(state)).toBe(0)
     expect(getHunterUpgradePurchaseStatus(state, 'contract-portfolio')).toMatchObject({ canPurchase: false, reason: 'rank-required', requiredRank: { id: 'scout' } })
     expect(purchaseHunterUpgrade(state, 'contract-portfolio')).toBe(false)
 
-    order.reputation = 250
+    order.reputation = 1250
+    expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices)
     expect(purchaseHunterUpgrade(state, 'contract-portfolio')).toBe(true)
     expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices + 1)
     expect(order.availableContracts).toHaveLength(Math.min(getHunterContractChoiceCount(state), 5))
@@ -149,7 +207,7 @@ describe('Hunter Order hardened runtime', () => {
   it('reduces Reroll and Skip costs through their authored upgrades', () => {
     const state = unlock()
     const order = state.progress.huntersOrder
-    order.reputation = 6500
+    order.reputation = 17500
     order.hunterMarks = 200
     expect(getHunterRerollMarkCost(state)).toBe(BALANCE.huntersOrder.rerollMarkCost)
     expect(getHunterSkipMarkCost(state)).toBe(BALANCE.huntersOrder.skipMarkCost)
@@ -161,7 +219,7 @@ describe('Hunter Order hardened runtime', () => {
 
   it('requires a matching explicit Boss contract for Nightglass Alpha at Master Hunter', () => {
     const state = unlock()
-    state.progress.huntersOrder.reputation = 10000
+    state.progress.huntersOrder.reputation = 32500
     state.progress.huntersOrder.activeContract = contract({ type: 'region', dungeonId: 'hunters-ground' }, 'prestigious')
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-target-mismatch' })
     state.progress.huntersOrder.activeContract = contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious')
@@ -169,12 +227,12 @@ describe('Hunter Order hardened runtime', () => {
   })
 
   it('offers the authored Apex Boss Contract at Master Hunter and preserves access above that rank', () => {
-    expect(canOfferHunterApexContract(6499)).toBe(false)
-    expect(canOfferHunterApexContract(6500)).toBe(true)
+    expect(canOfferHunterApexContract(32499)).toBe(false)
+    expect(canOfferHunterApexContract(32500)).toBe(true)
     const futureRanks = [...HUNTER_RANKS, { id: 'apex-hunter' }]
     expect(isHunterRankAtLeast('apex-hunter', HUNTER_APEX_CONTRACT.requiredRank, futureRanks)).toBe(true)
     const state = unlock()
-    state.progress.huntersOrder.reputation = 6500
+    state.progress.huntersOrder.reputation = 32500
     const offers = debugRegenerateHunterContractBoard(state, { archetype: 'boss', tier: 'prestigious' })
     expect(offers).toHaveLength(1)
     expect(offers[0]?.targetSpec).toEqual({ type: 'boss', monsterId: HUNTER_APEX_CONTRACT.monsterId })

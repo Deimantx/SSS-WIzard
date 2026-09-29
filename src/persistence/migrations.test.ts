@@ -118,11 +118,11 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({ ...initial, saveVersion: 52, progress: { ...initial.progress, guildUnlocked: true, arcaneGuild: { ...initial.progress.arcaneGuild, activeCommission } } } as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.progress.arcaneGuild.activeCommission).toMatchObject({
-      templateId: 'mixed-ember-study', target: 21, progress: 7,
-      components: [
-        { category: 'production', itemId: 'fire-fragment', target: 12, progress: 5 },
-        { category: 'transmutation', target: 6, progress: 1 },
-        { category: 'research', target: 3, progress: 1 },
+      templateId: 'mixed-ember-study',
+      objectives: [
+        { kind: 'production', itemId: 'fire-fragment', target: 12, progress: 5 },
+        { kind: 'transmutation', target: 6, progress: 1 },
+        { kind: 'research', target: 3, progress: 1 },
       ],
     })
   })
@@ -147,6 +147,13 @@ describe('save navigation migration', () => {
     expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' } })
     expect(migrated.progress.huntersOrder.rankId).toBe('master-hunter')
     expect(migrated.progress.huntersOrder.rngState).toBe(8675309)
+  })
+
+  it('preserves legacy Hunter reputation while applying the new long-form rank thresholds', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 52, progress: { ...initial.progress, huntersOrder: { ...initial.progress.huntersOrder, reputation: 6500, rankId: 'master-hunter' } } } as any)
+    expect(migrated.progress.huntersOrder.reputation).toBe(6500)
+    expect(migrated.progress.huntersOrder.rankId).toBe('stalker')
   })
 
   it('maps the old aggregate Tower screen to Channeling', () => {

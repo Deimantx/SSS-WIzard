@@ -76,7 +76,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
     state.combat.threatCleared = DUNGEONS['hunters-ground'].threatRequired
     state.progress.autoHuntBossUnlocked = true
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    state.progress.huntersOrder.reputation = 7000
+    state.progress.huntersOrder.reputation = 32500
     state.progress.huntersOrder.activeContract = { id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 12 }
     useGameStore.setState(state)
 

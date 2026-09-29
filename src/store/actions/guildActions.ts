@@ -2,7 +2,7 @@ import { GUILD_REQUESTS, GUILD_REQUEST_IDS } from '../../game/content/guild/guil
 import { claimGuildRequest, donateGuildRequest, promoteGuild, purchaseGuildSkillNode, resetGuildRequests, resetGuildSkillTree, setGuildRank, grantGuildPoint, debugSetArcaneGuildUnlocked } from '../../game/systems/guild/guildRuntime'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
 import { debugCompleteRegistryEntry, debugCompleteRegistrySet, registerArcaneRegistryEntry } from '../../game/systems/guild/arcaneRegistry'
-import { acceptGuildCommission, deliverGuildCommissionItems, refreshGuildCommissionChoices, debugSetGuildCommissionRngSeed, debugRegenerateGuildCommissionBoard } from '../../game/systems/guild/guildCommissions'
+import { acceptGuildCommission, contributeGuildCommissionSupply, deliverGuildCommissionItems, refreshGuildCommissionChoices, debugSetGuildCommissionRngSeed, debugRegenerateGuildCommissionBoard } from '../../game/systems/guild/guildCommissions'
 import type { GuildCommissionGenerationOptions } from '../../game/systems/guild/guildCommissions'
 import { contributeGuildProject, debugCompleteGuildProject, debugCompleteGuildProjectPrerequisites } from '../../game/systems/guild/guildProjects'
 import { contributeGuildCommissionChainDelivery, debugCompleteGuildCommissionChain, startGuildCommissionChain } from '../../game/systems/guild/guildCommissionChains'
@@ -31,6 +31,7 @@ export const grantGuildPointAction = (state: GameState, amount: number) => grant
 export const registerArcaneRegistryEntryAction = (state: GameState, itemId: import('../../game/types').ItemId) => registerArcaneRegistryEntry(state, itemId)
 export const acceptGuildCommissionAction = (state: GameState, id: string) => acceptGuildCommission(state, id)
 export const deliverGuildCommissionItemsAction = (state: GameState, amount: number | 'max') => deliverGuildCommissionItems(state, amount)
+export const contributeGuildCommissionSupplyAction = (state: GameState, objectiveIndex: number, amount: number | 'max') => contributeGuildCommissionSupply(state, objectiveIndex, amount)
 export const refreshGuildCommissionChoicesAction = (state: GameState) => refreshGuildCommissionChoices(state)
 export const debugSetGuildCommissionRngSeedAction = (state: GameState, seed: number) => debugSetGuildCommissionRngSeed(state, seed)
 export const debugRegenerateGuildCommissionBoardAction = (state: GameState, options: GuildCommissionGenerationOptions = {}) => debugRegenerateGuildCommissionBoard(state, options)

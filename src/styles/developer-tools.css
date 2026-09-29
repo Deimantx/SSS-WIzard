@@ -210,6 +210,40 @@
 .developer-scenario-card { display: grid; gap: 12px; align-content: space-between; min-width: 0; padding: 12px; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel) 82%, transparent); }
 .developer-scenario-card h3 { margin: 5px 0 8px; color: var(--ui-text); font-size: var(--text-md); }
 .developer-scenario-card ul { display: grid; gap: 4px; margin: 0; padding-left: 16px; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.scenario-run-actions, .scenario-library-toolbar, .scenario-library-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.scenario-run-actions { justify-content: flex-end; }
+.scenario-library-toolbar { justify-content: space-between; margin: 10px 0; }
+.scenario-library-toolbar > p { flex: 1 1 420px; margin: 0; }
+.scenario-library-toolbar .search-input { flex: 1 1 300px; max-width: 520px; }
+.scenario-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.scenario-library-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.scenario-library-card { display: grid; align-content: start; gap: 10px; min-width: 0; padding: 14px; border: 1px solid var(--ui-border); border-radius: 10px; background: color-mix(in srgb, var(--ui-panel) 84%, transparent); }
+.scenario-library-title { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.scenario-library-title h3 { margin: 4px 0 0; color: var(--ui-text); font-size: var(--text-md); }
+.scenario-library-card > p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-sm); }
+.scenario-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.scenario-tags span { padding: 3px 7px; border-radius: 999px; color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent) 11%, var(--ui-panel)); font-size: var(--text-2xs); }
+.scenario-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.scenario-summary-grid span { min-width: 0; padding: 7px; border-radius: 7px; background: color-mix(in srgb, var(--ui-panel-strong) 75%, transparent); color: var(--ui-text-muted); font-size: var(--text-2xs); }
+.scenario-summary-grid strong { display: block; margin-top: 3px; overflow-wrap: anywhere; color: var(--ui-text); font-size: var(--text-xs); }
+.scenario-library-actions { align-items: stretch; padding-top: 3px; border-top: 1px solid var(--ui-border); }
+.scenario-library-actions .button { flex: 1 1 auto; }
+.scenario-library-diagnostics { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: var(--ui-text-muted); font-size: var(--text-2xs); }
+.scenario-library-diagnostics summary { flex-basis: 100%; cursor: pointer; color: var(--ui-accent); }
+.developer-empty-state { display: grid; gap: 5px; padding: 22px; border: 1px dashed var(--ui-border); border-radius: 9px; color: var(--ui-text-muted); text-align: center; }
+.developer-empty-state strong { color: var(--ui-text); }
+.scenario-dialog-backdrop { z-index: 1200; }
+.modal-portal-surface.scenario-dialog { display: grid; gap: 15px; width: min(620px, calc(100vw - 32px)); max-height: min(760px, calc(100dvh - 36px)); overflow: auto; padding: 22px; border: 1px solid color-mix(in srgb, var(--ui-accent) 35%, var(--ui-border)); border-radius: 12px; background: linear-gradient(150deg, var(--ui-panel-strong), var(--ui-panel)); box-shadow: 0 24px 70px color-mix(in srgb, var(--ui-shadow) 80%, transparent); }
+.scenario-dialog header h2 { margin: 5px 0; color: var(--ui-text); font-size: var(--text-xl); }
+.scenario-dialog header p { margin: 0; color: var(--ui-text-muted); }
+.scenario-dialog-fields { display: grid; gap: 12px; }
+.scenario-dialog-fields label { display: grid; gap: 5px; color: var(--ui-text); font-size: var(--text-sm); }
+.scenario-dialog-fields input, .scenario-dialog-fields textarea { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text); background: var(--ui-panel); font: inherit; }
+.scenario-dialog-fields textarea { resize: vertical; }
+.scenario-dialog-fields input:focus-visible, .scenario-dialog-fields textarea:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 1px; }
+.scenario-dialog-toggles { display: grid; gap: 8px; }
+.scenario-dialog footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+@media (max-width: 720px) { .scenario-library-grid { grid-template-columns: 1fr; } .scenario-library-toolbar { align-items: stretch; flex-direction: column; } .scenario-summary-grid { grid-template-columns: 1fr; } }
 .developer-confirm-surface { width: min(520px, calc(100vw - 28px)); padding: 18px; }
 .developer-confirm-head h2 { margin: 4px 0 0; color: var(--ui-text); font-size: var(--text-lg); }
 .developer-confirm-body { display: grid; gap: 14px; margin-top: 16px; color: var(--ui-text-muted); font-size: var(--text-sm); }

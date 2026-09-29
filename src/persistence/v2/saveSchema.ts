@@ -12,6 +12,8 @@ import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReserva
 import { WORLD_TIER_IDS } from '../../game/content/world-tier/worldTiers'
 import { GUILD_RANKS } from '../../game/content/guild/guildRanks'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
+import { RESONANCE_TYPES } from '../../game/content/resonance/resonance'
+import { SCHOOLS } from '../../game/content/schools/schools'
 
 const gameplayFields = [
   'player', 'schools', 'currencies', 'resonance', 'tower', 'worldTier', 'inventory', 'crystals',
@@ -48,25 +50,23 @@ const isHunterContract = (value: unknown) => isRecord(value)
   && isNonNegativeNumber(value.reputationReward) && isNonNegativeNumber(value.marksReward)
 const isGuildCommission = (value: unknown) => {
   if (!isRecord(value) || typeof value.id !== 'string' || !value.id || typeof value.templateId !== 'string' || !value.templateId) return false
-  if (!['delivery', 'production', 'research', 'transmutation', 'mixed'].includes(String(value.category))) return false
+  if (!['supply', 'channeling', 'production', 'research', 'transmutation', 'mixed'].includes(String(value.category))) return false
   if (!['routine', 'special', 'prestigious'].includes(String(value.quality))) return false
-  if (!isNonNegativeNumber(value.target) || value.target <= 0 || !isNonNegativeNumber(value.progress) || value.progress > value.target) return false
   if (!isNonNegativeNumber(value.reputationReward) || !isNonNegativeNumber(value.advancementPointReward)) return false
-  if (value.itemId !== undefined && (typeof value.itemId !== 'string' || !Object.prototype.hasOwnProperty.call(ITEMS, value.itemId))) return false
-  if (value.components !== undefined) {
-    if (!Array.isArray(value.components)) return false
-    if (value.components.some((component) => {
-      if (!isRecord(component)) return true
-      if (!['delivery', 'production', 'research', 'transmutation'].includes(String(component.category))) return true
-      if (!isNonNegativeNumber(component.target) || component.target <= 0 || !isNonNegativeNumber(component.progress) || component.progress > component.target) return true
-      return component.itemId !== undefined && (typeof component.itemId !== 'string' || !Object.prototype.hasOwnProperty.call(ITEMS, component.itemId))
-    })) return false
-  }
+  if (!Array.isArray(value.objectives) || value.objectives.length < 1 || value.objectives.some((objective) => {
+    if (!isRecord(objective) || !isNonNegativeNumber(objective.target) || objective.target <= 0 || !isNonNegativeNumber(objective.progress) || objective.progress > objective.target) return true
+    if (objective.kind === 'item-supply' || objective.kind === 'production') return typeof objective.itemId !== 'string' || !Object.prototype.hasOwnProperty.call(ITEMS, objective.itemId)
+    if (objective.kind === 'resonance-supply') return !RESONANCE_TYPES.includes(objective.resonanceType as typeof RESONANCE_TYPES[number])
+    if (objective.kind === 'channeling') return objective.metric !== 'arcane-flux'
+    if (objective.kind === 'research') return objective.schoolId !== undefined && (typeof objective.schoolId !== 'string' || !Object.prototype.hasOwnProperty.call(SCHOOLS, objective.schoolId))
+    if (objective.kind === 'transmutation') return objective.recipeId !== undefined && (typeof objective.recipeId !== 'string' || !Object.prototype.hasOwnProperty.call(TRANSMUTATION_RECIPES, objective.recipeId))
+    return true
+  })) return false
   return true
 }
 
 export const validatePersistedGameStateV1 = (value: unknown): value is PersistedGameStateV1 => {
-  if (!isRecord(value) || value.schemaVersion !== 1) return false
+  if (!isRecord(value) || value.schemaVersion !== 2) return false
   if (Object.keys(value).some((key) => !documentFields.has(key))) return false
   if (typeof value.savedAt !== 'number' || !Number.isFinite(value.savedAt) || value.savedAt < 0) return false
   if (typeof value.offlineBankMs !== 'number' || !Number.isFinite(value.offlineBankMs) || value.offlineBankMs < 0) return false

@@ -15,13 +15,15 @@ describe('Developer progression tester actions', () => {
     await user.click(screen.getByRole('button', { name: 'Unlock Arcane Guild' }))
     expect(useGameStore.getState().progress.guildUnlocked).toBe(true)
     expect(useGameStore.getState().progress.arcaneGuild.availableCommissions.length).toBeGreaterThan(0)
-    await user.click(screen.getByRole('button', { name: 'Accept Deliver 8 Life Essence' }))
+    await user.click(screen.getByRole('button', { name: /Accept .*Life Essence/ }))
     expect(useGameStore.getState().progress.arcaneGuild.activeCommission).not.toBeNull()
     await user.click(screen.getByRole('button', { name: '+5 Advancement Points' }))
     expect(useGameStore.getState().progress.guildPointsEarned).toBe(5)
     await user.click(screen.getByRole('button', { name: 'Unlock Hunter’s Order' }))
     expect(useGameStore.getState().progress.bossKillsByBoss['corrupted-greatbear']).toBe(1)
-    expect(useGameStore.getState().progress.huntersOrder.availableContracts).toHaveLength(3)
+    expect(useGameStore.getState().progress.huntersOrder.availableContracts).toHaveLength(0)
+    await user.click(screen.getByRole('button', { name: 'Issue Starter Contract' }))
+    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec.type).toBe('monster')
   })
 
   it('exposes forced board fixtures, authored Hunter upgrades, and Apex-ready Gloamridge state', async () => {

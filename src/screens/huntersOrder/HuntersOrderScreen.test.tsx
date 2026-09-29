@@ -33,39 +33,40 @@ describe('Hunter’s Order locked shell', () => {
 
     expect((screen.getByRole('tab', { name: 'Contracts' }) as HTMLButtonElement).disabled).toBe(false)
     await user.click(screen.getByRole('tab', { name: 'Contracts' }))
-    expect(screen.getByRole('heading', { name: 'Choose a contract' })).toBeTruthy()
+    expect(screen.getByText('WELCOME TO THE ORDER')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Receive First Contract' }))
+    expect(useGameStore.getState().progress.huntersOrder.activeContract).not.toBeNull()
+    expect(screen.getByText('FIRST ASSIGNMENT')).toBeTruthy()
   })
 
-  it('explains an empty blocked board and restores offers through the inline block manager', async () => {
+  it('hides Target Blocks until unlocked and lists all eligible quarry afterward', async () => {
     const user = userEvent.setup()
     renderScreen()
     act(() => useGameStore.getState().debugSetHuntersOrderUnlocked(true))
-    act(() => useGameStore.setState((state) => {
-      state.progress.huntersOrder.availableContracts = []
-      state.progress.huntersOrder.blockedTargets = ['forest-wisp', 'cinder-moth', 'stone-root']
-      return state
-    }))
-
-    expect(screen.getByRole('heading', { name: 'No contracts available' })).toBeTruthy()
-    expect(screen.getByText('3 target blocks active')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Manage Blocks' }))
-    expect(screen.getByRole('region', { name: 'Blocked targets' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Clear All Blocks' }))
-
+    expect(screen.queryByText('TARGET BLOCKS')).toBeNull()
+    act(() => {
+      useGameStore.getState().debugSetHunterRank('stalker')
+      useGameStore.getState().debugGrantHunterUpgrade('extended-trails')
+    })
     expect(useGameStore.getState().progress.huntersOrder.blockedTargets).toEqual([])
-    expect(useGameStore.getState().progress.huntersOrder.availableContracts.length).toBeGreaterThan(0)
-    expect(screen.getByRole('heading', { name: 'Available contracts' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Manage Blocks' }))
+    expect(screen.getByRole('region', { name: 'Blockable targets' })).toBeTruthy()
+    expect(screen.getAllByText('Ashen Tracker').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Gloamfang Stalker').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Runehorn Brute').length).toBeGreaterThan(0)
+    await user.click(screen.getAllByRole('button', { name: 'Block' })[0])
+    expect(useGameStore.getState().progress.huntersOrder.blockedTargets).toHaveLength(1)
   })
 
   it('makes an accepted contract the primary state and exposes the hunting ground action', async () => {
     const user = userEvent.setup()
     renderScreen()
-    act(() => useGameStore.getState().debugSetHuntersOrderUnlocked(true))
+    act(() => useGameStore.getState().debugSetHunterRank('scout'))
     await user.click(screen.getByRole('tab', { name: 'Contracts' }))
     const accept = screen.getAllByRole('button', { name: 'Accept Contract' })[0]
     await user.click(accept)
 
-    expect(screen.getByRole('heading', { name: 'Current contract' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /View Hunting Ground/ })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'First assignment' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Open Gloamridge/ })).toBeTruthy()
   })
 })

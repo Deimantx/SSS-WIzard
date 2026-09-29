@@ -7,7 +7,7 @@ import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
 import { CHRONICLE_OBJECTIVES } from '../game/content/chronicles/chronicles'
 import { GUILD_SKILL_NODES, GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
-import { ensureHunterContractChoices, getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
+import { getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
 import { ensureGuildCommissionChoices, getGuildCommissionChoiceCount } from '../game/systems/guild/guildCommissions'
 import { GUILD_PROJECTS } from '../game/content/guild/guildProjects'
 import { ARCANE_REGISTRY_SETS } from '../game/content/guild/registry/registrySets'
@@ -131,7 +131,6 @@ const permanentManaIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
 /** V53 is the first canonical save schema that persists Hunter Contract boards. */
-const HUNTER_CONTRACT_BOARD_SAVE_VERSION = 53
 /** V53 is the first canonical save schema that persists Guild Commission boards. */
 const GUILD_COMMISSION_BOARD_SAVE_VERSION = 53
 /** V38 is the first save topology that contains the Phase 1 Resonance runtime. */
@@ -231,6 +230,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const fresh = createInitialState()
   const sourceVersion = typeof raw.saveVersion === 'number' ? raw.saveVersion : 0
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const rawHunters = isRecord(rawProgress.huntersOrder) ? rawProgress.huntersOrder : {}
   const rawActivities = isRecord(raw.activities) ? raw.activities : {}
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
 
@@ -287,7 +287,6 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     const rank = nonNegativeInteger(rawSkillRanks[nodeId])
     return rank && rank > 0 ? [[nodeId, Math.min(GUILD_SKILL_NODES[nodeId].maxRank, rank)]] : []
   })) as GameState['progress']['guildSkillNodeRanks']
-  const rawHunters = isRecord(rawProgress.huntersOrder) ? rawProgress.huntersOrder : {}
   const hunterIds = HUNTER_EXCLUSIVE_MONSTER_IDS
   const normalizeHunterTarget = (value: Record<string, any>) => {
     const rawTarget = isRecord(value.targetSpec) ? value.targetSpec : null
@@ -336,31 +335,33 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawGuild = isRecord(rawProgress.arcaneGuild) ? rawProgress.arcaneGuild : {}
   const rawAvailableCommissions = Array.isArray(rawGuild.availableCommissions) ? rawGuild.availableCommissions.filter(isRecord) : []
   const normalizeGuildCommission = (value: Record<string, any>): GameState['progress']['arcaneGuild']['activeCommission'] => {
-    const category = (['delivery', 'production', 'research', 'transmutation', 'mixed'] as const).find((entry) => entry === value.category) ?? null
-    const template = typeof value.templateId === 'string' ? GUILD_COMMISSION_TEMPLATES.find((entry) => entry.id === value.templateId) : undefined
-    if (!category || !template || template.category !== category || typeof value.id !== 'string') return null
+    const legacyCategory = value.category === 'delivery' ? 'supply' : value.category
+    const category = (['supply', 'channeling', 'production', 'research', 'transmutation', 'mixed'] as const).find((entry) => entry === legacyCategory) ?? null
+    if (!category || typeof value.id !== 'string') return null
     const quality = value.quality === 'special' || value.quality === 'prestigious' ? value.quality : 'routine'
-    const itemId = typeof value.itemId === 'string' && itemIds.includes(value.itemId) ? value.itemId as ItemId : undefined
-    let target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
-    let progress = Math.min(target, nonNegativeInteger(value.progress) ?? 0)
-    let components: NonNullable<GameState['progress']['arcaneGuild']['activeCommission']>['components']
-    if (category === 'mixed' && template.components?.length) {
-      const rawComponents = Array.isArray(value.components) ? value.components.filter(isRecord) : []
-      const rawProgress = progress
-      let remainingLegacyProgress = rawProgress
-      components = template.components.map((definition, index) => {
-        const component = rawComponents.find((entry) => entry.category === definition.category && (entry.itemId ?? undefined) === definition.itemId) ?? rawComponents[index]
-        const fallbackTarget = Math.max(1, Math.ceil(definition.target * BALANCE.arcaneGuild.qualityTargetMultipliers[quality as keyof typeof BALANCE.arcaneGuild.qualityTargetMultipliers]))
-        const componentTarget = Math.max(1, nonNegativeInteger(component?.target) ?? fallbackTarget)
-        const knownComponentProgress = component ? nonNegativeInteger(component.progress) ?? 0 : undefined
-        const componentProgress = Math.min(componentTarget, knownComponentProgress ?? Math.min(componentTarget, remainingLegacyProgress))
-        if (!component) remainingLegacyProgress = Math.max(0, remainingLegacyProgress - componentProgress)
-        return { category: definition.category, itemId: definition.itemId, target: componentTarget, progress: componentProgress }
-      })
-      target = components.reduce((sum, component) => sum + component.target, 0)
-      progress = components.reduce((sum, component) => sum + component.progress, 0)
+    const fallbackTarget = Math.max(1, nonNegativeInteger(value.target) ?? 1)
+    const fallbackProgress = nonNegativeInteger(value.progress) ?? 0
+    const normalizeObjective = (raw: Record<string, any>, legacyFallback = false): any => {
+      const target = Math.max(1, nonNegativeInteger(raw.target) ?? fallbackTarget)
+      const progress = Math.min(target, legacyFallback ? Math.min(target, fallbackProgress) : nonNegativeInteger(raw.progress) ?? 0)
+      const kind = raw.kind ?? (raw.category === 'delivery' ? 'item-supply' : raw.category)
+      if ((kind === 'item-supply' || kind === 'production') && typeof raw.itemId === 'string' && itemIds.includes(raw.itemId)) return { kind, itemId: raw.itemId as ItemId, target, progress }
+      if (kind === 'resonance-supply' && ['fire', 'water', 'earth', 'air'].includes(raw.resonanceType)) return { kind, resonanceType: raw.resonanceType, target, progress }
+      if (kind === 'channeling') return { kind, metric: 'arcane-flux', target, progress }
+      if (kind === 'research') return { kind, ...(typeof raw.schoolId === 'string' && Object.prototype.hasOwnProperty.call(SCHOOLS, raw.schoolId) ? { schoolId: raw.schoolId as SchoolId } : {}), target, progress }
+      if (kind === 'transmutation') return { kind, ...(typeof raw.recipeId === 'string' && RECIPE_ORDER.includes(raw.recipeId as TransmutationRecipeId) ? { recipeId: raw.recipeId as TransmutationRecipeId } : {}), target, progress }
+      return null
     }
-    return { id: value.id.slice(0, 100), templateId: template.id, category, quality, itemId, target, progress, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, advancementPointReward: nonNegativeInteger(value.advancementPointReward) ?? 0, ...(components ? { components } : {}) }
+    let rawObjectives = Array.isArray(value.objectives) ? value.objectives.filter(isRecord) : []
+    let usesAggregateFallback = false
+    if (!rawObjectives.length) {
+      if (Array.isArray(value.components)) rawObjectives = value.components.filter(isRecord)
+      else { rawObjectives = [{ category: value.category, itemId: value.itemId, target: value.target, progress: value.progress }]; usesAggregateFallback = true }
+    }
+    const objectives = rawObjectives.map((objective: Record<string, any>) => normalizeObjective(objective, usesAggregateFallback)).filter((objective: any) => objective !== null)
+    if (!objectives.length) return null
+    const templateId = typeof value.templateId === 'string' ? value.templateId.slice(0, 100) : 'recovered-commission'
+    return { id: value.id.slice(0, 100), templateId, category, quality, objectives, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, advancementPointReward: nonNegativeInteger(value.advancementPointReward) ?? 0 }
   }
   const rawProjectProgress = isRecord(rawGuild.projects) ? rawGuild.projects : {}
   const projects = Object.fromEntries(GUILD_PROJECTS.flatMap((project) => { const rawProject: Record<string, any> = isRecord(rawProjectProgress[project.id]) ? rawProjectProgress[project.id] as Record<string, any> : {}; const values = Object.fromEntries(project.requirements.flatMap((requirement) => { const amount = Math.min(requirement.quantity, nonNegativeInteger(rawProject[requirement.itemId]) ?? 0); return amount > 0 ? [[requirement.itemId, amount]] : [] })); return Object.keys(values).length ? [[project.id, values]] : [] }))
@@ -843,7 +844,7 @@ const normalizeGuardianRuntime = (migrated: GameState, raw: Record<string, any>)
   migrated.combat.guardian = { activeGuardianId, attackTimerMs, suppressedForEncounter }
 }
 
-/** Explicit V26→V27 cleanup for the removed Prismatic Focus content. */
+/** Explicit V26â†’V27 cleanup for the removed Prismatic Focus content. */
 const removeDeletedPrismaticFocus = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   if (sourceVersion >= 27) return
 
@@ -1035,14 +1036,7 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
 
 const backfillHistoricalContractBoards = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const rawProgress = isRecord(raw.progress) ? raw.progress : {}
-  const rawHunters = isRecord(rawProgress.huntersOrder) ? rawProgress.huntersOrder : {}
   const rawGuild = isRecord(rawProgress.arcaneGuild) ? rawProgress.arcaneGuild : {}
-
-  if (
-    sourceVersion < HUNTER_CONTRACT_BOARD_SAVE_VERSION
-    && !Object.prototype.hasOwnProperty.call(rawHunters, 'availableContracts')
-    && !migrated.progress.huntersOrder.activeContract
-  ) ensureHunterContractChoices(migrated)
 
   if (
     sourceVersion < GUILD_COMMISSION_BOARD_SAVE_VERSION

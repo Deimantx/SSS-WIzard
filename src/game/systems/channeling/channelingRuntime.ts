@@ -3,6 +3,7 @@ import { MANA_PILLARS } from '../../content/channeling/manaPillars'
 import type { GameState, ManaPillarId } from '../../types'
 import { clamp } from '../../utils'
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
+import { recordGuildCommissionProgressBatch } from '../guild/guildCommissions'
 
 export interface ArcaneFluxProductionBreakdown {
   assignedAcolytes: number
@@ -59,6 +60,7 @@ export const advanceArcaneFlux = (state: GameState, deltaMs: number, productionO
   state.tower.resources.arcaneFlux = clamp(before + generated, 0, capacity)
   const gained = state.tower.resources.arcaneFlux - before
   state.progress.channeling.totalFluxGenerated = Math.max(0, (state.progress.channeling.totalFluxGenerated ?? 0) + gained)
+  if (gained > 0) recordGuildCommissionProgressBatch(state, [{ category: 'channeling', metric: 'arcane-flux', amount: gained }])
   if (!state.progress.channeling.discoveries['echo-resonance']) {
     state.progress.channeling.fiveEchoSustainMs = channelingAcolytes(state) >= 3 ? state.progress.channeling.fiveEchoSustainMs + deltaMs : 0
   }

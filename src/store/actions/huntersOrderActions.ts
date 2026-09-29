@@ -1,9 +1,12 @@
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
-import { acceptHunterContract, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, clearHunterTargetBlocks, debugSetHuntersOrderUnlocked, debugGrantHunterReputation, debugGrantHunterMarks, debugCompleteActiveHunterContract, debugSetHunterRngSeed, debugRegenerateHunterContractBoard, debugSetHunterRank, debugGrantHunterUpgrade, debugGrantNightglassBossContract, debugSetHunterApexThreatReady } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { acceptHunterContract, issueFirstHunterContract, requestHunterAssignment, requestHunterContractBoard, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, clearHunterTargetBlocks, debugSetHuntersOrderUnlocked, debugGrantHunterReputation, debugGrantHunterMarks, debugCompleteActiveHunterContract, debugSetHunterRngSeed, debugRegenerateHunterContractBoard, debugSetHunterRank, debugGrantHunterUpgrade, debugGrantNightglassBossContract, debugSetHunterApexThreatReady } from '../../game/systems/huntersOrder/huntersOrderRuntime'
 import type { HunterContractGenerationOptions } from '../../game/systems/huntersOrder/huntersOrderRuntime'
 import type { GameState, MonsterId } from '../../game/types'
 
 export const acceptHunterContractAction = (state: GameState, id: string) => acceptHunterContract(state, id)
+export const issueFirstHunterContractAction = (state: GameState) => issueFirstHunterContract(state)
+export const requestHunterAssignmentAction = (state: GameState) => requestHunterAssignment(state)
+export const requestHunterContractBoardAction = (state: GameState) => requestHunterContractBoard(state)
 export const skipHunterContractAction = (state: GameState) => skipHunterContract(state)
 export const rerollHunterContractsAction = (state: GameState) => rerollHunterContracts(state)
 export const purchaseHunterUpgradeAction = (state: GameState, id: string) => purchaseHunterUpgrade(state, id)

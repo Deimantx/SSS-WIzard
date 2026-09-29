@@ -1,24 +1,27 @@
 import { GUILD_REQUESTS, GUILD_REQUEST_IDS, type GuildRequestId } from '../../content/guild/guildRequests'
 import { GUILD_SKILL_NODES, type GuildSkillBranch } from '../../content/guild/guildSkills'
 import { ITEMS } from '../../content/items/items'
+import { RESONANCE_METADATA } from '../../content/resonance/resonance'
 import { getGuildContractClaimCount, getGuildPointsSpent, getGuildRequestProgress, getGuildPromotionProgress, isGuildRequestComplete } from '../../systems/guild/guildSelectors'
 import type { GameState, GuildRankId } from '../../types'
 import type { GuildCommissionState } from '../../types'
 
 export const formatGuildCommissionObjective = (commission: GuildCommissionState): string => {
-  if (commission.category === 'mixed') return commission.components?.map((component) => {
-    const item = component.itemId ? ` ${ITEMS[component.itemId]?.name ?? component.itemId}` : ''
-    const verb = component.category === 'delivery' ? 'Deliver' : component.category === 'production' ? 'Produce' : component.category === 'research' ? 'Complete Research' : 'Complete Transmutations'
-    return `${verb} ${component.target.toLocaleString()}${item}`
-  }).join(' + ') || 'Complete a mixed Guild assignment'
-  if ((commission.category === 'delivery' || commission.category === 'production') && commission.itemId) {
-    const verb = commission.category === 'delivery' ? 'Deliver' : 'Produce'
-    return `${verb} ${commission.target.toLocaleString()} ${ITEMS[commission.itemId]?.name ?? commission.itemId}`
-  }
-  if (commission.category === 'research') return `Complete ${commission.target.toLocaleString()} Research cycles`
-  if (commission.category === 'transmutation') return `Complete ${commission.target.toLocaleString()} Transmutations`
-  return 'Complete Guild work'
+  const labels = commission.objectives.map((objective) => {
+    if (objective.kind === 'item-supply') return `Deliver ${objective.target.toLocaleString()} ${ITEMS[objective.itemId]?.name ?? objective.itemId}`
+    if (objective.kind === 'resonance-supply') return `Contribute ${objective.target.toLocaleString()} ${RESONANCE_METADATA[objective.resonanceType].label}`
+    if (objective.kind === 'channeling') return `Generate ${objective.target.toLocaleString()} Arcane Flux`
+    if (objective.kind === 'production') return `Produce ${objective.target.toLocaleString()} ${ITEMS[objective.itemId]?.name ?? objective.itemId}`
+    if (objective.kind === 'research') return `Complete ${objective.target.toLocaleString()} Research cycles${objective.schoolId ? ` · ${objective.schoolId}` : ''}`
+    return `Complete ${objective.target.toLocaleString()} Transmutation cycles${objective.recipeId ? ` · ${objective.recipeId}` : ''}`
+  })
+  return labels.join(' + ') || 'Complete Guild work'
 }
+
+export const getGuildCommissionProgress = (commission: GuildCommissionState) => ({
+  current: commission.objectives.reduce((total, objective) => total + objective.progress, 0),
+  target: commission.objectives.reduce((total, objective) => total + objective.target, 0),
+})
 
 export const GUILD_REQUEST_KIND_LABELS = {
   donation: 'Supply',

@@ -143,7 +143,7 @@ export const completeTransmutationCycle = (state: GameState, recipe: (typeof REC
   const outputQuantity = recipe.output.quantity * (replicated ? 2 : 1) + extraGuildOutput
   grantItem(state, recipe.output.itemId, outputQuantity)
   recordGuildCommissionProgressBatch(state, [
-    { category: 'transmutation', amount: 1 },
+    { category: 'transmutation', amount: 1, recipeId: recipe.id },
     { category: 'production', amount: outputQuantity, itemId: recipe.output.itemId },
   ])
   context.onItemAcquired?.(recipe.output.itemId, outputQuantity)

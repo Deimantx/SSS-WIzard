@@ -13,7 +13,7 @@ import { persistedGameStatesEqual } from './v2/saveRoundTrip'
 const unlockedHunterState = () => {
   const state = createInitialState()
   state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-  state.progress.huntersOrder.reputation = 10_000
+  state.progress.huntersOrder.reputation = 32_500
   state.progress.huntersOrder.rankId = 'master-hunter'
   state.progress.huntersOrder.rngState = 73_194_621
   return state

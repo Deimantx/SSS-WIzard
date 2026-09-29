@@ -93,7 +93,7 @@ export type CanonicalSpellId =
 export type LegacySpellId = 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellId = CanonicalSpellId | LegacySpellId
 export type SpellPresetId = string
-export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper' | 'tidefang-serpent' | 'brinebound-sentinel' | 'abyssal-archivist' | 'emberwing-harrier' | 'charred-warden' | 'pyre-colossus' | 'sporeback-brute' | 'vinebound-reaver' | 'scarwood-behemoth' | 'ashen-tracker' | 'gloamfang-stalker' | 'runehorn-brute' | 'nightglass-alpha'
+export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper' | 'tidefang-serpent' | 'brinebound-sentinel' | 'abyssal-archivist' | 'emberwing-harrier' | 'charred-warden' | 'pyre-colossus' | 'sporeback-brute' | 'vinebound-reaver' | 'scarwood-behemoth' | 'ashen-tracker' | 'gloamfang-stalker' | 'runehorn-brute' | 'veilwing-harrier' | 'cinderback-mauler' | 'gloomroot-hexer' | 'nightglass-alpha'
   | 'drowned-acolyte' | 'reliquary-slime' | 'mist-wraith' | 'rune-leech' | 'drowned-keeper'
   | 'cinder-hound' | 'ash-cultist' | 'fire-elemental' | 'lava-eel' | 'flamebound-revenant'
   | 'thorn-maw' | 'rootbound-stalker' | 'briar-sprite' | 'moss-carapace' | 'rootscar-ancient'
@@ -744,20 +744,24 @@ export interface ProgressState {
 
 
 
-export type GuildCommissionCategory = 'delivery' | 'production' | 'research' | 'transmutation' | 'mixed'
+export type GuildCommissionCategory = 'supply' | 'channeling' | 'production' | 'research' | 'transmutation' | 'mixed'
 export type GuildCommissionQuality = 'routine' | 'special' | 'prestigious'
-export interface GuildCommissionComponentState { category: 'delivery' | 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number; progress: number }
+export type GuildCommissionObjective =
+  | { kind: 'item-supply'; itemId: ItemId; target: number; progress: number }
+  | { kind: 'resonance-supply'; resonanceType: keyof ResonanceState; target: number; progress: number }
+  | { kind: 'channeling'; metric: 'arcane-flux'; target: number; progress: number }
+  | { kind: 'production'; itemId: ItemId; target: number; progress: number }
+  | { kind: 'research'; schoolId?: SchoolId; target: number; progress: number }
+  | { kind: 'transmutation'; recipeId?: TransmutationRecipeId; target: number; progress: number }
+export type GuildCommissionObjectiveDefinition<T = GuildCommissionObjective> = T extends GuildCommissionObjective ? Omit<T, 'progress'> : never
 export interface GuildCommissionState {
   id: string
   templateId: string
   category: GuildCommissionCategory
   quality: GuildCommissionQuality
-  itemId?: ItemId
-  target: number
-  progress: number
+  objectives: GuildCommissionObjective[]
   reputationReward: number
   advancementPointReward: number
-  components?: GuildCommissionComponentState[]
 }
 export interface GuildCommissionChainState { id: string; stageIndex: number; stageProgress: number }
 export interface ArcaneGuildProgress {

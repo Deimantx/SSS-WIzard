@@ -16,7 +16,7 @@ describe('V2 profile primary and backup storage', () => {
 
     expect(JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!).inventory['fire-fragment']).toBe(8)
     expect(JSON.parse(localStorage.getItem(profileSaveBackupKey('slot-1'))!).inventory['fire-fragment']).toBe(3)
-    expect(JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!).schemaVersion).toBe(1)
+    expect(JSON.parse(localStorage.getItem(profileSaveKey('slot-1'))!).schemaVersion).toBe(2)
     expect(loadProfileGame('slot-1').state?.inventory['fire-fragment']).toBe(8)
   })
 

@@ -81,11 +81,12 @@ describe('Power-based Boss Threat', () => {
     greatbear.combat.enemyHp = 0
     finishEnemy(greatbear)
     expect(greatbear.notifications.map((notification) => notification.text)).toContain('HUNTER’S ORDER UNLOCKED')
+    greatbear.notifications.length = 0
     greatbear.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     greatbear.combat.enemyId = 'corrupted-greatbear'
     greatbear.combat.enemyHp = 0
     finishEnemy(greatbear)
-    expect(greatbear.notifications.map((notification) => notification.text).filter((text) => text === 'HUNTER’S ORDER UNLOCKED')).toHaveLength(1)
+    expect(greatbear.notifications.map((notification) => notification.text)).not.toContain('HUNTER’S ORDER UNLOCKED')
   })
 
   it('caps overshoot and emits readiness once while Auto Hunt queues immediately', () => {

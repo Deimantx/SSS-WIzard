@@ -91,6 +91,20 @@ describe('Developer Scenario Lab', () => {
     expect(useGameStore.getState().combat.dungeonId).toBe('hunters-ground')
   })
 
+  it('separates RAW encounter setup from the finite TEST READY player preset', () => {
+    render(<DeveloperScenarios />)
+    const card = screen.getByRole('heading', { name: 'Forest Heart Ready' }).closest('article')!
+    fireEvent.click(card.querySelector('button[aria-label="RAW"]') ?? card.querySelectorAll('button')[0]!)
+    expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
+    expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(0)
+    fireEvent.click(card.querySelectorAll('button')[1]!)
+    expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(150)
+    expect(useGameStore.getState().debug.playerImmortal).toBe(false)
+    expect(useGameStore.getState().debug.infiniteMana).toBe(false)
+    expect(useGameStore.getState().player.health).toBe(useGameStore.getState().player.maxHealth)
+    expect(useGameStore.getState().combat.activeSpellLoadout?.slots.map((slot) => slot.spellId)).toContain('fire-bolt')
+  })
+
   it('prepares real Arcane Guild, Research, and Transmutation test states', () => {
     render(<DeveloperScenarios />)
     const buttonFor = (heading: string) => screen.getByRole('heading', { name: heading }).closest('article')!.querySelector('button')!

@@ -22,7 +22,7 @@ describe('Save System V2', () => {
     ;(state as typeof state & { recentAcquisitions?: unknown[] }).recentAcquisitions = [{ itemId: 'test' }]
 
     const document = serializeGameState(state, 1234)
-    expect(document.schemaVersion).toBe(1)
+    expect(document.schemaVersion).toBe(2)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')

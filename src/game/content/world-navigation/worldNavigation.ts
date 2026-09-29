@@ -94,7 +94,7 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       'den-stalker': { difficulty: 'apex', order: 6 },
     },
   },
-  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 3), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 } } },
+  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 3), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 }, 'veilwing-harrier': { difficulty: 'standard', order: 4 }, 'cinderback-mauler': { difficulty: 'hard', order: 5 }, 'gloomroot-hexer': { difficulty: 'hard', order: 6 } } },
   'abandoned-catacombs': {
     ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 4),
     encounterMode: 'sequence',

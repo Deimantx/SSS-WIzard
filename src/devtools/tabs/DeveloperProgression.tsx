@@ -68,6 +68,7 @@ export function DeveloperProgression() {
       <div className="developer-summary-grid"><Summary label="Hunter Rank" value={HUNTER_RANKS.find((rank) => rank.id === progress.huntersOrder.rankId)?.name ?? 'Tracker'} /><Summary label="Reputation" value={progress.huntersOrder.reputation} /><Summary label="Hunter Marks" value={progress.huntersOrder.hunterMarks} /><Summary label="Contracts complete" value={progress.huntersOrder.totalContractsCompleted} /></div>
       <div className="developer-button-grid">
         <Button variant="secondary" onClick={() => state.debugSetHuntersOrderUnlocked(true)}>Unlock Hunter’s Order</Button>
+        <Button variant="secondary" onClick={() => state.issueFirstHunterContract()}>Issue Starter Contract</Button>
         <Button variant="ghost" onClick={() => state.debugGrantHunterReputation(500)}>+500 Hunter Reputation</Button>
         <Button variant="ghost" onClick={() => state.debugGrantHunterMarks(10)}>+10 Hunter Marks</Button>
         <Button variant="secondary" onClick={() => state.debugCompleteActiveHunterContract()}>Complete Active Hunt</Button>

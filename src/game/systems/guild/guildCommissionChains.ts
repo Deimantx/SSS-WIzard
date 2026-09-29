@@ -2,7 +2,9 @@ import { GUILD_COMMISSION_CHAINS } from '../../content/guild/guildCommissionChai
 import { pushNotification } from '../../engine'
 import { grantItem } from '../inventory/itemAcquisition'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
-import type { GameState, GuildCommissionCategory, ItemId } from '../../types'
+import type { GameState, ItemId } from '../../types'
+
+type GuildCommissionChainCategory = 'delivery' | 'production' | 'research' | 'transmutation'
 import { GUILD_RANKS } from '../../content/guild/guildRanks'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 
@@ -31,7 +33,7 @@ export const contributeGuildCommissionChainDelivery = (state: GameState, amount:
   return true
 }
 
-export const recordGuildCommissionChainProgress = (state: GameState, category: GuildCommissionCategory, amount = 1, itemId?: ItemId) => {
+export const recordGuildCommissionChainProgress = (state: GameState, category: GuildCommissionChainCategory, amount = 1, itemId?: ItemId) => {
   const active = state.progress.arcaneGuild.activeCommissionChain
   const chain = active && GUILD_COMMISSION_CHAINS.find((entry) => entry.id === active.id)
   if (!active || !chain || amount <= 0) return false

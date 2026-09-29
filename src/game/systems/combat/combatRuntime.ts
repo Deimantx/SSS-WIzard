@@ -30,7 +30,7 @@ import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
-import { ensureHunterContractChoices, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage } from '../huntersOrder/huntersOrderRuntime'
+import { issueFirstHunterContract, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage } from '../huntersOrder/huntersOrderRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -318,6 +318,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     }
     if (bossId === 'corrupted-greatbear' && state.progress.bossKillsByBoss[bossId] === 1) {
       pushNotification(state, 'HUNTER’S ORDER UNLOCKED', 'success')
+      issueFirstHunterContract(state)
       pushNotification(state, 'HOWLING DEN COMPLETE / Abandoned Catacombs unlocked.', 'success')
     }
     if (bossId === 'archmage-edrin-shade' && state.progress.bossKillsByBoss[bossId] === 1) {

@@ -29,7 +29,7 @@ describe('Arcane Guild presentations', () => {
     render(<><GuildRecommendedContracts state={state} onNavigate={navigate} /><GuildAdvancementSummary state={state} onNavigate={navigate} /></>)
 
     expect(screen.getByText('ACTIVE COMMISSION')).toBeTruthy()
-    expect(screen.getByText(/RESEARCH.*0.*3/)).toBeTruthy()
+    expect(screen.getByText(/SUPPLY.*0.*10/)).toBeTruthy()
     expect(screen.getByText('AVAILABLE')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Open Advancement Board' }))
     expect(navigate).toHaveBeenCalledWith('skills')

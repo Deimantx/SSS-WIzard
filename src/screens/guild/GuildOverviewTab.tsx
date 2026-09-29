@@ -3,15 +3,16 @@ import { Button, Card, GameTooltip, Progress } from '../../components/ui'
 import type { GuildScreenTab } from '../../ui/preferences/uiPreferencesTypes'
 import type { GameStore } from '../../store/gameStore'
 import { getGuildAdvancementPointEconomy, getGuildPointsAvailable, getGuildPointsSpent } from '../../game/systems/guild/guildSelectors'
-import { formatGuildCommissionObjective } from '../../game/presentation/guild/guildPresentation'
+import { formatGuildCommissionObjective, getGuildCommissionProgress } from '../../game/presentation/guild/guildPresentation'
 import type { GuildCommissionCategory, GuildCommissionQuality } from '../../game/types'
 
-const categoryLabel: Record<GuildCommissionCategory, string> = { delivery: 'DELIVERY', production: 'PRODUCTION', research: 'RESEARCH', transmutation: 'TRANSMUTATION', mixed: 'MIXED' }
+const categoryLabel: Record<GuildCommissionCategory, string> = { supply: 'SUPPLY', channeling: 'CHANNELING', production: 'PRODUCTION', research: 'RESEARCH', transmutation: 'TRANSMUTATION', mixed: 'MIXED' }
 const qualityLabel: Record<GuildCommissionQuality, string> = { routine: 'ROUTINE', special: 'SPECIAL', prestigious: 'PRESTIGIOUS' }
 
 export function GuildRecommendedContracts({ state, onNavigate }: { state: GameStore; onNavigate: (tab: GuildScreenTab) => void }) {
   const guild = state.progress.arcaneGuild
   const active = guild.activeCommission
+  const activeProgress = active ? getGuildCommissionProgress(active) : null
   const previews = guild.availableCommissions.slice(0, 2)
 
   return <Card className="guild-v3-panel guild-overview-commissions">
@@ -22,8 +23,8 @@ export function GuildRecommendedContracts({ state, onNavigate }: { state: GameSt
     {active ? <div className="guild-overview-active-commission">
       <div className="guild-overview-work-label"><span>ACTIVE COMMISSION</span><span className={`guild-commission-quality ${active.quality}`}>{qualityLabel[active.quality]}</span></div>
       <strong>{formatGuildCommissionObjective(active)}</strong>
-      <Progress value={Math.min(100, active.progress / active.target * 100)} tone="gold" />
-      <div className="guild-overview-work-meta"><span>{categoryLabel[active.category]} · {active.progress.toLocaleString()} / {active.target.toLocaleString()}</span><b>+{active.reputationReward.toLocaleString()} Reputation</b></div>
+      <Progress value={Math.min(100, (activeProgress?.current ?? 0) / Math.max(1, activeProgress?.target ?? 1) * 100)} tone="gold" />
+      <div className="guild-overview-work-meta"><span>{categoryLabel[active.category]} · {activeProgress?.current.toLocaleString()} / {activeProgress?.target.toLocaleString()}</span><b>+{active.reputationReward.toLocaleString()} Reputation</b></div>
     </div> : <div className="guild-v3-commission-preview">
       <span className="guild-overview-work-heading">NEXT OFFERS</span>
       {previews.length ? previews.map((commission) => <div className="guild-overview-commission-row" key={commission.id}>

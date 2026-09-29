@@ -1,6 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
-import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../content/monsters/huntersOrder'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS, HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/huntersOrder'
 import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
 import { HUNTER_APEX_CONTRACT } from '../../content/huntersOrder/hunterApex'
 import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
@@ -9,7 +9,8 @@ import { pushNotification } from '../../engine'
 import { resolveBossThreatRequirement } from '../combat/combatThreat'
 import type { DungeonId, GameState, HunterContractState, HunterContractTarget, HunterRankId, HunterUpgradeId, MonsterId } from '../../types'
 
-const normalTargets = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => MONSTERS[id]?.hunter?.exclusive && !isBossMonster(MONSTERS[id]))
+const normalTargets = HUNTER_REGULAR_MONSTER_IDS.filter((id) => MONSTERS[id]?.hunter?.exclusive)
+const starterTargets = normalTargets
 const safeInt = (n: number) => Math.max(0, Math.floor(Number.isFinite(n) ? n : 0))
 const orderFor = (state: Pick<GameState, 'progress'>) => state.progress.huntersOrder
 const tierOrder = { routine: 0, special: 1, prestigious: 2 } as const
@@ -65,8 +66,14 @@ export const getHunterAuthorizationMessage = (authorization: HunterAuthorization
   return messages[authorization.reason]
 }
 
-const getUpgradeRankCount = (state: Pick<GameState, 'progress'>, effectType: string) => HUNTER_UPGRADES.reduce((sum, upgrade) => upgrade.effect.type === effectType ? sum + Math.min(upgrade.maxRank, safeInt(orderFor(state).purchasedUpgrades[upgrade.id] ?? 0)) * upgrade.effect.amount : sum, 0)
-export const getHunterContractChoiceCount = (state: Pick<GameState, 'progress'>) => BALANCE.huntersOrder.baseContractChoices + getUpgradeRankCount(state, 'contract-choices')
+const getUpgradeRankCount = (state: Pick<GameState, 'progress'>, effectType: string) => HUNTER_UPGRADES.reduce((sum, upgrade) => {
+  if (upgrade.effect.type !== effectType) return sum
+  const rank = Math.min(upgrade.maxRank, safeInt(orderFor(state).purchasedUpgrades[upgrade.id] ?? 0))
+  const effect = upgrade.effect
+  return sum + ('rankAmounts' in effect ? effect.rankAmounts.slice(0, rank).reduce((total, amount) => total + amount, 0) : rank * effect.amount)
+}, 0)
+export const isHunterContractBoardUnlocked = (state: Pick<GameState, 'progress'>) => rankIndex(state) >= 1
+export const getHunterContractChoiceCount = (state: Pick<GameState, 'progress'>) => isHunterContractBoardUnlocked(state) ? BALANCE.huntersOrder.baseContractChoices + getUpgradeRankCount(state, 'contract-choices') : 0
 export const getHunterRerollMarkCost = (state: Pick<GameState, 'progress'>) => Math.max(1, BALANCE.huntersOrder.rerollMarkCost - getUpgradeRankCount(state, 'reroll-cost-reduction'))
 export const getHunterSkipMarkCost = (state: Pick<GameState, 'progress'>) => Math.max(1, BALANCE.huntersOrder.skipMarkCost - getUpgradeRankCount(state, 'skip-cost-reduction'))
 
@@ -152,7 +159,7 @@ const chooseWeightedTargetSpec = (state: Pick<GameState, 'progress'>, available:
 export interface HunterContractGenerationOptions { archetype?: HunterContractTarget['type']; tier?: HunterContractState['tier'] }
 export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>, options: HunterContractGenerationOptions = {}): HunterContractState[] => {
   const order = orderFor(state)
-  if (!isHuntersOrderUnlocked(state)) return []
+  if (!isHuntersOrderUnlocked(state) || !isHunterContractBoardUnlocked(state)) return []
   const pool = makeTargetSpecs(state).filter((spec) => !options.archetype || spec.type === options.archetype)
   const selected: HunterContractState[] = []
   const seen = new Set<string>()
@@ -165,9 +172,13 @@ export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>
     const available = unselected.filter((spec) => allowedTypes.includes(spec.type))
     if (!available.length) break
     const spec = chooseWeightedTargetSpec(state, available)
-    const range = BALANCE.huntersOrder.targetRanges[quality]
+    const tierRanges = spec.type === 'boss'
+      ? BALANCE.huntersOrder.bossTargetRanges as Partial<Record<HunterContractState['tier'], readonly [number, number]>>
+      : BALANCE.huntersOrder.targetRanges[spec.type] as Partial<Record<HunterContractState['tier'], readonly [number, number]>>
+    const range = tierRanges[quality]
+    if (!range) continue
     const baseTarget = range[0] + Math.floor(nextHunterRandom(state) * (range[1] - range[0] + 1))
-    const target = Math.max(1, baseTarget - (order.purchasedUpgrades['trail-kit'] ?? 0))
+    const target = spec.type === 'boss' ? baseTarget : Math.max(1, Math.ceil(baseTarget * (1 - getUpgradeRankCount(state, 'target-reduction-percent'))))
     const rewardMultiplier = BALANCE.huntersOrder.reputationMultipliers[quality]
     const reward = Math.round(target * BALANCE.huntersOrder.reputationPerKill * rewardMultiplier)
     selected.push({ id: `hunt-${order.generationCount}-${index}-${specKey(spec)}`, targetSpec: spec, target, progress: 0, tier: quality, reputationReward: reward, marksReward: BALANCE.huntersOrder.markRewards[quality] })
@@ -176,11 +187,56 @@ export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>
   return selected
 }
 
-export const ensureHunterContractChoices = (state: GameState) => {
-  const order = state.progress.huntersOrder
-  if (!isHuntersOrderUnlocked(state) || order.activeContract || order.availableContracts.length > 0) return
-  state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
+const randomStarterTarget = (state: Pick<GameState, 'progress'>): HunterContractState => {
+  const order = orderFor(state)
+  const monsterId = starterTargets[Math.floor(nextHunterRandom(state) * starterTargets.length)]
+  const [min, max] = BALANCE.huntersOrder.starterTargetRange
+  const target = min + Math.floor(nextHunterRandom(state) * (max - min + 1))
+  return {
+    id: `hunt-starter-${order.generationCount}`,
+    targetSpec: { type: 'monster', monsterId },
+    target,
+    progress: 0,
+    tier: 'routine',
+    reputationReward: target * BALANCE.huntersOrder.starterReputationPerKill,
+    marksReward: BALANCE.huntersOrder.starterMarksReward,
+  }
 }
+
+/** Issues the tutorial assignment from an explicit first-kill/recovery gameplay action. */
+export const issueFirstHunterContract = (state: GameState) => {
+  const order = state.progress.huntersOrder
+  if (!isHuntersOrderUnlocked(state) || order.activeContract || safeInt(order.totalContractsAccepted) !== 0) return false
+  order.activeContract = randomStarterTarget(state)
+  order.totalContractsAccepted = 1
+  order.availableContracts = []
+  pushNotification(state, `First Hunt Assignment: ${getHunterContractTargetLabel(order.activeContract)}.`, 'success')
+  return true
+}
+
+/** Tracker receives one free routine assignment at a time, without a choice board. */
+export const requestHunterAssignment = (state: GameState) => {
+  const order = state.progress.huntersOrder
+  if (!isHuntersOrderUnlocked(state) || isHunterContractBoardUnlocked(state) || order.activeContract || safeInt(order.totalContractsAccepted) === 0) return false
+  const contract = randomStarterTarget(state)
+  order.activeContract = { ...contract, id: `hunt-tracker-${order.generationCount}` }
+  order.totalContractsAccepted = safeInt(order.totalContractsAccepted) + 1
+  order.generationCount += 1
+  order.availableContracts = []
+  pushNotification(state, `Hunt Assignment received: ${getHunterContractTargetLabel(contract)}.`, 'info')
+  return true
+}
+
+/** A blank Scout+ board is repaired only after the player explicitly requests it. */
+export const requestHunterContractBoard = (state: GameState) => {
+  const order = state.progress.huntersOrder
+  if (!isHuntersOrderUnlocked(state) || !isHunterContractBoardUnlocked(state) || order.activeContract || order.availableContracts.length) return false
+  order.generationCount += 1
+  order.availableContracts = generateHunterContractChoices(state)
+  return order.availableContracts.length > 0
+}
+
+export const getHunterBlockableTargets = (_state: Pick<GameState, 'progress'>) => normalTargets
 
 export const acceptHunterContract = (state: GameState, contractId: string) => {
   const order = state.progress.huntersOrder
@@ -226,7 +282,7 @@ export const recordHunterKill = (state: GameState, monsterId: MonsterId, dungeon
   if (nextRank.id !== order.rankId) { order.rankId = nextRank.id; pushNotification(state, `Hunter Rank raised to ${nextRank.name}.`, 'success') }
   order.activeContract = null
   order.generationCount += 1
-  order.availableContracts = generateHunterContractChoices(state)
+  order.availableContracts = isHunterContractBoardUnlocked(state) ? generateHunterContractChoices(state) : []
   pushNotification(state, `Hunt Contract complete - +${reputationReward} Reputation - +${marksAwarded} Hunter Marks.`, 'success')
   return true
 }
@@ -256,7 +312,7 @@ export const rerollHunterContracts = (state: GameState) => {
 
 export const setHunterTargetBlocked = (state: GameState, monsterId: MonsterId, blocked: boolean) => {
   const order = state.progress.huntersOrder
-  if (!normalTargets.includes(monsterId)) return false
+  if (!normalTargets.includes(monsterId) || getHunterBlockSlotCount(state) <= 0) return false
   const blockedTargets = order.blockedTargets
   const exists = blockedTargets.includes(monsterId)
   if (exists === blocked) return false
@@ -294,11 +350,11 @@ export const normalizeHuntersOrderProgress = (state: GameState) => {
   order.blockedTargets = order.blockedTargets.filter((id) => normalTargets.includes(id)).slice(0, getHunterBlockSlotCount(state))
   for (const upgrade of HUNTER_UPGRADES) order.purchasedUpgrades[upgrade.id] = Math.min(upgrade.maxRank, safeInt(order.purchasedUpgrades[upgrade.id] ?? 0))
   order.rankId = getHunterRank(order.reputation).id
-  ensureHunterContractChoices(state)
+  if (!isHunterContractBoardUnlocked(state)) order.availableContracts = []
   return order
 }
 
-export const debugSetHuntersOrderUnlocked = (state: GameState, unlocked: boolean) => { if (unlocked) state.progress.bossKillsByBoss['corrupted-greatbear'] = Math.max(1, state.progress.bossKillsByBoss['corrupted-greatbear'] ?? 0); else delete state.progress.bossKillsByBoss['corrupted-greatbear']; ensureHunterContractChoices(state) }
+export const debugSetHuntersOrderUnlocked = (state: GameState, unlocked: boolean) => { if (unlocked) state.progress.bossKillsByBoss['corrupted-greatbear'] = Math.max(1, state.progress.bossKillsByBoss['corrupted-greatbear'] ?? 0); else delete state.progress.bossKillsByBoss['corrupted-greatbear'] }
 export const debugGrantHunterReputation = (state: GameState, amount: number) => { const order = state.progress.huntersOrder; order.reputation = safeInt(order.reputation) + safeInt(amount); const rank = getHunterRank(order.reputation); if (rank.id !== order.rankId) pushNotification(state, `Hunter Rank raised to ${rank.name}.`, 'success'); order.rankId = rank.id }
 export const debugGrantHunterMarks = (state: GameState, amount: number) => { state.progress.huntersOrder.hunterMarks = safeInt(state.progress.huntersOrder.hunterMarks) + safeInt(amount) }
 export const debugCompleteActiveHunterContract = (state: GameState) => {

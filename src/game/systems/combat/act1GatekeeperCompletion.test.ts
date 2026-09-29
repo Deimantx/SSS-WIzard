@@ -4,6 +4,7 @@ import { isDungeonCompleted } from '../../content/dungeons/dungeons'
 import { isSummoningUnlocked } from '../summoning/summoningSelectors'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { createCombatTestState } from './testCombatState'
+import { getHunterContractChoiceCount } from '../huntersOrder/huntersOrderRuntime'
 
 describe('Corrupted Elemental Gatekeeper completion', () => {
   it('uses the normal boss death pipeline once for T2 completion and Summoning unlock', () => {
@@ -51,5 +52,23 @@ describe('Corrupted Elemental Gatekeeper completion', () => {
     expect(state.activities.autoCast['fire-bolt']).toBe(false)
     expect(state.activities.autoCastPriority).toEqual([])
     expect(state.spellPresets.selectedPresetId).toBe('spell-preset-1')
+  })
+})
+
+describe('Hunter Order first unlock', () => {
+  it('issues the first Routine Contract from the actual first Greatbear kill', () => {
+    const state = createCombatTestState()
+    state.combat.active = true
+    state.combat.dungeonId = 'howling-den'
+    expect(spawnEnemy(state, 'corrupted-greatbear')).toBe(true)
+    state.combat.enemyHp = 0
+
+    finishEnemy(state)
+
+    expect(state.progress.bossKillsByBoss['corrupted-greatbear']).toBe(1)
+    expect(state.progress.huntersOrder.activeContract).toMatchObject({ tier: 'routine', target: expect.any(Number), marksReward: 3 })
+    expect(state.progress.huntersOrder.availableContracts).toEqual([])
+    expect(state.progress.huntersOrder.totalContractsAccepted).toBe(1)
+    expect(getHunterContractChoiceCount(state)).toBe(0)
   })
 })

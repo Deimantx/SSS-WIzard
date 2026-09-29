@@ -38,29 +38,33 @@ export const LEGACY_GUILD_REQUESTS = {
 
 export interface GuildCommissionTemplate {
   id: string
-  category: 'delivery' | 'production' | 'research' | 'transmutation' | 'mixed'
-  itemId?: ItemId
-  target: number
+  category: 'supply' | 'channeling' | 'production' | 'research' | 'transmutation' | 'mixed'
+  objectives: readonly import('../../types').GuildCommissionObjectiveDefinition[]
   baseReputation: number
   baseAdvancementPoints: number
-  minimumProgressStage: 'guild' | 'research' | 'transmutation'
+  minimumProgressStage: 'guild' | 'channeling' | 'research' | 'transmutation'
   weight?: number
-  components?: readonly { category: 'delivery' | 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number }[]
   complexity?: 'routine' | 'special' | 'prestigious'
 }
 
 export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
-  { id: 'deliver-life-essence-small', category: 'delivery', itemId: 'life-essence', target: 8, baseReputation: 45, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
-  { id: 'deliver-life-essence-standard', category: 'delivery', itemId: 'life-essence', target: 18, baseReputation: 75, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
-  { id: 'deliver-life-essence-large', category: 'delivery', itemId: 'life-essence', target: 30, baseReputation: 110, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
-  { id: 'deliver-fire-fragments', category: 'delivery', itemId: 'fire-fragment', target: 6, baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
-  { id: 'deliver-water-fragments', category: 'delivery', itemId: 'water-fragment', target: 6, baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
-  { id: 'study-research-cycles', category: 'research', target: 3, baseReputation: 90, baseAdvancementPoints: 0, minimumProgressStage: 'research' },
-  { id: 'transmute-materials', category: 'transmutation', target: 5, baseReputation: 100, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
-  { id: 'produce-fire-fragments', category: 'production', itemId: 'fire-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
-  { id: 'produce-water-fragments', category: 'production', itemId: 'water-fragment', target: 12, baseReputation: 115, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', weight: 1.2 },
-  { id: 'mixed-ember-study', category: 'mixed', target: 14, baseReputation: 160, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.7, complexity: 'prestigious', components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'transmutation', target: 4 }, { category: 'research', target: 2 }] },
-  { id: 'mixed-materials-research', category: 'mixed', target: 10, baseReputation: 150, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.9, complexity: 'special', components: [{ category: 'delivery', itemId: 'life-essence', target: 8 }, { category: 'research', target: 2 }] },
-  { id: 'mixed-output-research', category: 'mixed', target: 10, baseReputation: 165, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.8, complexity: 'special', components: [{ category: 'production', itemId: 'fire-fragment', target: 8 }, { category: 'research', target: 2 }] },
-  { id: 'mixed-leyline-practice', category: 'mixed', target: 13, baseReputation: 205, baseAdvancementPoints: 0, minimumProgressStage: 'research', weight: 0.6, complexity: 'prestigious', components: [{ category: 'production', itemId: 'air-fragment', target: 8 }, { category: 'transmutation', target: 3 }, { category: 'research', target: 2 }] },
+  { id: 'supply-life-essence', category: 'supply', objectives: [{ kind: 'item-supply', itemId: 'life-essence', target: 10 }], baseReputation: 60, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'supply-earth-resonance', category: 'supply', objectives: [{ kind: 'resonance-supply', resonanceType: 'earth', target: 100 }], baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'supply-air-resonance', category: 'supply', objectives: [{ kind: 'resonance-supply', resonanceType: 'air', target: 100 }], baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'supply-fire-resonance', category: 'supply', objectives: [{ kind: 'resonance-supply', resonanceType: 'fire', target: 100 }], baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'supply-water-resonance', category: 'supply', objectives: [{ kind: 'resonance-supply', resonanceType: 'water', target: 100 }], baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'channel-arcane-flux', category: 'channeling', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 250 }], baseReputation: 65, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'transmute-cycle', category: 'transmutation', objectives: [{ kind: 'transmutation', target: 3 }], baseReputation: 80, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'produce-fire-fragments', category: 'production', objectives: [{ kind: 'production', itemId: 'fire-fragment', target: 8 }], baseReputation: 85, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'produce-water-fragments', category: 'production', objectives: [{ kind: 'production', itemId: 'water-fragment', target: 8 }], baseReputation: 85, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'produce-earth-fragments', category: 'production', objectives: [{ kind: 'production', itemId: 'earth-fragment', target: 8 }], baseReputation: 85, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'produce-air-fragments', category: 'production', objectives: [{ kind: 'production', itemId: 'air-fragment', target: 8 }], baseReputation: 85, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'study-research-cycles', category: 'research', objectives: [{ kind: 'research', target: 2 }], baseReputation: 90, baseAdvancementPoints: 0, minimumProgressStage: 'research' },
+  { id: 'special-ember-supply', category: 'mixed', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 160 }, { kind: 'production', itemId: 'fire-fragment', target: 6 }], baseReputation: 165, baseAdvancementPoints: 0, minimumProgressStage: 'guild', complexity: 'special' },
+  { id: 'special-tidal-research', category: 'mixed', objectives: [{ kind: 'research', target: 2 }, { kind: 'production', itemId: 'water-fragment', target: 5 }], baseReputation: 175, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'special' },
+  { id: 'special-earth-reserves', category: 'mixed', objectives: [{ kind: 'resonance-supply', resonanceType: 'earth', target: 80 }, { kind: 'transmutation', target: 2 }], baseReputation: 170, baseAdvancementPoints: 0, minimumProgressStage: 'guild', complexity: 'special' },
+  { id: 'special-water-conversion', category: 'mixed', objectives: [{ kind: 'transmutation', target: 3 }, { kind: 'production', itemId: 'water-fragment', target: 5 }], baseReputation: 180, baseAdvancementPoints: 0, minimumProgressStage: 'guild', complexity: 'special' },
+  { id: 'prestige-ember-research', category: 'mixed', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 320 }, { kind: 'production', itemId: 'fire-fragment', target: 10 }, { kind: 'research', target: 3 }], baseReputation: 260, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'prestigious' },
+  { id: 'prestige-field-study', category: 'mixed', objectives: [{ kind: 'research', target: 3 }, { kind: 'production', itemId: 'water-fragment', target: 8 }, { kind: 'resonance-supply', resonanceType: 'water', target: 120 }], baseReputation: 275, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'prestigious' },
+  { id: 'prestige-leyline-practice', category: 'mixed', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 300 }, { kind: 'transmutation', target: 4 }, { kind: 'production', itemId: 'air-fragment', target: 8 }], baseReputation: 280, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'prestigious' },
 ]

@@ -119,7 +119,7 @@ const completeResearchCycle = (state: GameState, slotId: ResearchSlotId, job: Re
   if (!consumePreparedResearchItem(state, slotId)) return 'missing-item' as const
   const xp = Math.round(getResearchXp(job.itemId, job.targetSchoolId) * getGuildProgressionBonuses(state).researchXpMultiplier)
   const levels = grantSchoolXp(state, job.targetSchoolId, xp)
-  recordGuildCommissionProgress(state, 'research', 1)
+  recordGuildCommissionProgress(state, 'research', 1, undefined, job.targetSchoolId)
   context.report?.recordResearch(job.itemId, job.targetSchoolId, xp)
   context.onResearchComplete?.()
   job.remainingQuantity -= 1

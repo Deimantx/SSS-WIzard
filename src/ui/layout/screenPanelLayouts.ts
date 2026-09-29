@@ -302,7 +302,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'guild-tabs': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 100, label: 'Guild navigation' }),
     'guild-progression': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 710, label: 'Rank progression dossier' }),
     'guild-recommended-contracts': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 610, alignSelf: 'start', label: 'Commission overview' }),
-    'guild-advancement-summary': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 190, label: 'Advancement overview' }),
+    'guild-advancement-summary': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 250, label: 'Advancement overview' }),
     'guild-contracts': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 1020, label: 'Commission board' }),
     'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 200, label: 'Advancement points and controls' }),
     'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 860, label: 'Advancement branches' }),

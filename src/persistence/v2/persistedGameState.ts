@@ -1,4 +1,4 @@
-import type { DungeonId, EquipmentPosition, GameState, HunterRankId, HunterUpgradeId, ItemId, MonsterId, ResearchSlotId, SchoolId, TransmutationRecipeId, WorldTierId } from '../../game/types'
+import type { DungeonId, EquipmentPosition, GameState, GuildCommissionObjective, HunterRankId, HunterUpgradeId, ItemId, MonsterId, ResearchSlotId, SchoolId, TransmutationRecipeId, WorldTierId } from '../../game/types'
 
 export type PersistedInventoryV1 = Partial<Record<ItemId, number>>
 export type PersistedEquipmentV1 = Record<EquipmentPosition, ItemId | null>
@@ -58,14 +58,11 @@ export interface PersistedHunterOrderV1 {
 export interface PersistedGuildCommissionV1 {
   id: string
   templateId: string
-  category: 'delivery' | 'production' | 'research' | 'transmutation' | 'mixed'
+  category: 'supply' | 'channeling' | 'production' | 'research' | 'transmutation' | 'mixed'
   quality: 'routine' | 'special' | 'prestigious'
-  itemId?: ItemId
-  target: number
-  progress: number
+  objectives: GuildCommissionObjective[]
   reputationReward: number
   advancementPointReward: number
-  components?: Array<{ category: 'delivery' | 'production' | 'research' | 'transmutation'; itemId?: ItemId; target: number; progress: number }>
 }
 
 export interface PersistedArcaneGuildV1 {
@@ -112,7 +109,7 @@ export const PERSISTED_COMBAT_FIELDS_V1 = [
 
 /** Purpose-built V2 document. Runtime UI, debug state, and notifications have no fields here. */
 export interface PersistedGameStateV1 {
-  schemaVersion: 1
+  schemaVersion: 2
   savedAt: number
   player: Pick<GameState['player'], 'health' | 'mana' | 'baseMaxHealth' | 'baseMaxMana' | 'healthRegenTimerMs'>
   schools: GameState['schools']

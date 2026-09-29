@@ -177,7 +177,8 @@ export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>
 }
 
 export const ensureHunterContractChoices = (state: GameState) => {
-  if (!isHuntersOrderUnlocked(state) || state.progress.huntersOrder.availableContracts.length > 0) return
+  const order = state.progress.huntersOrder
+  if (!isHuntersOrderUnlocked(state) || order.activeContract || order.availableContracts.length > 0) return
   state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
 }
 

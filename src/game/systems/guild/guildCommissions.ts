@@ -49,11 +49,13 @@ const chooseQuality = (state: GameState, available: ReadonlySet<GuildCommissionQ
 const scaled = (target: number, quality: GuildCommissionQuality) => Math.max(1, Math.ceil(target * BALANCE.arcaneGuild.qualityTargetMultipliers[quality]))
 
 export interface GuildCommissionGenerationOptions { quality?: GuildCommissionQuality; templateId?: string }
+export const getGuildCommissionChoiceCount = (state: Pick<GameState, 'progress'>) => BALANCE.arcaneGuild.baseCommissionChoices + getGuildProgressionBonuses(state).commissionChoiceBonus
+
 export const generateGuildCommissionChoices = (state: GameState, options: GuildCommissionGenerationOptions = {}): GuildCommissionState[] => {
   if (!state.progress.guildUnlocked) return []
   const eligible = GUILD_COMMISSION_TEMPLATES.filter((template) => templateIsAccessible(state, template) && (!options.templateId || template.id === options.templateId))
   if (!eligible.length) return []
-  const choiceCount = Math.min(eligible.length, options.templateId ? 1 : BALANCE.arcaneGuild.baseCommissionChoices + getGuildProgressionBonuses(state).commissionChoiceBonus)
+  const choiceCount = Math.min(eligible.length, options.templateId ? 1 : getGuildCommissionChoiceCount(state))
   const selected: GuildCommissionState[] = []
   const signatures = new Set<string>()
   const remaining = [...eligible]
@@ -89,7 +91,7 @@ export const generateGuildCommissionChoices = (state: GameState, options: GuildC
 }
 
 export const ensureGuildCommissionChoices = (state: GameState) => {
-  if (!state.progress.guildUnlocked || state.progress.arcaneGuild.availableCommissions.length) return
+  if (!state.progress.guildUnlocked || state.progress.arcaneGuild.activeCommission || state.progress.arcaneGuild.availableCommissions.length) return
   state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state)
 }
 

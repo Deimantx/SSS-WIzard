@@ -2,11 +2,12 @@ import { useSyncExternalStore } from 'react'
 import { clampDeveloperToolsGeometry, getDefaultDeveloperGeometry, loadDeveloperToolsGeometry, saveDeveloperToolsGeometry, type DeveloperToolsGeometry, type DeveloperToolsMode } from './developerToolsWindowGeometry'
 import { DEVELOPER_TOOL_IDS, type DeveloperToolsTab } from './developerToolIds'
 import { getDefaultDeveloperTool, getDeveloperWorkspace, type DeveloperWorkspaceId } from './developerToolRegistryModel'
+import { setDeveloperTestSessionSavePaused } from '../persistence/developerTestSessionSaveGuard'
 
 export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'status' | 'telemetry' | 'balance'
 export type { DeveloperToolsTab } from './developerToolIds'
 export type { DeveloperWorkspaceId } from './developerToolRegistryModel'
-export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; activeWorkspace: DeveloperWorkspaceId; combatTab: DeveloperCombatTab; showArtifactDevPanel: boolean; selectedEntityIds: Partial<Record<string, string>>; paneMode: 'browse' | 'inspect' }
+export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; activeWorkspace: DeveloperWorkspaceId; combatTab: DeveloperCombatTab; showArtifactDevPanel: boolean; selectedEntityIds: Partial<Record<string, string>>; paneMode: 'browse' | 'inspect'; testSessionActive: boolean }
 
 export function normalizeDeveloperToolsTab(tab: string): DeveloperToolsTab {
   if (tab === 'equipment') return 'inventory'
@@ -30,7 +31,7 @@ const loadSessionPreferences = (): Pick<DeveloperToolsSessionState, 'activeTab' 
   } catch { return defaults }
 }
 const sessionPreferences = loadSessionPreferences()
-let current: DeveloperToolsSessionState = { open: false, ...sessionPreferences, ...geometry }
+let current: DeveloperToolsSessionState = { open: false, testSessionActive: false, ...sessionPreferences, ...geometry }
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((listener) => listener())
 const update = (changes: Partial<DeveloperToolsSessionState>, persistGeometry = false) => {
@@ -56,6 +57,10 @@ export const setDeveloperWorkspace = (activeWorkspace: DeveloperWorkspaceId) => 
 export const setDeveloperCombatTab = (combatTab: DeveloperCombatTab) => update({ combatTab }, true)
 export const setArtifactDevPanelVisible = (showArtifactDevPanel: boolean) => update({ showArtifactDevPanel }, true)
 export const setDeveloperPaneMode = (paneMode: 'browse' | 'inspect') => update({ paneMode }, true)
+export const setDeveloperTestSessionActive = (testSessionActive: boolean) => {
+  setDeveloperTestSessionSavePaused(testSessionActive)
+  return update({ testSessionActive })
+}
 export const setDeveloperSelectedEntity = (entityType: string, entityId: string | null) => update({ selectedEntityIds: entityId ? { ...current.selectedEntityIds, [entityType]: entityId } : Object.fromEntries(Object.entries(current.selectedEntityIds).filter(([key]) => key !== entityType)) }, true)
 export const setDeveloperToolsMode = (mode: DeveloperToolsMode, persist = true) => update({ mode }, persist)
 export const setDeveloperToolsGeometry = (next: Partial<DeveloperToolsGeometry>, persist = true) => update(clampDeveloperToolsGeometry({ mode: current.mode, dockedX: current.dockedX, dockedY: current.dockedY, dockedWidth: current.dockedWidth, dockedHeight: current.dockedHeight, ...next }), persist)

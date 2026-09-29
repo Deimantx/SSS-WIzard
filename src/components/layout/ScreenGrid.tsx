@@ -80,7 +80,7 @@ function responsiveScreenDeclarations(responsive: ResponsiveScreenLayout): strin
   if (responsive.minWidth !== undefined) declarations.push(`min-width:${important(cssSize(responsive.minWidth) ?? '0px')}`)
   if (responsive.maxWidthOverride !== undefined) declarations.push(`max-width:${important(cssSize(responsive.maxWidthOverride) ?? 'none')}`)
   if (responsive.alignItems !== undefined) declarations.push(`align-items:${important(responsive.alignItems)}`)
-  return declarations.join('')
+  return declarations.join(';')
 }
 
 function responsivePanelDeclarations(layout: ScreenPanelLayout): string {
@@ -97,7 +97,7 @@ function responsivePanelDeclarations(layout: ScreenPanelLayout): string {
     `align-self:${important(layout.alignSelf ?? 'stretch')}`,
     `justify-self:${important(layout.justifySelf ?? 'stretch')}`,
     `overflow:${important(layout.overflow ?? 'visible')}`,
-  ].join('')
+  ].join(';')
 }
 
 function getResponsiveCss(screen: ScreenId, layout: ScreenLayoutDefinition, panels: ScreenGridPanel[], draft: UITuningDraft): string {

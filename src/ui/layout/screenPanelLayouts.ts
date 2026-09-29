@@ -301,8 +301,9 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     // layout changes these values to auto when panels stack vertically.
     'guild-header': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 190, label: 'Guild identity and metrics' }),
     'guild-tabs': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 100, label: 'Guild navigation tabs' }),
-    'guild-progression': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Guild rank progression' }),
+    'guild-progression': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 710, overflow: 'auto', label: 'Guild rank progression' }),
     'guild-recommended-contracts': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 610, overflow: 'auto', label: 'Recommended Guild contracts' }),
+    'guild-advancement-summary': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 190, label: 'Guild Advancement summary' }),
     'guild-specialization': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 220, overflow: 'auto', label: 'Guild specialization summary' }),
     'guild-contract-controls': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 86, overflow: 'auto', label: 'Guild contract filters' }),
     'guild-contracts': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 1020, overflow: 'auto', label: 'Guild contract board' }),
@@ -318,6 +319,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'guild-tabs',
     'guild-progression',
     'guild-recommended-contracts',
+    'guild-advancement-summary',
     'guild-specialization',
     'guild-contract-controls',
     'guild-contracts',

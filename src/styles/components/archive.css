@@ -43,6 +43,18 @@
 .archive-entry-card.undiscovered { color: var(--ui-text-muted); }
 .archive-entry-art { display: grid; place-items: center; width: 100%; height: var(--archive-card-art-height); min-height: 0; border-radius: 7px; }
 .archive-new-badge { position: absolute; top: 7px; right: 7px; z-index: 1; padding: 3px 5px; border: 1px solid color-mix(in srgb, var(--ui-secondary) 62%, var(--ui-border)); border-radius: 4px; color: var(--ui-secondary); background: color-mix(in srgb, var(--ui-panel-strong) 92%, transparent); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; line-height: 1; pointer-events: none; }
+.archive-item-tile { grid-template-rows: 78px minmax(0, auto); align-content: stretch; min-height: 140px; padding: 7px; }
+.archive-item-tile-art { position: relative; overflow: hidden; background: color-mix(in srgb, var(--ui-panel-raised) 78%, transparent); }
+.archive-item-copy { display: grid; align-content: start; min-width: 0; gap: 4px; padding: 0 2px 2px; }
+.archive-item-copy strong, .archive-item-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.archive-item-copy strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
+.archive-item-copy small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.archive-item-tile.undiscovered .archive-item-copy strong { color: var(--ui-text-muted); letter-spacing: .12em; }
+.archive-item-tile-check { position: absolute; top: 6px; left: 6px; z-index: 1; display: grid; place-items: center; width: 20px; height: 20px; padding: 3px; border: 1px solid color-mix(in srgb, var(--semantic-positive) 58%, var(--ui-border)); border-radius: 50%; color: var(--semantic-positive); background: var(--ui-panel); }
+.archive-item-tile-ready, .archive-item-tile-unknown { position: absolute; top: 6px; right: 6px; z-index: 1; padding: 3px 5px; border: 1px solid color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border)); border-radius: 4px; color: var(--ui-warning); background: var(--ui-panel); font: 700 9px var(--font-mono); letter-spacing: .06em; }
+.archive-item-tile-unknown { width: 19px; height: 19px; padding: 0; border-color: var(--ui-border-strong); color: var(--ui-text-muted); font-size: var(--text-xs); text-align: center; line-height: 18px; }
+.archive-item-tile.registry-entry-tile.ready { border-color: color-mix(in srgb, var(--ui-warning) 34%, var(--ui-border)); }
+.archive-item-tile.registry-entry-tile.registered { border-color: color-mix(in srgb, var(--semantic-positive) 28%, var(--ui-border)); }
 
 @media (max-width: 760px) {
   .archive-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

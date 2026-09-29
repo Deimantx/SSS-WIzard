@@ -175,6 +175,7 @@
 .developer-tools-tabs button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .developer-context-bar { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 5px 12px; overflow-x: auto; border-bottom: 1px solid var(--ui-border); color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 84%, transparent); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; text-transform: uppercase; scrollbar-width: thin; }
 .developer-context-bar span { flex: 0 0 auto; padding: 3px 7px; border: 1px solid var(--ui-border); border-radius: 4px; }
+.developer-context-bar .developer-test-session-indicator { border-color: color-mix(in srgb, var(--ui-warning) 62%, var(--ui-border)); color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 12%, var(--ui-panel)); font-weight: 700; }
 .developer-override-center { border-bottom: 1px solid color-mix(in srgb, var(--ui-warning) 32%, var(--ui-border)); background: color-mix(in srgb, var(--ui-warning) 6%, var(--ui-panel)); }
 .developer-override-center summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; color: var(--ui-warning); cursor: pointer; font-size: var(--text-xs); }
 .developer-override-center summary span { color: var(--ui-text-muted); }

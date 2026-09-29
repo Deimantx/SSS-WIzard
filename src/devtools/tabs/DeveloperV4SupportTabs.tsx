@@ -9,6 +9,7 @@ import { captureTestSnapshot, discardTestSnapshot, hasTestSnapshot, restoreTestS
 import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 import { useShallow } from 'zustand/react/shallow'
+import { getDeveloperToolsState, setDeveloperTestSessionActive } from '../developerToolsStore'
 
 const formatDuration = (milliseconds: number) => {
   const seconds = Math.floor(Math.max(0, milliseconds) / 1000)
@@ -73,6 +74,11 @@ export function DeveloperScenarios() {
   ] as const
   const run = (scenario: typeof scenarios[number]) => {
     try {
+      if (!getDeveloperToolsState().testSessionActive) {
+        if (!hasTestSnapshot()) captureTestSnapshot()
+        setSnapshotReady(hasTestSnapshot())
+        setDeveloperTestSessionActive(true)
+      }
       const result = scenario.run()
       if (result === false) setFeedback({ text: `${scenario.label}: the authored action could not prepare this state from the current profile.`, tone: 'warning' })
       else setFeedback({ text: `${scenario.label} prepared through existing game actions.`, tone: 'success' })
@@ -81,7 +87,7 @@ export function DeveloperScenarios() {
     }
   }
   return <div className="developer-tab-stack developer-scenario-lab">
-    <Card title="Developer Scenario Lab"><div className="developer-scenario-intro"><div><Status tone="active">REAL GAME ACTIONS</Status><p className="muted">Prepare focused test states with authored content and existing store/system actions. Scenarios change the current runtime profile state; capture a session snapshot first if you need an undo point.</p></div><div className="developer-snapshot-actions"><Button variant="secondary" tooltip="Stores the current game data in memory for this browser session only." onClick={() => { captureTestSnapshot(); setSnapshotReady(true); setFeedback({ text: 'Test snapshot captured in session memory.', tone: 'success' }) }}>Capture test snapshot</Button><Button variant="primary" tooltip="Restores the in-memory snapshot and recalculates derived resources." disabled={!snapshotReady} onClick={() => { const restored = restoreTestSnapshot(); setSnapshotReady(hasTestSnapshot()); setFeedback({ text: restored ? 'Test snapshot restored and derived HP / Mana recalculated.' : 'No session snapshot is available.', tone: restored ? 'success' : 'warning' }) }}>Restore test snapshot</Button><Button variant="ghost" tooltip="Discards the in-memory snapshot." disabled={!snapshotReady} onClick={() => { discardTestSnapshot(); setSnapshotReady(false); setFeedback({ text: 'Test snapshot discarded.', tone: 'success' }) }}>Discard snapshot</Button></div></div>{feedback && <Status tone={feedback.tone}>{feedback.text}</Status>}</Card>
+    <Card title="Developer Scenario Lab"><div className="developer-scenario-intro"><div>{getDeveloperToolsState().testSessionActive ? <Status tone="warning">DEV TEST SESSION · AUTOSAVE PAUSED</Status> : <Status tone="active">REAL GAME ACTIONS</Status>}<p className="muted">Prepare focused test states with authored content and existing store/system actions. Each scenario automatically captures a session snapshot and pauses profile saves. Restore the snapshot to end the test session.</p></div><div className="developer-snapshot-actions"><Button variant="secondary" tooltip="Stores the current game data in memory for this browser session only." disabled={getDeveloperToolsState().testSessionActive} onClick={() => { captureTestSnapshot(); setSnapshotReady(true); setFeedback({ text: 'Test snapshot captured in session memory.', tone: 'success' }) }}>Capture test snapshot</Button><Button variant="primary" tooltip="Restores the in-memory snapshot, recalculates derived resources, and resumes profile saving." disabled={!snapshotReady} onClick={() => { const restored = restoreTestSnapshot(); if (restored) setDeveloperTestSessionActive(false); setSnapshotReady(hasTestSnapshot()); setFeedback({ text: restored ? 'Test snapshot restored. Developer Test Session ended and profile saving resumed.' : 'No session snapshot is available.', tone: restored ? 'success' : 'warning' }) }}>Restore snapshot &amp; end test session</Button><Button variant="ghost" tooltip="Discards the in-memory snapshot. This is disabled during a Developer Test Session." disabled={!snapshotReady || getDeveloperToolsState().testSessionActive} onClick={() => { discardTestSnapshot(); setSnapshotReady(false); setFeedback({ text: 'Test snapshot discarded.', tone: 'success' }) }}>Discard snapshot</Button></div></div>{feedback && <Status tone={feedback.tone}>{feedback.text}</Status>}</Card>
     {[...new Set(scenarios.map(({ group }) => group))].map((group) => <Card key={group} title={group}><div className="developer-scenario-grid">{scenarios.filter((scenario) => scenario.group === group).map((scenario) => <article className="developer-scenario-card" key={scenario.id}><div><span className="eyebrow">SESSION FIXTURE</span><h3>{scenario.label}</h3><ul>{scenario.summary.map((item) => <li key={item}>{item}</li>)}</ul></div><Button variant="secondary" tooltip={`Run ${scenario.label} through current game actions.`} onClick={() => run(scenario)}>RUN SCENARIO</Button></article>)}</div></Card>)}
   </div>
 }

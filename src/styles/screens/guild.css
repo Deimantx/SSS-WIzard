@@ -198,3 +198,79 @@
 }
 
 .guild-project-grid, .guild-chain-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; min-width: 0; } .guild-project-card, .guild-chain-card { display: grid; gap: 11px; min-width: 0; } .guild-project-card h2, .guild-chain-card h2 { margin: 0; color: var(--ui-text); font-size: var(--text-lg); } .guild-project-card > p, .guild-chain-card > p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-sm); line-height: 1.5; } .guild-project-rewards { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); } .guild-project-rewards strong { color: var(--gold); } .guild-project-progress, .guild-chain-progress span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); } .guild-project-requirements { display: grid; gap: 6px; } .guild-project-requirements > div { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--ui-border); } .guild-project-requirements span { color: var(--ui-text-soft); font-size: var(--text-xs); } .guild-project-requirements b { margin-left: 7px; color: var(--gold); font-family: var(--font-mono); } .guild-project-complete { display: flex; align-items: center; gap: 6px; color: var(--semantic-positive); font: var(--text-micro) var(--font-mono); text-transform: uppercase; } .guild-chain-card ol { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; counter-reset: stages; } .guild-chain-card li { display: grid; gap: 4px; padding: 9px 11px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-raised); } .guild-chain-card li.current { border-color: color-mix(in srgb, var(--gold) 42%, var(--ui-border)); } .guild-chain-card li span { color: var(--gold); font: var(--text-micro) var(--font-mono); } .guild-chain-card li strong { color: var(--ui-text-soft); font-size: var(--text-xs); } .guild-chain-progress { display: grid; gap: 7px; } @media (max-width: 760px) { .guild-project-grid, .guild-chain-list { grid-template-columns: 1fr; } }
+
+/* Compact field-office presentation for Arcane Guild work surfaces. */
+.guild-overview-commissions, .guild-v3-advancement-summary { display: grid; align-content: start; gap: 12px; }
+.guild-overview-commissions .guild-v3-panel-heading { align-items: center; }
+.guild-overview-commissions .guild-v3-panel-heading h2, .guild-advancement-summary-copy h2 { color: var(--ui-text); font-size: var(--text-md); }
+.guild-overview-commissions .guild-v3-panel-heading p, .guild-advancement-summary-copy p { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.guild-overview-active-commission, .guild-v3-commission-preview { display: grid; gap: 9px; padding: 11px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel-raised); }
+.guild-overview-work-label, .guild-overview-work-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.guild-overview-work-label > span:first-child, .guild-overview-work-heading { color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.guild-overview-active-commission > strong { color: var(--ui-text-soft); font-size: var(--text-sm); }
+.guild-overview-work-meta b { color: var(--gold); font-weight: 500; text-align: right; }
+.guild-overview-commission-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--ui-border); }
+.guild-overview-commission-row > div { display: grid; min-width: 0; gap: 3px; }
+.guild-overview-commission-row strong { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.guild-overview-commission-row span, .guild-overview-commission-row > b { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
+.guild-overview-commission-row > b { flex: 0 0 auto; color: var(--gold); }
+.guild-overview-empty { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.guild-overview-commissions > .button, .guild-v3-advancement-summary > .button { justify-self: start; }
+.guild-advancement-summary-copy h2 { margin: 4px 0 0; }
+.guild-advancement-summary-copy p { margin: 4px 0 0; }
+.guild-advancement-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.guild-advancement-metrics > div { display: grid; gap: 5px; min-width: 0; padding: 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-raised); }
+.guild-advancement-metrics span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .05em; }
+.guild-advancement-metrics strong { overflow: hidden; color: var(--ui-text); font: var(--text-md) var(--font-mono); text-overflow: ellipsis; }
+.guild-commission-board-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; padding: 0 1px 10px; border-bottom: 1px solid var(--ui-border); }
+.guild-commission-board-header h2 { margin: 4px 0 0; color: var(--ui-text); font-size: var(--text-lg); }
+.guild-commission-board-header p { margin: 4px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.guild-commission-board-counters { display: flex; gap: 8px; }
+.guild-commission-board-counters > div { display: grid; gap: 4px; min-width: 85px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-raised); }
+.guild-commission-board-counters span, .guild-commission-active-heading > .guild-v3-kicker, .guild-commission-progress-block > div > span, .guild-commission-active-reward > span, .guild-commission-delivery > div:first-child > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.guild-commission-board-counters strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); }
+.guild-commission-active, .guild-commission-offer { display: grid; align-content: start; gap: 10px; min-width: 0; padding: 13px; border: 1px solid var(--ui-border); border-radius: 9px; background: var(--ui-panel); }
+.guild-commission-active { border-color: color-mix(in srgb, var(--ui-accent) 35%, var(--ui-border)); }
+.guild-commission-active-heading, .guild-commission-offer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.guild-commission-quality { display: inline-flex; align-items: center; min-height: 20px; padding: 3px 6px; border: 1px solid var(--ui-border); border-radius: 4px; color: var(--ui-text-muted); background: var(--ui-panel-raised); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.guild-commission-quality.special { border-color: color-mix(in srgb, var(--ui-accent) 55%, var(--ui-border)); color: var(--ui-accent); }
+.guild-commission-quality.prestigious { border-color: color-mix(in srgb, var(--gold) 55%, var(--ui-border)); color: var(--gold); }
+.guild-commission-active-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.guild-commission-active-title > div { min-width: 0; }
+.guild-commission-category-mark { display: inline-flex; align-items: center; gap: 6px; color: var(--ui-accent); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.guild-commission-category-mark.delivery { color: var(--semantic-positive); }
+.guild-commission-category-mark.production, .guild-commission-category-mark.transmutation { color: var(--gold); }
+.guild-commission-category-mark.research { color: var(--ui-accent); }
+.guild-commission-category-mark.mixed { color: var(--ui-text-soft); }
+.guild-commission-category-label { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.guild-commission-active-title h3, .guild-commission-offer h3 { margin: 3px 0 0; color: var(--ui-text); font-size: var(--text-md); line-height: 1.35; }
+.guild-commission-description, .guild-commission-offer > p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.guild-commission-progress-block { display: grid; gap: 7px; }
+.guild-commission-progress-block > div { display: flex; justify-content: space-between; gap: 8px; }
+.guild-commission-progress-block > div > strong { color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
+.guild-commission-active-reward { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 12px; padding-top: 8px; border-top: 1px solid var(--ui-border); }
+.guild-commission-active-reward strong, .guild-commission-reward > span { color: var(--gold); font: var(--text-xs) var(--font-mono); }
+.guild-commission-active-reward b, .guild-commission-reward > strong { color: var(--semantic-positive); font: var(--text-micro) var(--font-mono); }
+.guild-commission-components { display: grid; gap: 8px; }
+.guild-commission-component { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 8px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel-raised); }
+.guild-commission-component > span { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.guild-commission-component > strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); }
+.guild-commission-component > .progress { grid-column: 1 / -1; }
+.guild-commission-delivery { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid var(--ui-border); }
+.guild-commission-delivery > div:first-child { display: grid; gap: 4px; min-width: 0; }
+.guild-commission-delivery > div:first-child > strong { color: var(--ui-text-soft); font-size: var(--text-xs); }
+.guild-commission-delivery > div:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.guild-commission-delivery .button { min-height: 30px; padding: 5px 8px; font-size: var(--text-micro); }
+.guild-commission-offer-heading { margin: 10px 0 0; }
+.guild-commission-offer-heading h3 { margin: 3px 0 0; color: var(--ui-text); font-size: var(--text-md); }
+.guild-commission-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 10px; }
+.guild-commission-offer { min-height: 190px; border-top-width: 2px; }
+.guild-commission-offer.special { border-top-color: var(--ui-accent); }
+.guild-commission-offer.prestigious { border-top-color: var(--gold); }
+.guild-commission-offer h3 { font-size: var(--text-sm); }
+.guild-commission-reward { display: flex; flex-wrap: wrap; gap: 5px 10px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--ui-border); }
+.guild-commission-offer > .game-tooltip-trigger { justify-self: start; }
+.guild-commission-offer > .game-tooltip-trigger > .button { min-height: 32px; }
+@media (max-width: 900px) { .guild-commission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .guild-commission-board-header { align-items: flex-start; flex-direction: column; } .guild-commission-grid { grid-template-columns: 1fr; } .guild-commission-delivery { align-items: flex-start; flex-direction: column; } .guild-commission-delivery > div:last-child { justify-content: flex-start; } }
+@media (max-width: 760px) { .guild-v3-tabs { flex-wrap: wrap; overflow: visible; } .guild-v3-tab { min-height: 34px; padding-inline: 10px; } }

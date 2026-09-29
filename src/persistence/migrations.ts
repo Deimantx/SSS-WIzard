@@ -7,8 +7,8 @@ import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
 import { CHRONICLE_OBJECTIVES } from '../game/content/chronicles/chronicles'
 import { GUILD_SKILL_NODES, GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
-import { ensureHunterContractChoices } from '../game/systems/huntersOrder/huntersOrderRuntime'
-import { ensureGuildCommissionChoices } from '../game/systems/guild/guildCommissions'
+import { ensureHunterContractChoices, getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
+import { ensureGuildCommissionChoices, getGuildCommissionChoiceCount } from '../game/systems/guild/guildCommissions'
 import { GUILD_PROJECTS } from '../game/content/guild/guildProjects'
 import { ARCANE_REGISTRY_SETS } from '../game/content/guild/registry/registrySets'
 import { GUILD_COMMISSION_CHAINS } from '../game/content/guild/guildCommissionChains'
@@ -130,6 +130,10 @@ const recipeIds = Object.keys(RECIPES)
 const permanentManaIds = ['forest-heart', 'guild-apprentice']
 /** V34 is the first save topology that stores Arcane Core ranked nodes. */
 const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
+/** V53 is the first canonical save schema that persists Hunter Contract boards. */
+const HUNTER_CONTRACT_BOARD_SAVE_VERSION = 53
+/** V53 is the first canonical save schema that persists Guild Commission boards. */
+const GUILD_COMMISSION_BOARD_SAVE_VERSION = 53
 /** V38 is the first save topology that contains the Phase 1 Resonance runtime. */
 const PRE_RESONANCE_SAVE_VERSION = 38
 const ARCANE_CORE_V37_REPRICE_SAVE_VERSION = 37
@@ -317,19 +321,20 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     return contractKills + contractsCompleted + marksEarned > 0 ? [[id, { contractKills, contractsCompleted, marksEarned }]] : []
   })) as GameState['progress']['huntersOrder']['monsterHunterStats']
   const activeHunterContract = normalizeContract(rawHunters.activeContract)
-  const availableHunterContracts = Array.isArray(rawHunters.availableContracts) ? rawHunters.availableContracts.map(normalizeContract).filter((contract): contract is NonNullable<typeof contract> => Boolean(contract)).slice(0, 3) : []
   const rawPurchasedHunterUpgrades = isRecord(rawHunters.purchasedUpgrades) ? rawHunters.purchasedUpgrades : {}
   const purchasedHunterUpgrades = Object.fromEntries(HUNTER_UPGRADES.flatMap((upgrade) => { const rank = Math.min(upgrade.maxRank, nonNegativeInteger(rawPurchasedHunterUpgrades[upgrade.id]) ?? 0); return rank > 0 ? [[upgrade.id, rank]] : [] }))
   const rawBlockedHunterTargets = Array.isArray(rawHunters.blockedTargets) ? rawHunters.blockedTargets.filter((id): id is GameState['progress']['huntersOrder']['blockedTargets'][number] => hunterIds.some((hunterId) => hunterId === id) && !isBossMonster(MONSTERS[id as typeof hunterIds[number]])) : []
   const blockCapacity = BALANCE.huntersOrder.baseBlockSlots + (purchasedHunterUpgrades['extended-trails'] ?? 0)
-  migrated.progress.huntersOrder = { reputation: hunterReputation, rankId: hunterRankId, hunterMarks: nonNegativeInteger(rawHunters.hunterMarks) ?? 0, totalContractsAccepted: Math.max(nonNegativeInteger(rawHunters.totalContractsAccepted) ?? 0, activeHunterContract ? 1 : nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0), activeContract: activeHunterContract, availableContracts: availableHunterContracts, blockedTargets: [...new Set(rawBlockedHunterTargets)].slice(0, blockCapacity), purchasedUpgrades: purchasedHunterUpgrades, totalContractsCompleted: nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0, totalHunterKills: nonNegativeInteger(rawHunters.totalHunterKills) ?? 0, generationCount: nonNegativeInteger(rawHunters.generationCount) ?? 0, rngState: nonNegativeInteger(rawHunters.rngState) || 2654435769, monsterHunterStats }
+  migrated.progress.huntersOrder = { reputation: hunterReputation, rankId: hunterRankId, hunterMarks: nonNegativeInteger(rawHunters.hunterMarks) ?? 0, totalContractsAccepted: Math.max(nonNegativeInteger(rawHunters.totalContractsAccepted) ?? 0, activeHunterContract ? 1 : nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0), activeContract: activeHunterContract, availableContracts: [], blockedTargets: [...new Set(rawBlockedHunterTargets)].slice(0, blockCapacity), purchasedUpgrades: purchasedHunterUpgrades, totalContractsCompleted: nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0, totalHunterKills: nonNegativeInteger(rawHunters.totalHunterKills) ?? 0, generationCount: nonNegativeInteger(rawHunters.generationCount) ?? 0, rngState: nonNegativeInteger(rawHunters.rngState) ?? 2654435769, monsterHunterStats }
+  const normalizedHunterContracts = Array.isArray(rawHunters.availableContracts) ? rawHunters.availableContracts.map(normalizeContract).filter((contract): contract is NonNullable<typeof contract> => Boolean(contract)) : []
+  migrated.progress.huntersOrder.availableContracts = normalizedHunterContracts.slice(0, getHunterContractChoiceCount(migrated))
   const rawRegistry = isRecord(rawProgress.arcaneRegistry) ? rawProgress.arcaneRegistry : {}
   const rawRegistered = isRecord(rawRegistry.registeredEntries) ? rawRegistry.registeredEntries : {}
   const registeredEntries = Object.fromEntries(itemIds.flatMap((id) => { const quantity = nonNegativeInteger(rawRegistered[id]) ?? 0; return quantity > 0 ? [[id, quantity]] : [] })) as GameState['progress']['arcaneRegistry']['registeredEntries']
   const savedCompletedSets = Array.isArray(rawRegistry.completedSetIds) ? rawRegistry.completedSetIds.filter((id): id is string => typeof id === 'string' && ARCANE_REGISTRY_SETS.some((set) => set.id === id)) : []
   migrated.progress.arcaneRegistry = { registeredEntries, completedSetIds: [...new Set(savedCompletedSets)] }
   const rawGuild = isRecord(rawProgress.arcaneGuild) ? rawProgress.arcaneGuild : {}
-  const rawAvailableCommissions = Array.isArray(rawGuild.availableCommissions) ? rawGuild.availableCommissions.filter(isRecord).slice(0, 3) : []
+  const rawAvailableCommissions = Array.isArray(rawGuild.availableCommissions) ? rawGuild.availableCommissions.filter(isRecord) : []
   const normalizeGuildCommission = (value: Record<string, any>): GameState['progress']['arcaneGuild']['activeCommission'] => {
     const category = (['delivery', 'production', 'research', 'transmutation', 'mixed'] as const).find((entry) => entry === value.category) ?? null
     const template = typeof value.templateId === 'string' ? GUILD_COMMISSION_TEMPLATES.find((entry) => entry.id === value.templateId) : undefined
@@ -363,7 +368,9 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawChain = isRecord(rawGuild.activeCommissionChain) ? rawGuild.activeCommissionChain : null
   const chainDefinition = rawChain && GUILD_COMMISSION_CHAINS.find((chain) => chain.id === rawChain.id)
   const activeCommissionChain = chainDefinition ? { id: chainDefinition.id, stageIndex: Math.min(chainDefinition.stages.length - 1, nonNegativeInteger(rawChain?.stageIndex) ?? 0), stageProgress: Math.min(chainDefinition.stages[Math.min(chainDefinition.stages.length - 1, nonNegativeInteger(rawChain?.stageIndex) ?? 0)].target, nonNegativeInteger(rawChain?.stageProgress) ?? 0) } : null
-  migrated.progress.arcaneGuild = { projects, completedProjectIds, activeCommissionChain, availableCommissions: rawAvailableCommissions.map((entry) => normalizeGuildCommission(entry)).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)), activeCommission: isRecord(rawGuild.activeCommission) ? normalizeGuildCommission(rawGuild.activeCommission) : null, generationCount: nonNegativeInteger(rawGuild.generationCount) ?? 0, completedCommissions: nonNegativeInteger(rawGuild.completedCommissions) ?? 0, freeRefreshes: Math.min(BALANCE.arcaneGuild.maxFreeRefreshes, nonNegativeInteger(rawGuild.freeRefreshes) ?? 0), rngState: nonNegativeInteger(rawGuild.rngState) || 2246822519, completedChainIds: Array.isArray(rawGuild.completedChainIds) ? [...new Set(rawGuild.completedChainIds.filter((id): id is string => typeof id === 'string' && GUILD_COMMISSION_CHAINS.some((chain) => chain.id === id)))] : [] }
+  migrated.progress.arcaneGuild = { projects, completedProjectIds, activeCommissionChain, availableCommissions: [], activeCommission: isRecord(rawGuild.activeCommission) ? normalizeGuildCommission(rawGuild.activeCommission) : null, generationCount: nonNegativeInteger(rawGuild.generationCount) ?? 0, completedCommissions: nonNegativeInteger(rawGuild.completedCommissions) ?? 0, freeRefreshes: Math.min(BALANCE.arcaneGuild.maxFreeRefreshes, nonNegativeInteger(rawGuild.freeRefreshes) ?? 0), rngState: nonNegativeInteger(rawGuild.rngState) ?? 2246822519, completedChainIds: Array.isArray(rawGuild.completedChainIds) ? [...new Set(rawGuild.completedChainIds.filter((id): id is string => typeof id === 'string' && GUILD_COMMISSION_CHAINS.some((chain) => chain.id === id)))] : [] }
+  const normalizedGuildCommissions = rawAvailableCommissions.map((entry) => normalizeGuildCommission(entry)).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+  migrated.progress.arcaneGuild.availableCommissions = normalizedGuildCommissions.slice(0, getGuildCommissionChoiceCount(migrated))
   const rawChronicle = isRecord(rawProgress.chronicle) ? rawProgress.chronicle : {}
   const rawCompleted = Array.isArray(rawChronicle.completedObjectiveIds) ? rawChronicle.completedObjectiveIds : []
   const rawGranted = Array.isArray(rawChronicle.grantedUnlockRewardIds) ? rawChronicle.grantedUnlockRewardIds : []
@@ -1026,6 +1033,24 @@ const normalizeTransmutationJobs = (migrated: GameState, raw: Record<string, any
   migrated.activities.transmutation = { jobs: normalized }
 }
 
+const backfillHistoricalContractBoards = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
+  const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+  const rawHunters = isRecord(rawProgress.huntersOrder) ? rawProgress.huntersOrder : {}
+  const rawGuild = isRecord(rawProgress.arcaneGuild) ? rawProgress.arcaneGuild : {}
+
+  if (
+    sourceVersion < HUNTER_CONTRACT_BOARD_SAVE_VERSION
+    && !Object.prototype.hasOwnProperty.call(rawHunters, 'availableContracts')
+    && !migrated.progress.huntersOrder.activeContract
+  ) ensureHunterContractChoices(migrated)
+
+  if (
+    sourceVersion < GUILD_COMMISSION_BOARD_SAVE_VERSION
+    && !Object.prototype.hasOwnProperty.call(rawGuild, 'availableCommissions')
+    && !migrated.progress.arcaneGuild.activeCommission
+  ) ensureGuildCommissionChoices(migrated)
+}
+
 const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion = Number(raw.saveVersion ?? 0)) => {
   // V1-V7 retain their historical migration marker. V8+ are normalized into
   // the current save document.
@@ -1052,8 +1077,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSigils(migrated, raw)
   normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
-  ensureHunterContractChoices(migrated)
-  ensureGuildCommissionChoices(migrated)
+  backfillHistoricalContractBoards(migrated, raw, sourceVersion)
   reconcileWorldTierProgression(migrated)
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)

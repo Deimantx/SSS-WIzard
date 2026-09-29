@@ -5,7 +5,7 @@ import { ScreenRouter } from '../screens/ScreenRouter'
 import { getNavigationContext } from './navigation'
 import { setUiPreferences, useUiPreferences } from '../ui/preferences/uiPreferencesStore'
 import { themeColors } from '../ui/theme/themePresets'
-import { openDeveloperTools } from '../devtools/developerToolsStore'
+import { getDeveloperToolsState, openDeveloperTools } from '../devtools/developerToolsStore'
 import { DeveloperToolsWindow } from '../devtools/DeveloperToolsWindow'
 import { AUTOSAVE_INTERVAL_MS } from '../persistence/saveConstants'
 import { useProfileSession } from '../profiles/profileSessionStore'
@@ -87,9 +87,9 @@ export function GameShell() {
 
   useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
-    const autosave = window.setInterval(() => saveGame('autosave'), AUTOSAVE_INTERVAL_MS)
-    const visibility = () => { const transition = getLiveVisibilityTransition(document.hidden, performance.now(), lastFrame.current); hiddenRef.current = transition.hidden; lastFrame.current = transition.lastFrame; if (transition.shouldSaveSafetyAnchor) saveGame('visibility') }
-    const pageHide = () => saveGame('visibility')
+    const autosave = window.setInterval(() => { if (!getDeveloperToolsState().testSessionActive) saveGame('autosave') }, AUTOSAVE_INTERVAL_MS)
+    const visibility = () => { const transition = getLiveVisibilityTransition(document.hidden, performance.now(), lastFrame.current); hiddenRef.current = transition.hidden; lastFrame.current = transition.lastFrame; if (transition.shouldSaveSafetyAnchor && !getDeveloperToolsState().testSessionActive) saveGame('visibility') }
+    const pageHide = () => { if (!getDeveloperToolsState().testSessionActive) saveGame('visibility') }
     document.addEventListener('visibilitychange', visibility)
     window.addEventListener('pagehide', pageHide)
     return () => { window.clearInterval(interval); window.clearInterval(autosave); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', pageHide) }

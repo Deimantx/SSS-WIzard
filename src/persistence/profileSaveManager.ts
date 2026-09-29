@@ -13,6 +13,7 @@ import type { ProfileSlotId } from '../profiles/profileTypes'
 import { attemptLegacySaveRecovery, validateSerializedSave, validateStoredSave, type SaveValidationReport } from './saveIntegrity'
 import { detectCatastrophicProgressRegression, getProgressionEvidence, summarizeProgressionEvidence, type ProgressionEvidenceSummary, type ProgressionRegressionResult } from './progressionEvidence'
 import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave, type SaveFailureKind } from './saveDiagnosticsStore'
+import { isDeveloperTestSessionSavePaused } from './developerTestSessionSaveGuard'
 
 export interface ProfileSaveResult {
   ok: boolean
@@ -333,6 +334,7 @@ const writeVerified = (key: string, value: string | null) => {
 }
 
 export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options?: { savedAt?: number; explicitReset?: boolean }): ProfileSaveResult => {
+  if (isDeveloperTestSessionSavePaused()) return { ok: false, error: 'Profile saving is paused during Developer Test Session.', kind: 'unknown', detail: 'Developer test session save interlock is active.' }
   if (!isProfileSlotId(slotId)) return { ok: false, error: 'Invalid profile slot.' }
   if (typeof localStorage === 'undefined') return saveFailure(slotId, 'Browser storage is unavailable.', false, undefined, undefined, 'storage-unavailable')
   let previous: (string | null)[] = []

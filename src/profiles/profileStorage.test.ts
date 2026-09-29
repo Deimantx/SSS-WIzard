@@ -3,7 +3,7 @@ import { createInitialState } from '../store/initialState'
 import { useGameStore } from '../store/gameStore'
 import { loadProfileGame, saveProfileGame } from '../persistence/profileSaveManager'
 import { getSchoolLevelStartXp } from '../game/systems/schools'
-import { LEGACY_SAVE_BACKUP_KEY, SAVE_KEY } from '../persistence/saveSchema'
+import { LEGACY_SAVE_KEY } from '../persistence/saveSchema'
 import { createProfile, enterProfile, leaveToProfiles } from './profileController'
 import { PROFILE_REGISTRY_KEY, profileSaveBackupKey, profileSaveKey } from './profileKeys'
 import { loadProfileRegistry, saveProfileRegistry } from './profileStorage'
@@ -49,15 +49,14 @@ describe('profile storage and session lifecycle', () => {
     expect(localStorage.getItem(UI_PREFERENCES_KEY)).toBe(uiPreferencesBefore)
   })
 
-  it('migrates a legacy global save into Slot 1', () => {
+  it('ignores the old global save namespace', () => {
     const state = createInitialState()
     state.progress.lifetimeKills = 17
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state))
+    localStorage.setItem(LEGACY_SAVE_KEY, JSON.stringify(state))
     const registry = loadProfileRegistry()
-    expect(registry.slots['slot-1']?.name).toBe('Profile 1')
-    expect(loadProfileGame('slot-1').state?.progress.lifetimeKills).toBe(17)
-    expect(localStorage.getItem(LEGACY_SAVE_BACKUP_KEY)).toBeTruthy()
-    expect(localStorage.getItem(SAVE_KEY)).toBeNull()
+    expect(registry.slots['slot-1']).toBeNull()
+    expect(loadProfileGame('slot-1').state).toBeNull()
+    expect(localStorage.getItem(LEGACY_SAVE_KEY)).not.toBeNull()
   })
 
   it('recovers from corrupt registry data without creating extra slots', () => {
@@ -97,7 +96,8 @@ describe('profile storage and session lifecycle', () => {
     expect(enterProfile('slot-1').ok).toBe(true)
     useGameStore.getState().addItem('fire-fragment', 37)
     useGameStore.getState().addItem('life-essence', 9)
-    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+    const saved = useGameStore.getState().saveGame('manual')
+    expect(saved.ok, saved.error ?? '').toBe(true)
 
     expect(leaveToProfiles().ok).toBe(true)
     expect(enterProfile('slot-1').ok).toBe(true)
@@ -148,7 +148,8 @@ describe('profile storage and session lifecycle', () => {
       state.progress.autoHuntBossByDungeon['whispering-woods'] = true
       return state
     })
-    expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
+    const saved = useGameStore.getState().saveGame('manual')
+    expect(saved.ok, saved.error ?? '').toBe(true)
 
     expect(leaveToProfiles().ok).toBe(true)
     expect(enterProfile('slot-1').ok).toBe(true)
@@ -237,19 +238,21 @@ describe('profile storage and session lifecycle', () => {
     const result = saveProfileGame('slot-1', invalidState)
 
     expect(result.ok).toBe(false)
-    expect(result.error).toContain('SAVE FAILED')
+    expect(result.error).toContain('V2 save schema')
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe(primaryBefore)
     expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toBe(backupBefore)
   })
 
-  it('keeps the player on Profile Select when both gameplay copies are unreadable', () => {
+  it('starts a clean profile when both gameplay copies are unreadable', () => {
     expect(createProfile('slot-1', 'Unreadable Test').ok).toBe(true)
     localStorage.setItem(profileSaveKey('slot-1'), '{primary-corrupt')
     localStorage.setItem(profileSaveBackupKey('slot-1'), '{backup-corrupt')
 
     const result = enterProfile('slot-1')
 
-    expect(result.ok).toBe(false)
-    expect(result.error).toContain('Profile save could not be loaded.')
+    expect(result.ok).toBe(true)
+    expect(getActiveProfileId()).toBe('slot-1')
+    expect(loadProfileGame('slot-1').state?.schools).toEqual(createInitialState().schools)
+    expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toBeNull()
   })
 })

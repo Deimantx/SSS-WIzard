@@ -74,7 +74,7 @@ describe('screen smoke coverage', () => {
     render(<GameShell />)
     expect(screen.getByText(/Required progress drives chapter completion/)).toBeTruthy()
     expect(screen.queryByText(/first three dungeons/i)).toBeNull()
-    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'Combat' }, { nav: 'Magic Schools', heading: 'Magic Schools' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: "Build the tower's answer." }, { nav: 'Arcane Core', heading: 'Arcane Core' }, { nav: 'Arcane Guild', heading: 'Arcane Guild' }, { nav: 'Hunter’s Order', heading: 'The ground remembers every hunt.' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
+    const screens = [{ nav: 'Overview', heading: 'Good evening, apprentice.' }, { nav: 'Combat', heading: 'Combat' }, { nav: 'Magic Schools', heading: 'Magic Schools' }, { nav: 'Inventory', heading: 'Everything the tower currently holds.' }, { nav: 'Equipment', heading: "Build the tower's answer." }, { nav: 'Arcane Core', heading: 'Arcane Core' }, { nav: 'Arcane Guild', heading: 'Arcane Guild' }, { nav: 'Hunter’s Order', heading: 'Hunter’s Order' }, { nav: 'Settings / Info', heading: 'Settings / Info' }]
     for (const item of screens) { await user.click(navItem(item.nav)); expect(screen.getByRole('heading', { name: item.heading })).toBeTruthy() }
     expect(navGroup('Combat')).toBeTruthy()
     expect(navGroup('Hero')).toBeTruthy()

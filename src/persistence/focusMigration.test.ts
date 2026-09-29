@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { serializeGameState } from './profileSaveManager'
+import { validateStoredSave } from './saveIntegrity'
 import { migrateSave } from './migrations'
 
-describe('Mana and Prismatic save migration', () => {
+describe('Mana and Prismatic persistence', () => {
   it('normalizes a V9 save without losing gameplay data', () => {
     const initial = createInitialState()
     const migrated = migrateSave({ ...initial, saveVersion: 9, inventory: { ...initial.inventory, 'fire-fragment': 37 } })
@@ -17,9 +18,9 @@ describe('Mana and Prismatic save migration', () => {
     state.inventory['prismatic-fragment'] = 77
     state.activities.transmutation.jobs['prismatic-fragment'] = { echoesAssigned: 2, progressMs: 4_321 }
 
-    const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    const loaded = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(loaded.inventory['prismatic-fragment']).toBe(77)
-    expect(loaded.activities.transmutation.jobs['prismatic-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 2, progressMs: 4_321 })
+    expect(loaded.activities.transmutation.jobs['prismatic-fragment']).toEqual({ echoesAssigned: 2, progressMs: 4_321 })
   })
 
   it('migrates a V16 save without presets to a safe empty combat preset', () => {

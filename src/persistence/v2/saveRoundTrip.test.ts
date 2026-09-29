@@ -1,0 +1,123 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createInitialState } from '../../store/initialState'
+import { loadProfileGame, saveProfileGame, serializeGameState } from '../profileSaveManager'
+import { profileSaveBackupKey, profileSaveKey } from '../../profiles/profileKeys'
+import { setDeveloperTestSessionSavePaused } from '../developerTestSessionSaveGuard'
+import { validateV2RoundTrip } from './saveRoundTrip'
+import { validateStoredSave } from '../saveIntegrity'
+import { loadPersistedGameStateV1 } from './saveLoader'
+import { parsePersistedGameStateV1 } from './saveSchema'
+
+describe('Save System V2', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setDeveloperTestSessionSavePaused(false)
+  })
+
+  it('round-trips a new game without saving runtime UI, developer, or notification state', () => {
+    const state = createInitialState()
+    state.debug.playerStats.maxHealthFlat = 500
+    state.notifications = [{ id: 'test', text: 'runtime-only', tone: 'info' }]
+    state.ui.screen = 'equipment'
+    ;(state as typeof state & { recentAcquisitions?: unknown[] }).recentAcquisitions = [{ itemId: 'test' }]
+
+    const document = serializeGameState(state, 1234)
+    expect(document.schemaVersion).toBe(1)
+    expect(document).not.toHaveProperty('debug')
+    expect(document).not.toHaveProperty('ui')
+    expect(document).not.toHaveProperty('notifications')
+    expect(document).not.toHaveProperty('recentAcquisitions')
+    expect(validateV2RoundTrip(JSON.stringify(document), state).ok).toBe(true)
+
+    const result = saveProfileGame('slot-1', state, { savedAt: 1234 })
+    expect(result.ok).toBe(true)
+    expect(loadProfileGame('slot-1').state?.ui.screen).toBe('home')
+    expect(loadProfileGame('slot-1').state?.debug.playerStats.maxHealthFlat).toBe(0)
+    expect(loadProfileGame('slot-1').state?.notifications).toEqual([])
+  })
+
+  it('preserves inventory, equipment, world progress, resource values, and contract RNG exactly', () => {
+    const state = createInitialState()
+    state.inventory['fire-fragment'] = 17
+    state.equipment.weapon = 'ember-staff'
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.availableContracts = []
+    state.progress.huntersOrder.blockedTargets = ['forest-wisp', 'cinder-moth']
+    state.progress.huntersOrder.rngState = 0x12345678
+    state.progress.arcaneGuild.availableCommissions = []
+    state.progress.arcaneGuild.rngState = 0x76543210
+    state.player.health = 41
+    state.player.mana = 19
+    state.combat.playerBarrier = 7
+
+    const encoded = JSON.stringify(serializeGameState(state, 500))
+    const roundTrip = validateV2RoundTrip(encoded, state)
+    expect(roundTrip.ok).toBe(true)
+    expect(roundTrip.state?.progress.huntersOrder).toEqual(state.progress.huntersOrder)
+    expect(roundTrip.state?.progress.arcaneGuild).toEqual(state.progress.arcaneGuild)
+    expect(roundTrip.state?.inventory).toEqual(state.inventory)
+    expect(roundTrip.state?.equipment).toEqual(state.equipment)
+    expect(roundTrip.state?.player.health).toBe(41)
+    expect(roundTrip.state?.player.mana).toBe(19)
+    expect(roundTrip.state?.combat.playerBarrier).toBe(7)
+  })
+
+  it('keeps empty contract boards empty and never consumes Hunter or Guild RNG while loading', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.availableContracts = []
+    state.progress.huntersOrder.activeContract = null
+    state.progress.huntersOrder.rngState = 183
+    state.progress.guildUnlocked = true
+    state.progress.arcaneGuild.availableCommissions = []
+    state.progress.arcaneGuild.rngState = 299
+    const saved = JSON.stringify(serializeGameState(state, 99))
+
+    const loaded = loadProfileGameFromRaw(saved)
+    expect(loaded.progress.huntersOrder.availableContracts).toEqual([])
+    expect(loaded.progress.huntersOrder.rngState).toBe(183)
+    expect(loaded.progress.arcaneGuild.availableCommissions).toEqual([])
+    expect(loaded.progress.arcaneGuild.rngState).toBe(299)
+  })
+
+  it('rebuilds derived caps and clamps saved HP, Mana, and Barrier during runtime initialization', () => {
+    const state = createInitialState()
+    const document = serializeGameState(state, 100)
+    document.player.health = 1_000_000
+    document.player.mana = 1_000_000
+    document.combat.playerBarrier = -50
+    const loaded = loadPersistedGameStateV1(parsePersistedGameStateV1(JSON.stringify(document)))
+
+    expect(loaded.player.health).toBe(loaded.player.maxHealth)
+    expect(loaded.player.mana).toBe(loaded.player.maxMana)
+    expect(loaded.combat.playerBarrier).toBe(0)
+  })
+
+  it('uses only V2 storage and falls back from a corrupt current save to its single backup', () => {
+    const first = createInitialState()
+    first.inventory['fire-fragment'] = 3
+    expect(saveProfileGame('slot-1', first, { savedAt: 100 }).ok).toBe(true)
+    const next = createInitialState()
+    next.inventory['fire-fragment'] = 8
+    expect(saveProfileGame('slot-1', next, { savedAt: 200 }).ok).toBe(true)
+
+    expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toContain('"savedAt":100')
+    localStorage.setItem(profileSaveKey('slot-1'), '{invalid')
+    const loaded = loadProfileGame('slot-1')
+    expect(loaded.source).toBe('backup')
+    expect(loaded.state?.inventory['fire-fragment']).toBe(3)
+    expect(localStorage.getItem('sss-wizard-profile-slot-1-save-v1')).toBeNull()
+  })
+
+  it('does not save while a Developer Test Session is active', () => {
+    setDeveloperTestSessionSavePaused(true)
+    expect(saveProfileGame('slot-1', createInitialState()).ok).toBe(false)
+    expect(localStorage.getItem(profileSaveKey('slot-1'))).toBeNull()
+  })
+})
+
+const loadProfileGameFromRaw = (encoded: string) => {
+  const result = validateStoredSave(encoded)
+  if (!result.state) throw new Error(result.error ?? 'V2 fixture did not load.')
+  return result.state
+}

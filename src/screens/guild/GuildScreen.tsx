@@ -25,7 +25,7 @@ export function GuildScreen() {
     if (activeTab !== 'registry') return <GuildLockedState state={state} />
     return <div className="screen-content guild-v3-screen">
       <div className="screen-header"><div><div className="eyebrow">ARCANE GUILD</div><h1>Registry archive</h1><p>Previously discovered items remain available to browse. Defeat the Forest Heart to register new entries.</p></div></div>
-      <ScreenGrid screen="guild" panels={[{ id: 'guild-registry', content: <ArcaneRegistryTab /> }]} />
+      <ScreenGrid screen="arcane-guild" panels={[{ id: 'guild-registry', content: <ArcaneRegistryTab /> }]} />
     </div>
   }
 
@@ -53,7 +53,7 @@ export function GuildScreen() {
   ] : panels
 
   return <div className="screen-content guild-v3-screen">
-    <main className="guild-v3-main" aria-live="polite"><ScreenGrid screen="guild" panels={registryPanels} /></main>
+    <main className="guild-v3-main" aria-live="polite"><ScreenGrid screen="arcane-guild" panels={registryPanels} /></main>
   </div>
 }
 
@@ -61,7 +61,7 @@ function GuildLockedState({ state }: { state: GameStore }) {
   const forestHeartDefeated = state.progress.forestHeartUnlocked ? 1 : 0
   return <div className="screen-content guild-v3-screen guild-v3-locked-screen">
     <div className="screen-header"><div><div className="eyebrow">ARCANE GUILD</div><h1>A guild invitation, still sealed.</h1><p>Defeat the Forest Heart to receive an invitation to the Arcane Guild and open its Registry and commissions.</p></div></div>
-    <ScreenGrid screen="guild" panels={[{ id: 'guild-locked', content: <GuildLockedCard state={state} forestHeartDefeated={forestHeartDefeated} /> }]} />
+    <ScreenGrid screen="arcane-guild" panels={[{ id: 'guild-locked', content: <GuildLockedCard state={state} forestHeartDefeated={forestHeartDefeated} /> }]} />
   </div>
 }
 

@@ -15,7 +15,7 @@ describe('Resonance save migration and integrity', () => {
   it('preserves valid balances and sanitizes malformed persisted values', () => {
     const state = createInitialState()
     state.resonance = { fire: 17, water: 23, earth: 0, air: 91 }
-    const roundTrip = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    const roundTrip = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(roundTrip.resonance).toEqual(state.resonance)
     const malformed = migrateSave({ ...state, saveVersion: SAVE_VERSION, resonance: { fire: -2, water: 3.9, earth: Number.POSITIVE_INFINITY, air: 'bad', unknown: 42 } } as any)
     expect(malformed.resonance).toEqual({ fire: 0, water: 3, earth: 0, air: 0 })
@@ -24,7 +24,7 @@ describe('Resonance save migration and integrity', () => {
   it('round-trips World Tier state and derives WT2 unlock from a historical Edrin defeat', () => {
     const state = createInitialState()
     state.worldTier = { current: 2, highestUnlocked: 2 }
-    const roundTrip = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    const roundTrip = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(roundTrip.worldTier).toEqual({ current: 2, highestUnlocked: 2 })
 
     const legacy = { ...state, saveVersion: 39, worldTier: undefined, progress: { ...state.progress, bossKillsByBoss: { ...state.progress.bossKillsByBoss, 'archmage-edrin-shade': 1 } } }
@@ -50,6 +50,6 @@ describe('Resonance save migration and integrity', () => {
     expect(criticalSaveSnapshotsEqual(getCriticalSaveSnapshot(state), getCriticalSaveSnapshot(changed))).toBe(false)
     const encoded = JSON.stringify({ ...state, resonance: undefined })
     expect(validateStoredSave(encoded).ok).toBe(false)
-    expect(validateStoredSave(JSON.stringify({ ...state, saveVersion: SAVE_VERSION - 1, resonance: undefined })).ok).toBe(true)
+    expect(validateStoredSave(JSON.stringify({ ...serializeGameState(state), resonance: undefined })).ok).toBe(false)
   })
 })

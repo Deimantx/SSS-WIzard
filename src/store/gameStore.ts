@@ -148,7 +148,7 @@ import {
 } from "./actions/guildActions";
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
 import type { GuildSkillNodeId, GuildRankId } from "../game/types";
-import { acceptHunterContractAction, rerollHunterContractsAction, setHunterTargetBlockedAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassBossContractAction, debugSetHunterApexThreatReadyAction } from './actions/huntersOrderActions'
+import { acceptHunterContractAction, rerollHunterContractsAction, setHunterTargetBlockedAction, clearHunterTargetBlocksAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassBossContractAction, debugSetHunterApexThreatReadyAction } from './actions/huntersOrderActions'
 import { debugSetGuildCommissionRngSeedAction, debugRegenerateGuildCommissionBoardAction } from './actions/guildActions'
 import {
   debugLockSpellAction,
@@ -845,6 +845,7 @@ export interface GameActions {
   skipHunterContract: () => boolean;
   rerollHunterContracts: () => boolean;
   setHunterTargetBlocked: (monsterId: MonsterId, blocked: boolean) => boolean;
+  clearHunterTargetBlocks: () => boolean;
   purchaseHunterUpgrade: (upgradeId: string) => boolean;
   claimGuildReward: (requestId: string) => void;
   promoteGuild: () => void;
@@ -3124,6 +3125,7 @@ export const useGameStore = create<GameStore>()(
     rerollHunterContracts: () => { let ok = false; set((state) => { ok = rerollHunterContractsAction(state); return state; }); return ok; },
     purchaseHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = purchaseHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
     setHunterTargetBlocked: (monsterId, blocked) => { let ok = false; set((state) => { ok = setHunterTargetBlockedAction(state, monsterId, blocked); return state; }); return ok; },
+    clearHunterTargetBlocks: () => { let ok = false; set((state) => { ok = clearHunterTargetBlocksAction(state); return state; }); return ok; },
     claimGuildReward: (requestId) =>
       set((state) => {
         claimGuildRewardAction(state, requestId);

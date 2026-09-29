@@ -1,5 +1,5 @@
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
-import { acceptHunterContract, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, debugSetHuntersOrderUnlocked, debugGrantHunterReputation, debugGrantHunterMarks, debugCompleteActiveHunterContract, debugSetHunterRngSeed, debugRegenerateHunterContractBoard, debugSetHunterRank, debugGrantHunterUpgrade, debugClearHunterTargetBlocks, debugGrantNightglassBossContract, debugSetHunterApexThreatReady } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { acceptHunterContract, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, clearHunterTargetBlocks, debugSetHuntersOrderUnlocked, debugGrantHunterReputation, debugGrantHunterMarks, debugCompleteActiveHunterContract, debugSetHunterRngSeed, debugRegenerateHunterContractBoard, debugSetHunterRank, debugGrantHunterUpgrade, debugGrantNightglassBossContract, debugSetHunterApexThreatReady } from '../../game/systems/huntersOrder/huntersOrderRuntime'
 import type { HunterContractGenerationOptions } from '../../game/systems/huntersOrder/huntersOrderRuntime'
 import type { GameState, MonsterId } from '../../game/types'
 
@@ -17,6 +17,7 @@ export const debugSetHunterRngSeedAction = (state: GameState, seed: number) => d
 export const debugRegenerateHunterContractBoardAction = (state: GameState, options: HunterContractGenerationOptions = {}) => debugRegenerateHunterContractBoard(state, options)
 export const debugSetHunterRankAction = (state: GameState, rankId: import('../../game/types').HunterRankId) => debugSetHunterRank(state, rankId)
 export const debugGrantHunterUpgradeAction = (state: GameState, upgradeId: string) => debugGrantHunterUpgrade(state, upgradeId)
-export const debugClearHunterTargetBlocksAction = (state: GameState) => debugClearHunterTargetBlocks(state)
+export const clearHunterTargetBlocksAction = (state: GameState) => clearHunterTargetBlocks(state)
+export const debugClearHunterTargetBlocksAction = clearHunterTargetBlocksAction
 export const debugGrantNightglassBossContractAction = (state: GameState) => debugGrantNightglassBossContract(state)
 export const debugSetHunterApexThreatReadyAction = (state: GameState) => debugSetHunterApexThreatReady(state)

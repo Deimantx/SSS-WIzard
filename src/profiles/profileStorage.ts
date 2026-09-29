@@ -1,5 +1,3 @@
-import { migrateSave } from '../persistence/migrations'
-import { LEGACY_SAVE_BACKUP_KEY, LEGACY_SAVE_KEY } from '../persistence/saveSchema'
 import { loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
 import { DIFFICULTIES, GAME_MODES, type DifficultyId, type GameModeId, type ProfileMetadata, type ProfileRegistry, type ProfileSlotId } from './profileTypes'
 import { PROFILE_REGISTRY_KEY, PROFILE_SLOT_IDS } from './profileKeys'
@@ -45,51 +43,11 @@ const readRegistryKey = () => {
   try { return { value: localStorage.getItem(PROFILE_REGISTRY_KEY), error: null } } catch (error) { return { value: null, error: error instanceof Error ? error.message : 'Profile registry could not be read.' } }
 }
 
-const migrateLegacySave = (): ProfileRegistry | null => {
-  if (typeof localStorage === 'undefined') return null
-  let raw: string | null = null
-  try { raw = localStorage.getItem(LEGACY_SAVE_KEY) } catch { return null }
-  if (!raw) return null
-  try {
-    const state = migrateSave(JSON.parse(raw))
-    const now = Date.now()
-    const metadata: ProfileMetadata = {
-      slotId: 'slot-1', slotNumber: 1, name: 'Profile 1', gameMode: 'default', difficulty: 'normal',
-      createdAt: state.lastSavedAt || now, lastPlayedAt: null, lastSavedAt: state.lastSavedAt || null,
-    }
-    // A legacy global save intentionally takes ownership of Slot 1. Clear
-    // any stale profile candidate chain before anchoring the migrated state.
-    const result = resetProfileGame('slot-1', state)
-    if (!result.ok) return null
-    const verification = loadProfileGame('slot-1')
-    if (!verification.state) return null
-    const registry = emptyRegistry()
-    registry.slots['slot-1'] = metadata
-    if (!saveProfileRegistry(registry)) return null
-    try {
-      localStorage.setItem(LEGACY_SAVE_BACKUP_KEY, raw)
-      localStorage.removeItem(LEGACY_SAVE_KEY)
-    } catch { /* Keep the legacy live key if recovery backup cleanup fails. */ }
-    return registry
-  } catch {
-    return null
-  }
-}
-
 export const loadProfileRegistry = (): ProfileRegistry => {
   const raw = readRegistryKey()
-  if (!raw.value && !raw.error) {
-    const migrated = migrateLegacySave()
-    if (migrated) return migrated
-  }
   if (!raw.value) return emptyRegistry()
   try {
-    const registry = normalizeRegistry(JSON.parse(raw.value))
-    if (Object.values(registry.slots).every((slot) => slot === null)) {
-      const migrated = migrateLegacySave()
-      if (migrated) return migrated
-    }
-    return registry
+    return normalizeRegistry(JSON.parse(raw.value))
   } catch { return emptyRegistry() }
 }
 

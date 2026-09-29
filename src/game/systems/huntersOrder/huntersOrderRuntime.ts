@@ -345,12 +345,13 @@ export const debugGrantHunterUpgrade = (state: GameState, upgradeId: HunterUpgra
   state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
   return true
 }
-export const debugClearHunterTargetBlocks = (state: GameState) => {
+export const clearHunterTargetBlocks = (state: GameState) => {
   if (!state.progress.huntersOrder.blockedTargets.length) return false
   state.progress.huntersOrder.blockedTargets = []
   state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
   return true
 }
+export const debugClearHunterTargetBlocks = clearHunterTargetBlocks
 export const debugGrantNightglassBossContract = (state: GameState) => {
   const apexRank = HUNTER_RANKS.find((rank) => rank.id === HUNTER_APEX_CONTRACT.requiredRank)
   if (!apexRank) return false

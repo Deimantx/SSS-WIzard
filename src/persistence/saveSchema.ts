@@ -1,8 +1,7 @@
+/** Old global key is intentionally not read by Save System V2. */
 export const LEGACY_SAVE_KEY = 'sss-wizard-save-v1'
-/** @deprecated Kept as a migration/test compatibility alias; active saves use profile slot keys. */
-export const SAVE_KEY = LEGACY_SAVE_KEY
-export const LEGACY_SAVE_BACKUP_KEY = 'sss-wizard-legacy-save-backup-v1'
 export const CURRENT_SAVE_VERSION = 53
+export const V2_SAVE_SCHEMA_VERSION = 1
 
 export class SaveMigrationError extends Error {
   constructor(message: string) { super(message); this.name = 'SaveMigrationError' }

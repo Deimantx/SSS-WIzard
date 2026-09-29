@@ -4,8 +4,8 @@ import { ScreenGrid } from './ScreenGrid'
 
 describe('ScreenGrid responsive styles', () => {
   it('separates generated mobile declarations so stacked panels can size to content', () => {
-    render(<ScreenGrid screen="guild" panels={[{ id: 'guild-header', content: <div /> }, { id: 'guild-tabs', content: <div /> }]} />)
-    const responsiveCss = document.querySelector('style[data-screen-grid-responsive="guild"]')?.textContent ?? ''
+    render(<ScreenGrid screen="arcane-guild" panels={[{ id: 'guild-header', content: <div /> }, { id: 'guild-tabs', content: <div /> }]} />)
+    const responsiveCss = document.querySelector('style[data-screen-grid-responsive="arcane-guild"]')?.textContent ?? ''
 
     expect(responsiveCss).toContain('height:auto !important;max-height:none !important;')
     expect(responsiveCss).toContain('overflow:visible !important}')

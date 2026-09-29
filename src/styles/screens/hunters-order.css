@@ -59,3 +59,48 @@
 @media (max-width: 520px) { .bestiary-hunter-data dl { grid-template-columns: 1fr; } }
 
 .hunter-upgrade-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .hunter-upgrade-card { display: grid; align-content: start; justify-items: start; gap: 10px; } .hunter-upgrade-card p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-sm); line-height: 1.5; } .hunter-upgrade-rank { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; width: 100%; padding: 8px 10px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-panel-strong); font-size: var(--text-xs); } .hunter-upgrade-rank span { color: var(--ui-text-muted); } .hunter-upgrade-rank strong { color: var(--ui-text); } .hunter-offer-actions { display: grid; width: 100%; gap: 6px; margin-top: 5px; } .hunter-offer-actions > * { width: 100%; } @media (max-width: 650px) { .hunter-upgrade-grid { grid-template-columns: 1fr; } }
+
+.hunters-order-header { margin-bottom: 4px; }
+.hunters-order-header h1 { margin-bottom: 4px; }
+.hunter-tab-rail { margin-top: 6px; margin-bottom: 12px; }
+.hunter-contract-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 290px); align-items: start; gap: 16px; min-width: 0; }
+.hunter-contract-main, .hunter-contract-sidebar { display: grid; align-content: start; gap: 14px; min-width: 0; }
+.hunter-board-heading h2 { margin-top: 4px; }
+.hunter-active-contract { align-items: start; }
+.hunter-contract-copy { display: grid; gap: 4px; }
+.hunter-contract-copy .button { justify-self: start; margin-top: 7px; }
+.hunter-offer-heading { padding-top: 0; }
+.hunter-offer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hunter-offer-card { padding: 14px; gap: 7px; }
+.hunter-offer-card p { min-height: 2.8em; }
+.hunter-empty-state { max-width: none; width: 100%; align-content: start; }
+.hunter-empty-state p { max-width: 560px; }
+.hunter-empty-count { color: var(--gold); font: var(--text-micro) var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+.hunter-order-resource, .hunter-block-summary, .hunter-contract-guidance { display: grid; align-content: start; gap: 11px; min-width: 0; }
+.hunter-mark-balance { color: var(--gold); font: 600 var(--text-xl) var(--font-mono); }
+.hunter-refresh-cost, .hunter-block-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 9px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-xs); }
+.hunter-refresh-cost strong, .hunter-block-heading > div > strong { color: var(--ui-text); }
+.hunter-order-resource > .button { width: 100%; }
+.hunter-disabled-note { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.hunter-block-heading { align-items: center; padding-top: 0; border-top: 0; }
+.hunter-block-heading > div { display: grid; gap: 4px; }
+.hunter-block-heading .button { flex: 0 0 auto; }
+.hunter-block-preview { display: grid; gap: 5px; margin: 0; padding: 0 0 0 16px; color: var(--ui-text-soft); font-size: var(--text-xs); }
+.hunter-block-list { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--ui-border); }
+.hunter-block-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 4px 0; color: var(--ui-text-soft); font-size: var(--text-xs); }
+.hunter-block-row > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hunter-block-row .button { flex: 0 0 auto; }
+.hunter-block-summary > .button { justify-self: start; }
+.hunter-contract-guidance p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
+@media (max-width: 900px) {
+  .hunter-contract-layout { grid-template-columns: minmax(0, 1fr); }
+  .hunter-contract-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hunter-contract-guidance { grid-column: 1 / -1; }
+}
+@media (max-width: 650px) {
+  .hunter-contract-sidebar, .hunter-offer-grid { grid-template-columns: minmax(0, 1fr); }
+  .hunter-active-contract { grid-template-columns: 38px minmax(0, 1fr); }
+  .hunter-active-contract > .game-tooltip-trigger:last-child { grid-column: 2; justify-self: start; }
+  .hunter-contract-copy .button { width: 100%; }
+  .hunter-block-heading { align-items: flex-start; flex-direction: column; }
+}

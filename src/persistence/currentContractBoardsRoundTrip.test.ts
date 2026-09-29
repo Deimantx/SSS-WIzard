@@ -6,7 +6,9 @@ import { createInitialState } from '../store/initialState'
 import type { GameState } from '../game/types'
 import { serializeGameState } from './profileSaveManager'
 import { getAuthoritativeSaveSnapshot, validateSerializedSave } from './saveIntegrity'
-import { migrateSave } from './migrations'
+import { loadPersistedGameStateV1 } from './v2/saveLoader'
+import { parsePersistedGameStateV1 } from './v2/saveSchema'
+import { persistedGameStatesEqual } from './v2/saveRoundTrip'
 
 const unlockedHunterState = () => {
   const state = createInitialState()
@@ -130,22 +132,16 @@ describe('current Hunter and Guild board save integrity', () => {
     expect(result.state?.progress.arcaneGuild.rngState).toBe(state.progress.arcaneGuild.rngState)
   })
 
-  it('backfills only a missing board from a historical save, never a present empty current board', () => {
+  it('preserves an empty board as saved and does not generate contracts during load', () => {
     const current = unlockedHunterState()
     const currentRaw = serializeGameState(current) as unknown as Record<string, any>
     currentRaw.progress.huntersOrder.availableContracts = []
-    const migratedCurrent = migrateSave(currentRaw)
-    expect(migratedCurrent.progress.huntersOrder.availableContracts).toEqual([])
-    expect(migratedCurrent.progress.huntersOrder.rngState).toBe(current.progress.huntersOrder.rngState)
-
-    const historical = unlockedHunterState()
-    const historicalRaw = { ...serializeGameState(historical), saveVersion: 52 } as unknown as Record<string, any>
-    delete historicalRaw.progress.huntersOrder.availableContracts
-    const migratedHistorical = migrateSave(historicalRaw)
-    expect(migratedHistorical.progress.huntersOrder.availableContracts.length).toBeGreaterThan(0)
+    const loaded = loadPersistedGameStateV1(parsePersistedGameStateV1(JSON.stringify(currentRaw)))
+    expect(loaded.progress.huntersOrder.availableContracts).toEqual([])
+    expect(loaded.progress.huntersOrder.rngState).toBe(current.progress.huntersOrder.rngState)
   })
 
-  it('is idempotent for authoritative Hunter and Guild data in current saves', () => {
+  it('is identity-safe for Hunter and Guild state after save, load, and save', () => {
     const state = unlockedHunterState()
     state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
     state.progress.guildUnlocked = true
@@ -154,9 +150,10 @@ describe('current Hunter and Guild board save integrity', () => {
     state.progress.discoveredItems = getArcaneRegistryEntries().map(({ item }) => item.id)
     state.progress.guildSkillNodeRanks['major-favored-contractor'] = 1
     state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state)
-    const once = migrateSave(serializeGameState(state))
-    const twice = migrateSave(once)
-
-    expect(getAuthoritativeSaveSnapshot(twice)).toEqual(getAuthoritativeSaveSnapshot(once))
+    const first = serializeGameState(state)
+    const loaded = loadPersistedGameStateV1(parsePersistedGameStateV1(JSON.stringify(first)))
+    const second = serializeGameState(loaded, first.savedAt)
+    expect(persistedGameStatesEqual(second, first)).toBe(true)
+    expect(getAuthoritativeSaveSnapshot(loaded)).toEqual(getAuthoritativeSaveSnapshot(state))
   })
 })

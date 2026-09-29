@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
+import { validateStoredSave } from './saveIntegrity'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
@@ -54,8 +55,9 @@ describe('save navigation migration', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.ui.lastEnteredCombatDungeonId = 'howling-den'
-    const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
-    expect(loaded.ui.lastEnteredCombatDungeonId).toBe('howling-den')
+    const loaded = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
+    expect(loaded.ui.screen).toBe('home')
+    expect(loaded.ui.lastEnteredCombatDungeonId).toBeUndefined()
 
     const malformed = migrateSave({ ...state, saveVersion: 31, ui: { screen: 'combat', lastEnteredCombatDungeonId: 'not-a-dungeon' } } as any)
     expect(malformed.ui.lastEnteredCombatDungeonId).toBeUndefined()
@@ -451,15 +453,15 @@ describe('save navigation migration', () => {
     state.activities.research.slots['research-1'] = { itemId: 'fire-fragment', targetSchoolId: 'fire', requestedQuantity: 30, remainingQuantity: 30, progressMs: 0, echoesAssigned: 1, status: 'running' }
     state.activities.transmutation.jobs['fire-fragment'] = { echoesAssigned: 1, progressMs: 0 }
 
-    const migrated = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    const migrated = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
 
     expect(migrated.inventory).toMatchObject({ 'fire-fragment': 123, 'water-fragment': 47, 'life-essence': 99 })
     expect(migrated.schools).toEqual(state.schools)
     expect(migrated.currencies).toEqual({ gold: 321 })
     expect(migrated.equipment.weapon).toBe('tideglass-wand')
     expect(migrated.progress.channeling.pillars['leyline-conduit']).toEqual({ rank: 1, level: 3 })
-    expect(migrated.activities.research.slots['research-1']).toEqual({ ...state.activities.research.slots['research-1'], acolyteAssigned: true })
-    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual({ acolyteAssigned: true, echoesAssigned: 1, progressMs: 0 })
+    expect(migrated.activities.research.slots['research-1']).toEqual(state.activities.research.slots['research-1'])
+    expect(migrated.activities.transmutation.jobs['fire-fragment']).toEqual(state.activities.transmutation.jobs['fire-fragment'])
   })
 
   it('round-trips V18 committed Basic, Skill, and switched-Pattern timing state', () => {
@@ -476,7 +478,7 @@ describe('save navigation migration', () => {
     basic.combat.enemyCurrentActionPatternId = 'default'
     basic.combat.enemyActionDurationMs = 2_800
     basic.combat.enemyActionTimerMs = 1_743
-    const basicLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(basic))))
+    const basicLoaded = validateStoredSave(JSON.stringify(serializeGameState(basic))).state!
     expect(basicLoaded.combat).toMatchObject({ enemyActionPatternId: 'default', enemyNextActionIndex: 2, enemyCurrentStepId: 'basic-2', enemyCurrentActionId: null, enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_800, enemyActionTimerMs: 1_743 })
 
     const skill = createInitialState()
@@ -492,7 +494,7 @@ describe('save navigation migration', () => {
     skill.combat.enemyCurrentActionPatternId = 'default'
     skill.combat.enemyActionDurationMs = 2_000
     skill.combat.enemyActionTimerMs = 901
-    const skillLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(skill))))
+    const skillLoaded = validateStoredSave(JSON.stringify(serializeGameState(skill))).state!
     expect(skillLoaded.combat).toMatchObject({ enemyCurrentStepId: 'arc-spark-step', enemyCurrentActionId: 'arc-spark', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_000, enemyActionTimerMs: 901 })
 
     const switched = createInitialState()
@@ -508,8 +510,8 @@ describe('save navigation migration', () => {
     switched.combat.enemyCurrentActionPatternId = 'default'
     switched.combat.enemyActionDurationMs = 1_800
     switched.combat.enemyActionTimerMs = 901
-    const switchedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(switched))))
-    expect(switchedLoaded.combat).toMatchObject({ enemyActionPatternId: 'corrupted', enemyNextActionIndex: 4, enemyCurrentStepId: 'crushing-maul-step', enemyCurrentActionId: 'crushing-maul', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 2_200, enemyActionTimerMs: 901 })
+    const switchedLoaded = validateStoredSave(JSON.stringify(serializeGameState(switched))).state!
+    expect(switchedLoaded.combat).toMatchObject({ enemyActionPatternId: 'corrupted', enemyNextActionIndex: 4, enemyCurrentStepId: 'crushing-maul-step', enemyCurrentActionId: 'crushing-maul', enemyCurrentActionPatternId: 'default', enemyActionDurationMs: 1_800, enemyActionTimerMs: 901 })
   })
 
   it('clamps malformed current action work to the shared safety cap', () => {
@@ -760,7 +762,7 @@ describe('v42 power-based Threat migration', () => {
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.threatCleared = 3720
-    const loaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    const loaded = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(loaded.saveVersion).toBe(SAVE_VERSION)
     expect(loaded.combat.threatCleared).toBe(3720)
   })
@@ -1023,7 +1025,7 @@ describe('v45 Black Sigil Reach migration', () => {
     targeted.combat.threatCleared = 80000
     targeted.worldTier.current = 4
     targeted.worldTier.highestUnlocked = 4
-    const targetedLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(targeted))))
+    const targetedLoaded = validateStoredSave(JSON.stringify(serializeGameState(targeted))).state!
     expect(targetedLoaded.saveVersion).toBe(SAVE_VERSION)
     expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, enemyWorldTier: 4, threatCleared: 80000 })
 
@@ -1034,7 +1036,7 @@ describe('v45 Black Sigil Reach migration', () => {
     sequence.combat.enemyId = 'black-gatekeeper'
     sequence.combat.inBossFight = true
     sequence.combat.enemyHp = 12000
-    const sequenceLoaded = migrateSave(JSON.parse(JSON.stringify(serializeGameState(sequence))))
+    const sequenceLoaded = validateStoredSave(JSON.stringify(serializeGameState(sequence))).state!
     expect(sequenceLoaded.saveVersion).toBe(SAVE_VERSION)
     expect(sequenceLoaded.combat).toMatchObject({ dungeonId: 'black-gate', dungeonSequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
   })
@@ -1075,7 +1077,7 @@ describe('targeted combat migration', () => {
 
     expect(validation.ok).toBe(true)
     expect(validation.state?.combat.targetEnemyId).toBe('tempest-stag')
-    expect(getCriticalSaveSnapshot(validation.state!).targetEnemyId).toBe('tempest-stag')
+    expect(getCriticalSaveSnapshot(validation.state!).combat.targetEnemyId).toBe('tempest-stag')
   })
 })
 

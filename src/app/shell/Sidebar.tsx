@@ -23,7 +23,6 @@ export function Sidebar({ screen, setScreen, preferences, toggleGroup, activePro
   const attention = useProfileAttention(profileKey)
   const storyProgress = useGameStore((state) => state.storyProgress)
   const progress = useGameStore((state) => state.progress)
-  const saveBlocked = saveDiagnostics.health === 'protected'
   const saveError = saveDiagnostics.health === 'error'
   return <aside className="sidebar">
     <div className="brand"><div className="brand-mark">SSS</div><div><strong>SSS Wizard</strong><span>Arcane incremental RPG</span></div></div>
@@ -37,6 +36,6 @@ export function Sidebar({ screen, setScreen, preferences, toggleGroup, activePro
         </section>
       })}
     </nav>
-    <div className="sidebar-foot"><div className={`save-dot ${saveBlocked ? 'is-blocked' : saveError ? 'is-error' : ''}`}><span /> {saveBlocked ? 'Autosave: BLOCKED' : saveError ? 'Autosave: ERROR' : 'Autosave · 30s'}</div><div className="version">Profile {activeProfile?.slotNumber ?? '-'} · {activeProfile?.name ?? 'No profile'}</div>{profileSwitchError && <small className="profile-switch-error" role="alert">{profileSwitchError}</small>}<GameTooltip content="Return to Profile Selection"><button className="profile-switch-button" onClick={switchProfile}>Switch Profile</button></GameTooltip></div>
+    <div className="sidebar-foot"><div className={`save-dot ${saveError ? 'is-error' : ''}`}><span /> {saveError ? 'Autosave: ERROR' : 'Autosave · 30s'}</div><div className="version">Profile {activeProfile?.slotNumber ?? '-'} · {activeProfile?.name ?? 'No profile'}</div>{profileSwitchError && <small className="profile-switch-error" role="alert">{profileSwitchError}</small>}<GameTooltip content="Return to Profile Selection"><button className="profile-switch-button" onClick={switchProfile}>Switch Profile</button></GameTooltip></div>
   </aside>
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
+import { validateStoredSave } from './saveIntegrity'
 
 describe('item discovery save migration', () => {
   it('seeds V10 archives from owned and equipped items without inventing dynamic rewards', () => {
@@ -25,7 +26,7 @@ describe('item discovery save migration', () => {
     const state = createInitialState()
     state.progress.discoveredItems = ['fire-fragment']
     state.inventory['water-fragment'] = 7
-    const migrated = migrateSave(JSON.parse(JSON.stringify(serializeGameState(state))))
+    const migrated = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(migrated.progress.discoveredItems).toEqual(['fire-fragment'])
     expect(migrated.inventory['water-fragment']).toBe(7)
   })

@@ -44,7 +44,7 @@ describe('authoritative save validation', () => {
     expect(result.state?.guardians.progress['fire-guardian']).toEqual({ level: 3, rank: 2 })
   })
 
-  it('reports the exact authoritative path when migration changes owned data', () => {
+  it('reports the exact authoritative path when a saved value differs from its source snapshot', () => {
     const state = createInitialState()
     const encoded = JSON.stringify({ ...serializeGameState(state), sigils: { ...state.sigils, dust: 9 } })
     const result = validateSerializedSave(encoded, state)
@@ -54,17 +54,17 @@ describe('authoritative save validation', () => {
     expect(result.report.changes.some((change) => change.path === 'sigils.dust')).toBe(true)
   })
 
-  it('does not treat chronicle-only normalization as an authoritative rollback', () => {
+  it('preserves Chronicle progression as authoritative V2 data', () => {
     const expected = createInitialState()
     const actual = createInitialState()
     actual.progress.chronicle.completedObjectiveIds = ['m1-choose-school']
     const expectedSnapshot = getAuthoritativeSaveSnapshot(expected)
     const actualSnapshot = getAuthoritativeSaveSnapshot(actual)
 
-    expect(expectedSnapshot).toEqual(actualSnapshot)
+    expect(expectedSnapshot).not.toEqual(actualSnapshot)
     const result = validateSerializedSave(JSON.stringify(serializeGameState(actual)), expected)
-    expect(result.ok).toBe(true)
-    expect(result.report.classification).toBe('DERIVED_ONLY')
-    expect(result.report.changes[0]?.path).toBe('chronicle.completedObjectiveIds.0')
+    expect(result.ok).toBe(false)
+    expect(result.report.classification).toBe('AUTHORITATIVE_CHANGE')
+    expect(result.report.changes[0]?.path).toBe('progress.chronicle.completedObjectiveIds.0')
   })
 })

@@ -2,7 +2,7 @@ import { Button, Card, Status } from '../../components/ui'
 import { CHANNELING_DISCOVERIES, MANA_PILLAR_IDS, MANA_PILLARS } from '../../game/content/channeling'
 import { formatDuration, formatNumber } from '../../game/content/presentation/balanceFormatters'
 import { getArcaneFluxCapacityBreakdown, getArcaneFluxProductionBreakdown } from '../../game/systems/channeling/channelingRuntime'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperChanneling() {

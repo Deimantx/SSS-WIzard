@@ -5,7 +5,7 @@ import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked } from '../../../game/conten
 import { MONSTERS } from '../../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../../game/content/world-navigation'
 import type { DungeonId } from '../../../game/types'
-import { useGameStore } from '../../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import { NumberField, Summary } from '../DeveloperTabPrimitives'
 import { resolveBossThreatRequirement } from '../../../game/systems/combat/combatThreat'
 import { formatNumber } from '../../../game/utils'

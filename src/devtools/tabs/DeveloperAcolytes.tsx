@@ -2,7 +2,7 @@ import { Button, Card, Status } from '../../components/ui'
 import { getAcolyteCapacityBreakdown } from '../../game/systems/acolytes/acolyteCapacity'
 import { getAcolyteAssignments, selectFreeAcolytes, selectUsedAcolytes } from '../../game/systems/acolytes/acolyteAssignments'
 import { getArcaneFluxCapacityBreakdown, getArcaneFluxProductionPerSecond } from '../../game/systems/channeling/channelingRuntime'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperAcolytes() {

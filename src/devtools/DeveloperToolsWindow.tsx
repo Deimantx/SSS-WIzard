@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { Bug, Check, Command, PanelRight, RotateCcw, Search, X } from 'lucide-react'
 import { Button, GameTooltip, Status } from '../components/ui'
-import { useGameStore } from '../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from './developerSandbox'
 import { clampDeveloperToolsToViewport, closeDeveloperTools, dockDeveloperTools, resetDeveloperToolsWindow, setDeveloperToolsDockedPosition, setDeveloperToolsGeometry, setDeveloperToolsTab, setDeveloperWorkspace, useDeveloperToolsStore, workspaceDeveloperTools } from './developerToolsStore'
 import { DeveloperTab } from './DeveloperToolTabs'
 import { getDeveloperWorkspaceTools, searchDeveloperTools, DEVELOPER_WORKSPACE_REGISTRY } from './developerToolRegistry'
 import { getActiveDebugOverrides, type ActiveDebugOverride } from './debugOverridePresentation'
+import { restoreAndExitDeveloperSandbox } from './developerSandbox'
 
 type Interaction = { pointerId: number; startX: number; startY: number; geometry: { x: number; y: number; width: number; height: number } }
 
@@ -19,6 +20,12 @@ export function DeveloperToolsWindow() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const interaction = useRef<Interaction | null>(null)
+
+  useEffect(() => {
+    if (import.meta.env.DEV && !session.sandbox.active && getActiveDebugOverrides(debug).length > 0) {
+      console.error('[SSS Wizard] Gameplay debug overrides are active outside Developer Sandbox.')
+    }
+  }, [debug, session.sandbox.active])
 
   useEffect(() => {
     const onResize = () => clampDeveloperToolsToViewport()
@@ -106,8 +113,9 @@ export function DeveloperToolsWindow() {
     <section className={`developer-tools-window ${workspace ? 'workspace' : 'docked'}`} style={windowStyle} role="dialog" aria-modal={workspace} aria-label="Developer Tools">
       <header className="developer-tools-header" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endInteraction} onPointerCancel={endInteraction}>
         <div className="developer-tools-title"><div className="eyebrow"><Bug size={13} /> {workspaceDefinition.eyebrow} / DEVELOPER WORKSPACE</div><h2>{workspaceDefinition.label}</h2></div>
-        <div className="developer-tools-header-status">{activeOverrides.length > 0 && <GameTooltip content={`${activeOverrides.length} active debug override${activeOverrides.length === 1 ? '' : 's'}`}><Status tone="warning">{`${activeOverrides.length} ACTIVE OVERRIDE${activeOverrides.length === 1 ? '' : 'S'}`}</Status></GameTooltip>}{copied && <Status tone={copied === 'Clipboard unavailable' ? 'warning' : 'success'}>{copied === 'Clipboard unavailable' ? copied : <><Check size={13} /> {copied} copied</>}</Status>}</div>
+        <div className="developer-tools-header-status">{session.sandbox.active && <Status tone="warning" role="status">SANDBOX ACTIVE · AUTOSAVE PAUSED</Status>}{activeOverrides.length > 0 && <GameTooltip content={`${activeOverrides.length} active debug override${activeOverrides.length === 1 ? '' : 's'}`}><Status tone="warning">{`${activeOverrides.length} ACTIVE OVERRIDE${activeOverrides.length === 1 ? '' : 'S'}`}</Status></GameTooltip>}{copied && <Status tone={copied === 'Clipboard unavailable' ? 'warning' : 'success'}>{copied === 'Clipboard unavailable' ? copied : <><Check size={13} /> {copied} copied</>}</Status>}</div>
         <div className="developer-tools-header-actions">
+          {session.sandbox.active && <GameTooltip content="Restore the captured profile state and resume profile saving."><Button variant="primary" className="developer-sandbox-exit" onClick={restoreAndExitDeveloperSandbox}>RESTORE &amp; EXIT</Button></GameTooltip>}
           {!workspace && <GameTooltip content="Reset docked window position and size"><button className="icon-button" onClick={resetDeveloperToolsWindow} aria-label="Reset Developer Tools window position and size"><RotateCcw size={15} /></button></GameTooltip>}
           <GameTooltip content="Clear all debug overrides"><Button variant="ghost" className="developer-clear-all-button" onClick={resetDebug} disabled={activeOverrides.length === 0} ariaLabel="Clear all debug overrides"><span>CLEAR ALL</span></Button></GameTooltip>
           <GameTooltip content="Search registered tools and tester surfaces"><button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Open Developer command palette"><Search size={16} /></button></GameTooltip>
@@ -115,7 +123,7 @@ export function DeveloperToolsWindow() {
           <GameTooltip content="Close Developer Tools"><button className="icon-button" onClick={closeDeveloperTools} aria-label="Close Developer Tools"><X size={18} /></button></GameTooltip>
         </div>
       </header>
-      <div className="developer-context-bar"><span>WT{worldTier}</span><span>{combatActive ? 'COMBAT ACTIVE' : 'COMBAT IDLE'}</span><span>{activeOverrides.length ? `${activeOverrides.length} SESSION OVERRIDES` : 'SESSION CLEAN'}</span>{session.testSessionActive && <span className="developer-test-session-indicator">DEV TEST SESSION · AUTOSAVE PAUSED</span>}</div>
+      <div className="developer-context-bar"><span>WT{worldTier}</span><span>{combatActive ? 'COMBAT ACTIVE' : 'COMBAT IDLE'}</span><span>{activeOverrides.length ? `${activeOverrides.length} SESSION OVERRIDES` : 'SESSION CLEAN'}</span>{session.sandbox.active && <span className="developer-sandbox-indicator">DEV SANDBOX · AUTOSAVE PAUSED</span>}</div>
       {activeOverrides.length > 0 && <details className="developer-override-center"><summary><strong>{activeOverrides.length} SESSION OVERRIDES</strong><span>Inspect active runtime mutations</span></summary><div>{activeOverrides.map((override) => <span className="developer-override-entry" key={override.id}><span className={`developer-override-chip ${override.tone}`}>{override.label}</span><button type="button" className="developer-override-clear" onClick={() => clearOverride(override)}>CLEAR</button></span>)}<button type="button" className="developer-override-clear" onClick={resetDebug}>CLEAR ALL SESSION OVERRIDES</button></div></details>}
       <div className="developer-local-tabs" role="tablist" aria-label={`${workspaceDefinition.label} tools`}>{workspaceTools.map((tool) => <button key={tool.id} role="tab" aria-selected={session.activeTab === tool.id} className={session.activeTab === tool.id ? 'active' : ''} onClick={() => setDeveloperToolsTab(tool.id)}>{tool.label}</button>)}</div>
       <div className="developer-tools-body">

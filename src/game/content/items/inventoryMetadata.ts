@@ -51,7 +51,7 @@ export function getItemUses(itemId: ItemId): InventoryDestination[] {
     uses.push({ label: 'Leyline Pillars', destination: 'tower-channeling', detail: 'Permanent Tower progression' })
   }
   Object.values(GUILD_REQUESTS).forEach((request) => {
-    if (request.kind === 'donation' && request.itemId === itemId) uses.push({ label: request.name, destination: 'guild', detail: 'Guild request' })
+    if (request.kind === 'donation' && request.itemId === itemId) uses.push({ label: request.name, destination: 'arcane-guild', detail: 'Guild request' })
   })
   if (ITEMS[itemId].researchSchool) uses.push({ label: 'Research', destination: 'tower-research', detail: 'Arcane Crucible' })
   return uses

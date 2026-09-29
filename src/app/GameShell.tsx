@@ -38,6 +38,8 @@ import { isAllowedNativeDragTarget, isNativeInteractionTarget } from '../ui/game
 import { GameContextMenuProvider } from '../ui/context-menu/GameContextMenuProvider'
 import { StoryEventModal } from '../components/story/StoryEventModal'
 import { useUITuning } from '../ui/config/uiTuningResolver'
+import { ModalPortal, Button } from '../components/ui'
+import { restoreAndExitDeveloperSandbox } from '../devtools/developerSandbox'
 
 export function GameShell() {
   const screen = useGameStore((state) => state.ui.screen)
@@ -53,6 +55,7 @@ export function GameShell() {
   const profileSession = useProfileSession()
   const activeProfile = profileSession.activeProfileId ? profileSession.profiles.slots[profileSession.activeProfileId] : null
   const [profileSwitchError, setProfileSwitchError] = useState<string | null>(null)
+  const [sandboxSwitchOpen, setSandboxSwitchOpen] = useState(false)
   const [offlineBankOpen, setOfflineBankOpen] = useState(false)
   const [offlineResultsOpen, setOfflineResultsOpen] = useState(false)
   const lastOfflineBankReport = useGameStore((state) => state.lastOfflineBankReport)
@@ -87,9 +90,9 @@ export function GameShell() {
 
   useEffect(() => {
     const interval = window.setInterval(() => { if (document.hidden || hiddenRef.current) return; const now = performance.now(); const elapsed = now - lastFrame.current; lastFrame.current = now; tick(elapsed) }, 100)
-    const autosave = window.setInterval(() => { if (!getDeveloperToolsState().testSessionActive) saveGame('autosave') }, AUTOSAVE_INTERVAL_MS)
-    const visibility = () => { const transition = getLiveVisibilityTransition(document.hidden, performance.now(), lastFrame.current); hiddenRef.current = transition.hidden; lastFrame.current = transition.lastFrame; if (transition.shouldSaveSafetyAnchor && !getDeveloperToolsState().testSessionActive) saveGame('visibility') }
-    const pageHide = () => { if (!getDeveloperToolsState().testSessionActive) saveGame('visibility') }
+    const autosave = window.setInterval(() => { if (!getDeveloperToolsState().sandbox.active) saveGame('autosave') }, AUTOSAVE_INTERVAL_MS)
+    const visibility = () => { const transition = getLiveVisibilityTransition(document.hidden, performance.now(), lastFrame.current); hiddenRef.current = transition.hidden; lastFrame.current = transition.lastFrame; if (transition.shouldSaveSafetyAnchor && !getDeveloperToolsState().sandbox.active) saveGame('visibility') }
+    const pageHide = () => { if (!getDeveloperToolsState().sandbox.active) saveGame('visibility') }
     document.addEventListener('visibilitychange', visibility)
     window.addEventListener('pagehide', pageHide)
     return () => { window.clearInterval(interval); window.clearInterval(autosave); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', pageHide) }
@@ -101,7 +104,17 @@ export function GameShell() {
     setUiPreferences({ navigationGroups: { ...preferences.navigationGroups, [groupId]: !preferences.navigationGroups[groupId] } })
   }
   const openDevTools = () => { dismissGameTooltips(); setOfflineBankOpen(false); setOfflineResultsOpen(false); openDeveloperTools() }
-  const switchProfile = () => { const result = leaveToProfiles(); if (!result.ok) setProfileSwitchError(result.error) }
+  const switchProfile = () => {
+    if (getDeveloperToolsState().sandbox.active) { setProfileSwitchError(null); setSandboxSwitchOpen(true); return }
+    const result = leaveToProfiles()
+    if (!result.ok) setProfileSwitchError(result.error)
+  }
+  const restoreAndSwitchProfile = () => {
+    if (!restoreAndExitDeveloperSandbox()) { setProfileSwitchError('No Sandbox snapshot is available.'); setSandboxSwitchOpen(false); return }
+    const result = leaveToProfiles()
+    setSandboxSwitchOpen(false)
+    if (!result.ok) setProfileSwitchError(result.error)
+  }
 
   const ambient = getAmbientProfile(screen, appearance)
   const atmosphereOpacity = preferences.theme === 'light' ? 0.22 : 0.72
@@ -132,6 +145,7 @@ export function GameShell() {
     <GameFeelInteractionLayer />
     <GameFeelLayer />
     <DeveloperToolsWindow />
+    <ModalPortal open={sandboxSwitchOpen} onClose={() => setSandboxSwitchOpen(false)} ariaLabel="Developer Sandbox profile switch" backdropClassName="sandbox-switch-backdrop" surfaceClassName="sandbox-switch-dialog"><div className="sandbox-switch-content"><span className="eyebrow">PROFILE SWITCH</span><h2>Developer Sandbox is active</h2><p>Restore the captured profile state before switching profiles. Sandbox changes will be discarded.</p><div className="sandbox-switch-actions"><Button variant="primary" onClick={restoreAndSwitchProfile}>RESTORE &amp; SWITCH</Button><Button variant="ghost" onClick={() => setSandboxSwitchOpen(false)}>CANCEL</Button></div></div></ModalPortal>
     <OfflineBankResultsDialog report={lastOfflineBankReport} open={offlineResultsOpen} onClose={() => setOfflineResultsOpen(false)} onOpenInventory={() => { setOfflineResultsOpen(false); setScreen('inventory') }} />
     <div className="global-feedback-stack">
       <SaveProtectionNotice />

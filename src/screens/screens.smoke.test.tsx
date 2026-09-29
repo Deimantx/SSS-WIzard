@@ -5,6 +5,11 @@ import { ScreenErrorBoundary } from '../components/errors/ScreenErrorBoundary'
 import { GameShell } from '../app/GameShell'
 import { resetAllUiPreferences, setUiPreferences } from '../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../store/gameStore'
+import { createProfile, enterProfile } from '../profiles/profileController'
+import { getActiveProfileId } from '../profiles/profileSessionStore'
+import { loadProfileGame } from '../persistence/profileSaveManager'
+import { useDeveloperGameStore } from '../devtools/developerSandbox'
+import { getDeveloperToolsState } from '../devtools/developerToolsStore'
 
 vi.mock('../components/ArcaneAtmosphere', () => ({ ArcaneAtmosphere: () => null }))
 
@@ -39,6 +44,27 @@ describe('screen smoke coverage', () => {
     expect(screen.getAllByText('Undiscovered')).toHaveLength(6)
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: 'Arcane Discoveries' })).toBeNull()
+  })
+
+  it('requires restore before profile switching and completes Restore & Switch safely', async () => {
+    const user = userEvent.setup()
+    expect(createProfile('slot-1', 'Sandbox Switch').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useDeveloperGameStore.getState().addItem('fire-fragment', 19)
+    render(<GameShell />)
+
+    await user.click(screen.getByRole('button', { name: 'Switch Profile' }))
+    expect(screen.getByRole('dialog', { name: 'Developer Sandbox profile switch' })).toBeTruthy()
+    expect(getActiveProfileId()).toBe('slot-1')
+    await user.click(screen.getByRole('button', { name: 'CANCEL' }))
+    expect(getDeveloperToolsState().sandbox.active).toBe(true)
+    expect(getActiveProfileId()).toBe('slot-1')
+
+    await user.click(screen.getByRole('button', { name: 'Switch Profile' }))
+    await user.click(screen.getByRole('button', { name: 'RESTORE & SWITCH' }))
+    expect(getDeveloperToolsState().sandbox.active).toBe(false)
+    expect(getActiveProfileId()).toBeNull()
+    expect(loadProfileGame('slot-1').state?.inventory['fire-fragment'] ?? 0).toBe(0)
   })
 
   it('renders the five available Pillars and the item-only archive', async () => {

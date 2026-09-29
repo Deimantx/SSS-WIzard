@@ -5,7 +5,7 @@ import { MONSTERS, MONSTER_IDS } from '../../game/content/monsters'
 import { formatResonanceAmount, getNonZeroResonanceEntries } from '../../game/presentation/resonance/resonancePresentation'
 import { aggregateResonanceBundle, resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
 import type { MonsterId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { DeveloperSection } from '../components/DeveloperBrowser'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 

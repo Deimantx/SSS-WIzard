@@ -32,7 +32,7 @@ function CurrentScreen({ screen }: { screen: ScreenId }) {
   if (screen === 'equipment') return <EquipmentScreenV2 />
   if (screen === 'arcane-core') return <ArcaneCoreScreen />
   if (screen === 'crystals') return <CrystalsScreen />
-  if (screen === 'guild' || screen === 'arcane-guild') return <GuildScreen />
+  if (screen === 'arcane-guild') return <GuildScreen />
   if (screen === 'hunters-order') return <HuntersOrderScreen />
   if (screen === 'collection') return <GuildScreen />
   if (screen === 'bestiary') return <HuntersOrderScreen />

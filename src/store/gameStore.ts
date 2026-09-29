@@ -77,6 +77,7 @@ import {
   validateProfileCandidate,
 } from "../persistence/profileSaveManager";
 import { type SaveReason } from "../persistence/saveConstants";
+import { isDeveloperSandboxSavePaused } from "../persistence/developerSandboxSaveGuard";
 import { getActiveProfileId } from "../profiles/profileSessionStore";
 import { updateProfileMetadata } from "../profiles/profileStorage";
 import { createInitialState } from "./initialState";
@@ -882,6 +883,8 @@ export type GameStore = GameState &
 
 export interface SaveResult {
   ok: boolean;
+  skipped?: true;
+  reason?: 'developer-sandbox';
   error: string | null;
   kind?: import('../persistence/saveDiagnosticsStore').SaveFailureKind;
   detail?: string;
@@ -2575,6 +2578,7 @@ export const useGameStore = create<GameStore>()(
       return result;
     },
     reloadFromStorage: () => {
+      if (isDeveloperSandboxSavePaused()) return;
       const activeProfileId = getActiveProfileId();
       if (!activeProfileId) return;
       const loaded = loadProfileGame(activeProfileId);
@@ -2597,6 +2601,7 @@ export const useGameStore = create<GameStore>()(
       });
     },
     resetSave: () => {
+      if (isDeveloperSandboxSavePaused()) return;
       const fresh = createInitialState();
       useArcaneCorePresetStore.getState().reset();
       const activeProfileId = getActiveProfileId();
@@ -3212,8 +3217,11 @@ export const useGameStore = create<GameStore>()(
       }),
   advanceWithOfflineBank: async (durationMs, onProgress) => {
       const activeProfileId = getActiveProfileId();
-      const preflight = validateProfileCandidate(activeProfileId, get());
-      if (!preflight.ok) return { ok: false, error: `Offline Bank could not start because the profile cannot currently be saved. Open Save Diagnostics. ${preflight.error ?? ''}`.trim(), saveKind: preflight.kind };
+      const sandbox = isDeveloperSandboxSavePaused();
+      if (!sandbox) {
+        const preflight = validateProfileCandidate(activeProfileId, get());
+        if (!preflight.ok) return { ok: false, error: `Offline Bank could not start because the profile cannot currently be saved. Open Save Diagnostics. ${preflight.error ?? ''}`.trim(), saveKind: preflight.kind };
+      }
       const result = await runOfflineBankAdvance(
         durationMs,
         get,
@@ -3222,7 +3230,7 @@ export const useGameStore = create<GameStore>()(
             recipe(state);
             return state;
           }),
-        (candidate) => candidate ? saveGameCandidateAction(candidate, getActiveProfileId(), Date.now()) : undefined,
+        (candidate) => candidate && !sandbox ? saveGameCandidateAction(candidate, getActiveProfileId(), Date.now()) : undefined,
         (state, itemId, amount) =>
           recordRecentAcquisition(state as GameStore, itemId, amount),
         offlineBankAnalyticsObservers,

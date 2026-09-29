@@ -5,7 +5,7 @@ import { Button, Card, Status } from '../ui'
 
 interface Props { children: ReactNode; screen: ScreenId }
 interface State { error: Error | null; componentStack: string }
-const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', 'arcane-core': 'Arcane Core', crystals: 'Crystals', collection: 'Collection', bestiary: 'Bestiary', 'tower-channeling': 'Channeling', 'tower-acolytes': 'Acolytes', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', 'tower-artificing': 'Artificing', 'tower-summoning': 'Summoning', 'tower-dark-portal': 'Dark Portal', guild: 'Arcane Guild', 'arcane-guild': 'Arcane Guild', 'hunters-order': 'Hunter?s Order', settings: 'Settings / Info' }
+const SCREEN_LABELS: Record<ScreenId, string> = { home: 'Overview', combat: 'Combat', schools: 'Magic Schools', inventory: 'Inventory', equipment: 'Equipment', 'arcane-core': 'Arcane Core', crystals: 'Crystals', collection: 'Collection', bestiary: 'Bestiary', 'tower-channeling': 'Channeling', 'tower-acolytes': 'Acolytes', 'tower-research': 'Research', 'tower-transmutation': 'Transmutation', 'tower-artificing': 'Artificing', 'tower-summoning': 'Summoning', 'tower-dark-portal': 'Dark Portal', 'arcane-guild': 'Arcane Guild', 'hunters-order': 'Hunter?s Order', settings: 'Settings / Info' }
 
 export class ScreenErrorBoundary extends Component<Props, State> {
   state: State = { error: null, componentStack: '' }

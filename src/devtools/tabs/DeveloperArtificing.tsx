@@ -8,7 +8,7 @@ import { isRecipeUnlocked } from '../../game/content/recipes/recipeUnlocks'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import type { ArtificingRecipeId, EquipmentItemSlot } from '../../game/types'
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_ITEM_SLOTS } from '../../game/core/equipment'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
 
 type DevFilter = 'all' | 'unlocked' | 'locked' | 'craftable' | 'missing'

@@ -48,7 +48,7 @@
 .acolyte-resource.tight-resource .acolyte-head strong { color: var(--ui-warning); }
 .topbar-utility-cluster { display: flex; align-items: center; gap: 6px; min-width: max-content; height: 100%; padding-left: 12px; border-left: 1px solid var(--ui-border); }
 .topbar-utility-cluster > .game-tooltip-trigger { display: inline-flex; min-width: 0; }
-.topbar-test-session-indicator { flex: 0 0 auto; min-height: 30px; padding: 5px 7px; border: 1px solid color-mix(in srgb, var(--ui-warning) 58%, var(--ui-border)); border-radius: 6px; color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 12%, var(--ui-panel)); font: 700 9px var(--font-mono); letter-spacing: .04em; white-space: nowrap; }
+.topbar-sandbox-indicator { flex: 0 0 auto; min-height: 30px; padding: 5px 7px; border: 1px solid color-mix(in srgb, var(--ui-warning) 58%, var(--ui-border)); border-radius: 6px; color: var(--ui-warning); background: color-mix(in srgb, var(--ui-warning) 12%, var(--ui-panel)); font: 700 9px var(--font-mono); letter-spacing: .04em; white-space: nowrap; }
 .topbar-tool-button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-soft); background: var(--ui-panel); cursor: pointer; font: var(--text-xs) var(--font-sans); white-space: nowrap; }
 .topbar-tool-button:hover, .topbar-tool-button.active { border-color: var(--ui-accent); color: var(--ui-text); background: var(--ui-accent-soft); }
 .topbar-tool-button:disabled { opacity: .45; cursor: not-allowed; }
@@ -69,7 +69,7 @@
   .topbar-tool-button span:not(.offline-bank-label) { display: none; }
   .offline-bank-label { display: none; }
   .topbar-utility-cluster { gap: 5px; padding-left: 10px; }
-  .topbar-test-session-indicator { max-width: 145px; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-sandbox-indicator { max-width: 145px; overflow: hidden; text-overflow: ellipsis; }
 }
 @media (max-width: 1200px) and (min-width: 981px) {
   .topbar-resource-cluster { gap: 6px; }
@@ -101,7 +101,7 @@
   .topbar-tool-button { padding-inline: 7px; }
   .topbar-utility-cluster { flex: 1 1 100%; width: 100%; min-width: 0; height: 34px; justify-content: flex-start; gap: 5px; padding-left: 0; border-left: 0; }
   .topbar-utility-cluster .offline-bank-trigger { min-height: 30px; padding: 5px 6px; }
-  .topbar-test-session-indicator { max-width: 130px; min-height: 29px; padding: 4px 5px; font-size: 8px; }
+  .topbar-sandbox-indicator { max-width: 130px; min-height: 29px; padding: 4px 5px; font-size: 8px; }
   .topbar-utility-cluster .fps-counter { min-height: 30px; padding: 5px 6px; }
   .topbar-utility-cluster .topbar-tool-button, .topbar-settings-button { min-height: 30px; }
 }

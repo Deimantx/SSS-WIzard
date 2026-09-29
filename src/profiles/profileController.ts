@@ -1,6 +1,6 @@
 import { createInitialState } from '../store/initialState'
 import { useGameStore } from '../store/gameStore'
-import { closeDeveloperTools } from '../devtools/developerToolsStore'
+import { closeDeveloperTools, getDeveloperToolsState } from '../devtools/developerToolsStore'
 import { clearProfileGame, loadProfileGame, resetProfileGame } from '../persistence/profileSaveManager'
 import { setSaveDiagnosticsProfile } from '../persistence/saveDiagnosticsStore'
 import { createProfileMetadata, loadProfileRegistry, saveProfileRegistry } from './profileStorage'
@@ -14,6 +14,7 @@ const success = (): ProfileOperationResult => ({ ok: true, error: null })
 const failure = (error: string): ProfileOperationResult => ({ ok: false, error })
 
 export const enterProfile = (slotId: ProfileSlotId): ProfileOperationResult => {
+  if (getDeveloperToolsState().sandbox.active) return failure('Developer Sandbox is active. Restore the snapshot before switching profiles.')
   const metadata = loadProfileRegistry().slots[slotId]
   if (!metadata) return failure('That profile slot is empty.')
   if (metadata.unsupportedReason) return failure(metadata.unsupportedReason)
@@ -38,6 +39,7 @@ export const enterProfile = (slotId: ProfileSlotId): ProfileOperationResult => {
 }
 
 export const leaveToProfiles = (): ProfileOperationResult => {
+  if (getDeveloperToolsState().sandbox.active) return failure('Developer Sandbox is active. Restore the snapshot before switching profiles.')
   const active = getActiveProfileId()
   if (active) {
     const saved = useGameStore.getState().saveGame('profile-switch')
@@ -52,6 +54,7 @@ export const leaveToProfiles = (): ProfileOperationResult => {
 }
 
 export const createProfile = (slotId: ProfileSlotId, name: string): ProfileOperationResult => {
+  if (getDeveloperToolsState().sandbox.active) return failure('Developer Sandbox is active. Restore the snapshot before creating a profile.')
   const trimmed = name.trim()
   if (trimmed.length < 1 || trimmed.length > 24) return failure('Profile name must be 1-24 characters.')
   const registry = loadProfileRegistry()
@@ -72,6 +75,7 @@ export const createProfile = (slotId: ProfileSlotId, name: string): ProfileOpera
 }
 
 export const deleteProfile = (slotId: ProfileSlotId): ProfileOperationResult => {
+  if (getDeveloperToolsState().sandbox.active) return failure('Developer Sandbox is active. Restore the snapshot before deleting a profile.')
   if (getActiveProfileId() === slotId) return failure('Leave the active profile before deleting it.')
   const registry = loadProfileRegistry()
   if (!registry.slots[slotId]) return failure('That profile slot is already empty.')

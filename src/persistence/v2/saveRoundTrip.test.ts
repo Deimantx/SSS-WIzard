@@ -2,16 +2,16 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
 import { loadProfileGame, saveProfileGame, serializeGameState } from '../profileSaveManager'
 import { profileSaveBackupKey, profileSaveKey } from '../../profiles/profileKeys'
-import { setDeveloperTestSessionSavePaused } from '../developerTestSessionSaveGuard'
+import { setDeveloperSandboxSavePaused } from '../developerSandboxSaveGuard'
 import { validateV2RoundTrip } from './saveRoundTrip'
 import { validateStoredSave } from '../saveIntegrity'
 import { loadPersistedGameStateV1 } from './saveLoader'
-import { parsePersistedGameStateV1 } from './saveSchema'
+import { parsePersistedGameStateV1, validatePersistedGameStateV1 } from './saveSchema'
 
 describe('Save System V2', () => {
   beforeEach(() => {
     localStorage.clear()
-    setDeveloperTestSessionSavePaused(false)
+    setDeveloperSandboxSavePaused(false)
   })
 
   it('round-trips a new game without saving runtime UI, developer, or notification state', () => {
@@ -62,6 +62,31 @@ describe('Save System V2', () => {
     expect(roundTrip.state?.combat.playerBarrier).toBe(7)
   })
 
+  it('preserves the explicit deterministic combat checkpoint while excluding the event log', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.enemyId = 'forest-wisp'
+    state.combat.targetEnemyId = 'forest-wisp'
+    state.combat.enemyWorldTier = 1
+    state.combat.enemyInstanceSerial = 9
+    state.combat.enemyInstanceKey = 'enemy:9'
+    state.combat.enemyHp = 57
+    state.combat.enemyMaxHp = 100
+    state.combat.enemyActionTimerMs = 321
+    state.combat.combatRngState = 0x12345678
+    state.combat.arcaneCoreRuntime.elapsedMs = 4567
+    state.combat.log = ['runtime-only event']
+
+    const document = serializeGameState(state, 88)
+    const roundTrip = validateV2RoundTrip(JSON.stringify(document), state)
+    const expected = structuredClone(state.combat)
+    delete (expected as Partial<typeof expected>).log
+    expect(roundTrip.ok).toBe(true)
+    expect(document.combat).toEqual(expected)
+    expect(roundTrip.state?.combat.log).toEqual([])
+  })
+
   it('keeps empty contract boards empty and never consumes Hunter or Guild RNG while loading', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
@@ -109,10 +134,29 @@ describe('Save System V2', () => {
     expect(localStorage.getItem('sss-wizard-profile-slot-1-save-v1')).toBeNull()
   })
 
-  it('does not save while a Developer Test Session is active', () => {
-    setDeveloperTestSessionSavePaused(true)
-    expect(saveProfileGame('slot-1', createInitialState()).ok).toBe(false)
+  it('suppresses writes without reporting a save failure during Developer Sandbox', () => {
+    setDeveloperSandboxSavePaused(true)
+    expect(saveProfileGame('slot-1', createInitialState())).toMatchObject({ ok: true, skipped: true, reason: 'developer-sandbox' })
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBeNull()
+  })
+
+  it('rejects malformed nested Hunter, Guild, Combat, and activity records', () => {
+    const baseline = serializeGameState(createInitialState(), 77)
+    const malformed: Array<[string, (document: typeof baseline) => void]> = [
+      ['Hunter RNG', (document) => { (document.progress.huntersOrder as { rngState: number }).rngState = Number.NaN }],
+      ['Hunter rank', (document) => { (document.progress.huntersOrder as { rankId: string }).rankId = 'not-a-rank' }],
+      ['Guild node rank', (document) => { document.progress.guildSkillNodeRanks['mana-efficiency' as keyof typeof document.progress.guildSkillNodeRanks] = -1 }],
+      ['monster ID', (document) => { (document.combat as { enemyId: string | null }).enemyId = 'missing-monster' }],
+      ['dungeon ID', (document) => { (document.combat as { dungeonId: string | null }).dungeonId = 'missing-dungeon' }],
+      ['unapproved combat field', (document) => { (document.combat as Record<string, unknown>).runtimeDebugOverride = true }],
+      ['transmutation recipe ID', (document) => { (document.activities.transmutation.jobs as Record<string, unknown>)['missing-recipe'] = { acolyteAssigned: 1, progressMs: 1 } }],
+      ['research item ID', (document) => { document.activities.research.slots['research-1'] = { itemId: 'missing-item', schoolId: 'fire', progressMs: 0, acolyteAssigned: 0 } as never }],
+    ]
+    for (const [label, corrupt] of malformed) {
+      const document = structuredClone(baseline)
+      corrupt(document)
+      expect(validatePersistedGameStateV1(document), label).toBe(false)
+    }
   })
 })
 

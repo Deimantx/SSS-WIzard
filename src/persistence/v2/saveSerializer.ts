@@ -1,10 +1,13 @@
 import type { GameState } from '../../game/types'
-import type { PersistedGameStateV1 } from './persistedGameState'
+import { PERSISTED_COMBAT_FIELDS_V1, type PersistedCombatStateV1, type PersistedGameStateV1 } from './persistedGameState'
 import { validatePersistedGameStateV1 } from './saveSchema'
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSavedAt): PersistedGameStateV1 => {
+  const activities = clone(state.activities)
+  activities.research = { slots: clone(state.activities.research.slots) }
+  activities.transmutation = { jobs: clone(state.activities.transmutation.jobs) }
   const document: PersistedGameStateV1 = {
     schemaVersion: 1,
     savedAt,
@@ -28,15 +31,14 @@ export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSaved
     artifactProgress: clone(state.artifactProgress),
     sigils: clone(state.sigils),
     guardians: clone(state.guardians),
-    activities: clone(state.activities),
-    combat: clone(state.combat),
+    activities,
+    combat: Object.fromEntries(PERSISTED_COMBAT_FIELDS_V1.map((field) => [field, clone(state.combat[field])])) as PersistedCombatStateV1,
     progress: clone(state.progress),
     storyProgress: clone(state.storyProgress),
     darkPortal: clone(state.darkPortal),
     spellPresets: clone(state.spellPresets),
     offlineBankMs: state.offlineBankMs,
   }
-  delete (document.combat as Partial<GameState['combat']>).log
   if (!validatePersistedGameStateV1(document)) throw new Error('Runtime state could not be mapped to the V2 save schema.')
   return document
 }

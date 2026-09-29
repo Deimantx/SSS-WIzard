@@ -59,7 +59,7 @@ export function getItemNeeds(itemId: ItemId, state: ItemEconomyState): ItemNeed[
       if (request.kind !== 'donation' || request.itemId !== itemId) continue
       const progress = Math.max(0, state.progress.requestProgress[request.id] ?? 0)
       const remaining = Math.max(0, request.target - progress)
-      if (remaining > 0) needs.push(need(`guild:${request.id}`, request.name, 'Active Guild donation', 'guild', itemId, remaining, state, flow))
+      if (remaining > 0) needs.push(need(`guild:${request.id}`, request.name, 'Active Guild donation', 'arcane-guild', itemId, remaining, state, flow))
     }
   }
 

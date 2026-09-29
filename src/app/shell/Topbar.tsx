@@ -31,7 +31,7 @@ export function Topbar({ offlineBankOpen, onOfflineBankToggle, onDeveloperTools,
   const maxMana = useGameStore((state) => state.player.maxMana)
   const acolytes = useSampledGameReadModel((state) => ({ total: selectTotalAcolytes(state), used: selectUsedAcolytes(state) }))
   const offlineBankMs = useGameStore((state) => state.offlineBankMs)
-  const testSessionActive = useDeveloperToolsStore().testSessionActive
+  const sandboxActive = useDeveloperToolsStore().sandbox.active
   const flow = useSampledGameReadModel((state) => getManaFlowBreakdown(state))
   const freeAcolytes = Math.max(0, acolytes.total - acolytes.used)
   const acolytePercent = clampResourcePercent(acolytes.used, acolytes.total)
@@ -64,7 +64,7 @@ export function Topbar({ offlineBankOpen, onOfflineBankToggle, onDeveloperTools,
     <GameTooltip content={<TooltipContent title="Offline Bank" description={`${formatOfflineBank(offlineBankMs)} banked. Spend it to advance active systems.`} />}>
       <button className={`topbar-tool-button offline-bank-trigger ${offlineBankOpen ? 'active' : ''} ${offlineBankMs > 0 ? 'has-bank' : ''}`} onClick={onOfflineBankToggle} aria-label="Offline Bank"><Clock3 size={15} /><span className="offline-bank-label">OFFLINE</span><strong>{formatOfflineBank(offlineBankMs)}</strong></button>
     </GameTooltip>
-    {testSessionActive && <GameTooltip content={<TooltipContent title="Developer Test Session" description="Scenario fixture is active. Profile autosave, visibility save, and page-exit save are paused until you restore the snapshot." />}><Status tone="warning" className="topbar-test-session-indicator" role="status">DEV TEST · SAVE PAUSED</Status></GameTooltip>}
+    {sandboxActive && <GameTooltip content={<TooltipContent title="Developer Sandbox" description="Runtime changes are temporary. Profile autosave, visibility save, and page-exit save are paused until you restore the snapshot." />}><Status tone="warning" className="topbar-sandbox-indicator" role="status">DEV SANDBOX · SAVE PAUSED</Status></GameTooltip>}
     <FpsCounter />
     <GameTooltip content="Developer Tools">
       <button className="topbar-tool-button" onClick={onDeveloperTools} aria-label="Dev Tools"><Wrench size={15} /><span>Dev Tools</span></button>

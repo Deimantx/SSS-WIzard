@@ -50,6 +50,6 @@ function groupFor(use: ItemUseEntry): ItemUseGroup {
   if (use.destination === 'tower-transmutation') return 'transmutation'
   if (use.destination === 'tower-research') return 'research'
   if (use.destination === 'tower-channeling') return 'tower-progression'
-  if (use.destination === 'guild') return 'guild'
+  if (use.destination === 'arcane-guild') return 'guild'
   return 'other'
 }

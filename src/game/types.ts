@@ -7,7 +7,7 @@ export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
-export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'guild' | 'arcane-guild' | 'hunters-order' | 'settings'
+export type ScreenId = 'home' | 'combat' | 'schools' | 'inventory' | 'equipment' | 'arcane-core' | 'crystals' | 'collection' | 'bestiary' | 'tower-channeling' | 'tower-acolytes' | 'tower-research' | 'tower-transmutation' | 'tower-artificing' | 'tower-summoning' | 'tower-dark-portal' | 'arcane-guild' | 'hunters-order' | 'settings'
 export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-flux' | 'waiting-mana' | 'completed' | 'locked' | 'recovering'
 
 export type ChronicleChapterId = 'first-frontier' | 'shattered-frontier'

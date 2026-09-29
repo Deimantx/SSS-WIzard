@@ -15,7 +15,7 @@ import {
   type CombatFarmingBenchmarkResult,
 } from '../../../game/analysis/combat/combatFarmingBenchmark'
 import type { MonsterId, WorldTierId } from '../../../game/types'
-import { useGameStore } from '../../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import type { DeveloperCopy } from '../DeveloperCombat'
 import { Summary } from '../DeveloperTabPrimitives'
 

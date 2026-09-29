@@ -1,6 +1,6 @@
 import { Button } from '../../../components/ui'
 import { COMBAT_TIME_SCALES } from '../../../store/actions/debugActions'
-import { useGameStore } from '../../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 
 export function CombatTimeControls() {
   const debug = useGameStore((state) => state.debug)

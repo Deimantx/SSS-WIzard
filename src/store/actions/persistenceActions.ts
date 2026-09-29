@@ -4,7 +4,7 @@ import { pushNotification } from '../../game/engine'
 import { saveProfileGame } from '../../persistence/profileSaveManager'
 import { type SaveReason } from '../../persistence/saveConstants'
 import { updateProfileMetadata } from '../../profiles/profileStorage'
-import { isDeveloperTestSessionSavePaused } from '../../persistence/developerTestSessionSaveGuard'
+import { isDeveloperSandboxSavePaused } from '../../persistence/developerSandboxSaveGuard'
 
 /** Persistence-specific state mutations stay separate from storage adapters. */
 export const markSavedAt = (state: GameState, savedAt: number) => { state.lastSavedAt = savedAt }
@@ -13,7 +13,7 @@ export type PersistenceSaveResult = ReturnType<typeof saveProfileGame>
 let lastBackgroundSaveErrorAt = 0
 
 export const saveGameAction = (state: GameState, activeProfileId: ProfileSlotId | null, reason: SaveReason, savedAt: number): PersistenceSaveResult => {
-  if (isDeveloperTestSessionSavePaused()) return { ok: false, error: 'Profile saving is paused during Developer Test Session.' }
+  if (isDeveloperSandboxSavePaused()) return { ok: true, skipped: true, reason: 'developer-sandbox', error: null }
   if (!activeProfileId) return { ok: false, error: 'No active profile.' }
   const result = saveProfileGame(activeProfileId, state, { savedAt })
   if (result.ok) { markSavedAt(state, savedAt); lastBackgroundSaveErrorAt = 0 }
@@ -28,7 +28,7 @@ export const saveGameAction = (state: GameState, activeProfileId: ProfileSlotId 
 
 /** Saves a detached candidate. The caller owns the live-state commit and only applies it after this succeeds. */
 export const saveGameCandidateAction = (candidate: GameState, activeProfileId: ProfileSlotId | null, savedAt: number): PersistenceSaveResult => {
-  if (isDeveloperTestSessionSavePaused()) return { ok: false, error: 'Profile saving is paused during Developer Test Session.', kind: 'unknown', detail: 'Developer test session save interlock is active.' }
+  if (isDeveloperSandboxSavePaused()) return { ok: true, skipped: true, reason: 'developer-sandbox', error: null }
   if (!activeProfileId) return { ok: false, error: 'No active profile.', kind: 'storage-unavailable', detail: 'No active profile.' }
   const result = saveProfileGame(activeProfileId, candidate, { savedAt })
   if (result.ok) {

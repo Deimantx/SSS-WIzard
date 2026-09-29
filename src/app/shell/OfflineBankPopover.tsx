@@ -1,6 +1,7 @@
 import { Activity, Clock3, Hammer, Swords, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { GameTooltip } from '../../components/ui/tooltip/Tooltip'
+import { Status } from '../../components/ui'
 import { getActivityTelemetry } from '../../game/systems/activity/activityTelemetry'
 import { formatCompactDuration, formatOfflineBank } from '../../game/utils'
 import type { OfflineBankProgress } from '../../game/systems/offline-bank/offlineBankSimulation'
@@ -8,6 +9,7 @@ import { useGameStore } from '../../store/gameStore'
 import { OFFLINE_BANK_SPEND_PRESETS as presets } from '../../game/systems/offline-bank/offlineBankDuration'
 import { canAdvanceOfflineBank } from '../../game/systems/offline-bank/offlineBankSelectors'
 import { useSampledGameReadModel } from './sampledGameReadModel'
+import { useDeveloperToolsStore } from '../../devtools/developerToolsStore'
 
 type OfflineBankPopoverProps = { open: boolean; onClose: () => void; onViewLastResults: () => void }
 
@@ -29,6 +31,7 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
   const lastOfflineBankReport = useGameStore((state) => state.lastOfflineBankReport)
   const activities = useSampledGameReadModel((state) => getActivityTelemetry(state), 250)
   const canAdvance = useSampledGameReadModel((state) => canAdvanceOfflineBank(state), 250)
+  const sandboxActive = useDeveloperToolsStore().sandbox.active
 
   useEffect(() => {
     const updatePosition = () => {
@@ -71,11 +74,12 @@ function OpenOfflineBankPopover({ onClose, onViewLastResults }: Omit<OfflineBank
 
   return <div className="offline-bank-popover" style={position} ref={panelRef} role="dialog" aria-label="Offline Bank">
     <div className="offline-bank-header"><div><span className="offline-bank-eyebrow"><Clock3 size={14} /> OFFLINE BANK</span><p>Stored time can advance live systems</p></div><button className="offline-bank-close icon-button" onClick={onClose} aria-label="Close Offline Bank"><X size={15} /></button></div>
+    {sandboxActive && <div className="offline-sandbox-mode"><Status tone="warning">DEV SANDBOX · MEMORY-ONLY ADVANCE</Status><p>This simulated progress will not be written to the profile. Restore the snapshot to discard it.</p></div>}
     <div className="offline-bank-hero"><span className="offline-bank-section-label">BANKED TIME</span><strong>{formatOfflineBank(bankMs)}</strong><small>Available for simulation</small><div className="offline-bank-meter" aria-hidden="true"><i /></div></div>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ACTIVE SYSTEMS</span><small>{activities.length ? `${activities.length} running` : 'Standby'}</small></div>{activities.length ? <div className="offline-active-list">{activities.map((activity) => <div className={`offline-active-row accent-${activity.accent}`} key={activity.id}><span className="offline-activity-icon"><ActivityIcon activity={activity.label} /></span><span className="offline-active-copy"><strong>{activity.label}</strong><small>{activity.subtitle ?? activity.status}</small></span><em>{activity.status === 'running' ? 'ACTIVE' : activity.status.replace('-', ' ').toUpperCase()}</em></div>)}</div> : <div className="offline-empty-state"><strong>No active timed systems.</strong><span>Start an activity before spending Offline Bank time.</span></div>}</section>
     <section className="offline-bank-section"><div className="offline-bank-section-head"><span className="offline-bank-section-label">ADVANCE TIME</span><small>Spend deliberately</small></div>{!canAdvance && <div className="offline-no-work">Start an activity before spending Offline Bank time.</div>}<div className="offline-presets">{presets.map((preset) => { const disabled = advancing || bankMs < preset.ms || !canAdvance; const reason = !canAdvance ? 'Start an activity before spending Offline Bank time.' : 'Not enough Offline Bank time.'; const button = <button key={preset.ms} className="offline-preset" disabled={disabled} onClick={() => spend(preset.ms)} aria-label={`Advance ${preset.short}`}><strong>+{preset.label}</strong><small>Advance active systems</small></button>; return disabled && !advancing ? <GameTooltip key={preset.ms} block content={reason} accent="warning">{button}</GameTooltip> : button })}</div>{advancing && progress && <OfflineProgress progress={progress} durationMs={advancingDurationMs} />}</section>
     {error && <div className="offline-bank-error" role="alert"><strong>{errorKind === 'validation' ? 'OFFLINE ADVANCE BLOCKED BY SAVE VALIDATION' : 'OFFLINE ADVANCE NOT COMMITTED'}</strong><span>{error}</span><small>{errorKind === 'validation' ? 'No banked time or simulated progress was committed. Review Save Diagnostics before retrying.' : 'No Offline Bank time was spent. The live profile was rolled back.'}</small></div>}
-    <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span>{lastOfflineBankReport && <button type="button" className="offline-last-results" onClick={onViewLastResults}>View Last Results</button>}</div>
+    <div className="offline-bank-footnote"><span>Offline Bank is never spent automatically.</span><span>Simulation uses normal game rules.</span>{sandboxActive && <span>This simulated progress will not be written to the profile.</span>}{lastOfflineBankReport && <button type="button" className="offline-last-results" onClick={onViewLastResults}>View Last Results</button>}</div>
   </div>
 }
 

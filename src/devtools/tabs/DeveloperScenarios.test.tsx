@@ -2,24 +2,27 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
-import { discardTestSnapshot, hasTestSnapshot } from '../sessionTestSnapshot'
-import { getDeveloperToolsState, setDeveloperTestSessionActive } from '../developerToolsStore'
-import { createProfile, enterProfile } from '../../profiles/profileController'
+import { discardDeveloperSandboxSnapshot, hasDeveloperSandboxSnapshot, restoreAndExitDeveloperSandbox } from '../developerSandbox'
+import { clearDeveloperSandbox, getDeveloperToolsState } from '../developerToolsStore'
+import { createProfile, enterProfile, leaveToProfiles } from '../../profiles/profileController'
 import { getActiveProfileId, refreshProfiles, setActiveProfileId } from '../../profiles/profileSessionStore'
-import { loadProfileGame } from '../../persistence/profileSaveManager'
-import { profileSaveKey } from '../../profiles/profileKeys'
+import { loadProfileGame, validateProfileCandidate } from '../../persistence/profileSaveManager'
+import { profileSaveBackupKey, profileSaveKey } from '../../profiles/profileKeys'
 import { DeveloperScenarios } from './DeveloperV4SupportTabs'
+import { useDeveloperGameStore } from '../developerSandbox'
+import { getSaveDiagnostics } from '../../persistence/saveDiagnosticsStore'
 
 describe('Developer Scenario Lab', () => {
   beforeEach(() => {
-    setDeveloperTestSessionActive(false)
+    if (getDeveloperToolsState().sandbox.active) restoreAndExitDeveloperSandbox()
+    else discardDeveloperSandboxSnapshot()
+    clearDeveloperSandbox()
     setActiveProfileId(null)
-    discardTestSnapshot()
     useGameStore.setState(createInitialState())
     window.localStorage.clear()
     refreshProfiles()
   })
-  afterEach(() => setDeveloperTestSessionActive(false))
+  afterEach(() => { if (getDeveloperToolsState().sandbox.active) restoreAndExitDeveloperSandbox(); else discardDeveloperSandboxSnapshot() })
 
   it('registers the focused combat, progression, research, and production scenarios', () => {
     render(<DeveloperScenarios />)
@@ -29,6 +32,41 @@ describe('Developer Scenario Lab', () => {
       'Arcane Guild — Early Progression', 'Arcane Guild — Advancement Test',
       'Research Stress Test', 'Transmutation Stress Test',
     ]) expect(screen.getByRole('heading', { name: label })).toBeTruthy()
+  })
+
+  it('auto-enters Sandbox before a wrapped gameplay action mutates the runtime', () => {
+    useDeveloperGameStore.getState().addItem('fire-fragment', 100)
+    expect(getDeveloperToolsState().sandbox.active).toBe(true)
+    expect(useGameStore.getState().inventory['fire-fragment']).toBe(100)
+  })
+
+  it('auto-sandboxes and restores Player Stat Lab, Barrier, and Hunter progression mutations', () => {
+    const originalHunter = structuredClone(useGameStore.getState().progress.huntersOrder)
+    const dev = useDeveloperGameStore.getState()
+    dev.applyDebugPlayerStatPreset('spell-power')
+    expect(getDeveloperToolsState().sandbox.active).toBe(true)
+    expect(useGameStore.getState().debug.playerStats.spellPowerFlat).toBe(500)
+    dev.setPlayerBarrierForDebug(100)
+    expect(useGameStore.getState().combat.playerBarrier).toBe(100)
+    expect(restoreAndExitDeveloperSandbox()).toBe(true)
+    expect(useGameStore.getState().debug.playerStats.spellPowerFlat).toBe(0)
+    expect(useGameStore.getState().combat.playerBarrier).toBe(0)
+
+    useDeveloperGameStore.getState().debugSetHunterRank('master-hunter')
+    expect(getDeveloperToolsState().sandbox.active).toBe(true)
+    expect(useGameStore.getState().progress.huntersOrder.rankId).toBe('master-hunter')
+    expect(restoreAndExitDeveloperSandbox()).toBe(true)
+    expect(useGameStore.getState().progress.huntersOrder).toEqual(originalHunter)
+  })
+
+  it('blocks profile entry and leaving while test runtime is active', () => {
+    expect(createProfile('slot-1', 'Switch Guard').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    useDeveloperGameStore.getState().addItem('fire-fragment', 12)
+    expect(leaveToProfiles()).toMatchObject({ ok: false })
+    expect(enterProfile('slot-1')).toMatchObject({ ok: false })
+    expect(getActiveProfileId()).toBe('slot-1')
+    expect(useGameStore.getState().inventory['fire-fragment']).toBe(12)
   })
 
   it('prepares accepted Hunter contracts through the authored generation and acceptance actions', () => {
@@ -78,16 +116,15 @@ describe('Developer Scenario Lab', () => {
     render(<DeveloperScenarios />)
     const buttonFor = (heading: string) => screen.getByRole('heading', { name: heading }).closest('article')!.querySelector('button')!
     fireEvent.click(buttonFor('Research Stress Test'))
-    expect(hasTestSnapshot()).toBe(true)
-    expect(getDeveloperToolsState().testSessionActive).toBe(true)
-    expect(screen.getByText(/DEV TEST SESSION/)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Discard snapshot' }).hasAttribute('disabled')).toBe(true)
+    expect(hasDeveloperSandboxSnapshot()).toBe(true)
+    expect(getDeveloperToolsState().sandbox.active).toBe(true)
+    expect(screen.getByText(/DEV SANDBOX ACTIVE/)).toBeTruthy()
     expect(useGameStore.getState().inventory['fire-fragment']).toBe(100)
-    expect(useGameStore.getState().saveGame('autosave').ok).toBe(false)
+    expect(useGameStore.getState().saveGame('autosave')).toMatchObject({ ok: true, skipped: true, reason: 'developer-sandbox' })
     expect(window.localStorage.getItem(profileSaveKey('slot-1'))).toBe(before)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot & end test session' }))
-    expect(getDeveloperToolsState().testSessionActive).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'RESTORE SNAPSHOT & EXIT SANDBOX' }))
+    expect(getDeveloperToolsState().sandbox.active).toBe(false)
     expect(useGameStore.getState().inventory['fire-fragment'] ?? 0).toBe(0)
     expect(useGameStore.getState().saveGame('manual').ok).toBe(true)
     const saved = loadProfileGame(getActiveProfileId()!).state!
@@ -95,22 +132,78 @@ describe('Developer Scenario Lab', () => {
     expect(Object.values(saved.activities.research.slots).filter(Boolean)).toHaveLength(0)
   })
 
-  it('captures, restores, and discards session-only data without writing a snapshot to storage', () => {
+  it('automatically captures and restores session-only data without writing a snapshot to storage', () => {
     render(<DeveloperScenarios />)
     const storageBefore = Object.keys(window.localStorage)
-    fireEvent.click(screen.getByRole('button', { name: 'Capture test snapshot' }))
-    expect(hasTestSnapshot()).toBe(true)
+    const buttonFor = (heading: string) => screen.getByRole('heading', { name: heading }).closest('article')!.querySelector('button')!
+    fireEvent.click(buttonFor('Fresh Start'))
+    expect(hasDeveloperSandboxSnapshot()).toBe(true)
     expect(Object.keys(window.localStorage)).toEqual(storageBefore)
 
     useGameStore.getState().setDebugPlayerStatValue('core.maxHealthFlat', 500)
     expect(useGameStore.getState().player.maxHealth).toBeGreaterThan(100)
-    fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot & end test session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'RESTORE SNAPSHOT & EXIT SANDBOX' }))
     expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(0)
     expect(useGameStore.getState().player.maxHealth).toBe(100)
-    expect(hasTestSnapshot()).toBe(true)
-    expect(getDeveloperToolsState().testSessionActive).toBe(false)
+    expect(hasDeveloperSandboxSnapshot()).toBe(false)
+    expect(getDeveloperToolsState().sandbox.active).toBe(false)
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Discard snapshot' }))
-    expect(hasTestSnapshot()).toBe(false)
+  it('runs Tank combat and Offline Bank in memory, then restores the clean profile', async () => {
+    expect(createProfile('slot-1', 'Tank Sandbox').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    const initialRuntime = useGameStore.getState()
+    const original = { health: initialRuntime.player.health, maxHealth: initialRuntime.player.maxHealth, offlineBankMs: initialRuntime.offlineBankMs }
+    const primaryBefore = window.localStorage.getItem(profileSaveKey('slot-1'))
+    const backupBefore = window.localStorage.getItem(profileSaveBackupKey('slot-1'))
+    const dev = useDeveloperGameStore.getState()
+    dev.applyDebugPlayerStatPreset('tank')
+    dev.setPlayer({ health: useGameStore.getState().player.maxHealth })
+    dev.spawnDebugEnemy('forest-wisp', 'whispering-woods')
+    dev.debugAddOfflineBank(60_000)
+    dev.setChannelingAcolytesDebug(1)
+
+    const boostedMax = useGameStore.getState().player.maxHealth
+    expect(getDeveloperToolsState().sandbox).toMatchObject({ active: true, snapshotPresent: true })
+    expect(boostedMax).toBeGreaterThanOrEqual(original.maxHealth + 500)
+    expect(useGameStore.getState().player.health).toBe(boostedMax)
+    expect(useGameStore.getState().combat.active).toBe(true)
+
+    const advanced = await useGameStore.getState().advanceWithOfflineBank(60_000)
+    expect(advanced.ok).toBe(true)
+    expect(useGameStore.getState().offlineBankMs).toBe(0)
+    expect(window.localStorage.getItem(profileSaveKey('slot-1'))).toBe(primaryBefore)
+    expect(window.localStorage.getItem(profileSaveBackupKey('slot-1'))).toBe(backupBefore)
+    expect(getSaveDiagnostics().health).toBe('healthy')
+    expect(getDeveloperToolsState().sandbox.snapshotPresent).toBe(true)
+
+    expect(restoreAndExitDeveloperSandbox()).toBe(true)
+    const restored = useGameStore.getState()
+    expect(restored.player.maxHealth).toBe(original.maxHealth)
+    expect(restored.player.health).toBe(original.health)
+    expect(restored.debug.playerStats.maxHealthFlat).toBe(0)
+    expect(restored.combat.active).toBe(false)
+    expect(restored.offlineBankMs).toBe(original.offlineBankMs)
+    expect(getDeveloperToolsState().sandbox.active).toBe(false)
+    expect(validateProfileCandidate('slot-1', restored).ok).toBe(true)
+    expect(restored.saveGame('manual').ok).toBe(true)
+  })
+
+  it('keeps normal Offline Bank advancement transactional and rotates the previous primary to backup', async () => {
+    expect(createProfile('slot-1', 'Normal Offline').ok).toBe(true)
+    expect(enterProfile('slot-1').ok).toBe(true)
+    const primaryBefore = window.localStorage.getItem(profileSaveKey('slot-1'))
+    useGameStore.setState((state) => {
+      state.activities.channeling.acolytesAssigned = 1
+      state.offlineBankMs = 300_000
+      return state
+    })
+
+    const result = await useGameStore.getState().advanceWithOfflineBank(300_000)
+    expect(result.ok).toBe(true)
+    expect(window.localStorage.getItem(profileSaveBackupKey('slot-1'))).toBe(primaryBefore)
+    expect(loadProfileGame('slot-1').state?.offlineBankMs).toBe(0)
+    expect(useGameStore.getState().offlineBankMs).toBe(0)
+    expect(getDeveloperToolsState().sandbox.active).toBe(false)
   })
 })

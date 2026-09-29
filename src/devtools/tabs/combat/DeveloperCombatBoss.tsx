@@ -7,7 +7,7 @@ import { getCurrentEnemyActionStep, getEnemyAction } from '../../../game/systems
 import { getCurrentEnemyActionTiming } from '../../../game/systems/combat/actionTiming'
 import { getMonsterTraits } from '../../../game/systems/combat/traitRuntime'
 import type { DungeonId } from '../../../game/types'
-import { useGameStore } from '../../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import { NumberField, Summary } from '../DeveloperTabPrimitives'
 
 export function DeveloperCombatBoss() {

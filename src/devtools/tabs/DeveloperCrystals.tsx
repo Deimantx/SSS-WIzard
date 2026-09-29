@@ -3,7 +3,7 @@ import { Button, Card, Status } from '../../components/ui'
 import { CRYSTAL_CACHE_ITEM_ID, CRYSTAL_VARIANT_IDS, getCrystalVariantName } from '../../game/content/crystals/crystals'
 import { isCrystalSystemUnlocked } from '../../game/systems/crystals/crystalRuntime'
 import type { CrystalVariantId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 export function DeveloperCrystals() {

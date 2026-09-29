@@ -4,7 +4,7 @@ import { formatDuration, formatNumber } from '../../game/content/presentation/ba
 import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { formatSpellRank, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells'
 import type { SchoolId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { NumberField } from './DeveloperTabPrimitives'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 

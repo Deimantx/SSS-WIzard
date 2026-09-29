@@ -9,7 +9,7 @@ import { getSigilEnhancementCap, resolveSigilStatsForInstance } from '../../game
 import { simulateSigilDrops, type SigilDropSimulationResult } from '../../game/systems/sigils/sigilDropSimulation'
 import type { SigilInstance, SigilSlot } from '../../game/types'
 import { formatSigilStatValue, getSigilSlotRoman } from '../../game/presentation/sigils/sigilEquipmentReadModel'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperSection } from '../components/DeveloperBrowser'
 import { Summary } from './DeveloperTabPrimitives'

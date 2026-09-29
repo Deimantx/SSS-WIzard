@@ -4,7 +4,7 @@ import { STATUS_DEFINITIONS, STATUS_ORDER } from '../../../game/content/statuses
 import { formatCombatEffect, formatCombatModifier, formatDuration, formatReadableId } from '../../../game/content/presentation/balanceFormatters'
 import { resolveCombatSourceLabel } from '../../../game/presentation/combat/combatSourcePresentation'
 import type { ActiveStatus, EquipmentPosition, ItemId, StatusId } from '../../../game/types'
-import { useGameStore } from '../../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import { DeveloperAdvancedSection } from '../../components/DeveloperBrowser'
 import { NumberField } from '../DeveloperTabPrimitives'
 

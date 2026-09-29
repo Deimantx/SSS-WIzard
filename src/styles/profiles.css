@@ -48,4 +48,11 @@
 .profile-field small { color: var(--ui-text-muted); font-size: var(--text-xs); }
 .profile-modal-note { display: flex; align-items: center; gap: 7px; margin-top: 20px; color: var(--ui-success); font-size: var(--text-sm); }
 .profile-modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 25px; }
+.sandbox-switch-backdrop { z-index: var(--z-modal); }
+.sandbox-switch-dialog { width: min(480px, calc(100vw - 28px)); max-height: min(90vh, 600px); overflow: auto; }
+.sandbox-switch-content { display: grid; gap: 12px; padding: 22px; }
+.sandbox-switch-content h2, .sandbox-switch-content p { margin: 0; }
+.sandbox-switch-content h2 { color: var(--ui-text); font-size: var(--text-lg); }
+.sandbox-switch-content p { color: var(--ui-text-muted); line-height: 1.5; }
+.sandbox-switch-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 @media (max-width: 800px) { .profile-launcher-main { width: min(560px, calc(100% - 30px)); padding-top: 36px; }.profile-launcher-header { margin-bottom: 28px; }.profile-grid { grid-template-columns: 1fr; }.profile-card { min-height: 230px; }.profile-launcher-footer { flex-direction: column; gap: 7px; } }

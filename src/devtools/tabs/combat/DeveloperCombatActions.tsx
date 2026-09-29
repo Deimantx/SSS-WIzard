@@ -8,7 +8,7 @@ import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } fro
 import { getCurrentEnemyActionTiming } from '../../../game/systems/combat/actionTiming'
 import { getMonsterTraits } from '../../../game/systems/combat/traitRuntime'
 import { getRuleRuntimeKey } from '../../../game/systems/combat/triggerRuntime'
-import { useGameStore } from '../../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import { Summary } from '../DeveloperTabPrimitives'
 import { DeveloperAdvancedSection } from '../../components/DeveloperBrowser'
 

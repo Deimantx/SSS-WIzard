@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { Button, Card, Status } from '../../components/ui'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { createInitialState } from '../../store/initialState'
 import { SCHOOLS } from '../../game/content/schools/schools'
 import { TRANSMUTATION_RECIPE_ORDER } from '../../game/content/recipes/transmutationRecipes'
 import type { SchoolId } from '../../game/types'
-import { captureTestSnapshot, discardTestSnapshot, hasTestSnapshot, restoreTestSnapshot } from '../sessionTestSnapshot'
+import { ensureDeveloperSandbox, restoreAndExitDeveloperSandbox } from '../developerSandbox'
 import { OFFLINE_BANK_PRESETS, toOfflineDurationMs, type OfflineBankUnit } from '../../game/systems/offline-bank/offlineBankDuration'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
 import { useShallow } from 'zustand/react/shallow'
-import { getDeveloperToolsState, setDeveloperTestSessionActive } from '../developerToolsStore'
+import { getDeveloperToolsState, useDeveloperToolsStore } from '../developerToolsStore'
 
 const formatDuration = (milliseconds: number) => {
   const seconds = Math.floor(Math.max(0, milliseconds) / 1000)
@@ -47,8 +47,9 @@ export function DeveloperOfflineBank() {
 }
 
 export function DeveloperScenarios() {
+  const session = useDeveloperToolsStore()
   const [feedback, setFeedback] = useState<{ text: string; tone: 'success' | 'warning' } | null>(null)
-  const [snapshotReady, setSnapshotReady] = useState(hasTestSnapshot)
+  const snapshotReady = session.sandbox.snapshotPresent
   const prepareCombatLoadout = () => {
     let state = useGameStore.getState()
     state.debugUnlockSpellRankOne('fire-bolt')
@@ -61,7 +62,7 @@ export function DeveloperScenarios() {
     useGameStore.getState().selectSpellPreset(presetId)
   }
   const scenarios = [
-    { id: 'fresh-start', group: 'Foundation', label: 'Fresh Start', summary: ['Reset runtime game data to a new profile state', 'No normal profile save is written'], run: () => useGameStore.setState(createInitialState()) },
+    { id: 'fresh-start', group: 'Foundation', label: 'Fresh Start', summary: ['Reset runtime game data to a new profile state', 'No normal profile save is written'], run: () => useGameStore.getState().hydrateState(createInitialState()) },
     { id: 'forest-heart', group: 'Combat', label: 'Forest Heart Ready', summary: ['Resolve the authored Whispering Woods threat', 'Prepare the Forest Heart encounter with an unlocked Spell loadout'], run: () => { prepareCombatLoadout(); const state = useGameStore.getState(); state.despawnDebugEnemy(); state.fastResolveDebugEnemies(100, 'whispering-woods'); useGameStore.getState().jumpDebugToBoss('whispering-woods'); return useGameStore.getState().combat.enemyId === 'forest-heart' } },
     { id: 'greatbear', group: 'Combat', label: 'Howling Den / Greatbear Ready', summary: ['Resolve Forest Heart to satisfy the authored Howling Den unlock', 'Clear the Den threat and prepare the Greatbear encounter'], run: () => { prepareCombatLoadout(); let state = useGameStore.getState(); state.despawnDebugEnemy(); state.fastResolveDebugEnemies(100, 'whispering-woods'); useGameStore.getState().jumpDebugToBoss('whispering-woods'); if (useGameStore.getState().combat.enemyId !== 'forest-heart') return false; useGameStore.getState().killCurrentEnemy(); state = useGameStore.getState(); state.fastResolveDebugEnemies(100, 'howling-den'); useGameStore.getState().jumpDebugToBoss('howling-den'); return useGameStore.getState().combat.enemyId === 'corrupted-greatbear' } },
     { id: 'hunter-first', group: 'Hunter’s Order', label: 'Hunter’s Order — First Contract', summary: ['Unlock the Order through its tester action', 'Generate and accept a routine monster contract'], run: () => { let state = useGameStore.getState(); if (state.progress.huntersOrder.activeContract) { state.debugGrantHunterMarks(100); state.skipHunterContract() } state = useGameStore.getState(); state.debugSetHunterRngSeed(341); state.debugSetHuntersOrderUnlocked(true); state.debugRegenerateHunterContractBoard({ archetype: 'monster', tier: 'routine' }); const contract = useGameStore.getState().progress.huntersOrder.availableContracts[0]; return Boolean(contract && useGameStore.getState().acceptHunterContract(contract.id)) } },
@@ -74,11 +75,7 @@ export function DeveloperScenarios() {
   ] as const
   const run = (scenario: typeof scenarios[number]) => {
     try {
-      if (!getDeveloperToolsState().testSessionActive) {
-        if (!hasTestSnapshot()) captureTestSnapshot()
-        setSnapshotReady(hasTestSnapshot())
-        setDeveloperTestSessionActive(true)
-      }
+      ensureDeveloperSandbox(`Scenario Lab · ${scenario.label}`)
       const result = scenario.run()
       if (result === false) setFeedback({ text: `${scenario.label}: the authored action could not prepare this state from the current profile.`, tone: 'warning' })
       else setFeedback({ text: `${scenario.label} prepared through existing game actions.`, tone: 'success' })
@@ -87,7 +84,7 @@ export function DeveloperScenarios() {
     }
   }
   return <div className="developer-tab-stack developer-scenario-lab">
-    <Card title="Developer Scenario Lab"><div className="developer-scenario-intro"><div>{getDeveloperToolsState().testSessionActive ? <Status tone="warning">DEV TEST SESSION · AUTOSAVE PAUSED</Status> : <Status tone="active">REAL GAME ACTIONS</Status>}<p className="muted">Prepare focused test states with authored content and existing store/system actions. Each scenario automatically captures a session snapshot and pauses profile saves. Restore the snapshot to end the test session.</p></div><div className="developer-snapshot-actions"><Button variant="secondary" tooltip="Stores the current game data in memory for this browser session only." disabled={getDeveloperToolsState().testSessionActive} onClick={() => { captureTestSnapshot(); setSnapshotReady(true); setFeedback({ text: 'Test snapshot captured in session memory.', tone: 'success' }) }}>Capture test snapshot</Button><Button variant="primary" tooltip="Restores the in-memory snapshot, recalculates derived resources, and resumes profile saving." disabled={!snapshotReady} onClick={() => { const restored = restoreTestSnapshot(); if (restored) setDeveloperTestSessionActive(false); setSnapshotReady(hasTestSnapshot()); setFeedback({ text: restored ? 'Test snapshot restored. Developer Test Session ended and profile saving resumed.' : 'No session snapshot is available.', tone: restored ? 'success' : 'warning' }) }}>Restore snapshot &amp; end test session</Button><Button variant="ghost" tooltip="Discards the in-memory snapshot. This is disabled during a Developer Test Session." disabled={!snapshotReady || getDeveloperToolsState().testSessionActive} onClick={() => { discardTestSnapshot(); setSnapshotReady(false); setFeedback({ text: 'Test snapshot discarded.', tone: 'success' }) }}>Discard snapshot</Button></div></div>{feedback && <Status tone={feedback.tone}>{feedback.text}</Status>}</Card>
+    <Card title="Developer Scenario Lab"><div className="developer-scenario-intro"><div>{session.sandbox.active ? <Status tone="warning">DEV SANDBOX ACTIVE · AUTOSAVE PAUSED</Status> : <Status tone="active">REAL PROFILE</Status>}<p className="muted">Prepare focused test states through authored content and existing game actions. The first scenario captures one in-memory snapshot and pauses profile writes. Only restoring the snapshot exits the Sandbox.</p></div><div className="developer-snapshot-actions"><Button variant="primary" tooltip="Restores the captured profile state, recalculates derived resources, and resumes autosaving." disabled={!session.sandbox.active || !snapshotReady} onClick={() => { const restored = restoreAndExitDeveloperSandbox(); setFeedback({ text: restored ? 'Snapshot restored. Developer Sandbox exited and profile saving resumed.' : 'No Sandbox snapshot is available.', tone: restored ? 'success' : 'warning' }) }}>RESTORE SNAPSHOT &amp; EXIT SANDBOX</Button></div></div>{session.sandbox.active && <div className="developer-sandbox-reason"><strong>Sandbox started for</strong><span>{session.sandbox.reason ?? 'Developer testing'}</span></div>}{feedback && <Status tone={feedback.tone}>{feedback.text}</Status>}</Card>
     {[...new Set(scenarios.map(({ group }) => group))].map((group) => <Card key={group} title={group}><div className="developer-scenario-grid">{scenarios.filter((scenario) => scenario.group === group).map((scenario) => <article className="developer-scenario-card" key={scenario.id}><div><span className="eyebrow">SESSION FIXTURE</span><h3>{scenario.label}</h3><ul>{scenario.summary.map((item) => <li key={item}>{item}</li>)}</ul></div><Button variant="secondary" tooltip={`Run ${scenario.label} through current game actions.`} onClick={() => run(scenario)}>RUN SCENARIO</Button></article>)}</div></Card>)}
   </div>
 }

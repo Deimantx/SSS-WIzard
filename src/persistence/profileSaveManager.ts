@@ -3,11 +3,11 @@ import { createInitialState } from '../store/initialState'
 import { isProfileSlotId, profileSaveBackupKey, profileSaveKey } from '../profiles/profileKeys'
 import type { ProfileSlotId } from '../profiles/profileTypes'
 import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave, type SaveFailureKind } from './saveDiagnosticsStore'
-import { isDeveloperTestSessionSavePaused } from './developerTestSessionSaveGuard'
+import { isDeveloperSandboxSavePaused } from './developerSandboxSaveGuard'
 import { validateSerializedSave, validateStoredSave, type SaveValidationReport } from './saveIntegrity'
 import { serializeGameStateV1 } from './v2/saveSerializer'
 
-export interface ProfileSaveResult { ok: boolean; error: string | null; kind?: SaveFailureKind; detail?: string; serializedBytes?: number; validationReport?: SaveValidationReport }
+export interface ProfileSaveResult { ok: boolean; skipped?: true; reason?: 'developer-sandbox'; error: string | null; kind?: SaveFailureKind; detail?: string; serializedBytes?: number; validationReport?: SaveValidationReport }
 export interface StoredCandidateDiagnostic { present: boolean; ok: boolean; error: string | null; saveVersion: number | null; savedAt: number | null; progression: null }
 export interface ProfileSaveDiagnostics { primary: StoredCandidateDiagnostic; backup: StoredCandidateDiagnostic }
 export interface ProfileStorageFootprint { candidateBytes: number; primaryBytes: number; backupBytes: number; totalKnownBytes: number; sigilCount: number; rollHistoryEntries: number; inventoryKeyCount: number; topLevelBytes: Record<string, number> }
@@ -52,6 +52,7 @@ export const getProfileStorageFootprint = (slotId: ProfileSlotId, candidateState
 }
 
 export const validateProfileCandidate = (slotId: ProfileSlotId | null, state: GameState): ProfileSaveResult => {
+  if (isDeveloperSandboxSavePaused()) return { ok: true, skipped: true, reason: 'developer-sandbox', error: null }
   if (!isProfileSlotId(slotId)) return { ok: false, error: 'Invalid profile slot.', kind: 'validation' }
   if (typeof localStorage === 'undefined') return { ok: false, error: 'Browser storage is unavailable.', kind: 'storage-unavailable' }
   try {
@@ -94,7 +95,7 @@ const writeVerified = (key: string, value: string | null) => {
 }
 
 export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options?: { savedAt?: number; explicitReset?: boolean }): ProfileSaveResult => {
-  if (isDeveloperTestSessionSavePaused()) return { ok: false, error: 'Profile saving is paused during Developer Test Session.', kind: 'unknown', detail: 'Developer test session save interlock is active.' }
+  if (isDeveloperSandboxSavePaused()) return { ok: true, skipped: true, reason: 'developer-sandbox', error: null }
   if (!isProfileSlotId(slotId)) return { ok: false, error: 'Invalid profile slot.', kind: 'validation' }
   if (typeof localStorage === 'undefined') return reportSaveFailure(slotId, 'Browser storage is unavailable.', 'storage-unavailable')
   let priorPrimary: string | null = null
@@ -129,6 +130,7 @@ export const saveProfileGame = (slotId: ProfileSlotId, state: GameState, options
 }
 
 export const clearProfileGame = (slotId: ProfileSlotId): ProfileSaveResult => {
+  if (isDeveloperSandboxSavePaused()) return { ok: true, skipped: true, reason: 'developer-sandbox', error: null }
   if (!isProfileSlotId(slotId)) return { ok: false, error: 'Invalid profile slot.' }
   if (typeof localStorage === 'undefined') return { ok: false, error: 'Browser storage is unavailable.' }
   try { localStorage.removeItem(profileSaveKey(slotId)); localStorage.removeItem(profileSaveBackupKey(slotId)); return { ok: true, error: null } }

@@ -7,7 +7,7 @@ import { MONSTERS, MONSTER_IDS, isBossMonster } from '../../game/content/monster
 import { getTraitDefinition } from '../../game/content/traits/traits'
 import { formatCombatEffect, formatCombatModifier, formatDuration, formatPercent, formatReadableId } from '../../game/content/presentation/balanceFormatters'
 import type { DamageType, DungeonId, MonsterId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
 import { getDeveloperMonsterView } from '../developerReadModels'
 import { NumberField } from './DeveloperTabPrimitives'

@@ -7,7 +7,7 @@ import { getResearchBatchEtaMs, getResearchEffectiveDuration, getResearchAcolyte
 import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReservations'
 import type { ResearchSlotId, SchoolId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 const schoolIds = Object.keys(SCHOOLS) as SchoolId[]

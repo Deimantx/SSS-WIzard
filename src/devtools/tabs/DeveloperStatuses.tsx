@@ -4,7 +4,7 @@ import { formatDuration, formatReadableId } from '../../game/content/presentatio
 import { STATUS_DEFINITIONS, STATUS_ORDER } from '../../game/content/statuses/statuses'
 import type { ActiveStatus } from '../../game/systems/combat/combatTypes'
 import type { StatusId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
 import { getDeveloperStatusView } from '../developerReadModels'
 

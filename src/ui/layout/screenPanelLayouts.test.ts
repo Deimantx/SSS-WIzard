@@ -18,10 +18,6 @@ const currentGuildPanelIds = [
 ]
 
 describe('Guild screen panel layout', () => {
-  it('keeps the canonical route and legacy screen id on the same layout', () => {
-    expect(SCREEN_PANEL_LAYOUTS['arcane-guild']).toEqual(SCREEN_PANEL_LAYOUTS.guild)
-  })
-
   it('contains exactly the panels currently rendered by GuildScreen', () => {
     expect(Object.keys(SCREEN_PANEL_LAYOUTS['arcane-guild'].panels).sort()).toEqual([...currentGuildPanelIds].sort())
     expect(Object.keys(SCREEN_PANEL_LAYOUTS['arcane-guild'].responsive?.mobile?.panels ?? {}).sort()).toEqual([...currentGuildPanelIds].sort())

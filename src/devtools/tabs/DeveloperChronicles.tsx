@@ -4,7 +4,7 @@ import { CHRONICLE_CHAPTERS, CHRONICLE_OBJECTIVES, type ChronicleObjectiveDefini
 import { getChronicleConditionProgress, getChronicleConditionValueLabel, getChronicleRewardSummary } from '../../game/presentation/chronicles/chroniclePresentation'
 import { getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, getChronicleObjectiveStatus, type ChronicleObjectiveStatus } from '../../game/systems/chronicles/chronicleRuntime'
 import type { ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, GuildRankId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { Summary } from './DeveloperTabPrimitives'
 import { DeveloperAdvancedSection } from '../components/DeveloperBrowser'
 import { toggleChronicleObjectiveTracking, useUiPreferences } from '../../ui/preferences/uiPreferencesStore'

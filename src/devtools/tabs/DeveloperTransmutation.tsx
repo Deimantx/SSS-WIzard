@@ -7,7 +7,7 @@ import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, get
 import { TRANSMUTATION_ARRAYS, TRANSMUTATION_ARRAY_IDS } from '../../game/content/transmutation/transmutationArrays'
 import { getEffectiveTransmutationFluxCost, getEffectiveTransmutationResonanceCost, getTransmutationArrayBonuses } from '../../game/systems/transmutation/transmutationArrays'
 import type { RecipeCategory, TransmutationRecipeId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 import { formatResourceAmount, formatResourceRate } from '../../game/presentation/resources/resourcePresentation'

@@ -9,7 +9,7 @@ import { formatEquipmentEffectSummary, formatPercent, formatReadableId, formatSt
 import { RECIPES, getRecipeUnlockRequirement, isRecipeUnlocked, isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { EQUIPMENT_ITEM_SLOT_LABELS, EQUIPMENT_ITEM_SLOTS, EQUIPMENT_POSITIONS, EQUIPMENT_POSITION_LABELS, getDefaultEquipmentPosition } from '../../game/core/equipment'
 import type { DungeonId, EquipmentItemSlot, EquipmentPosition, ItemId, MonsterId, RecipeId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { DeveloperAdvancedSection, DeveloperBrowser, DeveloperBrowserLayout, DeveloperSection } from '../components/DeveloperBrowser'
 import { DEVELOPER_LOADOUTS, type DeveloperEquipmentLoadout } from '../developerLoadouts'
 import { NumberField } from './DeveloperTabPrimitives'

@@ -7,7 +7,7 @@ import { getArcaneCoreNodeEffectTexts } from '../../game/presentation/arcaneCore
 import { getArcaneCoreHighestUnlockedRing, getArcaneCoreNodeRank, getArcaneCoreRingPointsSpent, getArcaneCoreRingStandardRanksInvested, getArcaneCoreWalletInfo, isArcaneCoreMajorUnlocked, isArcaneCoreRingUnlocked } from '../../game/systems/arcaneCore'
 import { validateArcaneCoreCatalog } from '../../game/systems/arcaneCore/arcaneCoreValidation'
 import type { ArcaneCoreBranchId, ArcaneCoreRingIndex } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
 
 const ringCost = (ring: ArcaneCoreRingIndex) => ARCANE_CORE_FULL_RING_COST_BY_RING[ring]

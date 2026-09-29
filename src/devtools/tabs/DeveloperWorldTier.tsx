@@ -7,7 +7,7 @@ import { formatResonanceBundle } from '../../game/presentation/resonance/resonan
 import { resolveWorldTierEnemyProfile } from '../../game/systems/world-tier/worldTierRuntime'
 import { resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
 import type { MonsterId } from '../../game/types'
-import { useGameStore } from '../../store/gameStore'
+import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { Summary } from './DeveloperTabPrimitives'
 
 const formatMultiplier = (value: number) => `×${value.toFixed(2)}`

@@ -2,14 +2,14 @@ import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
 import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../content/monsters/huntersOrder'
 import { MONSTERS } from '../../content/monsters'
-import { getHunterRankProgress, getHunterUpgradePurchaseStatus } from '../../systems/huntersOrder/huntersOrderRuntime'
+import { getEligibleHunterContractMembers, getHunterRankProgress, getHunterUpgradePurchaseStatus } from '../../systems/huntersOrder/huntersOrderRuntime'
 import type { GameState, HunterContractState, HunterRankId, HunterUpgradeId } from '../../types'
 
 export const getHunterHeaderPresentation = (state: Pick<GameState, 'progress'>) => {
   const order = state.progress.huntersOrder
   const progress = getHunterRankProgress(order.reputation)
   const remaining = progress.nextRank ? Math.max(0, progress.nextRank.reputation - order.reputation) : 0
-  return { ...progress, reputation: order.reputation, marks: order.hunterMarks, contractsCompleted: order.totalContractsCompleted, remaining, progressPercent: Math.round(progress.progress * 100), availableUpgradeCount: HUNTER_UPGRADES.filter((upgrade) => getHunterUpgradePurchaseStatus(state, upgrade.id).canPurchase).length }
+  return { ...progress, reputation: order.reputation, marks: order.hunterMarks, contractsCompleted: order.totalContractsCompleted, totalHunterKills: order.totalHunterKills, activeContract: order.activeContract, remaining, progressPercent: Math.round(progress.progress * 100), availableUpgradeCount: HUNTER_UPGRADES.filter((upgrade) => getHunterUpgradePurchaseStatus(state, upgrade.id).canPurchase).length }
 }
 
 export const getHunterRankPresentation = (state: Pick<GameState, 'progress'>, selectedRankId?: HunterRankId) => {
@@ -37,16 +37,10 @@ export const getHunterUpgradePresentation = (state: Pick<GameState, 'progress'>,
   return { ...status, upgrade, maxed: current >= upgrade.maxRank, currentEffect: effectForRank(upgrade, current), nextEffect: effectForRank(upgrade, Math.min(upgrade.maxRank, current + 1)), maximumEffect: effectForRank(upgrade, upgrade.maxRank) }
 }
 
-export const getHunterContractPresentation = (contract: HunterContractState) => {
+export const getHunterContractPresentation = (state: Pick<GameState, 'progress'>, contract: HunterContractState) => {
   const type = contract.targetSpec.type
   const action = type === 'monster' || type === 'boss' ? 'HUNT' : type === 'family' ? 'CULL' : type === 'alignment' ? 'PURSUE' : 'PATROL'
   const objective = type === 'monster' || type === 'boss' ? MONSTERS[contract.targetSpec.monsterId]?.name ?? 'Quarry' : type === 'family' ? `${contract.targetSpec.familyId} Family` : type === 'alignment' ? `${contract.targetSpec.alignmentId} Quarry` : 'Gloamridge'
-  const quarryCount = type === 'monster' || type === 'boss' ? 1 : HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => {
-    const metadata = MONSTERS[id]?.hunter
-    if (!metadata || id === 'nightglass-alpha') return false
-    if (type === 'family') return metadata.family === contract.targetSpec.familyId
-    if (type === 'alignment') return metadata.alignment === contract.targetSpec.alignmentId
-    return true
-  }).length
-  return { action, objective, quarryCount, progress: Math.min(contract.target, contract.progress), remaining: Math.max(0, contract.target - contract.progress), progressPercent: contract.target > 0 ? Math.min(100, contract.progress / contract.target * 100) : 0 }
+  const eligibleMonsterIds = getEligibleHunterContractMembers(state, contract, 'hunters-ground')
+  return { action, objective, eligibleMonsterIds, quarryCount: eligibleMonsterIds.length, progress: Math.min(contract.target, contract.progress), remaining: Math.max(0, contract.target - contract.progress), progressPercent: contract.target > 0 ? Math.min(100, contract.progress / contract.target * 100) : 0 }
 }

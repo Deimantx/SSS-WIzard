@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, debugRegenerateHunterContractBoard } from './huntersOrderRuntime'
+import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, debugRegenerateHunterContractBoard, getEligibleHunterContractMembers, getMinimumContractTierForMonster } from './huntersOrderRuntime'
 import { BALANCE } from '../../core/balance/balance'
 import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
 import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
@@ -237,6 +237,30 @@ describe('Hunter Order hardened runtime', () => {
     const offers = debugRegenerateHunterContractBoard(state, { archetype: 'monster', tier: 'prestigious', monsterId: 'nightglass-alpha' })
     expect(offers).toHaveLength(1)
     expect(offers[0]?.targetSpec).toEqual({ type: 'monster', monsterId: 'nightglass-alpha' })
+  })
+
+  it('never generates a lower-tier exact Nightglass contract at Master Hunter', () => {
+    expect(getMinimumContractTierForMonster('nightglass-alpha')).toBe('prestigious')
+    for (let seed = 1; seed <= 64; seed += 1) {
+      const state = unlock()
+      state.progress.huntersOrder.reputation = 32500
+      state.progress.huntersOrder.rngState = seed
+      const offers = generateHunterContractChoices(state, { archetype: 'monster', monsterId: 'nightglass-alpha' })
+      expect(offers).toHaveLength(1)
+      expect(offers[0]?.tier).toBe('prestigious')
+    }
+  })
+
+  it('uses authorization-aware members for broad contracts and keeps Nightglass locked below Master', () => {
+    const state = unlock()
+    state.progress.huntersOrder.reputation = 9000
+    const routine = contract({ type: 'family', familyId: 'Gloamridge Predators' }, 'routine')
+    expect(getEligibleHunterContractMembers(state, routine, 'hunters-ground')).toEqual(expect.arrayContaining(['gloamfang-stalker', 'veilwing-harrier']))
+    expect(getEligibleHunterContractMembers(state, routine, 'hunters-ground')).not.toContain('nightglass-alpha')
+    expect(getHunterAuthorization({ progress: state.progress }, 'nightglass-alpha', 'hunters-ground')).toMatchObject({ authorized: false, reason: 'contract-tier-locked' })
+    state.progress.huntersOrder.reputation = 32500
+    const prestigious = contract({ type: 'family', familyId: 'Gloamridge Predators' }, 'prestigious')
+    expect(getEligibleHunterContractMembers(state, prestigious, 'hunters-ground')).toContain('nightglass-alpha')
   })
 
   it('keeps maximum Hunter Marks costs proportionate to the rank path', () => {

@@ -37,8 +37,6 @@
 .hunter-rank-unlocks ul, .guild-v3-next-unlocks ul { display: grid; gap: 5px; margin: 9px 0 0; padding-left: 18px; color: var(--ui-text-muted); font-size: 12px; }
 .hunter-stat-row { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 10px; padding-top: 14px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-xs); }
 .hunter-stat-row strong { color: var(--ui-text); font-family: var(--font-mono); }
-.bestiary-screen.bestiary-embedded { width: 100%; max-width: none; margin: 0; padding: 0; }
-.bestiary-embedded .screen-grid { margin-top: 0; }
 @media (max-width: 900px) { .hunter-offer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 650px) { .hunters-order-header, .hunter-board-heading { align-items: flex-start; flex-direction: column; } .hunter-header-insignia { display: flex; min-width: 0; align-items: center; } .hunter-offer-grid { grid-template-columns: minmax(0, 1fr); } .hunter-active-contract { grid-template-columns: 40px minmax(0, 1fr); } .hunter-active-contract > .game-tooltip-trigger { grid-column: 2; justify-self: start; } .hunter-currency-line { justify-items: start; } .hunter-stat-row { grid-template-columns: 1fr auto; } }
 
@@ -87,6 +85,210 @@
   .hunter-contract-layout { grid-template-columns: minmax(0, 1fr); }
   .hunter-contract-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hunter-contract-guidance { grid-column: 1 / -1; }
+}
+
+/* Hunter Bestiary field workspace */
+.hunter-bestiary-workspace { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; width: 100%; height: 100%; min-width: 0; min-height: 0; color: var(--ui-text); --hunter-field-accent: var(--gold); }
+.hunter-field-intelligence { display: grid; grid-template-columns: minmax(150px, 1.2fr) repeat(3, minmax(95px, .7fr)) minmax(210px, 1.3fr); align-items: center; gap: 12px; min-width: 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--ui-border)); border-left: 3px solid var(--gold); border-radius: 8px; background: linear-gradient(100deg, color-mix(in srgb, var(--gold) 7%, var(--ui-panel-strong)), var(--ui-panel) 58%); }
+.hunter-field-intelligence-title, .hunter-field-metric, .hunter-field-contract { display: grid; gap: 4px; min-width: 0; }
+.hunter-field-intelligence-title h2 { margin: 0; color: var(--gold); font: 700 var(--text-xs) var(--font-mono); letter-spacing: .1em; }
+.hunter-field-metric span, .hunter-field-contract > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .09em; }
+.hunter-field-intelligence-title strong { color: var(--ui-text-soft); font: 600 var(--text-xs) var(--font-sans); letter-spacing: .04em; }
+.hunter-field-metric { padding-left: 12px; border-left: 1px solid var(--ui-border); }
+.hunter-field-metric strong { color: var(--ui-text); font: 600 var(--text-sm) var(--font-mono); }
+.hunter-field-contract { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding-left: 12px; border-left: 1px solid var(--ui-border); }
+.hunter-field-contract > span { grid-column: 1 / -1; }
+.hunter-field-contract > strong { overflow: hidden; color: var(--ui-text); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.hunter-field-contract > small { color: var(--gold); font: var(--text-micro) var(--font-mono); }
+.hunter-field-contract .game-tooltip-trigger { grid-row: 2 / span 2; grid-column: 2; }
+.hunter-field-contract .button { min-height: 29px; padding: 4px 9px; font-size: var(--text-micro); }
+.hunter-bestiary-columns { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: 12px; min-width: 0; min-height: 0; }
+.hunter-bestiary-columns > .card, .hunter-quarry-dossier { min-width: 0; min-height: 0; overflow: hidden; }
+.hunter-quarry-index, .hunter-quarry-dossier { display: flex; flex-direction: column; gap: 9px; }
+.hunter-quarry-index .card-head, .hunter-quarry-dossier .card-head { flex: 0 0 auto; margin-bottom: 0; }
+.hunter-quarry-index-heading { display: flex; align-items: center; justify-content: space-between; min-height: 28px; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.hunter-quarry-index-heading .button { min-height: 28px; padding: 4px 8px; }
+.hunter-quarry-index-controls { position: sticky; top: 0; z-index: 2; display: grid; gap: 8px; padding: 1px 0 8px; border-bottom: 1px solid var(--ui-border); background: var(--ui-panel); }
+.hunter-bestiary-search .search-input { width: 100%; }
+.hunter-quarry-index-controls > .archive-filter-bar { flex-wrap: wrap; }
+.hunter-bestiary-metadata-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.hunter-bestiary-metadata-filters .select-menu { min-width: 0; }
+.hunter-bestiary-metadata-filters .select-menu-trigger { width: 100%; min-width: 0; min-height: 32px; padding: 5px 8px; }
+.hunter-bestiary-metadata-filters .select-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hunter-quarry-index-list { display: grid; align-content: start; gap: 6px; min-width: 0; min-height: 0; flex: 1 1 auto; overflow: auto; padding: 1px 3px 5px 0; }
+.hunter-quarry-tile { position: relative; display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-width: 0; min-height: 80px; padding: 8px 10px; border: 1px solid var(--ui-border); border-left: 2px solid color-mix(in srgb, var(--gold) 20%, var(--ui-border)); border-radius: 7px; color: var(--ui-text); background: color-mix(in srgb, var(--ui-panel-strong) 74%, transparent); cursor: pointer; text-align: left; transition: border-color 180ms cubic-bezier(.2,.7,.2,1), background 180ms cubic-bezier(.2,.7,.2,1), transform 180ms cubic-bezier(.2,.7,.2,1); }
+.hunter-quarry-tile:hover { border-color: color-mix(in srgb, var(--gold) 50%, var(--ui-border)); background: color-mix(in srgb, var(--gold) 6%, var(--ui-panel-strong)); }
+.hunter-quarry-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hunter-quarry-tile.is-selected { border-color: color-mix(in srgb, var(--gold) 66%, var(--ui-border)); border-left-color: var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--ui-panel-strong)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 12%, transparent); }
+.hunter-quarry-tile.is-undiscovered { border-left-color: var(--ui-border); }
+.hunter-quarry-tile-portrait { display: grid; place-items: center; width: 54px; height: 58px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--gold) 24%, var(--ui-border)); border-radius: 6px; color: var(--ui-text-muted); background: radial-gradient(circle, color-mix(in srgb, var(--gold) 10%, var(--ui-panel-strong)), var(--ui-panel)); font: 22px var(--font-mono); }
+.hunter-quarry-tile-portrait .combat-monster-portrait { width: 52px; height: 56px; border: 0; border-radius: 5px; }
+.hunter-quarry-tile-copy { display: grid; gap: 3px; min-width: 0; }
+.hunter-quarry-tile-copy > strong { overflow: hidden; color: var(--ui-text); font: 600 var(--text-sm) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.hunter-quarry-role-tags { overflow: hidden; color: var(--ui-text-soft); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.hunter-quarry-classification { display: flex; flex-wrap: wrap; gap: 8px; color: var(--gold); font: 600 var(--text-micro) var(--font-mono); letter-spacing: .04em; }
+.hunter-quarry-classification i { color: var(--ui-text-muted); font-style: normal; }
+.hunter-quarry-tile-copy > small:last-child { color: var(--ui-text-muted); font-size: var(--text-xs); }
+.hunter-quarry-tile > .status { max-width: 120px; font-size: 9px; white-space: nowrap; }
+.hunter-quarry-new { align-self: start; padding: 2px 4px; border: 1px solid color-mix(in srgb, var(--ui-accent) 48%, var(--ui-border)); border-radius: 4px; color: var(--ui-accent); font: 700 9px var(--font-mono); }
+.hunter-quarry-empty, .hunter-dossier-empty { display: grid; justify-items: center; align-content: center; gap: 9px; min-height: 180px; color: var(--ui-text-muted); text-align: center; }
+.hunter-quarry-empty strong, .hunter-dossier-empty strong { color: var(--ui-text); font-size: var(--text-md); }
+.hunter-dossier-empty > svg { color: var(--gold); }
+.hunter-unknown-glyph { display: grid; place-items: center; width: 74px; height: 82px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: radial-gradient(circle, color-mix(in srgb, var(--ui-text-muted) 9%, var(--ui-panel-strong)), var(--ui-panel)); font: 36px var(--font-mono); }
+.hunter-dossier-hero { display: grid; grid-template-columns: 118px minmax(0, 1fr); align-items: center; gap: 14px; min-width: 0; }
+.hunter-dossier-hero > .combat-monster-portrait { width: 118px; height: 126px; border-color: color-mix(in srgb, var(--gold) 35%, var(--ui-border)); border-radius: 8px; }
+.hunter-dossier-identity { display: grid; gap: 6px; min-width: 0; }
+.hunter-dossier-kicker { color: var(--gold); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .1em; }
+.hunter-dossier-identity h2 { margin: 0; color: var(--ui-text); font: 650 var(--text-xl) var(--font-sans); }
+.hunter-dossier-identity p { margin: 0; color: var(--ui-text-soft); font-size: var(--text-sm); line-height: 1.45; }
+.hunter-dossier-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.hunter-dossier-location { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.hunter-dossier-location svg { color: var(--gold); }
+.hunter-dossier-metrics, .hunter-record-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.hunter-dossier-metrics > div, .hunter-record-metrics > div { display: grid; gap: 4px; min-width: 0; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 72%, transparent); }
+.hunter-dossier-metrics span, .hunter-record-metrics span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .06em; }
+.hunter-dossier-metrics strong, .hunter-record-metrics strong { overflow-wrap: anywhere; color: var(--ui-text); font: 600 var(--text-sm) var(--font-mono); }
+.hunter-authorization-panel { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--ui-border); border-left: 3px solid var(--ui-warning); border-radius: 7px; background: color-mix(in srgb, var(--ui-warning) 4%, var(--ui-panel-strong)); }
+.hunter-authorization-panel.is-authorized { border-left-color: var(--gold); background: color-mix(in srgb, var(--gold) 6%, var(--ui-panel-strong)); }
+.hunter-authorization-panel > div { display: grid; gap: 4px; min-width: 0; }
+.hunter-authorization-panel > div > span { color: var(--gold); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .08em; }
+.hunter-authorization-panel > div > strong { color: var(--ui-text-soft); font-size: var(--text-xs); font-weight: 500; line-height: 1.4; }
+.hunter-authorization-panel > div > small { color: var(--ui-text); font: var(--text-xs) var(--font-mono); }
+.hunter-authorization-panel .button { flex: 0 0 auto; }
+.hunter-dossier-tabs-sticky { position: sticky; top: 0; z-index: 3; padding: 6px 0; border-bottom: 1px solid var(--ui-border); background: var(--ui-panel); }
+.hunter-dossier-tabs-sticky .archive-filter-bar { flex-wrap: nowrap; overflow-x: auto; }
+.hunter-dossier-tabs-sticky .archive-filter-button { white-space: nowrap; }
+.hunter-dossier-content { display: grid; align-content: start; gap: 12px; min-width: 0; min-height: 0; flex: 1 1 auto; overflow: auto; padding: 3px 4px 8px 0; }
+.hunter-dossier-section-stack { display: grid; align-content: start; gap: 12px; min-width: 0; }
+.hunter-dossier-section-stack > section { display: grid; gap: 7px; min-width: 0; }
+.hunter-dossier-section-label { margin: 0; color: var(--gold); font: 700 var(--text-micro) var(--font-mono); letter-spacing: .12em; }
+.hunter-dossier-description { margin: 0; color: var(--ui-text-soft); font-size: var(--text-sm); line-height: 1.55; }
+.hunter-classification-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.hunter-classification-tile { display: grid; gap: 6px; min-width: 0; padding: 9px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); }
+.hunter-classification-tile > span { display: flex; align-items: center; gap: 6px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .07em; }
+.hunter-classification-tile svg { width: 13px; height: 13px; color: var(--gold); }
+.hunter-classification-tile strong { overflow-wrap: anywhere; color: var(--ui-text); font-size: var(--text-xs); }
+.hunter-authorization-detail, .hunter-record-board-state, .hunter-record-relation { display: grid; gap: 5px; padding: 10px; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel-strong); }
+.hunter-authorization-detail.is-authorized { border-color: color-mix(in srgb, var(--gold) 35%, var(--ui-border)); }
+.hunter-authorization-detail.is-locked { border-color: color-mix(in srgb, var(--ui-warning) 30%, var(--ui-border)); }
+.hunter-authorization-detail > strong, .hunter-record-board-state > strong, .hunter-record-relation > strong { color: var(--ui-text); font-size: var(--text-sm); }
+.hunter-authorization-detail > span, .hunter-record-board-state > small { color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
+.hunter-record-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 12px; }
+.hunter-record-facts > div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--ui-border); }
+.hunter-record-facts span, .hunter-record-board-state > span, .hunter-record-relation > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .04em; }
+.hunter-record-facts strong { color: var(--ui-text); font-size: var(--text-xs); text-align: right; }
+.hunter-dossier-sticky-hunt { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 -14px -14px; padding: 9px 14px; border-top: 1px solid color-mix(in srgb, var(--gold) 32%, var(--ui-border)); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 8%, var(--ui-panel-strong)), var(--ui-panel-strong)); }
+.hunter-dossier-sticky-hunt > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
+.hunter-dossier-mobile-back { display: none; }
+.hunter-quarry-index-list, .hunter-dossier-content { scrollbar-color: color-mix(in srgb, var(--gold) 36%, var(--ui-border)) transparent; scrollbar-width: thin; }
+.hunter-tab-button { display: inline-flex; align-items: center; gap: 7px; border-radius: 6px 6px 0 0; }
+.hunter-tab-button.is-active { color: var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--ui-panel-strong)); box-shadow: inset 0 -2px 0 var(--gold); }
+.hunter-tab-button.is-active svg { color: var(--gold); }
+.hunter-tab-badge { min-width: 18px; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--gold) 38%, var(--ui-border)); border-radius: 9px; color: var(--gold); background: color-mix(in srgb, var(--gold) 9%, transparent); font: 700 9px var(--font-mono); text-align: center; }
+.hunter-tab-badge.is-new { color: var(--ui-accent); border-color: color-mix(in srgb, var(--ui-accent) 44%, var(--ui-border)); background: color-mix(in srgb, var(--ui-accent) 8%, transparent); }
+.hunter-current-rank .hunter-rank-emblem { display: inline-grid; place-items: center; color: var(--gold); }
+.hunter-command-metrics .hunter-active-micro { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 7px 9px; border: 1px solid color-mix(in srgb, var(--gold) 28%, var(--ui-border)); background: color-mix(in srgb, var(--gold) 5%, var(--ui-panel-strong)); text-align: left; }
+.hunter-active-micro > span:first-child { display: grid; gap: 3px; min-width: 0; }
+.hunter-active-micro b { color: var(--gold); font: 700 9px var(--font-mono); letter-spacing: .1em; }
+.hunter-active-micro strong { overflow: hidden; color: var(--ui-text); font: 600 var(--text-xs) var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.hunter-active-micro > span:last-child { flex: 0 0 auto; color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
+.hunter-quarry-portrait { width: 39px; height: 42px; overflow: hidden; padding: 0; border: 1px solid var(--ui-border); border-radius: 5px; background: var(--ui-panel-strong); cursor: pointer; }
+.hunter-quarry-portrait:hover, .hunter-quarry-portrait:focus-visible { border-color: var(--gold); outline: none; }
+.hunter-quarry-portrait.is-exact-target, .hunter-quarry-portrait.is-eligible { border-color: color-mix(in srgb, var(--gold) 68%, var(--ui-border)); }
+.hunter-quarry-portrait.is-matching-but-locked { border-color: var(--ui-warning); }
+.hunter-quarry-portrait .combat-monster-portrait { width: 100%; height: 100%; border: 0; border-radius: 4px; }
+
+@media (max-width: 1050px) {
+  .hunter-field-intelligence { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hunter-field-intelligence-title { grid-column: 1 / -1; }
+  .hunter-field-contract { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) auto auto; padding: 8px 0 0; border-top: 1px solid var(--ui-border); border-left: 0; }
+  .hunter-field-contract > span { grid-column: 1 / -1; }
+  .hunter-field-contract .game-tooltip-trigger { grid-row: 2; grid-column: 3; }
+  .hunter-bestiary-columns { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(250px, .8fr) minmax(440px, 1.2fr); }
+  .hunter-bestiary-workspace { height: auto; min-height: 100%; }
+}
+@media (max-width: 760px) {
+  .hunter-bestiary-workspace:not(.is-mobile-dossier) .hunter-quarry-dossier { display: none; }
+  .hunter-bestiary-workspace:not(.is-mobile-dossier) .hunter-bestiary-columns { grid-template-rows: minmax(540px, 1fr); }
+  .hunter-bestiary-workspace.is-mobile-dossier .hunter-quarry-index { display: none; }
+  .hunter-bestiary-workspace.is-mobile-dossier .hunter-bestiary-columns { grid-template-rows: minmax(540px, 1fr); }
+  .hunter-dossier-mobile-back { display: block; }
+  .hunter-dossier-mobile-back .button { min-height: 30px; padding: 4px 8px; }
+  .hunter-bestiary-columns { grid-template-rows: minmax(430px, .8fr) minmax(600px, 1.2fr); }
+  .hunter-field-intelligence { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hunter-field-intelligence-title, .hunter-field-contract { grid-column: 1 / -1; }
+  .hunter-bestiary-metadata-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hunter-quarry-tile { grid-template-columns: 48px minmax(0, 1fr) auto; gap: 7px; padding: 7px; }
+  .hunter-quarry-tile-portrait { width: 46px; height: 50px; }
+  .hunter-quarry-tile-portrait .combat-monster-portrait { width: 44px; height: 48px; }
+  .hunter-quarry-tile > .status { max-width: 84px; white-space: normal; }
+  .hunter-dossier-hero { grid-template-columns: 84px minmax(0, 1fr); gap: 9px; }
+  .hunter-dossier-hero > .combat-monster-portrait { width: 84px; height: 92px; }
+  .hunter-dossier-identity h2 { font-size: var(--text-lg); }
+  .hunter-dossier-metrics, .hunter-record-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hunter-authorization-panel { align-items: flex-start; flex-direction: column; }
+  .hunter-authorization-panel .button { width: 100%; justify-content: center; }
+  .hunter-dossier-sticky-hunt { margin-inline: -10px; padding-inline: 10px; }
+  .hunter-dossier-sticky-hunt .button { padding-inline: 8px; font-size: var(--text-xs); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hunter-quarry-tile { transition: none; }
+}
+
+/* Rank rail, contract material states, and explicit service readiness */
+.hunter-rank-ladder { align-items: stretch; }
+.hunter-rank-node { position: relative; overflow: visible; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 76%, transparent); }
+.hunter-rank-node:not(:last-child)::after { position: absolute; z-index: 0; top: 25px; left: calc(100% + 1px); width: 8px; height: 2px; background: var(--ui-border); content: ''; }
+.hunter-rank-node.is-reached:not(:last-child)::after { background: color-mix(in srgb, var(--gold) 72%, var(--ui-border)); }
+.hunter-rank-node.is-reached .hunter-rank-node-icon { position: relative; z-index: 1; color: var(--gold); }
+.hunter-rank-node.is-locked { opacity: 1; }
+.hunter-rank-node.is-locked .hunter-rank-node-icon, .hunter-rank-node.is-locked small { color: var(--ui-text-muted); }
+.hunter-rank-node.is-current { border-color: color-mix(in srgb, var(--gold) 60%, var(--ui-border)); box-shadow: 0 0 12px color-mix(in srgb, var(--gold) 12%, transparent); }
+.hunter-rank-node.is-current .hunter-rank-node-icon { color: var(--gold); }
+.hunter-rank-node.is-selected { background: color-mix(in srgb, var(--gold) 9%, var(--ui-panel-strong)); }
+.hunter-rank-node i { color: var(--ui-text-muted); font: 700 9px var(--font-mono); font-style: normal; letter-spacing: .08em; }
+.hunter-rank-node.is-current i, .hunter-rank-node.is-reached i { color: var(--gold); }
+.hunter-rank-detail { align-items: start; }
+.hunter-rank-unlock-tiles, .hunter-benefit-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 6px; }
+.hunter-rank-unlock-tile, .hunter-benefit-tiles > div { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 7px; min-width: 0; padding: 7px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 76%, transparent); }
+.hunter-rank-unlock-tile > span, .hunter-benefit-tiles > div > span { display: grid; place-items: center; width: 23px; height: 23px; border: 1px solid color-mix(in srgb, var(--gold) 28%, var(--ui-border)); border-radius: 5px; color: var(--gold); }
+.hunter-rank-unlock-tile strong, .hunter-benefit-tiles > div > strong { color: var(--ui-text-soft); font-size: var(--text-xs); font-weight: 550; line-height: 1.3; }
+.hunter-upgrade-card.is-locked { opacity: 1; border-top-color: color-mix(in srgb, var(--ui-warning) 45%, var(--ui-border)); }
+.hunter-upgrade-card.is-available { border-top-color: color-mix(in srgb, var(--gold) 70%, var(--ui-border)); }
+.hunter-upgrade-card.is-maxed { border-top-color: color-mix(in srgb, var(--ui-success) 68%, var(--ui-border)); }
+.hunter-upgrade-card > .status { justify-self: start; }
+.hunter-active-contract { grid-template-columns: 72px minmax(0, 1fr); }
+.hunter-active-routine { border-top: 2px solid color-mix(in srgb, var(--ui-text-muted) 52%, var(--ui-border)); }
+.hunter-active-special { border-top: 2px solid color-mix(in srgb, var(--ui-accent) 70%, var(--ui-border)); }
+.hunter-active-prestigious { border-top: 2px solid color-mix(in srgb, var(--gold) 76%, var(--ui-border)); }
+.hunter-active-contract-art { display: grid; align-self: start; width: 62px; height: 68px; }
+.hunter-active-contract-art .combat-monster-portrait { width: 62px; height: 68px; border-radius: 7px; }
+.hunter-contract-art { display: flex; align-items: center; justify-content: center; gap: 3px; width: 50px; height: 50px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--ui-border)); border-radius: 7px; color: var(--gold); background: color-mix(in srgb, var(--gold) 5%, var(--ui-panel-strong)); }
+.hunter-contract-art .combat-monster-portrait { width: 44px; height: 46px; border: 0; border-radius: 5px; }
+.hunter-contract-art.is-family .combat-monster-portrait { width: 24px; height: 34px; }
+.hunter-contract-art.is-family .combat-monster-portrait:nth-child(2) { margin-top: 8px; }
+.hunter-contract-art.is-family .combat-monster-portrait:nth-child(3) { margin-top: 14px; }
+.hunter-contract-art.is-region { flex-direction: column; gap: 1px; }
+.hunter-contract-art.is-region small { color: var(--ui-text-muted); font: 8px var(--font-mono); }
+.hunter-overview-target .hunter-contract-art { flex: 0 0 50px; }
+.hunter-overview-actions, .hunter-contract-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.hunter-contract-actions > .game-tooltip-trigger { display: inline-flex; }
+.hunter-offer-art { width: 46px; height: 46px; }
+.hunter-offer-art .combat-monster-portrait { width: 42px; height: 44px; }
+.hunter-offer-art.is-family .combat-monster-portrait { width: 23px; height: 32px; }
+.hunter-offer-routine { border-top-color: color-mix(in srgb, var(--ui-text-muted) 58%, var(--ui-border)); }
+.hunter-offer-special { border-top-color: color-mix(in srgb, var(--ui-accent) 72%, var(--ui-border)); }
+.hunter-offer-prestigious { border-top-color: color-mix(in srgb, var(--gold) 82%, var(--ui-border)); }
+.hunter-quarry-portrait .combat-monster-portrait { background-color: var(--ui-panel-strong); }
+.hunter-bestiary-columns > .inspector-transition { display: flex; min-width: 0; min-height: 0; }
+.hunter-bestiary-columns > .inspector-transition > .hunter-quarry-dossier { flex: 1 1 auto; height: 100%; }
+@media (max-width: 760px) {
+  .hunter-rank-node:not(:last-child)::after { width: 8px; }
+  .hunter-active-contract { grid-template-columns: 52px minmax(0, 1fr); }
+  .hunter-active-contract-art, .hunter-active-contract-art .combat-monster-portrait { width: 48px; height: 54px; }
+  .hunter-contract-actions { align-items: stretch; flex-direction: column; }
+  .hunter-contract-actions > * { width: 100%; }
+  .hunter-contract-actions .button { justify-content: center; }
 }
 @media (max-width: 650px) {
   .hunter-contract-sidebar, .hunter-offer-grid { grid-template-columns: minmax(0, 1fr); }
@@ -139,10 +341,6 @@
 .hunter-overview-services dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--ui-border); font-size: var(--text-xs); }
 .hunter-overview-services dt { color: var(--ui-text-muted); }
 .hunter-overview-services dd { margin: 0; color: var(--ui-text); font-family: var(--font-mono); }
-.bestiary-hunter-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; padding: 10px; border: 1px solid color-mix(in srgb, var(--gold) 25%, var(--ui-border)); border-left: 2px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 4%, var(--ui-panel)); }
-.bestiary-hunter-summary > div { display: grid; gap: 3px; }
-.bestiary-hunter-summary span { color: var(--ui-text-muted); font: 9px var(--font-mono); }
-.bestiary-hunter-summary strong { color: var(--ui-text); font: var(--text-sm) var(--font-mono); }
 .hunter-rank-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); align-items: start; gap: 14px; }
 .hunter-rank-dossier, .hunter-rank-side { display: grid; align-content: start; gap: 14px; min-width: 0; }
 .hunter-rank-hero { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
@@ -261,4 +459,3 @@
 .developer-ready-action > small { max-width: 180px; color: var(--ui-text-muted); font-size: 9px; text-align: center; }
 @media (max-width: 900px) { .hunter-command-header { grid-template-columns: 1fr; } .hunter-command-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } .hunter-rank-layout { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .hunter-command-header { padding: 13px; } .hunter-command-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .hunter-overview-grid { grid-template-columns: 1fr; } .hunter-rank-ladder { grid-template-columns: repeat(6, 95px); } .hunter-rank-detail { grid-template-columns: 1fr; } .developer-scenario-card-compact { grid-template-columns: 1fr; } .developer-scenario-card-actions { justify-content: flex-start; flex-wrap: wrap; } .scenario-ready-flags { grid-template-columns: repeat(2, minmax(0, 1fr)); } .scenario-ready-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .developer-scenario-group > header { align-items: flex-start; } .developer-scenario-group > header > .button:first-child { align-items: flex-start; flex-wrap: wrap; } .developer-scenario-group > header small { width: 100%; margin-left: 24px; } }
-@media (max-width: 480px) { .bestiary-hunter-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

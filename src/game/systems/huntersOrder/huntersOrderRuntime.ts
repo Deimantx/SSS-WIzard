@@ -67,6 +67,9 @@ export const getHunterAuthorizationMessage = (authorization: HunterAuthorization
   return messages[authorization.reason]
 }
 
+export const getMinimumContractTierForMonster = (monsterId: MonsterId): HunterContractState['tier'] => MONSTERS[monsterId]?.hunter?.contractTier ?? 'routine'
+const meetsContractTier = (contractTier: HunterContractState['tier'], monsterId: MonsterId) => tierOrder[contractTier] >= tierOrder[getMinimumContractTierForMonster(monsterId)]
+
 const getUpgradeRankCount = (state: Pick<GameState, 'progress'>, effectType: string) => HUNTER_UPGRADES.reduce((sum, upgrade) => {
   if (upgrade.effect.type !== effectType) return sum
   const rank = Math.min(upgrade.maxRank, safeInt(orderFor(state).purchasedUpgrades[upgrade.id] ?? 0))
@@ -89,22 +92,30 @@ export const getHunterUpgradePurchaseStatus = (state: Pick<GameState, 'progress'
   const reason = ownedRank >= upgrade.maxRank ? 'max-rank' as const : !hasRequiredRank ? 'rank-required' as const : cost === null || orderFor(state).hunterMarks < cost ? 'marks-required' as const : null
   return { upgrade, ownedRank, cost, currentRank, requiredRank, canPurchase: reason === null, reason }
 }
-export const getHunterAuthorization = (state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId?: DungeonId | null): HunterAuthorization => {
+const getHunterAuthorizationForContract = (state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId: DungeonId | null | undefined, active: HunterContractState | null): HunterAuthorization => {
   const metadata = MONSTERS[monsterId]?.hunter
   if (!metadata?.exclusive || !metadata.contractRequired) return { authorized: true }
   if (!isHuntersOrderUnlocked(state)) return { authorized: false, reason: 'order-locked' }
   const rank = getHunterRank(orderFor(state).reputation)
-  const monsterTier = tierOrder[metadata.contractTier]
-  if (rank.reputation < requiredRankForTier(metadata.contractTier)) return { authorized: false, reason: 'contract-tier-locked' }
   if (metadata.minimumRank && !isHunterRankAtLeast(rank.id, metadata.minimumRank)) return { authorized: false, reason: 'contract-tier-locked' }
-  const active = orderFor(state).activeContract
   if (!active) return { authorized: false, reason: 'contract-required' }
-  const contractTier = tierOrder[active.tier]
-  if (contractTier < monsterTier || rank.reputation < requiredRankForTier(active.tier)) return { authorized: false, reason: 'contract-tier-locked' }
+  if (!meetsContractTier(active.tier, monsterId) || rank.reputation < requiredRankForTier(active.tier)) return { authorized: false, reason: 'contract-tier-locked' }
   if (isBossMonster(MONSTERS[monsterId]) && active.targetSpec.type !== 'boss') return { authorized: false, reason: 'contract-target-mismatch' }
   return doesMonsterMatchHunterContract(active, monsterId, dungeonId) ? { authorized: true } : { authorized: false, reason: 'contract-target-mismatch' }
 }
+export const getHunterAuthorization = (state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId?: DungeonId | null): HunterAuthorization => getHunterAuthorizationForContract(state, monsterId, dungeonId, orderFor(state).activeContract)
 export const canHuntMonster = (state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId?: DungeonId | null) => getHunterAuthorization(state, monsterId, dungeonId).authorized
+
+/** Canonical set of creatures whose kills can advance this assignment in the supplied location. */
+export const getEligibleHunterContractMembers = (state: Pick<GameState, 'progress'>, contract: HunterContractState, dungeonId: DungeonId): MonsterId[] => {
+  const dungeon = DUNGEONS[dungeonId]
+  if (!dungeon) return []
+  const roster = [...dungeon.monsterPool, ...(dungeon.boss ? [dungeon.boss] : [])]
+  const blocked = new Set(orderFor(state).blockedTargets)
+  return roster.filter((monsterId) => !blocked.has(monsterId)
+    && doesMonsterMatchHunterContract(contract, monsterId, dungeonId)
+    && getHunterAuthorizationForContract(state, monsterId, dungeonId, contract).authorized) as MonsterId[]
+}
 
 const matchesSpec = (spec: HunterContractTarget, monsterId: MonsterId) => doesMonsterMatchHunterContract({ id: 'candidate', targetSpec: spec, target: 1, progress: 0, tier: 'routine', reputationReward: 0, marksReward: 0 }, monsterId, spec.type === 'region' ? spec.dungeonId : 'hunters-ground')
 const eligibleMembers = (spec: HunterContractTarget) => HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => matchesSpec(spec, id) && (spec.type === 'boss' ? isBossMonster(MONSTERS[id]) : !isBossMonster(MONSTERS[id])))
@@ -124,10 +135,10 @@ const makeTargetSpecs = (state: Pick<GameState, 'progress'>): HunterContractTarg
   return candidates.filter((spec) => eligibleMembers(spec).some((id) => !blocked.has(id)))
 }
 
-const chooseQuality = (state: Pick<GameState, 'progress'>, availableTypes: ReadonlySet<HunterContractTarget['type']>, forcedTier?: HunterContractState['tier']) => {
+const chooseQuality = (state: Pick<GameState, 'progress'>, availableTypes: ReadonlySet<HunterContractTarget['type']>, forcedTier?: HunterContractState['tier'], minimumTier: HunterContractState['tier'] = 'routine') => {
   const reputation = orderFor(state).reputation
   const weights = BALANCE.huntersOrder.qualityWeights
-  const choices = (['routine', 'special', 'prestigious'] as const).filter((tier) => reputation >= requiredRankForTier(tier) && archetypesByTier[tier].some((type) => availableTypes.has(type)))
+  const choices = (['routine', 'special', 'prestigious'] as const).filter((tier) => tierOrder[tier] >= tierOrder[minimumTier] && reputation >= requiredRankForTier(tier) && archetypesByTier[tier].some((type) => availableTypes.has(type)))
   if (forcedTier) return choices.includes(forcedTier) ? forcedTier : null
   const total = choices.reduce((sum, tier) => sum + weights[tier], 0)
   let roll = nextHunterRandom(state) * total
@@ -167,10 +178,13 @@ export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>
   const count = Math.min(getHunterContractChoiceCount(state), pool.length)
   for (let index = 0; index < count; index += 1) {
     const unselected = pool.filter((spec) => !seen.has(specKey(spec)))
-    const quality = chooseQuality(state, new Set(unselected.map((spec) => spec.type)), options.tier)
+    const exactTarget = unselected.find((spec) => spec.type === 'monster')
+    const minimumTier = options.monsterId && exactTarget?.type === 'monster' ? getMinimumContractTierForMonster(exactTarget.monsterId) : 'routine'
+    const quality = chooseQuality(state, new Set(unselected.map((spec) => spec.type)), options.tier, minimumTier)
     if (!quality) break
     const allowedTypes = archetypesByTier[quality]
-    const available = unselected.filter((spec) => allowedTypes.includes(spec.type))
+    const available = unselected.filter((spec) => allowedTypes.includes(spec.type)
+      && (spec.type !== 'monster' || meetsContractTier(quality, spec.monsterId)))
     if (!available.length) break
     const spec = chooseWeightedTargetSpec(state, available)
     const tierRanges = spec.type === 'boss'
@@ -243,7 +257,7 @@ export const acceptHunterContract = (state: GameState, contractId: string) => {
   const order = state.progress.huntersOrder
   if (!isHuntersOrderUnlocked(state) || order.activeContract) return false
   const selected = order.availableContracts.find((contract) => contract.id === contractId)
-  if (!selected || !eligibleMembers(selected.targetSpec).length) return false
+  if (!selected || !getEligibleHunterContractMembers(state, selected, 'hunters-ground').length) return false
   order.activeContract = { ...selected, targetSpec: { ...selected.targetSpec } }
   order.totalContractsAccepted = safeInt(order.totalContractsAccepted) + 1
   order.availableContracts = order.availableContracts.filter((contract) => contract.id !== contractId)
@@ -268,7 +282,7 @@ export const recordHunterKill = (state: GameState, monsterId: MonsterId, dungeon
   order.totalHunterKills = safeInt(order.totalHunterKills) + 1
   const stats = order.monsterHunterStats[monsterId] ??= { contractKills: 0, contractsCompleted: 0, marksEarned: 0 }
   const contract = order.activeContract
-  if (!contract || !doesMonsterMatchHunterContract(contract, monsterId, dungeonId)) return false
+  if (!contract || !dungeonId || !getEligibleHunterContractMembers(state, contract, dungeonId).includes(monsterId)) return false
   contract.progress = Math.min(contract.target, contract.progress + 1)
   stats.contractKills += 1
   if (contract.progress < contract.target) return true
@@ -320,7 +334,7 @@ export const setHunterTargetBlocked = (state: GameState, monsterId: MonsterId, b
   if (!blocked) order.blockedTargets = blockedTargets.filter((id) => id !== monsterId)
   else {
     if (blockedTargets.length >= getHunterBlockSlotCount(state)) return false
-    if (order.activeContract && doesMonsterMatchHunterContract(order.activeContract, monsterId, 'hunters-ground')) return false
+    if (order.activeContract && getEligibleHunterContractMembers(state, order.activeContract, 'hunters-ground').includes(monsterId)) return false
     if (normalTargets.filter((id) => id !== monsterId && !blockedTargets.includes(id)).length < 1) return false
     order.blockedTargets = [...blockedTargets, monsterId]
   }
@@ -366,7 +380,7 @@ export const debugGrantHunterMarks = (state: GameState, amount: number) => { sta
 export const debugCompleteActiveHunterContract = (state: GameState) => {
   const contract = state.progress.huntersOrder.activeContract
   if (!contract) return false
-  const monsterId = eligibleMembers(contract.targetSpec)[0]
+  const monsterId = getEligibleHunterContractMembers(state, contract, 'hunters-ground')[0]
   if (!monsterId) return false
   for (let count = contract.progress; count < contract.target; count += 1) recordHunterKill(state, monsterId, 'hunters-ground')
   return true

@@ -20,9 +20,9 @@ describe('Hunter’s Order locked shell', () => {
     renderScreen()
 
     expect(screen.getAllByRole('heading', { name: 'FIELD INTELLIGENCE' }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('region', { name: 'Hunter quarry overview' })).toBeTruthy()
-    expect(screen.getByText('0 / 7 known')).toBeTruthy()
-    expect(screen.getByText('HUNTER QUARRY')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Field Intelligence' })).toBeTruthy()
+    expect(screen.getByText('0 / 7')).toBeTruthy()
+    expect(screen.getAllByText('HUNTER QUARRY').length).toBeGreaterThan(0)
     expect(screen.queryByRole('tab', { name: 'Hunting Grounds' })).toBeNull()
     expect(screen.getByRole('tab', { name: 'Bestiary' }).getAttribute('aria-selected')).toBe('true')
     expect((screen.getByRole('tab', { name: 'Contracts' }) as HTMLButtonElement).disabled).toBe(true)

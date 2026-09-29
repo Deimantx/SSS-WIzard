@@ -8,6 +8,8 @@ describe('Hunter Contract Combat navigation', () => {
 
   it('opens Gloamridge with an exact active Contract target selected without starting combat', () => {
     const state = createInitialState()
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.reputation = 32500
     state.progress.huntersOrder.activeContract = { id: 'nightglass-test', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 500, marksReward: 12 }
     const setScreen = vi.fn()
 
@@ -19,6 +21,8 @@ describe('Hunter Contract Combat navigation', () => {
 
   it('prefers a requested matching quarry and falls back to the authored deterministic target for a mismatch', () => {
     const state = createInitialState()
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.reputation = 1250
     state.progress.huntersOrder.activeContract = { id: 'family-test', targetSpec: { type: 'family', familyId: 'Gloamridge Predators' }, target: 20, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
     const setScreen = vi.fn()
 

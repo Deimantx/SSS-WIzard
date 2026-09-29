@@ -1,9 +1,8 @@
-import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
-import { doesMonsterMatchHunterContract, getHunterContractTargetLabel } from '../../systems/huntersOrder/huntersOrderRuntime'
+import { doesMonsterMatchHunterContract, getEligibleHunterContractMembers, getHunterContractTargetLabel } from '../../systems/huntersOrder/huntersOrderRuntime'
 import type { DungeonId, GameState, HunterContractState, MonsterId } from '../../types'
 
-export type HunterContractMonsterRelation = 'exact-target' | 'eligible' | 'not-eligible' | 'no-contract'
+export type HunterContractMonsterRelation = 'exact-target' | 'eligible' | 'matching-but-locked' | 'not-eligible' | 'no-contract'
 
 export function getMonsterHunterContractRelation(state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId: DungeonId): HunterContractMonsterRelation {
   const metadata = MONSTERS[monsterId]?.hunter
@@ -11,14 +10,14 @@ export function getMonsterHunterContractRelation(state: Pick<GameState, 'progres
   const contract = state.progress.huntersOrder.activeContract
   if (!contract) return 'no-contract'
   if (!doesMonsterMatchHunterContract(contract, monsterId, dungeonId)) return 'not-eligible'
+  if (!getEligibleHunterContractMembers(state, contract, dungeonId).includes(monsterId)) return 'matching-but-locked'
   return contract.targetSpec.type === 'monster' ? 'exact-target' : 'eligible'
 }
 
 export function resolvePreferredHunterContractMonster(state: Pick<GameState, 'progress' | 'combat' | 'ui'>): MonsterId | null {
   const contract = state.progress.huntersOrder.activeContract
   if (!contract) return null
-  const roster = DUNGEONS['hunters-ground'].monsterPool
-  const matches = roster.filter((monsterId) => doesMonsterMatchHunterContract(contract, monsterId, 'hunters-ground')) as MonsterId[]
+  const matches = getEligibleHunterContractMembers(state, contract, 'hunters-ground')
   if (!matches.length) return null
   const currentTarget = state.combat.targetEnemyId
   const wasAtGloamridge = state.combat.dungeonId === 'hunters-ground' || state.ui.lastEnteredCombatDungeonId === 'hunters-ground'
@@ -27,9 +26,7 @@ export function resolvePreferredHunterContractMonster(state: Pick<GameState, 'pr
 
 export function getHunterContractCombatPresentation(state: Pick<GameState, 'progress' | 'combat' | 'ui'>) {
   const contract = state.progress.huntersOrder.activeContract
-  const matchingMonsterIds: MonsterId[] = contract
-    ? DUNGEONS['hunters-ground'].monsterPool.filter((id) => doesMonsterMatchHunterContract(contract, id, 'hunters-ground'))
-    : []
+  const matchingMonsterIds: MonsterId[] = contract ? getEligibleHunterContractMembers(state, contract, 'hunters-ground') : []
   return {
     active: Boolean(contract),
     contract,
@@ -46,6 +43,6 @@ export function getHunterContractCombatPresentation(state: Pick<GameState, 'prog
   }
 }
 
-export function getHunterContractEligibleCount(contract: HunterContractState | null) {
-  return contract ? DUNGEONS['hunters-ground'].monsterPool.filter((id) => doesMonsterMatchHunterContract(contract, id, 'hunters-ground')).length : 0
+export function getHunterContractEligibleCount(state: Pick<GameState, 'progress'>, contract: HunterContractState | null) {
+  return contract ? getEligibleHunterContractMembers(state, contract, 'hunters-ground').length : 0
 }

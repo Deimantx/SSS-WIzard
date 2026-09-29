@@ -1,20 +1,22 @@
 import { useGameStore } from '../../store/gameStore'
+import { PLAYER_STAT_FIELD_REGISTRY } from '../playerStats/playerStatFieldRegistry'
+import type { ScenarioReadyPreset } from './scenarioReadyPresetStore'
 
-/** Shared, intentionally finite tester bonuses; no invulnerability or infinite-resource flags. */
-export const SCENARIO_PLAYER_PRESETS = {
-  'test-ready': { maxHealthFlat: 150, maxManaFlat: 50, healthRegenFlat: 2, manaRegenFlat: 5, spellPowerPercent: 0.35 },
-} as const
-
-export const applyTestReadyPlayerPreset = () => {
+export const applyTestReadyPlayerPreset = (preset: ScenarioReadyPreset) => {
   let state = useGameStore.getState()
-  state.resetDebugOverrides()
-  const preset = SCENARIO_PLAYER_PRESETS['test-ready']
-  for (const [key, value] of Object.entries(preset)) state.setDebugPlayerStatValue(`core.${key}`, value)
+  // TEST READY owns only the Player Stat Lab section and its explicit run flags.
+  state.resetDebugPlayerStats()
+  for (const field of PLAYER_STAT_FIELD_REGISTRY) {
+    const value = preset.stats[field.path] ?? 0
+    if (value !== 0) useGameStore.getState().setDebugPlayerStatValue(field.path, value)
+  }
   state = useGameStore.getState()
-  state.setPlayer({ health: state.player.maxHealth, mana: state.player.maxMana })
-  state.clearPlayerStatuses()
-  state.clearPlayerBarrier()
-  state.setDebugPlayerImmortal(false)
-  state.setDebugInfiniteMana(false)
-  return state
+  state.setDebugPlayerImmortal(preset.godMode)
+  state.setDebugInfiniteMana(preset.infiniteMana)
+  if (preset.clearStatuses) state.clearPlayerStatuses()
+  if (preset.clearBarrier) state.clearPlayerBarrier()
+  state = useGameStore.getState()
+  const player = { ...(preset.refillHealth ? { health: state.player.maxHealth } : {}), ...(preset.refillMana ? { mana: state.player.maxMana } : {}) }
+  if (Object.keys(player).length) state.setPlayer(player)
+  return useGameStore.getState()
 }

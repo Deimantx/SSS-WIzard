@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import { discardDeveloperSandboxSnapshot, hasDeveloperSandboxSnapshot, restoreAndExitDeveloperSandbox } from '../developerSandbox'
-import { clearDeveloperSandbox, getDeveloperToolsState } from '../developerToolsStore'
+import { clearDeveloperSandbox, getDeveloperToolsState, setCustomScenarioLibraryExpanded, setScenarioGroupExpanded } from '../developerToolsStore'
 import { createProfile, enterProfile, leaveToProfiles } from '../../profiles/profileController'
 import { getActiveProfileId, refreshProfiles, setActiveProfileId } from '../../profiles/profileSessionStore'
 import { loadProfileGame, validateProfileCandidate } from '../../persistence/profileSaveManager'
@@ -11,6 +11,8 @@ import { profileSaveBackupKey, profileSaveKey } from '../../profiles/profileKeys
 import { DeveloperScenarios } from './DeveloperV4SupportTabs'
 import { useDeveloperGameStore } from '../developerSandbox'
 import { getSaveDiagnostics } from '../../persistence/saveDiagnosticsStore'
+import { applyTestReadyPlayerPreset } from '../scenarios/scenarioStatPresets'
+import { createDefaultScenarioReadyPreset } from '../scenarios/scenarioReadyPresetStore'
 
 describe('Developer Scenario Lab', () => {
   beforeEach(() => {
@@ -20,6 +22,7 @@ describe('Developer Scenario Lab', () => {
     setActiveProfileId(null)
     useGameStore.setState(createInitialState())
     window.localStorage.clear()
+    setScenarioGroupExpanded({ Foundation: true, Combat: true, 'Hunter’s Order': true, 'Arcane Guild': true, 'Tower Systems': true })
     refreshProfiles()
   })
   afterEach(() => { if (getDeveloperToolsState().sandbox.active) restoreAndExitDeveloperSandbox(); else discardDeveloperSandboxSnapshot() })
@@ -98,11 +101,62 @@ describe('Developer Scenario Lab', () => {
     expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
     expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(0)
     fireEvent.click(card.querySelectorAll('button')[1]!)
-    expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(150)
+    expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(500)
     expect(useGameStore.getState().debug.playerImmortal).toBe(false)
     expect(useGameStore.getState().debug.infiniteMana).toBe(false)
     expect(useGameStore.getState().player.health).toBe(useGameStore.getState().player.maxHealth)
     expect(useGameStore.getState().combat.activeSpellLoadout?.slots.map((slot) => slot.spellId)).toContain('fire-bolt')
+  })
+
+  it('edits and persists a scenario-specific Ready preset that TEST READY applies', async () => {
+    const { unmount } = render(<DeveloperScenarios />)
+    const card = screen.getByRole('heading', { name: 'Nightglass Apex Ready' }).closest('article')!
+    fireEvent.click(card.querySelector('button[aria-label="Edit Test Ready preset for Nightglass Apex Ready"]')!)
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Max Health Flat' }), { target: { value: '2500' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Spell Power Flat' }), { target: { value: '700' } })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    fireEvent.click(screen.getByRole('button', { name: 'DONE' }))
+    unmount()
+    render(<DeveloperScenarios />)
+    const remounted = screen.getByRole('heading', { name: 'Nightglass Apex Ready' }).closest('article')!
+    expect(remounted.textContent).toContain('Custom')
+    fireEvent.click(remounted.querySelectorAll('button')[1])
+    expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(2500)
+    expect(useGameStore.getState().debug.playerStats.spellPowerFlat).toBe(700)
+  })
+
+  it('TEST READY replaces only Player Stat Lab state and preserves unrelated debug fixture settings', () => {
+    const state = useGameStore.getState()
+    state.setDebugIgnoreAcolyteLimit(true)
+    state.setDebugAcolyteTotalOverride(17)
+    state.setDebugArcaneFluxCapacity(4321)
+    const preset = createDefaultScenarioReadyPreset()
+    preset.stats = { 'core.maxHealthFlat': 300 }
+    applyTestReadyPlayerPreset(preset)
+    expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(300)
+    expect(useGameStore.getState().debug.ignoreAcolyteLimit).toBe(true)
+    expect(useGameStore.getState().debug.acolyteTotalOverride).toBe(17)
+    expect(useGameStore.getState().debug.arcaneFluxCapacityOverride).toBe(4321)
+  })
+
+  it('uses explicit Test Ready capability instead of inferring it from group names', () => {
+    render(<DeveloperScenarios />)
+    const hunter = screen.getByRole('heading', { name: 'Gloamridge — Active Contract' }).closest('article')!
+    const veteran = screen.getByRole('heading', { name: 'Hunter’s Order — Veteran Progression' }).closest('article')!
+    const guild = screen.getByRole('heading', { name: 'Arcane Guild — Early Progression' }).closest('article')!
+    expect(hunter.querySelector('button[aria-label="Edit Test Ready preset for Gloamridge — Active Contract"]')).toBeTruthy()
+    expect(veteran.textContent).not.toContain('TEST READY')
+    expect(guild.textContent).not.toContain('TEST READY')
+  })
+
+  it('collapses scenario groups and the Custom Scenario Library while keeping their summaries visible', () => {
+    render(<DeveloperScenarios />)
+    fireEvent.click(screen.getByRole('button', { name: 'COLLAPSE ALL' }))
+    expect(screen.queryByRole('heading', { name: 'Fresh Start' })).toBeNull()
+    expect(JSON.parse(window.localStorage.getItem('sss-wizard-devtools-session-v4') ?? '{}').scenarioGroupExpanded.Combat).toBe(false)
+    act(() => setCustomScenarioLibraryExpanded(false))
+    expect(screen.getByText('0 saved')).toBeTruthy()
+    expect(document.querySelector('.scenario-library-toolbar')).toBeNull()
   })
 
   it('prepares real Arcane Guild, Research, and Transmutation test states', () => {

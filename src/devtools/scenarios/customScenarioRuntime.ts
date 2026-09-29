@@ -1,5 +1,6 @@
 import { recalculateDerivedStats } from '../../game/engine'
 import type { GameState } from '../../game/types'
+import packageMetadata from '../../../package.json'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import { ensureDeveloperSandbox } from '../developerSandbox'
@@ -33,7 +34,7 @@ export const captureDeveloperScenario = (draft: DeveloperScenarioDraft, options:
   state.notifications = []
   return {
     id: newId(), name: draft.name.trim(), description: draft.description.trim(), tags: [...new Set(draft.tags.map((tag) => tag.trim()).filter(Boolean))],
-    createdAt: Date.now(), updatedAt: Date.now(), sourceAppVersion: '0.1.0', scenarioSchemaVersion: 1,
+    createdAt: Date.now(), updatedAt: Date.now(), sourceAppVersion: packageMetadata.version, scenarioSchemaVersion: 1,
     snapshot: { gameState: state, viewContext: { screen: live.ui.screen }, summary: summarize(state) },
   }
 }

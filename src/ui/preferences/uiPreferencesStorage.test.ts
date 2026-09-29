@@ -38,6 +38,11 @@ describe('screen UI preferences', () => {
     expect(normalizeUiPreferences({ screenState: { huntersOrder: { activeTab: 'invalid' } } }).screenState.huntersOrder.activeTab).toBe('contracts')
   })
 
+  it('persists the Hunter Overview tab across preference reloads', () => {
+    setUiPreferences({ screenState: { huntersOrder: { activeTab: 'overview' } } })
+    expect(loadUiPreferences().screenState.huntersOrder.activeTab).toBe('overview')
+  })
+
   it('normalizes malformed screen preferences without affecting gameplay', () => {
     const preferences = normalizeUiPreferences({ screenState: { inventory: { currentNeedsOpen: 'yes', sourceOpen: 1, usedInOpen: false }, transmutation: { selectedRecipeId: 7, recipeFilter: 'invalid', collapsedCategories: { elemental: true, material: 'yes', equipment: false } } } })
 

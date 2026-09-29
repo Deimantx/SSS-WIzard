@@ -5,6 +5,7 @@ import { deleteCustomScenario, getScenarioStorageStatus, listCustomScenarios, pu
 import { captureDeveloperScenario, duplicateDeveloperScenario, exportDeveloperScenario, runCustomDeveloperScenario } from './customScenarioRuntime'
 import { parseDeveloperScenarioFile, validateDeveloperScenario } from './customScenarioSchema'
 import type { DeveloperScenarioDraft, DeveloperScenarioRecord } from './customScenarioTypes'
+import { setCustomScenarioLibraryExpanded, useDeveloperToolsStore } from '../developerToolsStore'
 
 const emptyDraft: DeveloperScenarioDraft = { name: '', description: '', tags: [] }
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value)
@@ -12,6 +13,8 @@ const screenLabels: Record<string, string> = { home: 'Home', combat: 'Combat', s
 
 export function CustomScenarioLibrary() {
   const screen = useGameStore((state) => state.ui.screen)
+  const session = useDeveloperToolsStore()
+  const expanded = session.customScenarioLibraryExpanded
   const [status, setStatus] = useState<ScenarioStorageStatus>({ available: false, reason: 'Checking browser storage…' })
   const [records, setRecords] = useState<DeveloperScenarioRecord[]>([])
   const [query, setQuery] = useState('')
@@ -67,7 +70,8 @@ export function CustomScenarioLibrary() {
   }
 
   return <>
-    <Card title="Custom Scenario Library" action={<Status tone={status.available ? 'success' : 'warning'}>{status.available ? `${records.length} SAVED` : 'STORAGE UNAVAILABLE'}</Status>}>
+    <details className="developer-custom-scenario-accordion" open={expanded} onToggle={(event) => { const next = event.currentTarget.open; if (next !== expanded) setCustomScenarioLibraryExpanded(next) }}><summary><strong>CUSTOM SCENARIOS</strong><span>{records.length} saved</span></summary>
+    {expanded && <Card title="Custom Scenario Library" action={<Status tone={status.available ? 'success' : 'warning'}>{status.available ? `${records.length} SAVED` : 'STORAGE UNAVAILABLE'}</Status>}>
       <div className="scenario-library-toolbar">
         <p className="muted">Saved locally in a separate Developer-only database. Scenarios include progression, debug overrides, combat state and view context, without profile identity.</p>
         <div className="button-row"><Button onClick={() => openSave()}>{status.available ? 'SAVE CURRENT STATE' : 'EXPORT CURRENT STATE'}</Button><Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={!status.available}>IMPORT JSON</Button><input ref={fileRef} className="scenario-file-input" type="file" accept="application/json,.json" aria-label="Import scenario file" onChange={(event) => void importFile(event.target.files?.[0])} /></div>
@@ -88,7 +92,8 @@ export function CustomScenarioLibrary() {
         </article>
       })}</div>}
       {status.available && <details className="scenario-library-diagnostics"><summary>Advanced storage diagnostics</summary><span>Database: sss-wizard-dev-scenarios</span><span>Schema: V1</span><span>Records: {records.length}</span><span>Estimated payload: {formatNumber(new Blob(records.map((record) => JSON.stringify(record))).size)} bytes</span></details>}
-    </Card>
+    </Card>}
+    </details>
 
     <ModalPortal open={dialog === 'save'} onClose={() => setDialog(null)} backdropClassName="scenario-dialog-backdrop" surfaceClassName="scenario-dialog" ariaLabel={editing ? 'Edit scenario' : 'Save scenario'}>
       <header><span className="eyebrow">DEVELOPER SCENARIO</span><h2>{editing ? 'Edit library entry' : 'Save current state'}</h2><p>Capture the current game snapshot. This reads runtime state and does not start or replace the sandbox restore anchor.</p></header>

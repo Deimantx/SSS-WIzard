@@ -4,30 +4,26 @@ import { MAX_CRIT_CHANCE } from '../../game/core/balance/combatStats'
 import { getEquipmentStatSnapshot } from '../../game/presentation/equipment/equipmentReadModel'
 import { useDeveloperGameStore as useGameStore } from '../developerSandbox'
 import { formatResourceAmount } from '../../game/presentation/resources/resourcePresentation'
-import { getDeveloperPlayerStatLab, PLAYER_STAT_LAB_DAMAGE_TYPES } from '../playerStatLabReadModel'
+import { getDeveloperPlayerStatLab } from '../playerStatLabReadModel'
 import { NumberField, Summary } from './DeveloperTabPrimitives'
+import { PLAYER_STAT_FIELD_REGISTRY } from '../playerStats/playerStatFieldRegistry'
+import type { ModifierKey } from '../../game/systems/combat/combatTypes'
 
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`
+const elementLabel = (type: string) => `${type[0].toUpperCase()}${type.slice(1)}`
 const formatResolvedStat = (label: string, value: number) => {
   if (['Crit Chance', 'Crit Damage', 'Mana Cost Reduction', 'Healing Done', 'Barrier Power'].includes(label)) return percent(value)
   if (label === 'Cooldown Recovery') return `${value.toFixed(2)}x`
   return Number(value.toFixed(2))
 }
-const ELEMENT_LABELS = { physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air' } as const
-const OFFENSE_FIELDS = [
-  ['damage-dealt-percent', 'Damage Dealt'], ['spell-damage-percent', 'Spell Damage'], ['crit-chance', 'Critical Chance (pp)'],
-  ['crit-damage', 'Critical Damage (pp)'], ['damage-over-time-percent', 'Damage over Time'], ['cooldown-recovery-percent', 'Cooldown Recovery'], ['spell-cast-time-percent', 'Spell Cast Time'],
-] as const
-const DEFENSE_FIELDS = [['defense-flat', 'Defense Flat'], ['defense-percent', 'Defense (%)'], ['damage-taken-percent', 'Damage Taken (%)']] as const
-const SUSTAIN_FIELDS = [
-  ['healing-done-percent', 'Healing Done'], ['healing-received-percent', 'Healing Received'], ['barrier-power-percent', 'Barrier Power'],
-  ['barrier-received-flat', 'Barrier Received Flat'], ['barrier-received-percent', 'Barrier Received (%)'], ['status-duration-dealt-percent', 'Status Duration Dealt'],
-  ['status-duration-received-percent', 'Status Duration Received'], ['control-duration-received-percent', 'Control Duration Received'],
-] as const
+const statFields = (group: string) => PLAYER_STAT_FIELD_REGISTRY.filter((field) => field.group === group)
+const OFFENSE_FIELDS = statFields('Offensive').map((field) => [field.id as ModifierKey, field.label] as const)
+const DEFENSE_FIELDS = statFields('Defensive').map((field) => [field.id as ModifierKey, field.label] as const)
+const SUSTAIN_FIELDS = statFields('Sustain / Control').map((field) => [field.id as ModifierKey, field.label] as const)
 const SECTION_BY_PATH = {
-  core: ['maxHealthFlat', 'maxHealthPercent', 'healthRegenFlat', 'maxManaFlat', 'maxManaPercent', 'manaRegenFlat', 'manaRegenPercent', 'spellPowerFlat', 'spellPowerPercent', 'manaCostReductionPercent'],
-  offense: [...OFFENSE_FIELDS.map(([key]) => `modifiers.${key}`), ...PLAYER_STAT_LAB_DAMAGE_TYPES.map((type) => `spellDamageByType.${type}`)],
-  defense: [...DEFENSE_FIELDS.map(([key]) => `modifiers.${key}`), ...PLAYER_STAT_LAB_DAMAGE_TYPES.map((type) => `resistanceByType.${type}`)],
+  core: statFields('Core').map((field) => field.path),
+  offense: [...OFFENSE_FIELDS.map(([key]) => `modifiers.${key}`), ...statFields('Elemental').filter((field) => field.path.startsWith('spellDamageByType.')).map((field) => field.path)],
+  defense: [...DEFENSE_FIELDS.map(([key]) => `modifiers.${key}`), ...statFields('Elemental').filter((field) => field.path.startsWith('resistanceByType.')).map((field) => field.path)],
   sustain: SUSTAIN_FIELDS.map(([key]) => `modifiers.${key}`),
 } as const
 
@@ -45,11 +41,12 @@ export function DeveloperCharacter() {
   const setPercent = (path: string, value: number) => setValue(path, value / 100)
   const setModifier = (key: string, value: number) => setValue(`modifiers.${key}`, value / 100)
   const resetSection = (section: keyof typeof SECTION_BY_PATH) => SECTION_BY_PATH[section].forEach((path) => setValue(path, 0))
+  const statField = (path: string) => PLAYER_STAT_FIELD_REGISTRY.find((field) => field.path === path)
   const setHealthPercent = (value: number) => setPlayer({ health: Math.round(player.maxHealth * value / 100) })
   const setManaPercent = (value: number) => setPlayer({ mana: Math.round(player.maxMana * value / 100) })
   const coreField = (key: keyof typeof debug.playerStats, label: string, isPercent = false) => {
     const value = Number(debug.playerStats[key] ?? 0)
-    return <NumberField key={key} label={label} value={isPercent ? value * 100 : value} onChange={(next) => isPercent ? setPercent(`core.${key}`, next) : setCore(key, next)} />
+    return <NumberField key={key} label={statField(`core.${key}`)?.label ?? label} value={isPercent ? value * 100 : value} onChange={(next) => isPercent ? setPercent(`core.${key}`, next) : setCore(key, next)} />
   }
 
   return <div className="developer-tab-grid developer-player-stat-lab">
@@ -73,11 +70,11 @@ export function DeveloperCharacter() {
         </div></section>
         <section className="developer-stat-section"><header><div><h3>Offense</h3><span>Signed values allowed. Crit inputs use percentage points.</span></div><Button variant="ghost" onClick={() => resetSection('offense')}>Reset section</Button></header><div className="developer-form-grid">
           {OFFENSE_FIELDS.map(([key, label]) => <NumberField key={key} label={label} value={(debug.playerStats.modifiers[key] ?? 0) * 100} onChange={(value) => setModifier(key, value)} />)}
-          {PLAYER_STAT_LAB_DAMAGE_TYPES.map((type) => <NumberField key={type} label={`${ELEMENT_LABELS[type]} Spell Damage (%)`} value={(debug.playerStats.spellDamageByType[type] ?? 0) * 100} onChange={(value) => setPercent(`spellDamageByType.${type}`, value)} />)}
+          {statFields('Elemental').filter((field) => field.path.startsWith('spellDamageByType.')).map((field) => <NumberField key={field.path} label={field.label} value={(debug.playerStats.spellDamageByType[field.element!] ?? 0) * 100} onChange={(value) => setPercent(field.path, value)} />)}
         </div></section>
         <section className="developer-stat-section"><header><div><h3>Defense</h3><span>Damage and resistance values are signed percentages.</span></div><Button variant="ghost" onClick={() => resetSection('defense')}>Reset section</Button></header><div className="developer-form-grid">
           {DEFENSE_FIELDS.map(([key, label]) => <NumberField key={key} label={label} value={key === 'defense-flat' ? debug.playerStats.modifiers[key] ?? 0 : (debug.playerStats.modifiers[key] ?? 0) * 100} onChange={(value) => key === 'defense-flat' ? setValue(`modifiers.${key}`, value) : setPercent(`modifiers.${key}`, value)} />)}
-          {PLAYER_STAT_LAB_DAMAGE_TYPES.map((type) => <NumberField key={type} label={`${ELEMENT_LABELS[type]} Resistance (%)`} value={(debug.playerStats.resistanceByType[type] ?? 0) * 100} onChange={(value) => setPercent(`resistanceByType.${type}`, value)} />)}
+          {statFields('Elemental').filter((field) => field.path.startsWith('resistanceByType.')).map((field) => <NumberField key={field.path} label={field.label} value={(debug.playerStats.resistanceByType[field.element!] ?? 0) * 100} onChange={(value) => setPercent(field.path, value)} />)}
         </div></section>
         <section className="developer-stat-section"><header><div><h3>Sustain & status</h3><span>Adjust healing, barriers, and status timing.</span></div><Button variant="ghost" onClick={() => resetSection('sustain')}>Reset section</Button></header><div className="developer-form-grid">
           {SUSTAIN_FIELDS.map(([key, label]) => <NumberField key={key} label={label} value={key === 'barrier-received-flat' ? debug.playerStats.modifiers[key] ?? 0 : (debug.playerStats.modifiers[key] ?? 0) * 100} onChange={(value) => key === 'barrier-received-flat' ? setValue(`modifiers.${key}`, value) : setPercent(`modifiers.${key}`, value)} />)}
@@ -105,7 +102,7 @@ export function DeveloperCharacter() {
       ] as [string, number, number][]).map(([label, build, resolved]) => <div className="developer-stat-ledger-row" key={label}><span>{label}</span><b>{formatResolvedStat(label, build)}</b><b>{formatResolvedStat(label, resolved - build)}</b><b>{formatResolvedStat(label, resolved)}</b></div>)}
       {lab.metrics.map((metric) => <div className="developer-stat-ledger-row" key={metric.id}><span>{metric.label}</span><b>{metric.id === 'barrier-received-flat' ? formatResolvedStat('Barrier Received Flat', metric.build) : percent(metric.build)}</b><b>{metric.id === 'barrier-received-flat' ? formatResolvedStat('Barrier Received Flat', metric.resolved - metric.build) : percent(metric.resolved - metric.build)}</b><b>{metric.id === 'barrier-received-flat' ? formatResolvedStat('Barrier Received Flat', metric.resolved) : percent(metric.resolved)}</b></div>)}
       <div className="developer-stat-ledger-element-head"><strong>Elemental modifiers / resistance</strong><small>Context-matched against each damage type</small></div>
-      {lab.elemental.map((entry) => <div className="developer-stat-ledger-row" key={entry.type}><span>{ELEMENT_LABELS[entry.type]}</span><b>Spell {percent(entry.spellBuild)} / Resist {percent(entry.resistanceBuild)}</b><b>Spell {percent(entry.spellResolved - entry.spellBuild)} / Resist {percent(entry.resistanceResolved - entry.resistanceBuild)}</b><b>Spell {percent(entry.spellResolved)} / Resist {percent(entry.resistanceResolved)}</b></div>)}
+      {lab.elemental.map((entry) => <div className="developer-stat-ledger-row" key={entry.type}><span>{elementLabel(entry.type)}</span><b>Spell {percent(entry.spellBuild)} / Resist {percent(entry.resistanceBuild)}</b><b>Spell {percent(entry.spellResolved - entry.spellBuild)} / Resist {percent(entry.resistanceResolved - entry.resistanceBuild)}</b><b>Spell {percent(entry.spellResolved)} / Resist {percent(entry.resistanceResolved)}</b></div>)}
     </div><p className="developer-debug-note">Resolved values feed actual spell damage, cost, healing, barrier, defense, resistance, status, and cast timing.</p><div className="developer-debug-note"><Status tone={debug.playerImmortal ? 'warning' : 'neutral'}>{debug.playerImmortal ? 'IMMORTAL ACTIVE' : 'NORMAL SURVIVAL'}</Status><span>Base health regen: {BALANCE.player.healthRegenPerSecond}/s. Crit cap: {percent(MAX_CRIT_CHANCE)}.</span></div></Card>
   </div>
 }

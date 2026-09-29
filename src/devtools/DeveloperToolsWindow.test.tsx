@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DeveloperToolsWindow } from './DeveloperToolsWindow'
-import { closeDeveloperTools, getDeveloperToolsState, normalizeDeveloperToolsTab, openDeveloperTools, resetDeveloperToolsWindow, setArtifactDevPanelVisible, setDeveloperCombatTab, setDeveloperToolsGeometry } from './developerToolsStore'
+import { closeDeveloperTools, getDeveloperToolsState, normalizeDeveloperToolsTab, openDeveloperTools, resetDeveloperToolsWindow, setArtifactDevPanelVisible, setDeveloperCombatTab, setDeveloperToolsGeometry, setScenarioGroupExpanded, setCustomScenarioLibraryExpanded } from './developerToolsStore'
 
 describe('Developer Tools window presentation', () => {
   beforeEach(() => {
@@ -10,6 +10,8 @@ describe('Developer Tools window presentation', () => {
     setArtifactDevPanelVisible(false)
     resetDeveloperToolsWindow()
     setDeveloperToolsGeometry({ mode: 'workspace' }, false)
+    setScenarioGroupExpanded({})
+    setCustomScenarioLibraryExpanded(true)
   })
 
   it('opens as a centered workspace with body content and no resize handles', () => {
@@ -82,6 +84,14 @@ describe('Developer Tools window presentation', () => {
     setDeveloperCombatTab('balance')
     expect(getDeveloperToolsState().combatTab).toBe('balance')
     expect(JSON.parse(window.localStorage.getItem('sss-wizard-devtools-session-v3') ?? '{}').combatTab).toBe('balance')
+  })
+
+  it('persists scenario accordion choices in Developer-only session preferences', () => {
+    setScenarioGroupExpanded({ Combat: false, 'Hunter’s Order': true })
+    setCustomScenarioLibraryExpanded(false)
+    const stored = JSON.parse(window.localStorage.getItem('sss-wizard-devtools-session-v4') ?? '{}')
+    expect(stored.scenarioGroupExpanded).toEqual({ Combat: false, 'Hunter’s Order': true })
+    expect(stored.customScenarioLibraryExpanded).toBe(false)
   })
 
   it('renders the Balance Lab measurement columns and neutral controls', () => {

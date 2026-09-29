@@ -8,7 +8,7 @@ export type DeveloperCombatTab = 'live' | 'encounter' | 'boss' | 'actions' | 'st
 export type { DeveloperToolsTab } from './developerToolIds'
 export type { DeveloperWorkspaceId } from './developerToolRegistryModel'
 export interface DeveloperSandboxState { active: boolean; reason: string | null; snapshotPresent: boolean; startedAt: number | null }
-export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; activeWorkspace: DeveloperWorkspaceId; combatTab: DeveloperCombatTab; showArtifactDevPanel: boolean; selectedEntityIds: Partial<Record<string, string>>; paneMode: 'browse' | 'inspect'; sandbox: DeveloperSandboxState }
+export interface DeveloperToolsSessionState extends DeveloperToolsGeometry { open: boolean; activeTab: DeveloperToolsTab; activeWorkspace: DeveloperWorkspaceId; combatTab: DeveloperCombatTab; showArtifactDevPanel: boolean; selectedEntityIds: Partial<Record<string, string>>; paneMode: 'browse' | 'inspect'; scenarioGroupExpanded: Record<string, boolean>; customScenarioLibraryExpanded: boolean; sandbox: DeveloperSandboxState }
 
 export function normalizeDeveloperToolsTab(tab: string): DeveloperToolsTab {
   if (tab === 'equipment') return 'inventory'
@@ -19,16 +19,16 @@ export function normalizeDeveloperToolsTab(tab: string): DeveloperToolsTab {
 const geometry = loadDeveloperToolsGeometry()
 export const DEVELOPER_TOOLS_SESSION_KEY = 'sss-wizard-devtools-session-v4'
 const LEGACY_DEVELOPER_TOOLS_SESSION_KEY = 'sss-wizard-devtools-session-v3'
-const loadSessionPreferences = (): Pick<DeveloperToolsSessionState, 'activeTab' | 'activeWorkspace' | 'combatTab' | 'showArtifactDevPanel' | 'selectedEntityIds' | 'paneMode'> => {
-  const defaults = { activeTab: 'quick' as DeveloperToolsTab, activeWorkspace: 'dashboard' as DeveloperWorkspaceId, combatTab: 'live' as DeveloperCombatTab, showArtifactDevPanel: false, selectedEntityIds: {}, paneMode: 'browse' as const }
+const loadSessionPreferences = (): Pick<DeveloperToolsSessionState, 'activeTab' | 'activeWorkspace' | 'combatTab' | 'showArtifactDevPanel' | 'selectedEntityIds' | 'paneMode' | 'scenarioGroupExpanded' | 'customScenarioLibraryExpanded'> => {
+  const defaults = { activeTab: 'quick' as DeveloperToolsTab, activeWorkspace: 'dashboard' as DeveloperWorkspaceId, combatTab: 'live' as DeveloperCombatTab, showArtifactDevPanel: false, selectedEntityIds: {}, paneMode: 'browse' as const, scenarioGroupExpanded: {}, customScenarioLibraryExpanded: true }
   if (typeof localStorage === 'undefined') return defaults
   try {
     const raw = localStorage.getItem(DEVELOPER_TOOLS_SESSION_KEY) ?? localStorage.getItem(LEGACY_DEVELOPER_TOOLS_SESSION_KEY)
-    const saved = JSON.parse(raw ?? 'null') as { activeTab?: string; activeWorkspace?: DeveloperWorkspaceId; combatTab?: DeveloperCombatTab; showArtifactDevPanel?: boolean; selectedEntityIds?: Partial<Record<string, string>>; paneMode?: 'browse' | 'inspect' } | null
+    const saved = JSON.parse(raw ?? 'null') as { activeTab?: string; activeWorkspace?: DeveloperWorkspaceId; combatTab?: DeveloperCombatTab; showArtifactDevPanel?: boolean; selectedEntityIds?: Partial<Record<string, string>>; paneMode?: 'browse' | 'inspect'; scenarioGroupExpanded?: Record<string, boolean>; customScenarioLibraryExpanded?: boolean } | null
     const combatTabs: DeveloperCombatTab[] = ['live', 'encounter', 'boss', 'actions', 'status', 'telemetry', 'balance']
     const activeTab = normalizeDeveloperToolsTab(saved?.activeTab ?? 'quick')
     const activeWorkspace = saved?.activeWorkspace && ['dashboard', 'player', 'magic', 'tower', 'equipment', 'combat', 'progression', 'system'].includes(saved.activeWorkspace) ? saved.activeWorkspace : getDeveloperWorkspace(activeTab)
-    return { activeTab, activeWorkspace, combatTab: combatTabs.includes(saved?.combatTab as DeveloperCombatTab) ? saved!.combatTab! : 'live', showArtifactDevPanel: saved?.showArtifactDevPanel === true, selectedEntityIds: saved?.selectedEntityIds ?? {}, paneMode: saved?.paneMode === 'inspect' ? 'inspect' : 'browse' }
+    return { activeTab, activeWorkspace, combatTab: combatTabs.includes(saved?.combatTab as DeveloperCombatTab) ? saved!.combatTab! : 'live', showArtifactDevPanel: saved?.showArtifactDevPanel === true, selectedEntityIds: saved?.selectedEntityIds ?? {}, paneMode: saved?.paneMode === 'inspect' ? 'inspect' : 'browse', scenarioGroupExpanded: saved?.scenarioGroupExpanded ?? {}, customScenarioLibraryExpanded: saved?.customScenarioLibraryExpanded !== false }
   } catch { return defaults }
 }
 const sessionPreferences = loadSessionPreferences()
@@ -40,7 +40,7 @@ const update = (changes: Partial<DeveloperToolsSessionState>, persistGeometry = 
   if (persistGeometry) {
     saveDeveloperToolsGeometry(current)
     try {
-      const payload = { activeTab: current.activeTab, activeWorkspace: current.activeWorkspace, combatTab: current.combatTab, showArtifactDevPanel: current.showArtifactDevPanel, selectedEntityIds: current.selectedEntityIds, paneMode: current.paneMode }
+      const payload = { activeTab: current.activeTab, activeWorkspace: current.activeWorkspace, combatTab: current.combatTab, showArtifactDevPanel: current.showArtifactDevPanel, selectedEntityIds: current.selectedEntityIds, paneMode: current.paneMode, scenarioGroupExpanded: current.scenarioGroupExpanded, customScenarioLibraryExpanded: current.customScenarioLibraryExpanded }
       localStorage.setItem(DEVELOPER_TOOLS_SESSION_KEY, JSON.stringify(payload))
       // Keep the old key readable for installed builds that have not migrated yet.
       localStorage.setItem('sss-wizard-devtools-session-v3', JSON.stringify(payload))
@@ -58,6 +58,8 @@ export const setDeveloperWorkspace = (activeWorkspace: DeveloperWorkspaceId) => 
 export const setDeveloperCombatTab = (combatTab: DeveloperCombatTab) => update({ combatTab }, true)
 export const setArtifactDevPanelVisible = (showArtifactDevPanel: boolean) => update({ showArtifactDevPanel }, true)
 export const setDeveloperPaneMode = (paneMode: 'browse' | 'inspect') => update({ paneMode }, true)
+export const setScenarioGroupExpanded = (scenarioGroupExpanded: Record<string, boolean>) => update({ scenarioGroupExpanded }, true)
+export const setCustomScenarioLibraryExpanded = (customScenarioLibraryExpanded: boolean) => update({ customScenarioLibraryExpanded }, true)
 export const setDeveloperSandbox = (sandbox: DeveloperSandboxState) => {
   setDeveloperSandboxSavePaused(sandbox.active)
   return update({ sandbox })

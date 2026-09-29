@@ -10,7 +10,7 @@ describe('Developer Character Player Stat Lab', () => {
 
   it('edits a structured transient override and refreshes the resolved values', () => {
     render(<DeveloperCharacter />)
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Max HP Flat' }), { target: { value: '500' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Max Health Flat' }), { target: { value: '500' } })
     expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(500)
     expect(screen.getByText('STAT OVERRIDES ACTIVE')).toBeTruthy()
     expect(screen.getByText('Resolved live combat stats')).toBeTruthy()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { MapPin, X } from 'lucide-react'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { Button, GameTooltip } from '../../components/ui'
@@ -13,6 +13,7 @@ import { clearAttention, useProfileAttention } from '../../ui/attention/attentio
 import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { MONSTERS } from '../../game/content/monsters'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters/huntersOrder'
 import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}) {
@@ -59,5 +60,13 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
 
   const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} metadataFilter={metadataFilter} metadataFilterOptions={metadataFilterOptions} onMetadataFilter={setMetadataFilter} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
-  return <div className={`screen-content bestiary-screen ${embedded ? 'bestiary-embedded' : ''}`}>{!embedded && <div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div>}<ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
+  return <div className={`screen-content bestiary-screen ${embedded ? 'bestiary-embedded' : ''}`}>{!embedded && <div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div>}{embedded && <HunterBestiarySummary progress={progress} />}<ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
+}
+
+function HunterBestiarySummary({ progress }: { progress: ReturnType<typeof useGameStore.getState>["progress"] }) {
+  const regular = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => id !== 'nightglass-alpha')
+  const known = regular.filter((id) => progress.discoveredMonsters.includes(id)).length
+  const families = new Set(regular.map((id) => MONSTERS[id]?.hunter?.family).filter(Boolean)).size
+  const alignments = new Set(regular.map((id) => MONSTERS[id]?.hunter?.alignment).filter(Boolean)).size
+  return <section className="bestiary-hunter-summary" aria-label="Hunter quarry overview"><div><span>KNOWN QUARRY</span><strong>{known} / {regular.length}</strong></div><div><span>FAMILIES</span><strong>{families}</strong></div><div><span>ALIGNMENTS</span><strong>{alignments}</strong></div><div><span>APEX</span><strong>{HUNTER_EXCLUSIVE_MONSTER_IDS.includes('nightglass-alpha') ? 1 : 0}</strong></div></section>
 }

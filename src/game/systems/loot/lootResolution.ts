@@ -15,11 +15,12 @@ import { pushNotification } from '../../engine'
 export interface SigilLootResolution { instanceId: string; setId: string; slot: number; tier: number; quality: string; autoSalvaged: boolean; dustGranted: number }
 
 /** Resolves the authored material table into inventory changes and a readable log fragment. */
-export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random, onSigilDrop?: (drop: SigilLootResolution) => void): string {
+export interface HunterLootMultipliers { itemDropMultiplier?: number; essenceMultiplier?: number; sigilDropMultiplier?: number }
+export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random, onSigilDrop?: (drop: SigilLootResolution) => void, hunterBonuses: HunterLootMultipliers = {}): string {
   const drops: string[] = []
   const encounterWorldTier = getActiveEncounterWorldTier(state)
   MONSTERS[enemyId].loot.forEach((drop) => {
-    if (rng() > drop.chance) return
+    if (rng() > Math.min(1, drop.chance * Math.max(1, hunterBonuses.itemDropMultiplier ?? 1))) return
     const baseQuantity = Math.floor(drop.min + rng() * (drop.max - drop.min + 1))
     const quantity = resolveWorldTierLootQuantity(baseQuantity, encounterWorldTier)
     grantItem(state, drop.itemId, quantity)
@@ -28,7 +29,7 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   })
   const guildBonuses = getGuildProgressionBonuses(state)
   const isBoss = isBossMonster(MONSTERS[enemyId])
-  const lifeEssenceQuantity = Math.max(1, Math.round(rollPowerScaledCurrencyReward(enemyId, 'life-essence', encounterWorldTier, rng) * guildBonuses.lifeEssenceMultiplier * (isBoss ? guildBonuses.bossEssenceMultiplier : 1)))
+  const lifeEssenceQuantity = Math.max(1, Math.round(rollPowerScaledCurrencyReward(enemyId, 'life-essence', encounterWorldTier, rng) * guildBonuses.lifeEssenceMultiplier * (isBoss ? guildBonuses.bossEssenceMultiplier : 1) * Math.max(1, hunterBonuses.essenceMultiplier ?? 1)))
   grantItem(state, 'life-essence', lifeEssenceQuantity)
   onDrop?.('life-essence', lifeEssenceQuantity)
   drops.push(`${lifeEssenceQuantity} ${ITEMS['life-essence'].name}`)
@@ -44,7 +45,8 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   // normal post-onboarding drops never inherit this pity state.
   const firstDropPending = state.sigils.lifetimeDrops === 0
   const pityGuarantee = firstDropPending && state.sigils.firstDropPityKills >= 4
-  const naturalDrop = rng() < (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal)
+  const naturalChance = Math.min(1, (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal) * Math.max(1, hunterBonuses.sigilDropMultiplier ?? 1))
+  const naturalDrop = rng() < naturalChance
   if (pityGuarantee || naturalDrop) {
     const sigil = generateSigil({ state, dungeonId: state.combat.dungeonId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
     drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)

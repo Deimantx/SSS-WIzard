@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
-import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, debugRegenerateHunterContractBoard, getEligibleHunterContractMembers, getMinimumContractTierForMonster } from './huntersOrderRuntime'
+import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterStanding, getHunterContractBoardSlotCount, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, debugRegenerateHunterContractBoard, getEligibleHunterContractMembers, getMinimumContractTierForMonster, toggleHunterContractPin, getHunterContractTargetReduction, getHunterHarvestBonuses } from './huntersOrderRuntime'
 import { BALANCE } from '../../core/balance/balance'
-import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
+import { HUNTER_RANKS, HUNTER_STANDINGS } from '../../content/huntersOrder/hunterRanks'
 import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
+import { HUNTER_GROUNDS } from '../../content/huntersOrder/hunterGrounds'
 import { HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/huntersOrder'
 import { MONSTERS } from '../../content/monsters'
 import type { HunterContractState } from '../../types'
@@ -26,7 +27,7 @@ describe('Hunter Order hardened runtime', () => {
     }
   })
 
-  it('applies the three Trail Kit reductions to normal targets and offers no boss contracts', () => {
+  it('applies the five-rank Trail Kit reduction to normal targets and offers no boss contracts', () => {
     const withoutKit = unlock(); const withKit = unlock()
     for (const state of [withoutKit, withKit]) { state.progress.huntersOrder.reputation = 32500; state.progress.huntersOrder.rngState = 901 }
     withKit.progress.huntersOrder.hunterMarks = 100
@@ -36,7 +37,7 @@ describe('Hunter Order hardened runtime', () => {
     withKit.progress.huntersOrder.rngState = 901
     const raw = debugRegenerateHunterContractBoard(withoutKit, { archetype: 'monster', tier: 'prestigious' })
     const reduced = debugRegenerateHunterContractBoard(withKit, { archetype: 'monster', tier: 'prestigious' })
-    expect(reduced.map((offer) => offer.target)).toEqual(raw.map((offer) => Math.ceil(offer.target * 0.9)))
+    expect(reduced.map((offer) => offer.target)).toEqual(raw.map((offer) => Math.ceil(offer.target * 0.94)))
     expect(reduced.every((offer) => offer.reputationReward === Math.round(offer.target * 2 * 3))).toBe(true)
     const boss = debugRegenerateHunterContractBoard(withKit, { archetype: 'boss', tier: 'prestigious' })
     expect(boss).toEqual([])
@@ -54,6 +55,16 @@ describe('Hunter Order hardened runtime', () => {
     const nextA = generateHunterContractChoices(a)
     const continued = unlock(); continued.progress.huntersOrder = saved
     expect(generateHunterContractChoices(continued)).toEqual(nextA)
+  })
+
+  it('scopes every generated offer to an authored enabled Hunting Ground', () => {
+    const state = unlock()
+    state.progress.huntersOrder.reputation = 32500
+    const offers = generateHunterContractChoices(state)
+    const enabledGroundIds = HUNTER_GROUNDS.filter((ground) => ground.enabled).map((ground) => ground.id)
+    expect(enabledGroundIds).toEqual(['hunters-ground'])
+    expect(offers.length).toBeGreaterThan(0)
+    expect(offers.every((offer) => offer.huntingGroundId && enabledGroundIds.includes(offer.huntingGroundId))).toBe(true)
   })
 
   it('issues the first routine Contract immediately and supports the Tracker continuation action', () => {
@@ -94,7 +105,7 @@ describe('Hunter Order hardened runtime', () => {
     try {
       huntersBalance.qualityWeights = { routine: 0, special: 1, prestigious: 0 }
       const state = unlock()
-      state.progress.huntersOrder.reputation = 1250
+      state.progress.huntersOrder.reputation = 2350
       expect(generateHunterContractChoices(state).every((offer) => offer.tier === 'special')).toBe(true)
     } finally {
       huntersBalance.qualityWeights = previous
@@ -188,19 +199,20 @@ describe('Hunter Order hardened runtime', () => {
     expect(canHuntMonster(state, 'nightglass-alpha', 'hunters-ground')).toBe(true)
   })
 
-  it('gates authored upgrades by Hunter Rank and adds the Contract Portfolio choices', () => {
+  it('gates authored programs by exact Standing and grows Board slots from one to three', () => {
     const state = unlock()
     const order = state.progress.huntersOrder
     order.hunterMarks = 100
     expect(getHunterContractChoiceCount(state)).toBe(0)
-    expect(getHunterUpgradePurchaseStatus(state, 'contract-portfolio')).toMatchObject({ canPurchase: false, reason: 'rank-required', requiredRank: { id: 'scout' } })
-    expect(purchaseHunterUpgrade(state, 'contract-portfolio')).toBe(false)
-
-    order.reputation = 1250
-    expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices)
-    expect(purchaseHunterUpgrade(state, 'contract-portfolio')).toBe(true)
-    expect(getHunterContractChoiceCount(state)).toBe(BALANCE.huntersOrder.baseContractChoices + 1)
-    expect(order.availableContracts).toHaveLength(Math.min(getHunterContractChoiceCount(state), 5))
+    expect(getHunterContractBoardSlotCount(state)).toBe(1)
+    expect(getHunterUpgradePurchaseStatus(state, 'exact-quarry-briefing')).toMatchObject({ canPurchase: false, reason: 'rank-required', requiredStanding: { id: 'tracker-3' } })
+    expect(purchaseHunterUpgrade(state, 'exact-quarry-briefing')).toBe(false)
+    order.reputation = 500
+    expect(getHunterContractBoardSlotCount(state)).toBe(2)
+    expect(getHunterContractChoiceCount(state)).toBe(2)
+    order.reputation = 2350
+    expect(getHunterContractBoardSlotCount(state)).toBe(3)
+    expect(getHunterContractChoiceCount(state)).toBe(3)
   })
 
   it('reduces Reroll and Skip costs through their authored upgrades', () => {
@@ -214,6 +226,40 @@ describe('Hunter Order hardened runtime', () => {
     expect(purchaseHunterUpgrade(state, 'order-privilege')).toBe(true)
     expect(getHunterRerollMarkCost(state)).toBe(BALANCE.huntersOrder.rerollMarkCost - 1)
     expect(getHunterSkipMarkCost(state)).toBe(BALANCE.huntersOrder.skipMarkCost - 1)
+  })
+
+  it('pins offers across refresh, scopes matching to the Contract ground, and caps stacked target reductions', () => {
+    const state = unlock()
+    const order = state.progress.huntersOrder
+    order.reputation = 2900
+    order.purchasedUpgrades['pinned-orders'] = 2
+    order.purchasedUpgrades['trail-kit'] = 5
+    order.purchasedUpgrades['exact-quarry-briefing'] = 3
+    order.purchasedUpgrades['prestigious-preparation'] = 3
+    order.hunterMarks = 100
+    order.availableContracts = generateHunterContractChoices(state)
+    expect(order.availableContracts).toHaveLength(3)
+    const pinned = order.availableContracts[0]!
+    expect(toggleHunterContractPin(state, pinned.id)).toBe(true)
+    expect(rerollHunterContracts(state)).toBe(true)
+    expect(order.availableContracts[0]).toEqual(pinned)
+    expect(getHunterContractTargetReduction(state, 'monster', 'prestigious')).toBe(0.22)
+    expect(getHunterContractTargetReduction(state, 'monster', 'prestigious')).toBeLessThanOrEqual(0.25)
+    const otherGround = contract({ type: 'monster', monsterId: 'ashen-tracker' }, 'routine')
+    otherGround.huntingGroundId = 'howling-den'
+    expect(getEligibleHunterContractMembers(state, otherGround, 'hunters-ground')).toEqual([])
+    expect(doesMonsterMatchHunterContract(otherGround, 'ashen-tracker', 'howling-den')).toBe(false)
+  })
+
+  it('applies Harvest upgrades only to quarry authorized by the active Contract', () => {
+    const state = unlock()
+    state.progress.huntersOrder.purchasedUpgrades['resonant-claim'] = 2
+    state.progress.huntersOrder.purchasedUpgrades['essence-claim'] = 1
+    state.progress.huntersOrder.purchasedUpgrades['fragment-rights'] = 2
+    state.progress.huntersOrder.purchasedUpgrades['sigil-claim'] = 1
+    expect(getHunterHarvestBonuses(state, 'ashen-tracker', 'hunters-ground')).toMatchObject({ authorized: false, resonanceMultiplier: 1, essenceMultiplier: 1, itemDropMultiplier: 1, sigilDropMultiplier: 1 })
+    state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'ashen-tracker' })
+    expect(getHunterHarvestBonuses(state, 'ashen-tracker', 'hunters-ground')).toMatchObject({ authorized: true, resonanceMultiplier: 1.1, essenceMultiplier: 1.05, itemDropMultiplier: 1.1, sigilDropMultiplier: 1.03 })
   })
 
   it('gates Nightglass Alpha by authored minimum Hunter rank and matching normal quarry contract', () => {
@@ -265,7 +311,24 @@ describe('Hunter Order hardened runtime', () => {
 
   it('keeps maximum Hunter Marks costs proportionate to the rank path', () => {
     const totalMarks = HUNTER_UPGRADES.reduce((sum, upgrade) => sum + upgrade.markCosts.reduce((rankSum, cost) => rankSum + cost, 0), 0)
-    expect(totalMarks).toBe(188)
+    expect(HUNTER_UPGRADES).toHaveLength(30)
+    expect(totalMarks).toBe(1261)
+  })
+
+  it('derives all 30 Standing thresholds from Reputation and preserves macro ranks', () => {
+    expect(HUNTER_STANDINGS).toHaveLength(30)
+    for (let index = 0; index < HUNTER_STANDINGS.length; index += 1) {
+      const standing = HUNTER_STANDINGS[index]!
+      expect(getHunterStanding(standing.reputation).id).toBe(standing.id)
+      if (index > 0) expect(getHunterStanding(standing.reputation - 1).id).toBe(HUNTER_STANDINGS[index - 1]!.id)
+    }
+    expect(getHunterStanding(249).id).toBe('tracker-1')
+    expect(getHunterStanding(250).id).toBe('tracker-2')
+    expect(getHunterStanding(1249).id).toBe('tracker-5')
+    expect(getHunterStanding(1250).id).toBe('scout-1')
+    expect(getHunterStanding(55999).id).toBe('master-hunter-4')
+    expect(getHunterStanding(56000).id).toBe('master-hunter-5')
+    expect(HUNTER_RANKS.map((rank) => rank.reputation)).toEqual([0, 1250, 4000, 9000, 17500, 32500])
   })
 
   it('reports and records the same Deep Pockets Marks award', () => {

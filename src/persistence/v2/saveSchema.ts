@@ -43,6 +43,7 @@ const isHunterTarget = (value: unknown) => {
 }
 const isHunterContract = (value: unknown) => isRecord(value)
   && typeof value.id === 'string' && value.id.length > 0
+  && (value.huntingGroundId === undefined || typeof value.huntingGroundId === 'string' && Object.prototype.hasOwnProperty.call(DUNGEONS, value.huntingGroundId))
   && isHunterTarget(value.targetSpec)
   && isNonNegativeNumber(value.target) && value.target > 0
   && isNonNegativeNumber(value.progress) && value.progress <= value.target
@@ -93,6 +94,10 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
   }
   if (hunters.activeContract !== null && !isHunterContract(hunters.activeContract)) return false
   if (!Array.isArray(hunters.availableContracts) || !hunters.availableContracts.every(isHunterContract)) return false
+  if (hunters.pinnedContractIds !== undefined && (!Array.isArray(hunters.pinnedContractIds) || hunters.pinnedContractIds.some((id) => typeof id !== 'string'))) return false
+  if (hunters.preferredContractType !== undefined && hunters.preferredContractType !== null && !['monster', 'family', 'alignment', 'region'].includes(String(hunters.preferredContractType))) return false
+  if (hunters.preferredHuntingGroundId !== undefined && hunters.preferredHuntingGroundId !== null && (typeof hunters.preferredHuntingGroundId !== 'string' || !Object.prototype.hasOwnProperty.call(DUNGEONS, hunters.preferredHuntingGroundId))) return false
+  if (hunters.lastSelectedQuarryByGround !== undefined && (!isRecord(hunters.lastSelectedQuarryByGround) || Object.entries(hunters.lastSelectedQuarryByGround).some(([ground, monster]) => !Object.prototype.hasOwnProperty.call(DUNGEONS, ground) || typeof monster !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, monster as string)))) return false
   if (!Array.isArray(hunters.blockedTargets) || hunters.blockedTargets.some((id) => typeof id !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, id))) return false
   if (!isRecord(hunters.purchasedUpgrades) || Object.entries(hunters.purchasedUpgrades).some(([id, rank]) => !HUNTER_UPGRADES.some((entry) => entry.id === id) || !Number.isInteger(rank) || (rank as number) < 0)) return false
   if (!isRecord(hunters.monsterHunterStats) || Object.entries(hunters.monsterHunterStats).some(([id, stats]) => !Object.prototype.hasOwnProperty.call(MONSTERS, id) || !isRecord(stats) || !['contractKills', 'contractsCompleted', 'marksEarned'].every((key) => isNonNegativeNumber(stats[key])))) return false

@@ -162,7 +162,7 @@ describe('CombatWorldNavigation', () => {
     useGameStore.setState(state)
     renderNavigation()
 
-    expect(screen.getByText('ACTIVE HUNTER CONTRACT')).toBeTruthy()
+    expect(screen.getByText(/ACTIVE HUNTER CONTRACT/)).toBeTruthy()
     expect(screen.getAllByText('Ashen Tracker').length).toBeGreaterThan(0)
     expect(screen.getByText('84 / 153 defeated')).toBeTruthy()
     expect(screen.getByText('+306 Reputation · +3 Marks')).toBeTruthy()

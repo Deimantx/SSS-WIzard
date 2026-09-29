@@ -30,7 +30,7 @@ import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
-import { issueFirstHunterContract, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage } from '../huntersOrder/huntersOrderRuntime'
+import { issueFirstHunterContract, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage, getHunterHarvestBonuses } from '../huntersOrder/huntersOrderRuntime'
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -242,12 +242,13 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const undiscoveredItems = new Set(state.progress.discoveredItems)
   const resolvedDrops: CombatLootDrop[] = []
   const resolvedSigils: SigilLootResolution[] = []
+  const hunterBonuses = getHunterHarvestBonuses(state, enemyId, state.combat.dungeonId)
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) }, () => nextCombatRandom(state), (sigilLoot) => {
     resolvedSigils.push(sigilLoot)
     report?.recordSigil(sigilLoot)
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'sigil-loot', sourceId: 'sigil-loot', amount: 1, sigilLoot })
     pushNotification(state, `Sigil found: T${sigilLoot.tier} ${sigilLoot.quality} ${sigilLoot.setId}`, 'success', { key: 'sigil-loot', cooldownMs: 900 })
-  })
+  }, hunterBonuses)
   const encounterWorldTier = state.combat.enemyWorldTier ?? getWorldTierDefinition(state.worldTier.current).id
   if (resolveCrystalCacheDrop(state, enemyId, encounterWorldTier, () => nextCombatRandom(state))) {
     const itemId: ItemId = 'tier-1-crystal-cache'
@@ -259,7 +260,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   }
   if (resolvedDrops.length || resolvedSigils.length) onLootResolved?.(state, enemyId, resolvedDrops, resolvedSigils)
   const guildBonuses = getGuildProgressionBonuses(state)
-  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier, guildBonuses.combatResonanceMultiplier)
+  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier, guildBonuses.combatResonanceMultiplier * hunterBonuses.resonanceMultiplier)
   const resonanceGained = resonanceReward.grantedYield
   report?.recordResonance(resonanceGained)
   const resonanceText = formatResonanceBundle(resonanceGained)

@@ -14,6 +14,7 @@ import { ARCANE_REGISTRY_SETS } from '../game/content/guild/registry/registrySet
 import { GUILD_COMMISSION_CHAINS } from '../game/content/guild/guildCommissionChains'
 import { HUNTER_UPGRADES } from '../game/content/huntersOrder/hunterUpgrades'
 import { HUNTER_RANKS } from '../game/content/huntersOrder/hunterRanks'
+import { HUNTER_GROUNDS } from '../game/content/huntersOrder/hunterGrounds'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../game/content/monsters/huntersOrder'
 import { GUILD_COMMISSION_TEMPLATES } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
@@ -310,7 +311,8 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     if (!targetSpec) return null
     const tier = value.tier === 'special' || value.tier === 'prestigious' ? value.tier : 'routine'
     const target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
-    return { id: value.id.slice(0, 80), targetSpec, target, progress: Math.min(target, nonNegativeInteger(value.progress) ?? 0), tier, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, marksReward: nonNegativeInteger(value.marksReward) ?? 0 }
+    const huntingGroundId = HUNTER_GROUNDS.some((ground) => ground.id === value.huntingGroundId) ? value.huntingGroundId as DungeonId : 'hunters-ground'
+    return { id: value.id.slice(0, 80), huntingGroundId, targetSpec, target, progress: Math.min(target, nonNegativeInteger(value.progress) ?? 0), tier, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, marksReward: nonNegativeInteger(value.marksReward) ?? 0 }
   }
   const hunterReputation = nonNegativeInteger(rawHunters.reputation) ?? 0
   const hunterRankId = [...HUNTER_RANKS].reverse().find((rank) => hunterReputation >= rank.reputation)?.id ?? HUNTER_RANKS[0].id
@@ -327,7 +329,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const purchasedHunterUpgrades = Object.fromEntries(HUNTER_UPGRADES.flatMap((upgrade) => { const rank = Math.min(upgrade.maxRank, nonNegativeInteger(rawPurchasedHunterUpgrades[upgrade.id]) ?? 0); return rank > 0 ? [[upgrade.id, rank]] : [] }))
   const rawBlockedHunterTargets = Array.isArray(rawHunters.blockedTargets) ? rawHunters.blockedTargets.filter((id): id is GameState['progress']['huntersOrder']['blockedTargets'][number] => hunterIds.some((hunterId) => hunterId === id) && !isBossMonster(MONSTERS[id as typeof hunterIds[number]])) : []
   const blockCapacity = BALANCE.huntersOrder.baseBlockSlots + (purchasedHunterUpgrades['extended-trails'] ?? 0)
-  migrated.progress.huntersOrder = { reputation: hunterReputation, rankId: hunterRankId, hunterMarks: nonNegativeInteger(rawHunters.hunterMarks) ?? 0, totalContractsAccepted: Math.max(nonNegativeInteger(rawHunters.totalContractsAccepted) ?? 0, activeHunterContract ? 1 : nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0), activeContract: activeHunterContract, availableContracts: [], blockedTargets: [...new Set(rawBlockedHunterTargets)].slice(0, blockCapacity), purchasedUpgrades: purchasedHunterUpgrades, totalContractsCompleted: nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0, totalHunterKills: nonNegativeInteger(rawHunters.totalHunterKills) ?? 0, generationCount: nonNegativeInteger(rawHunters.generationCount) ?? 0, rngState: nonNegativeInteger(rawHunters.rngState) ?? 2654435769, monsterHunterStats }
+  migrated.progress.huntersOrder = { reputation: hunterReputation, rankId: hunterRankId, hunterMarks: nonNegativeInteger(rawHunters.hunterMarks) ?? 0, totalContractsAccepted: Math.max(nonNegativeInteger(rawHunters.totalContractsAccepted) ?? 0, activeHunterContract ? 1 : nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0), activeContract: activeHunterContract, availableContracts: [], pinnedContractIds: [], preferredContractType: null, preferredHuntingGroundId: null, lastSelectedQuarryByGround: {}, blockedTargets: [...new Set(rawBlockedHunterTargets)].slice(0, blockCapacity), purchasedUpgrades: purchasedHunterUpgrades, totalContractsCompleted: nonNegativeInteger(rawHunters.totalContractsCompleted) ?? 0, totalHunterKills: nonNegativeInteger(rawHunters.totalHunterKills) ?? 0, generationCount: nonNegativeInteger(rawHunters.generationCount) ?? 0, rngState: nonNegativeInteger(rawHunters.rngState) ?? 2654435769, monsterHunterStats }
   const normalizedHunterContracts = Array.isArray(rawHunters.availableContracts) ? rawHunters.availableContracts.map(normalizeContract).filter((contract): contract is NonNullable<typeof contract> => Boolean(contract)) : []
   migrated.progress.huntersOrder.availableContracts = normalizedHunterContracts.slice(0, getHunterContractChoiceCount(migrated))
   const rawRegistry = isRecord(rawProgress.arcaneRegistry) ? rawProgress.arcaneRegistry : {}

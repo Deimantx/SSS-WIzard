@@ -76,15 +76,15 @@ describe('current Hunter and Guild board save integrity', () => {
     expect(result.state?.progress.huntersOrder.rngState).toBe(rngState)
   })
 
-  it('preserves a five-offer Contract Portfolio board without truncation', () => {
+  it('preserves the three-offer Scout III board without truncation', () => {
     const state = unlockedHunterState()
-    state.progress.huntersOrder.purchasedUpgrades['contract-portfolio'] = 2
+    state.progress.huntersOrder.reputation = 2350
     state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state)
     const offers = structuredClone(state.progress.huntersOrder.availableContracts)
     const rngState = state.progress.huntersOrder.rngState
 
-    expect(getHunterContractChoiceCount(state)).toBe(5)
-    expect(offers).toHaveLength(5)
+    expect(getHunterContractChoiceCount(state)).toBe(3)
+    expect(offers).toHaveLength(3)
     const result = roundTrip(state)
 
     expect(result.ok, result.error ?? '').toBe(true)

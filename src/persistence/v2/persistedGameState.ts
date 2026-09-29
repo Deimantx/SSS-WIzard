@@ -31,6 +31,7 @@ export type PersistedHunterTargetV1 =
 
 export interface PersistedHunterContractV1 {
   id: string
+  huntingGroundId?: DungeonId
   targetSpec: PersistedHunterTargetV1
   target: number
   progress: number
@@ -46,6 +47,10 @@ export interface PersistedHunterOrderV1 {
   totalContractsAccepted: number
   activeContract: PersistedHunterContractV1 | null
   availableContracts: PersistedHunterContractV1[]
+  pinnedContractIds?: string[]
+  preferredContractType?: 'monster' | 'family' | 'alignment' | 'region' | 'boss' | null
+  preferredHuntingGroundId?: DungeonId | null
+  lastSelectedQuarryByGround?: Partial<Record<DungeonId, MonsterId>>
   blockedTargets: MonsterId[]
   purchasedUpgrades: Partial<Record<HunterUpgradeId, number>>
   totalContractsCompleted: number

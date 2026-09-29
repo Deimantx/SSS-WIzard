@@ -146,9 +146,9 @@ describe('save navigation migration', () => {
         },
       },
     } as any)
-    expect(migrated.progress.huntersOrder.activeContract).toMatchObject({ id: 'legacy-nightglass', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' }, target: 4, progress: 2, reputationReward: 140, marksReward: 6 })
-    expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' } })
-    expect(migrated.progress.huntersOrder.availableContracts[1]).toMatchObject({ id: 'legacy-hunt', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, progress: 2 })
+    expect(migrated.progress.huntersOrder.activeContract).toMatchObject({ id: 'legacy-nightglass', huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' }, target: 4, progress: 2, reputationReward: 140, marksReward: 6 })
+    expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' } })
+    expect(migrated.progress.huntersOrder.availableContracts[1]).toMatchObject({ id: 'legacy-hunt', huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, progress: 2 })
     expect(migrated.progress.huntersOrder.rankId).toBe('master-hunter')
     expect(migrated.progress.huntersOrder.rngState).toBe(8675309)
   })

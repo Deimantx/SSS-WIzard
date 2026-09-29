@@ -33,6 +33,19 @@ describe('Hunter Bestiary field workspace', () => {
     expect(screen.getByRole('button', { name: 'CLEAR FILTERS' })).toBeTruthy()
   })
 
+  it('groups the Hunter quarry index by Ground and changes the dossier when a tile is selected', async () => {
+    const state = useGameStore.getState()
+    state.progress.discoveredMonsters = ['gloamfang-stalker', 'ashen-tracker', 'runehorn-brute', 'veilwing-harrier', 'cinderback-mauler', 'gloomroot-hexer', 'nightglass-alpha']
+    useGameStore.setState(state)
+    const user = userEvent.setup()
+    const { container } = renderBestiary()
+    await user.click(screen.getByRole('tab', { name: 'HUNTER QUARRY' }))
+    expect(screen.getByText('Gloamridge', { selector: '.hunter-quarry-ground-group > header > strong' })).toBeTruthy()
+    expect(container.querySelectorAll('.hunter-quarry-tile-grid .hunter-quarry-tile')).toHaveLength(7)
+    await user.click(screen.getByRole('button', { name: /Ashen Tracker/ }))
+    expect(screen.getByRole('heading', { name: 'Ashen Tracker' })).toBeTruthy()
+  })
+
   it('shows the four structured dossier sections and reveals combat content only in Combat', async () => {
     const user = userEvent.setup()
     renderBestiary()

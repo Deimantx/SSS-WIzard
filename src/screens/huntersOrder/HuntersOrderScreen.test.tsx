@@ -40,7 +40,7 @@ describe('Hunter’s Order locked shell', () => {
     expect(screen.getByText('TRACKER DISPATCH')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: /REQUEST FIRST ASSIGNMENT/i }))
     expect(useGameStore.getState().progress.huntersOrder.activeContract).not.toBeNull()
-    expect(screen.getByText('FIRST ASSIGNMENT')).toBeTruthy()
+    expect(screen.getByText(/ROUTINE · ACTIVE CONTRACT/)).toBeTruthy()
   })
 
   it('hides Target Blocks until unlocked and lists all eligible quarry afterward', async () => {
@@ -53,7 +53,7 @@ describe('Hunter’s Order locked shell', () => {
       useGameStore.getState().debugGrantHunterUpgrade('extended-trails')
     })
     expect(useGameStore.getState().progress.huntersOrder.blockedTargets).toEqual([])
-    await user.click(screen.getByRole('button', { name: /MANAGE BLOCKS/i }))
+    await user.click(screen.getByRole('button', { name: /TARGET BLOCKS/i }))
     expect(screen.getByRole('region', { name: 'Blockable targets' })).toBeTruthy()
     expect(screen.getAllByText('Ashen Tracker').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Gloamfang Stalker').length).toBeGreaterThan(0)
@@ -70,8 +70,8 @@ describe('Hunter’s Order locked shell', () => {
     const accept = screen.getAllByRole('button', { name: /ACCEPT CONTRACT/i })[0]
     await user.click(accept)
 
-    expect(screen.getByRole('heading', { name: 'First assignment' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open gloamridge/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Current Contract' })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: /OPEN GROUND/i }).length).toBeGreaterThan(0)
   })
 
   it('shows the Order overview as a useful dispatch surface and routes its CTA to Contracts', async () => {
@@ -80,8 +80,8 @@ describe('Hunter’s Order locked shell', () => {
     act(() => useGameStore.getState().debugSetHuntersOrderUnlocked(true))
     await user.click(screen.getByRole('tab', { name: 'Overview' }))
     expect(screen.getByRole('heading', { name: 'Hunter’s Order' })).toBeTruthy()
-    expect(screen.getByText('Assignment desk is ready.')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'REQUEST ASSIGNMENT' }))
+    expect(screen.getByText('Dispatch is ready.')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'OPEN CONTRACT BOARD' }))
     expect(screen.getByRole('tab', { name: 'Contracts' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('button', { name: 'REQUEST FIRST ASSIGNMENT' })).toBeTruthy()
   })
@@ -92,12 +92,14 @@ describe('Hunter’s Order locked shell', () => {
     act(() => useGameStore.getState().debugSetHunterRank('stalker'))
     await user.click(screen.getByRole('tab', { name: 'Order Rank' }))
     expect(screen.getAllByRole('heading', { name: 'Stalker' }).length).toBeGreaterThan(0)
-    expect(screen.getByText('4,000 / 9,000 Reputation')).toBeTruthy()
+    expect(screen.getByText('4,000 / 5,000 Reputation')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: /Warden/ }))
     expect(screen.getByText('9,000 Reputation')).toBeTruthy()
     expect(screen.getAllByText('Region Contracts').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Deep Pockets').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Order Privilege').length).toBeGreaterThan(0)
+    await user.click(screen.getByRole('button', { name: /Stalker/ }))
+    await user.click(screen.getByRole('button', { name: /Stalker III/ }))
+    expect(screen.getAllByText('Deep Pockets').length).toBeGreaterThan(0)
   })
 
   it('presents upgrade effects and rank locks in the Order services catalog', async () => {
@@ -111,12 +113,13 @@ describe('Hunter’s Order locked shell', () => {
     })
     await user.click(screen.getByRole('tab', { name: 'Upgrades' }))
 
-    expect(screen.getByRole('heading', { name: 'Hunt Efficiency' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Hunter Mark Catalog' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Trail Kit/ }))
     expect(screen.getByRole('heading', { name: 'Trail Kit' })).toBeTruthy()
-    expect(screen.getByText('10% lower contract kill requirements')).toBeTruthy()
+    expect(screen.getByText('6% lower all contract target')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Deep Pockets/ }))
     expect(screen.getByRole('heading', { name: 'Deep Pockets' })).toBeTruthy()
-    expect(screen.getAllByText('REQUIRES WARDEN').length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('button', { name: 'LOCKED' }).every((button) => (button as HTMLButtonElement).disabled)).toBe(true)
+    expect(screen.getByText('REQUIRES STALKER III')).toBeTruthy()
   })
 
   it('includes Nightglass as a normal Gloamridge quarry in the shared Bestiary', () => {

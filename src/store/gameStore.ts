@@ -150,7 +150,7 @@ import {
 } from "./actions/guildActions";
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
 import type { GuildSkillNodeId, GuildRankId } from "../game/types";
-import { acceptHunterContractAction, issueFirstHunterContractAction, requestHunterAssignmentAction, requestHunterContractBoardAction, rerollHunterContractsAction, setHunterTargetBlockedAction, clearHunterTargetBlocksAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassContractAction } from './actions/huntersOrderActions'
+import { acceptHunterContractAction, issueFirstHunterContractAction, requestHunterAssignmentAction, requestHunterContractBoardAction, rerollHunterContractsAction, setHunterTargetBlockedAction, clearHunterTargetBlocksAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassContractAction, toggleHunterContractPinAction, setHunterPreferredContractTypeAction, setHunterPreferredHuntingGroundAction, debugSetHunterStandingAction, debugSetHunterUpgradeRankAction, debugSetAllHunterUpgradesAction, rememberHunterQuarryAction } from './actions/huntersOrderActions'
 import { debugSetGuildCommissionRngSeedAction, debugRegenerateGuildCommissionBoardAction } from './actions/guildActions'
 import {
   debugLockSpellAction,
@@ -837,8 +837,11 @@ export interface GameActions {
   debugGrantHunterReputation: (amount: number) => void;
   debugGrantHunterMarks: (amount: number) => void;
   debugSetHunterRngSeed: (seed: number) => void;
-  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'region' | 'boss'; tier?: 'routine' | 'special' | 'prestigious' }) => void;
+  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'region' | 'boss'; tier?: 'routine' | 'special' | 'prestigious'; fixtureChoiceCount?: 1 | 2 | 3; huntingGroundId?: DungeonId }) => void;
   debugSetHunterRank: (rank: import('../game/types').HunterRankId) => boolean;
+  debugSetHunterStanding: (standingId: string) => boolean;
+  debugSetHunterUpgradeRank: (upgradeId: string, rank: number) => boolean;
+  debugSetAllHunterUpgrades: (mode: 'max' | 'reset') => boolean;
   debugGrantHunterUpgrade: (upgradeId: string) => boolean;
   debugClearHunterTargetBlocks: () => boolean;
   debugGrantNightglassContract: () => boolean;
@@ -849,6 +852,10 @@ export interface GameActions {
   requestHunterContractBoard: () => boolean;
   skipHunterContract: () => boolean;
   rerollHunterContracts: () => boolean;
+  toggleHunterContractPin: (contractId: string) => boolean;
+  setHunterPreferredContractType: (type: import('../game/types').HunterContractTarget['type'] | null) => boolean;
+  setHunterPreferredHuntingGround: (groundId: DungeonId | null) => boolean;
+  rememberHunterQuarry: (monsterId: MonsterId, groundId: DungeonId) => boolean;
   setHunterTargetBlocked: (monsterId: MonsterId, blocked: boolean) => boolean;
   clearHunterTargetBlocks: () => boolean;
   purchaseHunterUpgrade: (upgradeId: string) => boolean;
@@ -3129,6 +3136,9 @@ export const useGameStore = create<GameStore>()(
     debugSetHunterRngSeed: (seed) => set((state) => { debugSetHunterRngSeedAction(state, seed); return state; }),
     debugRegenerateHunterContractBoard: (options = {}) => set((state) => { debugRegenerateHunterContractBoardAction(state, options); return state; }),
     debugSetHunterRank: (rank) => { let ok = false; set((state) => { ok = debugSetHunterRankAction(state, rank); return state; }); return ok; },
+    debugSetHunterStanding: (id) => { let ok = false; set((state) => { ok = debugSetHunterStandingAction(state, id); return state; }); return ok; },
+    debugSetHunterUpgradeRank: (id, rank) => { let ok = false; set((state) => { ok = debugSetHunterUpgradeRankAction(state, id, rank); return state; }); return ok; },
+    debugSetAllHunterUpgrades: (mode) => { let ok = false; set((state) => { ok = debugSetAllHunterUpgradesAction(state, mode); return state; }); return ok; },
     debugGrantHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = debugGrantHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
     debugClearHunterTargetBlocks: () => { let ok = false; set((state) => { ok = debugClearHunterTargetBlocksAction(state); return state; }); return ok; },
     debugGrantNightglassContract: () => { let ok = false; set((state) => { ok = debugGrantNightglassContractAction(state); return state; }); return ok; },
@@ -3139,6 +3149,10 @@ export const useGameStore = create<GameStore>()(
     requestHunterContractBoard: () => { let ok = false; set((state) => { ok = requestHunterContractBoardAction(state); return state; }); return ok; },
     skipHunterContract: () => { let ok = false; set((state) => { ok = skipHunterContractAction(state); if (ok) stopHunterContractCombat(state); return state; }); return ok; },
     rerollHunterContracts: () => { let ok = false; set((state) => { ok = rerollHunterContractsAction(state); return state; }); return ok; },
+    toggleHunterContractPin: (contractId) => { let ok = false; set((state) => { ok = toggleHunterContractPinAction(state, contractId); return state; }); return ok; },
+    setHunterPreferredContractType: (type) => { let ok = false; set((state) => { ok = setHunterPreferredContractTypeAction(state, type); return state; }); return ok; },
+    setHunterPreferredHuntingGround: (groundId) => { let ok = false; set((state) => { ok = setHunterPreferredHuntingGroundAction(state, groundId); return state; }); return ok; },
+    rememberHunterQuarry: (monsterId, groundId) => { let ok = false; set((state) => { ok = rememberHunterQuarryAction(state, monsterId, groundId); return state; }); return ok; },
     purchaseHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = purchaseHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
     setHunterTargetBlocked: (monsterId, blocked) => { let ok = false; set((state) => { ok = setHunterTargetBlockedAction(state, monsterId, blocked); return state; }); return ok; },
     clearHunterTargetBlocks: () => { let ok = false; set((state) => { ok = clearHunterTargetBlocksAction(state); return state; }); return ok; },

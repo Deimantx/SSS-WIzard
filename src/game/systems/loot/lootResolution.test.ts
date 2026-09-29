@@ -3,6 +3,7 @@ import { createInitialState } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
 import { resolvePowerScaledCurrencyRewardRange } from './powerScaledCurrencyRewards'
 import { resolveMonsterLoot } from './lootResolution'
+import { getHunterHarvestBonuses } from '../huntersOrder/huntersOrderRuntime'
 
 describe('monster loot resolution', () => {
   it('grants universal Life Essence through the normal item acquisition path', () => {
@@ -34,6 +35,31 @@ describe('monster loot resolution', () => {
     state.combat.enemyWorldTier = 4
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0)
     expect(state.inventory['life-essence']).toBe(resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 4).finalMin)
+  })
+
+  it('applies Hunter material and Sigil chance upgrades as relative multipliers only for authorized quarry', () => {
+    const base = createInitialState()
+    const boosted = createInitialState()
+    for (const state of [base, boosted]) {
+      state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+      state.progress.huntersOrder.activeContract = { id: 'authorized-hunt', huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 10, progress: 0, tier: 'routine', reputationReward: 20, marksReward: 3 }
+      state.sigils.lifetimeDrops = 1
+    }
+    boosted.progress.huntersOrder.purchasedUpgrades['fragment-rights'] = 3
+    boosted.progress.huntersOrder.purchasedUpgrades['sigil-claim'] = 3
+    const drops: string[] = []
+    resolveMonsterLoot(base, 'ashen-tracker', (itemId) => drops.push(itemId), () => 0.18, undefined, getHunterHarvestBonuses(base, 'ashen-tracker', 'hunters-ground'))
+    expect(drops).not.toContain('fire-fragment')
+    drops.length = 0
+    resolveMonsterLoot(boosted, 'ashen-tracker', (itemId) => drops.push(itemId), () => 0.18, undefined, getHunterHarvestBonuses(boosted, 'ashen-tracker', 'hunters-ground'))
+    expect(drops).toContain('fire-fragment')
+
+    let baseSigil = false
+    let boostedSigil = false
+    resolveMonsterLoot(base, 'ashen-tracker', undefined, () => 0.041, () => { baseSigil = true }, getHunterHarvestBonuses(base, 'ashen-tracker', 'hunters-ground'))
+    resolveMonsterLoot(boosted, 'ashen-tracker', undefined, () => 0.041, () => { boostedSigil = true }, getHunterHarvestBonuses(boosted, 'ashen-tracker', 'hunters-ground'))
+    expect(baseSigil).toBe(false)
+    expect(boostedSigil).toBe(true)
   })
 
   it('keeps every monster on the generic material-only authored loot path', () => {

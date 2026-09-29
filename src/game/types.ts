@@ -784,7 +784,8 @@ export interface ArcaneRegistryProgress {
 
 export type HunterRankId = 'tracker' | 'scout' | 'stalker' | 'warden' | 'veteran' | 'master-hunter'
 export type HunterContractTier = 'routine' | 'special' | 'prestigious'
-export type HunterUpgradeId = 'trail-kit' | 'marked-quarry' | 'extended-trails' | 'deep-pockets' | 'contract-portfolio' | 'negotiated-rerolls' | 'order-privilege'
+export type HunterStandingId = `${HunterRankId}-${1 | 2 | 3 | 4 | 5}`
+export type HunterUpgradeId = 'negotiated-rerolls' | 'order-privilege' | 'extended-trails' | 'pinned-orders' | 'dispatch-directives' | 'contract-recall' | 'trail-kit' | 'exact-quarry-briefing' | 'family-cull-orders' | 'alignment-pursuit-orders' | 'ground-patrol-orders' | 'prestigious-preparation' | 'marked-quarry' | 'routine-commendation' | 'special-commendation' | 'prestige-recognition' | 'deep-pockets' | 'broad-assignment-pay' | 'resonant-claim' | 'essence-claim' | 'fragment-rights' | 'sigil-claim' | 'resonant-completion' | 'essence-completion' | 'hunt-forecast' | 'board-forecast' | 'quarry-memory' | 'ground-survey' | 'priority-dispatch' | 'master-dossier'
 export type HunterContractTarget =
   | { type: 'monster'; monsterId: MonsterId }
   | { type: 'family'; familyId: string }
@@ -793,6 +794,7 @@ export type HunterContractTarget =
   | { type: 'boss'; monsterId: MonsterId }
 export interface HunterContractState {
   id: string
+  huntingGroundId?: DungeonId
   targetSpec: HunterContractTarget
   target: number
   progress: number
@@ -807,6 +809,10 @@ export interface HuntersOrderProgress {
   totalContractsAccepted: number
   activeContract: HunterContractState | null
   availableContracts: HunterContractState[]
+  pinnedContractIds?: string[]
+  preferredContractType?: HunterContractTarget['type'] | null
+  preferredHuntingGroundId?: DungeonId | null
+  lastSelectedQuarryByGround?: Partial<Record<DungeonId, MonsterId>>
   blockedTargets: MonsterId[]
   purchasedUpgrades: Record<string, number>
   totalContractsCompleted: number

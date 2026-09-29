@@ -1,6 +1,6 @@
 import { Crown, LogOut } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { COMBAT_LOCATION_TYPE_METADATA, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
 import { useGameStore } from '../../store/gameStore'
@@ -31,9 +31,10 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
   if (sequence) {
     const index = Math.min(sequence.length, Math.max(0, combat.dungeonSequenceIndex ?? 0))
     const totalSteps = sequence.length + 1
-    const currentMonsterId = combat.enemyId ?? (index < sequence.length ? sequence[index] : dungeon.boss)
-    const currentMonster = MONSTERS[currentMonsterId]
-    return <section className="combat-run-bar is-active is-mode-sequence"><div className="combat-run-context"><span className="combat-subsection-label">CURRENT LOCATION</span><strong>{dungeon.name}</strong><small>{COMBAT_LOCATION_TYPE_METADATA[location?.type ?? 'dungeon'].label}</small></div><div className="combat-run-sequence"><div className="combat-run-metric-head"><span>DUNGEON RUN</span><strong>{index + 1} / {totalSteps}</strong></div><Progress value={(index + 1) / totalSteps * 100} tone="mana" /><small>CURRENT ENCOUNTER · {currentMonster?.name ?? 'Unknown'}</small></div><div className="combat-run-boss"><span className="combat-subsection-label"><Crown size={12} aria-hidden="true" /> FINAL BOSS</span><strong>{MONSTERS[dungeon.boss].name}</strong><small>{index >= sequence.length ? 'FIGHTING' : `STEP ${index + 1} OF ${totalSteps}`}</small></div><div className="combat-run-actions"><Button variant="ghost" onClick={onRequestLeave}><LogOut size={14} /> LEAVE</Button></div></section>
+    const boss = hasBossEncounter(dungeon) ? dungeon.boss : null
+    const currentMonsterId = combat.enemyId ?? (index < sequence.length ? sequence[index] : boss)
+    const currentMonster = currentMonsterId ? MONSTERS[currentMonsterId] : null
+    return <section className="combat-run-bar is-active is-mode-sequence"><div className="combat-run-context"><span className="combat-subsection-label">CURRENT LOCATION</span><strong>{dungeon.name}</strong><small>{COMBAT_LOCATION_TYPE_METADATA[location?.type ?? 'dungeon'].label}</small></div><div className="combat-run-sequence"><div className="combat-run-metric-head"><span>DUNGEON RUN</span><strong>{index + 1} / {totalSteps}</strong></div><Progress value={(index + 1) / totalSteps * 100} tone="mana" /><small>CURRENT ENCOUNTER · {currentMonster?.name ?? 'Unknown'}</small></div>{boss && <div className="combat-run-boss"><span className="combat-subsection-label"><Crown size={12} aria-hidden="true" /> FINAL BOSS</span><strong>{MONSTERS[boss].name}</strong><small>{index >= sequence.length ? 'FIGHTING' : `STEP ${index + 1} OF ${totalSteps}`}</small></div>}<div className="combat-run-actions"><Button variant="ghost" onClick={onRequestLeave}><LogOut size={14} /> LEAVE</Button></div></section>
   }
 
   const huntingMonster = activeTarget ?? activeEncounter

@@ -1,16 +1,16 @@
-import { type DungeonDefinition } from '../../content/dungeons/dungeons'
+import { hasBossEncounter, type BossDungeonDefinition } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import type { CombatLocationType } from '../../content/world-navigation'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isAutoHuntUnlocked, isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
-import type { GameState, WorldTierId } from '../../types'
+import type { GameState, MonsterId, WorldTierId } from '../../types'
 
 export type CombatBossHuntState = 'building' | 'ready' | 'queued' | 'fighting'
 
 export interface CombatBossHuntPresentation {
-  bossId: DungeonDefinition['boss']
+  bossId: MonsterId
   bossName: string
-  bossLabel: 'ZONE BOSS' | 'ELITE BOSS' | 'FINAL BOSS' | 'APEX HUNT'
+  bossLabel: 'ZONE BOSS' | 'ELITE BOSS' | 'FINAL BOSS'
   threatCurrent: number
   threatRequired: number
   remainingThreat: number
@@ -25,7 +25,7 @@ export interface CombatBossHuntPresentation {
 export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, locationType, worldTier }: {
   combat: Pick<GameState['combat'], 'active' | 'dungeonId' | 'enemyId' | 'inBossFight' | 'pendingBossId' | 'threatCleared'>
   progress: Pick<GameState['progress'], 'autoHuntBossUnlocked' | 'bossKillsByBoss' | 'firstBossKill' | 'autoHuntBossByDungeon'>
-  dungeon: DungeonDefinition
+  dungeon: BossDungeonDefinition
   locationType: CombatLocationType
   worldTier?: WorldTierId
 }): CombatBossHuntPresentation => {
@@ -38,7 +38,7 @@ export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, loc
   const ready = active && threatCurrent >= threatRequired && !fighting && !queued
   const autoHuntUnlocked = isAutoHuntUnlocked(progress)
   const autoHuntEnabled = isAutoHuntEnabledForDungeon({ progress }, dungeon.id)
-  const bossLabel: CombatBossHuntPresentation['bossLabel'] = locationType === 'hunting-ground' ? 'APEX HUNT' : locationType === 'elite-zone' ? 'ELITE BOSS' : locationType === 'dungeon' ? 'FINAL BOSS' : 'ZONE BOSS'
+  const bossLabel: CombatBossHuntPresentation['bossLabel'] = locationType === 'elite-zone' ? 'ELITE BOSS' : locationType === 'dungeon' ? 'FINAL BOSS' : 'ZONE BOSS'
   return {
     bossId: dungeon.boss,
     bossName: MONSTERS[dungeon.boss]?.name ?? dungeon.boss,

@@ -19,10 +19,11 @@ describe('Hunter’s Order locked shell', () => {
   it('opens Bestiary from a fresh save and keeps other Order tabs locked', () => {
     renderScreen()
 
-    expect(screen.getByRole('heading', { name: 'BESTIARY INDEX' })).toBeTruthy()
+    expect(screen.getAllByRole('heading', { name: 'FIELD INTELLIGENCE' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('region', { name: 'Hunter quarry overview' })).toBeTruthy()
-    expect(screen.getByText('0 / 6')).toBeTruthy()
-    expect(screen.getByText('KNOWN QUARRY')).toBeTruthy()
+    expect(screen.getByText('0 / 7 known')).toBeTruthy()
+    expect(screen.getByText('HUNTER QUARRY')).toBeTruthy()
+    expect(screen.queryByRole('tab', { name: 'Hunting Grounds' })).toBeNull()
     expect(screen.getByRole('tab', { name: 'Bestiary' }).getAttribute('aria-selected')).toBe('true')
     expect((screen.getByRole('tab', { name: 'Contracts' }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole('tab', { name: 'Order Rank' }) as HTMLButtonElement).disabled).toBe(true)
@@ -118,13 +119,12 @@ describe('Hunter’s Order locked shell', () => {
     expect(screen.getAllByRole('button', { name: 'LOCKED' }).every((button) => (button as HTMLButtonElement).disabled)).toBe(true)
   })
 
-  it('shows all six Gloamridge quarry and separates Nightglass in the Apex panel', async () => {
-    const user = userEvent.setup()
+  it('includes Nightglass as a normal Gloamridge quarry in the shared Bestiary', () => {
+    const state = createInitialState()
+    state.progress.discoveredMonsters.push('nightglass-alpha')
+    useGameStore.setState(state)
     renderScreen()
-    act(() => { useGameStore.getState().debugSetHunterRank('scout'); useGameStore.getState().debugRegenerateHunterContractBoard({ archetype: 'monster' }) })
-    await user.click(screen.getByRole('tab', { name: 'Hunting Grounds' }))
-    for (const quarry of ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute', 'Veilwing Harrier', 'Cinderback Mauler', 'Gloomroot Hexer']) expect(screen.getByRole('heading', { name: quarry })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Nightglass Alpha' })).toBeTruthy()
-    expect(screen.getByText('APEX HUNT')).toBeTruthy()
+    expect(screen.getAllByText('Nightglass Alpha').length).toBeGreaterThan(0)
+    expect(screen.queryByText('APEX HUNT')).toBeNull()
   })
 })

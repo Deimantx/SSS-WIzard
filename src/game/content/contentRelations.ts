@@ -1,4 +1,4 @@
-import { DUNGEONS, DUNGEON_ORDER } from './dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './dungeons/dungeons'
 import { getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
@@ -48,7 +48,7 @@ export interface ItemDropSource {
 /** Exact authored loot entries that can produce an item. */
 export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => DUNGEON_ORDER.flatMap((dungeonId) => {
   const dungeon = DUNGEONS[dungeonId]
-  const monsterIds = [...dungeon.monsterPool, dungeon.boss]
+  const monsterIds = [...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])]
   return monsterIds.flatMap((monsterId) => {
     const monster = MONSTERS[monsterId]
     return monster.loot.filter((drop) => drop.itemId === itemId).map((drop) => ({ monsterId, monsterName: monster.name, dungeonId, dungeonName: dungeon.name, role: dungeon.boss === monsterId ? 'boss' as const : 'normal' as const, ...drop, itemId }))
@@ -90,7 +90,7 @@ export const getItemRecipeUses = (itemId: ItemId) => RECIPE_ORDER.flatMap((recip
 export const getMonsterDungeon = (monsterId: MonsterId): MonsterDungeonInfo | null => {
   for (const dungeonId of DUNGEON_ORDER) {
     const dungeon = DUNGEONS[dungeonId]
-    if (dungeon.boss === monsterId) return { monsterId, dungeonId, dungeonName: dungeon.name, role: 'boss' }
+    if (hasBossEncounter(dungeon) && dungeon.boss === monsterId) return { monsterId, dungeonId, dungeonName: dungeon.name, role: 'boss' }
     if (dungeon.monsterPool.includes(monsterId)) return { monsterId, dungeonId, dungeonName: dungeon.name, role: 'normal' }
   }
   return null

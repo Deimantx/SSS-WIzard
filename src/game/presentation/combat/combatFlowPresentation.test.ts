@@ -95,6 +95,11 @@ describe('getCombatFlowPresentation', () => {
     expect(getCombatFlowPresentation(input({ dungeon: sequenceDungeon, dungeonId: sequenceDungeon.id, selectedDungeonId: sequenceDungeon.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
   })
 
+  it('never presents boss-ready mode for the bossless Gloamridge Hunting Ground', () => {
+    const huntingGround = DUNGEONS['hunters-ground']
+    expect(getCombatFlowPresentation(input({ dungeon: huntingGround, dungeonId: huntingGround.id, selectedDungeonId: huntingGround.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
+  })
+
   it('keeps Boss-ready presentation independent from the retired Run Bar control', () => {
     const presentation = getCombatFlowPresentation(input({ enemyId: null, enemy: null, threatCleared: 5000 }))
     expect(presentation.mode).toBe('boss-ready')

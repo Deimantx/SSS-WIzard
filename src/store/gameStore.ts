@@ -10,6 +10,7 @@ import {
   DUNGEONS,
   DUNGEON_ORDER,
   getDungeonUnlockRequirement,
+  hasBossEncounter,
   isDungeonUnlocked,
 } from "../game/content/dungeons/dungeons";
 import {
@@ -149,7 +150,7 @@ import {
 } from "./actions/guildActions";
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
 import type { GuildSkillNodeId, GuildRankId } from "../game/types";
-import { acceptHunterContractAction, issueFirstHunterContractAction, requestHunterAssignmentAction, requestHunterContractBoardAction, rerollHunterContractsAction, setHunterTargetBlockedAction, clearHunterTargetBlocksAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassBossContractAction, debugSetHunterApexThreatReadyAction } from './actions/huntersOrderActions'
+import { acceptHunterContractAction, issueFirstHunterContractAction, requestHunterAssignmentAction, requestHunterContractBoardAction, rerollHunterContractsAction, setHunterTargetBlockedAction, clearHunterTargetBlocksAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassContractAction } from './actions/huntersOrderActions'
 import { debugSetGuildCommissionRngSeedAction, debugRegenerateGuildCommissionBoardAction } from './actions/guildActions'
 import {
   debugLockSpellAction,
@@ -840,8 +841,7 @@ export interface GameActions {
   debugSetHunterRank: (rank: import('../game/types').HunterRankId) => boolean;
   debugGrantHunterUpgrade: (upgradeId: string) => boolean;
   debugClearHunterTargetBlocks: () => boolean;
-  debugGrantNightglassBossContract: () => boolean;
-  debugSetHunterApexThreatReady: () => void;
+  debugGrantNightglassContract: () => boolean;
   debugCompleteActiveHunterContract: () => boolean;
   acceptHunterContract: (contractId: string) => boolean;
   issueFirstHunterContract: () => boolean;
@@ -2166,13 +2166,16 @@ export const useGameStore = create<GameStore>()(
           getCombatEncounterMode(
             getCombatLocationByDungeonId(state.combat.dungeonId),
           ) === "sequence";
+        const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null;
         state.combat = {
           ...createInitialState().combat,
           dungeonId: state.combat.dungeonId,
           log: [
             sequence
               ? "Left the dungeon run."
-              : "Left the Location. Threat resets.",
+              : dungeon && hasBossEncounter(dungeon)
+                ? "Left the Location. Threat resets."
+                : "Left the Location.",
           ],
         };
         return state;
@@ -2246,6 +2249,7 @@ export const useGameStore = create<GameStore>()(
         const location = getCombatLocationByDungeonId(dungeonId);
         if (
           !dungeon ||
+          !hasBossEncounter(dungeon) ||
           getCombatEncounterMode(location) !== "targeted" ||
           !isDungeonUnlocked(dungeon, state.progress)
         )
@@ -3127,8 +3131,7 @@ export const useGameStore = create<GameStore>()(
     debugSetHunterRank: (rank) => { let ok = false; set((state) => { ok = debugSetHunterRankAction(state, rank); return state; }); return ok; },
     debugGrantHunterUpgrade: (upgradeId) => { let ok = false; set((state) => { ok = debugGrantHunterUpgradeAction(state, upgradeId); return state; }); return ok; },
     debugClearHunterTargetBlocks: () => { let ok = false; set((state) => { ok = debugClearHunterTargetBlocksAction(state); return state; }); return ok; },
-    debugGrantNightglassBossContract: () => { let ok = false; set((state) => { ok = debugGrantNightglassBossContractAction(state); return state; }); return ok; },
-    debugSetHunterApexThreatReady: () => set((state) => { debugSetHunterApexThreatReadyAction(state); return state; }),
+    debugGrantNightglassContract: () => { let ok = false; set((state) => { ok = debugGrantNightglassContractAction(state); return state; }); return ok; },
     debugCompleteActiveHunterContract: () => { let ok = false; set((state) => { ok = debugCompleteActiveHunterContractAction(state); reconcileChronicleProgress(state); return state; }); return ok; },
     acceptHunterContract: (contractId) => { let ok = false; set((state) => { ok = acceptHunterContractAction(state, contractId); return state; }); return ok; },
     issueFirstHunterContract: () => { let ok = false; set((state) => { ok = issueFirstHunterContractAction(state); return state; }); return ok; },

@@ -1,14 +1,15 @@
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { MONSTERS, isBossMonster, type MonsterDefinition } from '../../content/monsters'
-import type { BestiaryCategory, GameState, MonsterId } from '../../types'
+import type { BestiaryCategory, DungeonId, GameState, MonsterId } from '../../types'
 import { completionPercent } from '../archive/archiveSelectors'
 import { getBestiaryActionSearchText, getBestiaryMechanicSearchText, getBestiaryResonanceSearchText, getBestiaryTraitSearchText } from '../../presentation/bestiary/bestiaryPresentation'
 import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
 import { SIGIL_SETS } from '../../content/sigils/sigilSets'
+import { doesMonsterMatchHunterContract } from '../huntersOrder/huntersOrderRuntime'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
-export type BestiaryMetadataFilter = 'all' | 'hunter-only' | 'boss' | 'discovered' | `region:${string}` | `family:${string}` | `alignment:${string}` | `tier:${string}`
+export type BestiaryMetadataFilter = 'all' | 'hunter-only' | 'boss' | 'discovered' | 'contract-targets' | `region:${string}` | `family:${string}` | `alignment:${string}` | `tier:${string}`
 export interface BestiaryMetadataFilterOption { value: BestiaryMetadataFilter; label: string }
 export const BESTIARY_CATEGORY_LABELS = { monster: 'Monsters', boss: 'Bosses' } as const satisfies Record<BestiaryCategory, string>
 export const BESTIARY_ENTRY_CATEGORY_LABELS = { monster: 'Monster', boss: 'Boss' } as const satisfies Record<BestiaryCategory, string>
@@ -23,6 +24,7 @@ export const getBestiaryMetadataFilterOptions = (): BestiaryMetadataFilterOption
     { value: 'hunter-only', label: 'Hunter-only' },
     { value: 'boss', label: 'Bosses' },
     { value: 'discovered', label: 'Discovered' },
+    { value: 'contract-targets', label: 'Active Contract targets' },
   ]
   const hunterEntries = getBestiaryEntries().filter((monster) => monster.hunter)
   const unique = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b))
@@ -38,6 +40,7 @@ export const matchesBestiaryMetadataFilter = (monster: MonsterDefinition, progre
   if (filter === 'hunter-only') return Boolean(monster.hunter?.exclusive)
   if (filter === 'boss') return monster.bestiaryCategory === 'boss'
   if (filter === 'discovered') return progress.discoveredMonsters.includes(monster.id)
+  if (filter === 'contract-targets') return Boolean(progress.huntersOrder.activeContract && doesMonsterMatchHunterContract(progress.huntersOrder.activeContract, monster.id, monster.hunter?.huntingGroundId as DungeonId | undefined))
   const separator = filter.indexOf(':')
   const kind = filter.slice(0, separator)
   const value = filter.slice(separator + 1)
@@ -55,7 +58,7 @@ export const getMonsterDefeatCount = (state: Pick<GameState, 'progress'>, monste
 
 export const formatDefeats = (count: number) => `${count.toLocaleString()} ${count === 1 ? 'defeat' : 'defeats'}`
 
-export const getMonsterLocationEntries = (monsterId: MonsterId) => Object.values(DUNGEONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || dungeon.boss === monsterId).map((dungeon) => ({ id: dungeon.id, name: dungeon.name }))
+export const getMonsterLocationEntries = (monsterId: MonsterId) => Object.values(DUNGEONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || (hasBossEncounter(dungeon) && dungeon.boss === monsterId)).map((dungeon) => ({ id: dungeon.id, name: dungeon.name }))
 export const getMonsterLocations = (monsterId: MonsterId) => getMonsterLocationEntries(monsterId).map((dungeon) => dungeon.name)
 
 export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {

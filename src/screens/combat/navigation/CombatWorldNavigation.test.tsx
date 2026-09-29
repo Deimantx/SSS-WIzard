@@ -3,12 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '../../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
+import { getNavigationIntent, setNavigationIntent } from '../../../ui/navigation/navigationIntent'
 import { CombatWorldNavigation } from './CombatWorldNavigation'
 
 const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => true)) => render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onHuntTarget={onHuntTarget} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
 describe('CombatWorldNavigation', () => {
-  beforeEach(() => useGameStore.setState(createInitialState()))
+  beforeEach(() => { useGameStore.setState(createInitialState()); setNavigationIntent({ combatDungeonId: null, combatMonsterId: null }) })
 
   it('shows the hierarchy inline with one unified First Frontier location grid', () => {
     renderNavigation()
@@ -95,6 +96,20 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('button', { name: /HUNT TARGET/ })).toHaveProperty('disabled', true)
   })
 
+  it('consumes the direct Hunter Contract intent and keeps the matching target selected', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.huntersOrder.activeContract = { id: 'veilwing-route', targetSpec: { type: 'monster', monsterId: 'veilwing-harrier' }, target: 153, progress: 84, tier: 'routine', reputationReward: 306, marksReward: 3 }
+    useGameStore.setState(state)
+    setNavigationIntent({ combatDungeonId: 'hunters-ground', combatMonsterId: 'veilwing-harrier' })
+    renderNavigation()
+
+    expect(screen.getByRole('button', { name: /Veilwing Harrier/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(getNavigationIntent()).toMatchObject({ combatDungeonId: null, combatMonsterId: null })
+    expect(useGameStore.getState().combat.enemyId).toBeNull()
+  })
+
   it.each([
     ['monster', { type: 'monster', monsterId: 'ashen-tracker' }, ['Ashen Tracker']],
     ['family', { type: 'family', familyId: 'Gloamridge Predators' }, ['Ashen Tracker', 'Gloamfang Stalker']],
@@ -117,42 +132,44 @@ describe('CombatWorldNavigation', () => {
     }
   })
 
-  it('shows Apex rank and Boss Contract requirements when Gloamridge Threat is ready', () => {
+  it('keeps Gloamridge bossless even when legacy threat is high', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    state.progress.huntersOrder.reputation = 1000
     state.combat.active = true
     state.combat.dungeonId = 'hunters-ground'
     state.combat.threatCleared = Number.MAX_SAFE_INTEGER
     useGameStore.setState(state)
     renderNavigation()
 
-    expect(screen.getByText('APEX HUNT')).toBeTruthy()
-    expect(screen.getByText('MASTER HUNTER RANK AND APEX / BOSS CONTRACT REQUIRED')).toBeTruthy()
-    expect(screen.getByText('APEX HUNT LOCKED')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'ENGAGE BOSS' })).toBeNull()
+    expect(screen.getAllByRole('button', { name: /Gloamridge, HUNTING GROUND/ }).length).toBeGreaterThan(0)
+    expect(screen.getByText('NO ACTIVE HUNT CONTRACT')).toBeTruthy()
+    expect(screen.queryByText('BOSS READY')).toBeNull()
+    expect(screen.queryByText(/THREAT/i)).toBeNull()
+    expect(screen.queryByText(/APEX/i)).toBeNull()
+    expect(screen.queryByRole('button', { name: /ENGAGE BOSS|AUTO HUNT/i })).toBeNull()
+    expect(useGameStore.getState().combat.enemyId).toBeNull()
   })
 
-  it('keeps a ready Apex disabled for a normal Region Contract and enables the matching Boss Contract', () => {
+  it('shows active Contract progress and marks only matching Gloamridge quarry', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    state.progress.huntersOrder.reputation = 32500
-    state.progress.huntersOrder.activeContract = { id: 'region-hunt', targetSpec: { type: 'region', dungeonId: 'hunters-ground' }, target: 5, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 12 }
+    state.progress.huntersOrder.activeContract = { id: 'exact-hunt', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 153, progress: 84, tier: 'routine', reputationReward: 306, marksReward: 3 }
     state.combat.active = true
     state.combat.dungeonId = 'hunters-ground'
-    state.combat.threatCleared = Number.MAX_SAFE_INTEGER
+    state.combat.targetEnemyId = 'ashen-tracker'
     useGameStore.setState(state)
-    const { rerender } = renderNavigation()
-    expect(screen.getByText('ACTIVE CONTRACT MUST BE A MATCHING BOSS CONTRACT')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'ENGAGE BOSS' })).toBeNull()
+    renderNavigation()
 
-    useGameStore.setState((current) => { current.progress.huntersOrder.activeContract = { id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 12 }; return current })
-    rerender(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
-    expect(screen.getByRole('button', { name: 'ENGAGE BOSS' })).toBeTruthy()
+    expect(screen.getByText('ACTIVE HUNTER CONTRACT')).toBeTruthy()
+    expect(screen.getAllByText('Ashen Tracker').length).toBeGreaterThan(0)
+    expect(screen.getByText('84 / 153 defeated')).toBeTruthy()
+    expect(screen.getByText('+306 Reputation · +3 Marks')).toBeTruthy()
+    expect(screen.getByText('CONTRACT TARGET')).toBeTruthy()
+    expect(screen.getAllByText('NOT AUTHORIZED').length).toBeGreaterThan(0)
+    expect(useGameStore.getState().combat.enemyId).toBeNull()
   })
-
   it('distinguishes the selected target from the target currently being hunted', () => {
     const state = createInitialState()
     state.combat.active = true

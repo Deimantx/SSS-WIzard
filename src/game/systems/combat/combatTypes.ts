@@ -32,7 +32,6 @@ export type TraitId =
   | 'sigil-guardian-ward' | 'black-seal-parasite-corruption' | 'vault-devourer-regrowth' | 'inkbound-specter-curse'
   | 'gatebound-remnant-cleave' | 'black-rift-stalker-corruption' | 'portalbound-acolyte-mute' | 'sealbreaker-construct-ward'
   | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate'
-  | 'nightglass-alpha-hide' | 'nightglass-alpha-frenzy'
 
 export type CombatTag =
   | 'basic-attack'

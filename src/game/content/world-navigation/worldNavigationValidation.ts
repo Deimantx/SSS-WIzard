@@ -1,4 +1,4 @@
-import { DUNGEON_ORDER, DUNGEONS } from '../dungeons/dungeons'
+import { DUNGEON_ORDER, DUNGEONS, hasBossEncounter } from '../dungeons/dungeons'
 import { MONSTERS, isBossMonster } from '../monsters'
 import { ELITE_ZONE_AFFIXES } from '../elite-affixes'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
@@ -90,7 +90,7 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
     if (pool.length === 0) errors.push(`${location.id}: targeted encounter pool must not be empty`)
     if (!dungeon) return
     if (pool.some((monsterId) => !MONSTERS[monsterId])) errors.push(`${location.id}: targeted pool references an unknown monster`)
-    if (pool.includes(dungeon.boss)) errors.push(`${location.id}: targeted pool may not contain its boss`)
+    if (hasBossEncounter(dungeon) && pool.includes(dungeon.boss)) errors.push(`${location.id}: targeted pool may not contain its boss`)
     const targetMetadata = location.targetMetadata ?? {}
     pool.forEach((monsterId) => {
       const metadata = targetMetadata[monsterId]

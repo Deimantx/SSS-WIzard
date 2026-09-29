@@ -33,6 +33,6 @@ export { SelectMenu, type SelectMenuOption, type SelectMenuPortalLayer } from '.
 export { ModalPortal } from './ModalPortal'
 export { EquipmentCombatDetails } from './item/EquipmentCombatDetails'
 
-export function Toggle({ label, description, checked, onChange, className = '' }: { label: string; description: string; checked: boolean; onChange: (checked: boolean) => void; className?: string }) {
-  return <GameTooltip content={description}><Button type="button" variant="secondary" role="switch" aria-checked={checked} ariaPressed={checked} className={['ui-toggle', checked ? 'active' : '', className].filter(Boolean).join(' ')} onClick={() => onChange(!checked)}><span className="ui-toggle-indicator" /><span>{label}</span><b>{checked ? 'ON' : 'OFF'}</b></Button></GameTooltip>
+export function Toggle({ label, description, checked, onChange, className = '', disabled = false }: { label: string; description: string; checked: boolean; onChange: (checked: boolean) => void; className?: string; disabled?: boolean }) {
+  return <GameTooltip block content={description}><Button type="button" variant="secondary" role="switch" aria-checked={checked} ariaPressed={checked} disabled={disabled} className={['ui-toggle', checked ? 'active' : '', className].filter(Boolean).join(' ')} onClick={() => onChange(!checked)}><span className="ui-toggle-indicator" /><span>{label}</span><b>{checked ? 'ON' : 'OFF'}</b></Button></GameTooltip>
 }

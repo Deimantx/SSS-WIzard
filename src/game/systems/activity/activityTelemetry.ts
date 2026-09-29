@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
@@ -25,6 +25,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const sequenceStep = sequence ? Math.min(sequenceTotal, Math.max(1, (state.combat.dungeonSequenceIndex ?? 0) + 1)) : 0
   const sequenceRunLabel = sequence ? `Step ${sequenceStep} / ${sequenceTotal}` : null
   const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+  const hasThreatProgress = hasBossEncounter(dungeon) && !sequence
 
   if (state.combat.active) {
     const playerPercent = percent(state.player.health, state.player.maxHealth)
@@ -45,10 +46,10 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
           { label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' },
           { label: enemyLabel, value: `${formatNumber(state.combat.enemyHp)} / ${formatNumber(state.combat.enemyMaxHp)} (${enemyPercent}%)`, percent: enemyPercent, tone: 'negative' },
         ],
-        collapsedSummary: sequence ? `${dungeon.name} | ${sequenceRunLabel} | P${playerPercent}% / E${enemyPercent}%` : boss ? `Boss ${enemy.name} | P${playerPercent}% / B${enemyPercent}%` : `Combat P${playerPercent}% / E${enemyPercent}% | Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`,
+        collapsedSummary: sequence ? `${dungeon.name} | ${sequenceRunLabel} | P${playerPercent}% / E${enemyPercent}%` : boss ? `Boss ${enemy.name} | P${playerPercent}% / B${enemyPercent}%` : hasThreatProgress ? `Combat P${playerPercent}% / E${enemyPercent}% | Threat ${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}` : `Combat P${playerPercent}% / E${enemyPercent}%`,
         metrics: [
           metric(boss ? 'Boss Action' : 'Enemy Action', `${nextLabel} | ${formatCompactDuration(nextTime)}`),
-          ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)]),
+          ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : hasThreatProgress ? [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)] : []),
           ...(boss ? [metric('Boss Encounter', enemy.name)] : []),
         ],
         accent: 'red',
@@ -58,7 +59,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
         id: 'combat', label: 'COMBAT', subtitle: dungeon.name, screen: 'combat', status: 'paused', remainingMs: state.combat.encounterTimerMs,
         bars: [{ label: 'Player HP', value: `${formatNumber(state.player.health)} / ${formatNumber(state.player.maxHealth)} (${playerPercent}%)`, percent: playerPercent, tone: playerPercent < 35 ? 'warning' : 'positive' }],
         collapsedSummary: sequence ? `${dungeon.name} | NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}` : `Combat | NEXT ENCOUNTER ${formatCompactDuration(state.combat.encounterTimerMs)}`,
-        metrics: [metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)), ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)])],
+        metrics: [metric('Next Encounter', formatCompactDuration(state.combat.encounterTimerMs)), ...(sequence ? [metric('Dungeon Run', sequenceRunLabel!)] : hasThreatProgress ? [metric('Threat', `${formatNumber(state.combat.threatCleared)} / ${formatNumber(threatRequired)}`)] : [])],
         accent: 'red',
       })
     }

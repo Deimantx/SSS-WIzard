@@ -1,11 +1,11 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { MapPin, X } from 'lucide-react'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
-import { Button, GameTooltip } from '../../components/ui'
+import { Button, Card, GameTooltip } from '../../components/ui'
 import { useGameStore } from '../../store/gameStore'
 import type { DungeonId, MonsterId } from '../../game/types'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { getBestiaryEntriesByCategory, getBestiarySearchText, getBestiaryMetadataFilterOptions, matchesBestiaryMetadataFilter, type BestiaryCategoryFilter, type BestiaryMetadataFilter } from '../../game/systems/bestiary/bestiarySelectors'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
+import { getBestiaryEntriesByCategory, getBestiarySearchText, getBestiaryMetadataFilterOptions, getBestiaryCompletion, matchesBestiaryMetadataFilter, type BestiaryCategoryFilter, type BestiaryMetadataFilter } from '../../game/systems/bestiary/bestiarySelectors'
 import { BestiaryIndex } from './BestiaryIndex'
 import { BestiaryInspector } from './BestiaryInspector'
 import { BestiarySummary } from './BestiarySummary'
@@ -15,9 +15,13 @@ import { InspectorTransition } from '../../ui/game-feel/InspectorTransition'
 import { MONSTERS } from '../../game/content/monsters'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters/huntersOrder'
 import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
+import { openHunterContractInCombat } from '../../ui/navigation/hunterContractNavigation'
+import { getHunterContractCombatPresentation } from '../../game/presentation/huntersOrder/hunterContractCombatPresentation'
 
-export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}) {
+export function BestiaryScreen({ embedded = false, context = 'archive' }: { embedded?: boolean; context?: 'archive' | 'hunter' } = {}) {
   const progress = useGameStore((state) => state.progress)
+  const gameState = useGameStore()
+  const setScreen = useGameStore((state) => state.setScreen)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<BestiaryCategoryFilter>('all')
   const [metadataFilter, setMetadataFilter] = useState<BestiaryMetadataFilter>('all')
@@ -29,7 +33,7 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
   const scopeIds = useMemo(() => {
     if (!scopedDungeonId || !DUNGEONS[scopedDungeonId]) return null
     const dungeon = DUNGEONS[scopedDungeonId]
-    return new Set<MonsterId>([...dungeon.monsterPool, dungeon.boss])
+    return new Set<MonsterId>([...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])])
   }, [scopedDungeonId])
   const visibleIds = useMemo(() => getBestiaryEntriesByCategory(category).filter((monster) => {
     const discovered = progress.discoveredMonsters.includes(monster.id)
@@ -41,7 +45,7 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
     const requestedMonsterId = navigationIntent.combatMonsterId
     if (dungeonId && DUNGEONS[dungeonId]) {
       const dungeon = DUNGEONS[dungeonId]
-      const validMonsterIds = new Set<MonsterId>([...dungeon.monsterPool, dungeon.boss])
+      const validMonsterIds = new Set<MonsterId>([...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])])
       setScopedDungeonId(dungeonId)
       setSelected(requestedMonsterId && validMonsterIds.has(requestedMonsterId) ? requestedMonsterId : null)
       setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
@@ -58,15 +62,16 @@ export function BestiaryScreen({ embedded = false }: { embedded?: boolean } = {}
     setSelected((current) => current && visibleIds.includes(current) ? current : discoveredVisibleId)
   }, [visibleIds.join('|'), progress.discoveredMonsters.join('|')])
 
-  const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} metadataFilter={metadataFilter} metadataFilterOptions={metadataFilterOptions} onMetadataFilter={setMetadataFilter} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
-  const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
-  return <div className={`screen-content bestiary-screen ${embedded ? 'bestiary-embedded' : ''}`}>{!embedded && <div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div>}{embedded && <HunterBestiarySummary progress={progress} />}<ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
+  const contractView = getHunterContractCombatPresentation(gameState)
+  const hunterContext = context === 'hunter'
+  const huntFromBestiary = (monsterId: MonsterId) => openHunterContractInCombat(gameState, setScreen, monsterId)
+  const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} metadataFilter={metadataFilter} metadataFilterOptions={metadataFilterOptions} onMetadataFilter={setMetadataFilter} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} hunterContext={hunterContext} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
+  const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} hunterContext={hunterContext} onHuntInGloamridge={huntFromBestiary} /></InspectorTransition>
+  return <div className={`screen-content bestiary-screen ${embedded ? 'bestiary-embedded' : ''}`}>{!embedded && <div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedDungeonId && DUNGEONS[scopedDungeonId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedDungeonId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedDungeonId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div>}<ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: embedded ? <HunterBestiarySummary progress={progress} gameState={gameState} setScreen={setScreen} presentation={contractView} /> : <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
 }
 
-function HunterBestiarySummary({ progress }: { progress: ReturnType<typeof useGameStore.getState>["progress"] }) {
-  const regular = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => id !== 'nightglass-alpha')
-  const known = regular.filter((id) => progress.discoveredMonsters.includes(id)).length
-  const families = new Set(regular.map((id) => MONSTERS[id]?.hunter?.family).filter(Boolean)).size
-  const alignments = new Set(regular.map((id) => MONSTERS[id]?.hunter?.alignment).filter(Boolean)).size
-  return <section className="bestiary-hunter-summary" aria-label="Hunter quarry overview"><div><span>KNOWN QUARRY</span><strong>{known} / {regular.length}</strong></div><div><span>FAMILIES</span><strong>{families}</strong></div><div><span>ALIGNMENTS</span><strong>{alignments}</strong></div><div><span>APEX</span><strong>{HUNTER_EXCLUSIVE_MONSTER_IDS.includes('nightglass-alpha') ? 1 : 0}</strong></div></section>
+function HunterBestiarySummary({ progress, gameState, setScreen, presentation }: { progress: ReturnType<typeof useGameStore.getState>["progress"]; gameState: ReturnType<typeof useGameStore.getState>; setScreen: ReturnType<typeof useGameStore.getState>['setScreen']; presentation: ReturnType<typeof getHunterContractCombatPresentation> }) {
+  const completion = getBestiaryCompletion({ progress })
+  const known = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => progress.discoveredMonsters.includes(id)).length
+  return <Card title="FIELD INTELLIGENCE" className="bestiary-summary hunter-bestiary-summary"><section className="bestiary-hunter-summary" aria-label="Hunter quarry overview"><div><span>DISCOVERED</span><strong>{completion.discovered} / {completion.total}</strong></div><div><span>TOTAL DEFEATS</span><strong>{completion.totalDefeats.toLocaleString()}</strong></div><div><span>HUNTER QUARRY</span><strong>{known} / {HUNTER_EXCLUSIVE_MONSTER_IDS.length} known</strong></div><div className="is-contract"><span>ACTIVE CONTRACT</span><strong>{presentation.active ? `${presentation.label} · ${presentation.progress} / ${presentation.target}` : 'None'}</strong>{presentation.active ? <GameTooltip content="Open Gloamridge with a matching quarry selected. Combat will not start until you press Hunt Target."><Button variant="ghost" onClick={() => openHunterContractInCombat(gameState, setScreen)}>OPEN GLOAMRIDGE</Button></GameTooltip> : <GameTooltip content="Accept a Hunt Contract before hunting Hunter quarry."><Button variant="ghost" onClick={() => setScreen('hunters-order')}>OPEN CONTRACTS</Button></GameTooltip>}</div></section></Card>
 }

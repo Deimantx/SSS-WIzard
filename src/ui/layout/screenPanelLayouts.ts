@@ -336,8 +336,7 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
     'hunter-rank': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 240, preferredHeight: 480, label: 'Hunter rank progress' }),
     'hunter-upgrades': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 240, preferredHeight: 420, label: 'Hunter upgrades' }),
     'hunter-bestiary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 540, preferredHeight: 880, overflow: 'auto', label: 'Hunter Bestiary' }),
-    'hunter-grounds': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 340, preferredHeight: 570, overflow: 'auto', label: 'Hunting Grounds' }),
-  }, ['hunter-overview', 'hunter-contracts', 'hunter-rank', 'hunter-upgrades', 'hunter-bestiary', 'hunter-grounds']),
+  }, ['hunter-overview', 'hunter-contracts', 'hunter-rank', 'hunter-upgrades', 'hunter-bestiary']),
 
   // ============================================================
   // SETTINGS / INFO

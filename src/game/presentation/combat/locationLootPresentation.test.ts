@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { buildLocationLootPresentation, getLocationLootAvailabilityLabel } from './locationLootPresentation'
 
 const discoveredProgress = (dungeonId: keyof typeof DUNGEONS, includeBoss = true) => {
   const state = createInitialState()
   const dungeon = DUNGEONS[dungeonId]
-  state.progress.discoveredMonsters = [...dungeon.monsterPool, ...(includeBoss ? [dungeon.boss] : [])]
+  state.progress.discoveredMonsters = [...dungeon.monsterPool, ...(includeBoss && hasBossEncounter(dungeon) ? [dungeon.boss] : [])]
   return state.progress
 }
 

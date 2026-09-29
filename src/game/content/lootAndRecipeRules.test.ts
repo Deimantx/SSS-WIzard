@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getItemDropSources } from './contentRelations'
 import { ARTIFACTS, isArtifactId } from './artifacts/artifacts'
-import { DUNGEONS, DUNGEON_ORDER } from './dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './dungeons/dungeons'
 import { ARTIFACT_EQUIPMENT_IDS, getEquipmentIdsForDungeon, getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, validateMonsterDefinitions } from './monsters'
@@ -22,7 +22,7 @@ describe('dungeon loot and equipment ownership', () => {
     DUNGEON_ORDER.forEach((dungeonId) => {
       const dungeon = DUNGEONS[dungeonId]
       dungeon.monsterPool.forEach((monsterId) => expect(MONSTERS[monsterId].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true))
-      expect(MONSTERS[dungeon.boss].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true)
+      if (hasBossEncounter(dungeon)) expect(MONSTERS[dungeon.boss].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true)
     })
   })
 

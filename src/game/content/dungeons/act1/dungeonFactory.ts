@@ -1,15 +1,16 @@
-import type { DungeonDefinition } from '../dungeons'
+import type { BossDungeonDefinition, DungeonDefinition, DungeonUnlockCondition } from '../dungeons'
+import type { DungeonId } from '../../../types'
 
-export const act1Dungeon = (
-  id: DungeonDefinition['id'],
+export const act1Dungeon = <Id extends DungeonId>(
+  id: Id,
   name: string,
-  monsterPool: DungeonDefinition['monsterPool'],
-  boss: DungeonDefinition['boss'],
+  monsterPool: BossDungeonDefinition['monsterPool'],
+  boss: BossDungeonDefinition['boss'],
   threatRequired: number,
-  unlock: NonNullable<DungeonDefinition['unlock']>,
+  unlock: DungeonUnlockCondition,
   description: string,
   options: Pick<DungeonDefinition, 'encounterSequence'> = {},
-): DungeonDefinition => ({
+): BossDungeonDefinition & { id: Id } => ({
   id,
   name,
   monsterPool,

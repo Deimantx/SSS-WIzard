@@ -1,7 +1,7 @@
 import { Crown, Heart, Shield, ShieldAlert, Sparkles, Swords, TimerReset } from 'lucide-react'
 import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
@@ -74,7 +74,7 @@ export function CombatFlowPanel({ selectedDungeonId }: { selectedDungeonId: Dung
   }), [combat, currentActionDefinition, currentStep, dungeon, enemy, pattern, selectedDungeonId, structuralTiming])
 
   if (presentation.mode === 'tower') return <section className="combat-flow-panel is-tower"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">AT THE TOWER</span><span className="combat-flow-state-mark">STANDBY</span></div><div className="combat-flow-state-sigil"><ShieldAlert size={26} aria-hidden="true" /></div><strong>NO ACTIVE HUNT</strong><p>Enter a Location from World Navigation to begin Combat.</p></section>
-  if (presentation.mode === 'boss-ready') return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">BOSS READY</span><span className="combat-flow-state-mark">LOCATION CLEAR</span></div><div className="combat-flow-state-sigil"><Crown size={26} aria-hidden="true" /></div><strong>{MONSTERS[presentation.dungeon.boss].name}</strong><p>Boss ready. Engage it from the Zone Boss section in World Navigation.</p><span className="combat-flow-state-action">USE ZONE BOSS CONTROLS</span></section>
+  if (presentation.mode === 'boss-ready' && hasBossEncounter(presentation.dungeon)) return <section className="combat-flow-panel is-boss-ready"><div className="combat-flow-state-kicker"><span className="combat-flow-kicker">BOSS READY</span><span className="combat-flow-state-mark">LOCATION CLEAR</span></div><div className="combat-flow-state-sigil"><Crown size={26} aria-hidden="true" /></div><strong>{MONSTERS[presentation.dungeon.boss].name}</strong><p>Boss ready. Engage it from the Zone Boss section in World Navigation.</p><span className="combat-flow-state-action">USE ZONE BOSS CONTROLS</span></section>
   if (presentation.mode === 'encounter-delay') return <EncounterDelayTimeline dungeonId={presentation.dungeon.id} dungeonName={presentation.dungeon.name} encounterDelayMs={presentation.dungeon.encounterDelayMs} threatCleared={combat.threatCleared} threatRequired={presentation.threatRequired} bossApproaching={presentation.threatRequired <= combat.threatCleared} sequence={sequence} sequenceIndex={combat.dungeonSequenceIndex} />
 
   const currentAction = presentation.enemyCurrentAction

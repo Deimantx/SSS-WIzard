@@ -60,21 +60,15 @@ export const HUNTERS_ORDER_MONSTERS: Partial<Record<MonsterId, MonsterDefinition
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('root-hex-1', 'root-hex'), basic('basic-2'), action('ley-barrier-1', 'ley-barrier'), basic('basic-3'), action('root-hex-2', 'root-hex')] } },
   },
   'nightglass-alpha': {
-    ...target({ id: 'nightglass-alpha', name: 'Nightglass Alpha', subtitle: 'Gloamridge’s apex predator. Its mirrored hide blunts early assaults; a Shadow Mark sets up crushing pounces before the Alpha enters a relentless frenzy.', health: 3600, damage: 64, attackTime: 2350, defense: 48, color: '#8e6c86', icon: 'boss', lootItem: 'prismatic-fragment', lootChance: 0.12, family: 'Gloamridge Predators', alignment: 'Nightglass', resonance: { air: 80 } }),
-    basicAttackTimeMs: 2350,
-    defense: 48,
-    bestiaryCategory: 'boss',
-    ui: { portraitIcon: 'boss', bestiary: { roleTags: ['Apex Hunt', 'Damage Mitigation', 'Mark and Pounce', 'Frenzy', '2 Phases'], phaseLabels: { default: 'Nightglass Hide', frenzy: 'Nightglass Frenzy' }, phaseOrder: ['default', 'frenzy'] } },
-    traitIds: ['nightglass-alpha-hide', 'nightglass-alpha-frenzy'],
-    hunter: { family: 'Gloamridge Predators', alignment: 'Nightglass', contractTier: 'prestigious', exclusive: true, contractRequired: true, huntingGroundId: 'hunters-ground' },
+    ...target({ id: 'nightglass-alpha', name: 'Nightglass Alpha', subtitle: 'A prestigious ridge predator that marks its quarry before striking with precise, punishing pounces.', health: 1000, damage: 40, attackTime: 1950, defense: 28, color: '#8e6c86', icon: 'claw', lootItem: 'prismatic-fragment', lootChance: 0.12, family: 'Gloamridge Predators', alignment: 'Nightglass', resonance: { air: 80 } }),
+    ui: { portraitIcon: 'claw', bestiary: { roleTags: ['Elite Quarry', 'Mark and Pounce', 'Control', 'Nightglass'] } },
+    hunter: { family: 'Gloamridge Predators', alignment: 'Nightglass', contractTier: 'prestigious', minimumRank: 'master-hunter', exclusive: true, contractRequired: true, huntingGroundId: 'hunters-ground' },
     actions: {
       'shadow-mark': { id: 'shadow-mark', name: 'Shadow Mark', description: 'Curses and exposes its quarry to the Alpha’s follow-up.', actionTimeMs: 1750, effects: [applyStatus('cursed', 'opponent', 12000), applyStatus('vulnerable', 'opponent', 12000)], tags: ['special', 'debuff'] },
       'alpha-pounce': { id: 'alpha-pounce', name: 'Alpha Pounce', description: 'A crushing leap that hits harder while the quarry is Vulnerable.', actionTimeMs: 1900, effects: [scaledDirectDamage('physical', 2.15), delayCurrentAction(700)], tags: ['special', 'physical', 'melee', 'control'] },
-      'frenzy-pounce': { id: 'frenzy-pounce', name: 'Frenzy Pounce', description: 'A rapid, repeated strike in the Alpha’s final phase.', actionTimeMs: 1550, effects: [scaledDirectDamage('physical', 1.8), applyStatus('bleeding', 'opponent', 6500)], tags: ['special', 'physical', 'melee', 'debuff'] },
     },
     actionPatterns: {
-      default: { id: 'default', steps: [basic('basic-1'), action('shadow-mark-step-1', 'shadow-mark'), basic('basic-2'), action('alpha-pounce-step-1', 'alpha-pounce'), basic('basic-3'), action('shadow-mark-step-2', 'shadow-mark'), action('alpha-pounce-step-2', 'alpha-pounce')] },
-      frenzy: { id: 'frenzy', steps: [action('shadow-mark-frenzy', 'shadow-mark'), action('frenzy-pounce-1', 'frenzy-pounce'), basic('basic-1'), action('frenzy-pounce-2', 'frenzy-pounce'), basic('basic-2')] },
+      default: { id: 'default', steps: [basic('basic-1'), action('shadow-mark-step', 'shadow-mark'), basic('basic-2'), action('alpha-pounce-step-1', 'alpha-pounce'), basic('basic-3'), basic('basic-4'), action('alpha-pounce-step-2', 'alpha-pounce')] },
     },
   },
 }

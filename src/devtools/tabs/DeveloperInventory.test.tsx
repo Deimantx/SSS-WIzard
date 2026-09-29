@@ -28,7 +28,7 @@ describe('DeveloperInventory selection safety', () => {
     expect(screen.getByRole('button', { name: /^Add$/ })).toBeTruthy()
   })
 
-  it('keeps Transmutation material and boss-drop source filters distinct', async () => {
+  it('keeps Transmutation and Boss-drop sources distinct for the normal Nightglass quarry', async () => {
     render(<DeveloperInventory />)
 
     fireEvent.click(screen.getByRole('tab', { name: 'TRANSMUTATION' }))
@@ -41,6 +41,7 @@ describe('DeveloperInventory selection safety', () => {
     expect(screen.queryByText('Artifact Essence')).toBeNull()
     expect(screen.queryByText('Life Essence')).toBeNull()
     expect(within(browser).queryByText('Fire Fragment')).toBeNull()
-    expect(within(browser).getByText('Prismatic Fragment')).toBeTruthy()
+    expect(within(browser).queryByText('Prismatic Fragment')).toBeNull()
+    expect(within(browser).getByText(/No matching items/)).toBeTruthy()
   })
 })

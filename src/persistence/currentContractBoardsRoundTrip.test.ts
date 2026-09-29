@@ -55,12 +55,12 @@ describe('current Hunter and Guild board save integrity', () => {
     expect(result.state?.progress.huntersOrder.rngState).toBe(rngState)
   })
 
-  it('round-trips the screenshot path: accepted Nightglass Boss Contract with an empty offer board', () => {
+  it('round-trips an accepted prestigious Nightglass monster Contract with an empty offer board', () => {
     const state = unlockedHunterState()
-    state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state, { archetype: 'boss', tier: 'prestigious' })
+    state.progress.huntersOrder.availableContracts = generateHunterContractChoices(state, { archetype: 'monster', tier: 'prestigious', monsterId: 'nightglass-alpha' })
     expect(state.progress.huntersOrder.availableContracts).toHaveLength(1)
     const nightglass = state.progress.huntersOrder.availableContracts[0]!
-    expect(nightglass.targetSpec).toEqual({ type: 'boss', monsterId: 'nightglass-alpha' })
+    expect(nightglass.targetSpec).toEqual({ type: 'monster', monsterId: 'nightglass-alpha' })
     expect(acceptHunterContract(state, nightglass.id)).toBe(true)
     expect(state.progress.huntersOrder.activeContract).not.toBeNull()
     expect(state.progress.huntersOrder.availableContracts).toEqual([])

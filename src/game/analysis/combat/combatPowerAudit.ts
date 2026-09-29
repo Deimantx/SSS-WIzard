@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/world-navigation'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
@@ -68,7 +68,7 @@ const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): Mon
       ? dungeon.encounterSequence
       : dungeon.monsterPool
   normalIds.forEach((monsterId, index) => add(monsterId, 'normal', mode === 'targeted' ? location.targetMetadata?.[monsterId]?.order ?? index + 1 : index + 1, mode === 'targeted' ? location.targetMetadata?.[monsterId]?.difficulty ?? null : null))
-  add(dungeon.boss, 'boss', normalIds.length + 1, null)
+  if (hasBossEncounter(dungeon)) add(dungeon.boss, 'boss', normalIds.length + 1, null)
   return rows
 }
 

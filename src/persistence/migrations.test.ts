@@ -137,14 +137,18 @@ describe('save navigation migration', () => {
         huntersOrder: {
           ...initial.progress.huntersOrder,
           reputation: 100000,
-          activeContract: { id: 'legacy-hunt', targetMonsterId: 'ashen-tracker', target: 4, progress: 2, tier: 'special', reputationReward: 140, marksReward: 6 },
-          availableContracts: [{ id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 500, marksReward: 12 }],
+          activeContract: { id: 'legacy-nightglass', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 4, progress: 2, tier: 'prestigious', reputationReward: 140, marksReward: 6 },
+          availableContracts: [
+            { id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 500, marksReward: 12 },
+            { id: 'legacy-hunt', targetMonsterId: 'ashen-tracker', target: 4, progress: 2, tier: 'special', reputationReward: 140, marksReward: 6 },
+          ],
           rngState: 8675309,
         },
       },
     } as any)
-    expect(migrated.progress.huntersOrder.activeContract).toMatchObject({ targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 4, progress: 2 })
-    expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' } })
+    expect(migrated.progress.huntersOrder.activeContract).toMatchObject({ id: 'legacy-nightglass', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' }, target: 4, progress: 2, reputationReward: 140, marksReward: 6 })
+    expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' } })
+    expect(migrated.progress.huntersOrder.availableContracts[1]).toMatchObject({ id: 'legacy-hunt', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, progress: 2 })
     expect(migrated.progress.huntersOrder.rankId).toBe('master-hunter')
     expect(migrated.progress.huntersOrder.rngState).toBe(8675309)
   })

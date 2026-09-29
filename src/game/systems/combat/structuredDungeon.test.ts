@@ -143,6 +143,13 @@ describe('structured dungeon encounters', () => {
     useGameStore.getState().leaveDungeon()
     expect(useGameStore.getState().combat.log).toContain('Left the Location. Threat resets.')
     expect(useGameStore.getState().combat.log).not.toContain('Left the dungeon.')
+
+    const hunterGround = prepare()
+    hunterGround.combat.dungeonId = 'hunters-ground'
+    useGameStore.setState({ ...useGameStore.getState(), ...hunterGround })
+    useGameStore.getState().leaveDungeon()
+    expect(useGameStore.getState().combat.log).toContain('Left the Location.')
+    expect(useGameStore.getState().combat.log.some((entry) => /Threat/.test(entry))).toBe(false)
   })
 
   it('uses the same deterministic sequence during Offline Bank and Fast Resolve', async () => {

@@ -1,7 +1,7 @@
 import { Clock3, X, Sparkles } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getTraitDefinitions } from '../../game/content/traits'
 import { buildCombatActionPresentation, buildEnemyCombatStatRows, formatResistanceEffect } from '../../game/presentation/combat'
@@ -163,7 +163,7 @@ export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: Dun
   const worldTier = useGameStore((state) => state.combat.enemyWorldTier ?? state.worldTier.current)
   const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
   const current = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} worldTier={worldTier} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div><div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} worldTier={worldTier} /></div></div>
+  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} worldTier={worldTier} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div>{hasBossEncounter(dungeon) && <div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} worldTier={worldTier} /></div>}</div>
 }
 
 function LootTiles({ monster, inventory, worldTier }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>>; worldTier: 1 | 2 | 3 | 4 | 5 }) {

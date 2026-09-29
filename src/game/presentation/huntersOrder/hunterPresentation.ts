@@ -39,7 +39,7 @@ export const getHunterUpgradePresentation = (state: Pick<GameState, 'progress'>,
 
 export const getHunterContractPresentation = (contract: HunterContractState) => {
   const type = contract.targetSpec.type
-  const action = type === 'monster' ? 'HUNT' : type === 'family' ? 'CULL' : type === 'alignment' ? 'PURSUE' : type === 'region' ? 'PATROL' : 'APEX CONTRACT'
+  const action = type === 'monster' || type === 'boss' ? 'HUNT' : type === 'family' ? 'CULL' : type === 'alignment' ? 'PURSUE' : 'PATROL'
   const objective = type === 'monster' || type === 'boss' ? MONSTERS[contract.targetSpec.monsterId]?.name ?? 'Quarry' : type === 'family' ? `${contract.targetSpec.familyId} Family` : type === 'alignment' ? `${contract.targetSpec.alignmentId} Quarry` : 'Gloamridge'
   const quarryCount = type === 'monster' || type === 'boss' ? 1 : HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => {
     const metadata = MONSTERS[id]?.hunter

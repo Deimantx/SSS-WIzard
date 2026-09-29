@@ -1,6 +1,6 @@
 import { GUILD_COMMISSION_TEMPLATES, type GuildCommissionTemplate } from '../../content/guild/guildRequests'
 import { GUILD_RANKS } from '../../content/guild/guildRanks'
-import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked } from '../../content/dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { ITEMS } from '../../content/items/items'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
@@ -22,7 +22,7 @@ const stageOrder = ['choose-school', 'combat', 'first-kill', 'tower-work', 'chan
 const rankOrder = (rank: GameState['progress']['guildRank']) => GUILD_RANKS.findIndex((entry) => entry.id === rank)
 const accessibleStage = (state: GameState, stage: GuildCommissionTemplate['minimumProgressStage']) => stage === 'guild' || stageOrder.indexOf(state.progress.tutorialStage) >= stageOrder.indexOf(stage)
 const recipeAccessible = (state: GameState, recipeId: TransmutationRecipeId) => Boolean(TRANSMUTATION_RECIPES[recipeId] && isRecipeUnlocked(state, TRANSMUTATION_RECIPES[recipeId]))
-const unlockedMonsters = (state: GameState) => DUNGEON_ORDER.filter((id) => isDungeonUnlocked(DUNGEONS[id], state.progress)).flatMap((id) => [...DUNGEONS[id].monsterPool, ...(DUNGEONS[id].encounterSequence ?? []), DUNGEONS[id].boss])
+const unlockedMonsters = (state: GameState) => DUNGEON_ORDER.filter((id) => isDungeonUnlocked(DUNGEONS[id], state.progress)).flatMap((id) => { const dungeon = DUNGEONS[id]; return [...dungeon.monsterPool, ...(dungeon.encounterSequence ?? []), ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])] })
 const resonanceObtainable = (state: GameState, type: ResonanceType) => unlockedMonsters(state).some((monsterId) => (MONSTERS[monsterId].resonanceYield?.[type] ?? 0) > 0)
 const itemObtainable = (state: GameState, itemId: ItemId) => itemId === 'life-essence' || state.progress.discoveredItems.includes(itemId) || getConsumableQuantity(state, itemId) > 0 || unlockedMonsters(state).some((id) => MONSTERS[id].loot.some((drop) => drop.itemId === itemId)) || Object.values(TRANSMUTATION_RECIPES).some((recipe) => recipe.output.itemId === itemId && recipeAccessible(state, recipe.id))
 const objectiveAccessible = (state: GameState, objective: import('../../types').GuildCommissionObjectiveDefinition) => {

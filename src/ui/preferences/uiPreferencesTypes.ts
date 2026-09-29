@@ -14,7 +14,7 @@ export type ChronicleSortMode = 'recommended' | 'progress' | 'track' | 'reward' 
 export type ChronicleGroupMode = 'none' | 'track' | 'status'
 export type ChronicleViewMode = 'compact' | 'detailed'
 export type GuildScreenTab = 'overview' | 'contracts' | 'skills' | 'registry' | 'projects' | 'chains'
-export type HuntersOrderScreenTab = 'overview' | 'contracts' | 'rank' | 'upgrades' | 'bestiary' | 'grounds'
+export type HuntersOrderScreenTab = 'overview' | 'contracts' | 'rank' | 'upgrades' | 'bestiary'
 
 export interface CustomThemeColors {
   background: string

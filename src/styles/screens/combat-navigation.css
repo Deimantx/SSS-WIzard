@@ -67,7 +67,7 @@
 .combat-location-sigil-set-list small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .combat-target-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .combat-target-grid > .game-tooltip-trigger { min-width: 0; }
-.combat-target-card { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 7px; width: 100%; min-width: 0; min-height: 62px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 72%, transparent); cursor: pointer; text-align: left; }
+.combat-target-card { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(75px, auto); align-items: center; gap: 7px; width: 100%; min-width: 0; min-height: 62px; padding: 7px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 72%, transparent); cursor: pointer; text-align: left; }
 .combat-target-card:hover, .combat-target-card:focus-visible { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); color: var(--ui-text); }
 .combat-target-card.is-selected { border-color: color-mix(in srgb, var(--ui-secondary) 72%, var(--ui-border)); background: linear-gradient(110deg, color-mix(in srgb, var(--ui-secondary) 9%, var(--ui-panel)), var(--ui-panel-strong)); box-shadow: inset 2px 0 var(--ui-secondary), 0 0 0 1px color-mix(in srgb, var(--ui-secondary) 18%, transparent); }
 .combat-target-card.is-hunting { border-color: var(--ui-warning); background: linear-gradient(110deg, color-mix(in srgb, var(--ui-warning) 14%, var(--ui-panel)), var(--ui-panel-strong)); box-shadow: inset 2px 0 var(--ui-warning), 0 0 0 1px color-mix(in srgb, var(--ui-warning) 28%, transparent); }
@@ -81,6 +81,17 @@
 .combat-target-card-copy .combat-target-card-power { color: var(--ui-accent); font-weight: 700; letter-spacing: .04em; }
 .combat-target-card-marker { position: absolute; right: 6px; top: 5px; color: var(--ui-secondary); font: 7px var(--font-mono); letter-spacing: .08em; }
 .combat-target-card.is-hunting .combat-target-card-marker { color: var(--ui-warning); }
+.combat-target-card.is-contract-target:not(.is-hunting) { border-color: color-mix(in srgb, var(--gold) 72%, var(--ui-border)); box-shadow: inset 2px 0 var(--gold); }
+.combat-target-card-state { display: grid; justify-items: end; gap: 5px; min-width: 0; }
+.combat-target-card-state .combat-target-card-marker { position: static; }
+.combat-contract-relation { color: var(--gold); font: 7px var(--font-mono); letter-spacing: .04em; text-align: right; }
+.combat-contract-relation.is-not-eligible, .combat-contract-relation.is-no-contract { color: var(--ui-text-muted); }
+.combat-hunter-contract { gap: 8px; border-color: color-mix(in srgb, var(--gold) 38%, var(--ui-border)); background: color-mix(in srgb, var(--gold) 5%, var(--ui-panel)); }
+.combat-hunter-contract.is-empty { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.combat-hunter-contract.is-empty p { margin: 4px 0 0; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.combat-hunter-contract-title { color: var(--ui-text); font-size: var(--text-md); }
+.combat-hunter-contract-progress, .combat-hunter-contract-reward { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font-size: var(--text-xs); }
+.combat-hunter-contract-progress strong, .combat-hunter-contract-reward strong { color: var(--gold); }
 .combat-dungeon-sequence-list,
 .combat-first-clear-list { display: grid; gap: 6px; }
 .combat-dungeon-sequence-step { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-width: 0; padding: 7px 8px; border: 1px solid var(--ui-border); border-radius: 7px; background: color-mix(in srgb, var(--ui-panel) 72%, transparent); }

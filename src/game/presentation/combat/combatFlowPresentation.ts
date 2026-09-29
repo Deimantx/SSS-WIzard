@@ -9,6 +9,7 @@ import { SPELLS } from '../../content/spells'
 import type { PendingPlayerSpellCast } from '../../types'
 import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
+import { hasBossEncounter } from '../../content/dungeons/dungeons'
 import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 
 export type CombatFlowMode = 'tower' | 'boss-ready' | 'encounter-delay' | 'combat'
@@ -85,7 +86,7 @@ export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): Combat
   const dungeonId = input.dungeonId ?? input.selectedDungeonId
   const threatRequired = resolveBossThreatRequirement(input.dungeon.id, input.worldTier ?? 1)
   const isSequence = getCombatEncounterMode(getCombatLocationByDungeonId(input.dungeon.id)) === 'sequence'
-  const bossReady = input.active && !isSequence && !input.enemy && !input.inBossFight && input.threatCleared >= threatRequired
+  const bossReady = hasBossEncounter(input.dungeon) && input.active && !isSequence && !input.enemy && !input.inBossFight && input.threatCleared >= threatRequired
   if (!input.active) return { mode: 'tower', dungeonId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }
   if (!input.enemy && bossReady) return { mode: 'boss-ready', dungeonId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }
   if (!input.enemy) return { mode: 'encounter-delay', dungeonId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: Math.max(0, input.encounterTimerMs) }

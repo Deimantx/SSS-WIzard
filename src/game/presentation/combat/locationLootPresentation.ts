@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
 import { resolvePowerScaledCurrencyRewardRange } from '../../systems/loot/powerScaledCurrencyRewards'
@@ -19,7 +19,7 @@ export interface LocationLootEntry {
 export interface LocationLootGroups {
   monsters: LocationLootEntry[]
   boss: LocationLootEntry[]
-  bossId: MonsterId
+  bossId: MonsterId | null
   normalEncounterCount: number
   discoveredNormalEncounterCount: number
   discoveredBoss: boolean
@@ -71,11 +71,12 @@ export function buildLocationLootPresentation(dungeonId: DungeonId, progress: Pi
   const dungeon = DUNGEONS[dungeonId]
   const discovered = new Set(progress.discoveredMonsters)
   const discoveredNormalIds = dungeon.monsterPool.filter((monsterId) => discovered.has(monsterId))
-  const discoveredBoss = discovered.has(dungeon.boss)
+  const bossId = hasBossEncounter(dungeon) ? dungeon.boss : null
+  const discoveredBoss = bossId !== null && discovered.has(bossId)
   return {
     monsters: aggregateLoot(discoveredNormalIds, worldTier),
-    boss: discoveredBoss ? aggregateLoot([dungeon.boss], worldTier) : [],
-    bossId: dungeon.boss,
+    boss: discoveredBoss && bossId ? aggregateLoot([bossId], worldTier) : [],
+    bossId,
     normalEncounterCount: dungeon.monsterPool.length,
     discoveredNormalEncounterCount: discoveredNormalIds.length,
     discoveredBoss,

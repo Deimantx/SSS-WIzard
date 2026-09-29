@@ -292,7 +292,10 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     const rawTarget = isRecord(value.targetSpec) ? value.targetSpec : null
     if (rawTarget?.type === 'monster' || rawTarget?.type === 'boss') {
       const monsterId = hunterIds.find((id) => id === rawTarget.monsterId)
-      if (!monsterId || (rawTarget.type === 'boss' && !isBossMonster(MONSTERS[monsterId]))) return null
+      if (!monsterId) return null
+      if (rawTarget.type === 'boss' && !isBossMonster(MONSTERS[monsterId])) {
+        return MONSTERS[monsterId]?.hunter?.exclusive ? { type: 'monster', monsterId } as const : null
+      }
       return { type: rawTarget.type, monsterId } as const
     }
     if (rawTarget?.type === 'family' && hunterIds.some((id) => MONSTERS[id]?.hunter?.family === rawTarget.familyId)) return { type: 'family', familyId: String(rawTarget.familyId).slice(0, 80) } as const

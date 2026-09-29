@@ -13,6 +13,7 @@ import { useDeveloperGameStore } from '../developerSandbox'
 import { getSaveDiagnostics } from '../../persistence/saveDiagnosticsStore'
 import { applyTestReadyPlayerPreset } from '../scenarios/scenarioStatPresets'
 import { createDefaultScenarioReadyPreset } from '../scenarios/scenarioReadyPresetStore'
+import { getNavigationIntent } from '../../ui/navigation/navigationIntent'
 
 describe('Developer Scenario Lab', () => {
   beforeEach(() => {
@@ -31,7 +32,7 @@ describe('Developer Scenario Lab', () => {
     render(<DeveloperScenarios />)
     for (const label of [
       'Fresh Start', 'Forest Heart Ready', 'Howling Den / Greatbear Ready',
-      'Hunter’s Order — First Contract', 'Gloamridge — Active Contract', 'Nightglass Apex Ready',
+      'Hunter’s Order — First Contract', 'Gloamridge — Active Contract', 'Nightglass Alpha — Master Quarry',
       'Arcane Guild — Early Progression', 'Arcane Guild — Advancement Test',
       'Research Stress Test', 'Transmutation Stress Test',
     ]) expect(screen.getByRole('heading', { name: label })).toBeTruthy()
@@ -82,16 +83,16 @@ describe('Developer Scenario Lab', () => {
     expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'region', dungeonId: 'hunters-ground' })
   })
 
-  it('sets up the authored combat and Nightglass Apex encounters', () => {
+  it('sets up the authored combat and Nightglass Master Quarry encounter', () => {
     render(<DeveloperScenarios />)
     const buttonFor = (heading: string) => screen.getByRole('heading', { name: heading }).closest('article')!.querySelector('button')!
     fireEvent.click(buttonFor('Forest Heart Ready'))
     expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
     fireEvent.click(buttonFor('Howling Den / Greatbear Ready'))
     expect(useGameStore.getState().combat.enemyId).toBe('corrupted-greatbear')
-    fireEvent.click(buttonFor('Nightglass Apex Ready'))
-    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'boss', monsterId: 'nightglass-alpha' })
-    expect(useGameStore.getState().combat.dungeonId).toBe('hunters-ground')
+    fireEvent.click(buttonFor('Nightglass Alpha — Master Quarry'))
+    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'monster', monsterId: 'nightglass-alpha' })
+    expect(getNavigationIntent()).toMatchObject({ combatDungeonId: 'hunters-ground', combatMonsterId: 'nightglass-alpha' })
   })
 
   it('separates RAW encounter setup from the finite TEST READY player preset', () => {
@@ -110,15 +111,15 @@ describe('Developer Scenario Lab', () => {
 
   it('edits and persists a scenario-specific Ready preset that TEST READY applies', async () => {
     const { unmount } = render(<DeveloperScenarios />)
-    const card = screen.getByRole('heading', { name: 'Nightglass Apex Ready' }).closest('article')!
-    fireEvent.click(card.querySelector('button[aria-label="Edit Test Ready preset for Nightglass Apex Ready"]')!)
+    const card = screen.getByRole('heading', { name: 'Nightglass Alpha — Master Quarry' }).closest('article')!
+    fireEvent.click(card.querySelector('button[aria-label="Edit Test Ready preset for Nightglass Alpha — Master Quarry"]')!)
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Max Health Flat' }), { target: { value: '2500' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Spell Power Flat' }), { target: { value: '700' } })
     await new Promise((resolve) => setTimeout(resolve, 300))
     fireEvent.click(screen.getByRole('button', { name: 'DONE' }))
     unmount()
     render(<DeveloperScenarios />)
-    const remounted = screen.getByRole('heading', { name: 'Nightglass Apex Ready' }).closest('article')!
+    const remounted = screen.getByRole('heading', { name: 'Nightglass Alpha — Master Quarry' }).closest('article')!
     expect(remounted.textContent).toContain('Custom')
     fireEvent.click(remounted.querySelectorAll('button')[1])
     expect(useGameStore.getState().debug.playerStats.maxHealthFlat).toBe(2500)

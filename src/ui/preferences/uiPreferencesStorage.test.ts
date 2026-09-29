@@ -43,6 +43,10 @@ describe('screen UI preferences', () => {
     expect(loadUiPreferences().screenState.huntersOrder.activeTab).toBe('overview')
   })
 
+  it('migrates the removed Hunter Grounds tab preference to Overview', () => {
+    expect(normalizeUiPreferences({ screenState: { huntersOrder: { activeTab: 'grounds' } } }).screenState.huntersOrder.activeTab).toBe('overview')
+  })
+
   it('normalizes malformed screen preferences without affecting gameplay', () => {
     const preferences = normalizeUiPreferences({ screenState: { inventory: { currentNeedsOpen: 'yes', sourceOpen: 1, usedInOpen: false }, transmutation: { selectedRecipeId: 7, recipeFilter: 'invalid', collapsedCategories: { elemental: true, material: 'yes', equipment: false } } } })
 

@@ -8,22 +8,27 @@ export type DungeonUnlockCondition =
   | { type: 'boss-kill'; bossId: MonsterId }
   | { type: 'all-boss-kills'; bossIds: MonsterId[] }
 
-export interface DungeonDefinition {
+interface DungeonBase {
   id: DungeonId
   name: string
   monsterPool: MonsterId[]
-  threatRequired: number
-  boss: MonsterId
   encounterDelayMs: number
   encounterSequence?: MonsterId[]
   unlock?: DungeonUnlockCondition
   completesTutorial?: boolean
   ui?: { description: string }
 }
+export interface BossDungeonDefinition extends DungeonBase { boss: MonsterId; threatRequired: number }
+export interface BosslessDungeonDefinition extends DungeonBase { boss: null; threatRequired: null }
+export type DungeonDefinition = BossDungeonDefinition | BosslessDungeonDefinition
+
+export const hasBossEncounter = (dungeon: DungeonDefinition): dungeon is BossDungeonDefinition => dungeon.boss !== null && dungeon.threatRequired !== null
 
 const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, ABANDONED_CATACOMBS_DUNGEON] as const
 export const DUNGEON_ORDER: DungeonId[] = [...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => dungeon.id)
-export const DUNGEONS: Record<DungeonId, DungeonDefinition> = Object.fromEntries([...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => [dungeon.id, dungeon])) as Record<DungeonId, DungeonDefinition>
+type DungeonRegistryEntry = (typeof ACT0_DUNGEONS)[number] | (typeof ACT1_DUNGEONS)[number]
+type DungeonRegistry = { [Dungeon in DungeonRegistryEntry as Dungeon['id']]: Dungeon & DungeonDefinition }
+export const DUNGEONS = Object.fromEntries([...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => [dungeon.id, dungeon])) as DungeonRegistry
 
 export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
   const unlock = dungeon.unlock ?? { type: 'always' as const }
@@ -32,7 +37,10 @@ export const isDungeonUnlocked = (dungeon: DungeonDefinition, progress: Pick<Gam
   return unlock.bossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) >= 1)
 }
 
-export const isDungeonCompleted = (dungeonId: DungeonId, progress: GameState['progress']) => (progress.bossKillsByBoss[DUNGEONS[dungeonId].boss] ?? 0) >= 1
+export const isDungeonCompleted = (dungeonId: DungeonId, progress: GameState['progress']) => {
+  const dungeon = DUNGEONS[dungeonId]
+  return hasBossEncounter(dungeon) && (progress.bossKillsByBoss[dungeon.boss] ?? 0) >= 1
+}
 
 export const isTutorialCompleted = (progress: GameState['progress']) => {
   const tutorialDungeon = DUNGEON_ORDER.map((id) => DUNGEONS[id]).find((dungeon) => dungeon.completesTutorial)
@@ -52,7 +60,14 @@ export const validateDungeonDefinitions = (content: Record<DungeonId, DungeonDef
   order.forEach((dungeonId) => {
     const dungeon = content[dungeonId]
     if (!dungeon) { errors.push(`${dungeonId}: missing dungeon definition`); return }
-    if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
+    if (hasBossEncounter(dungeon)) {
+      if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
+      if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
+      if (dungeon.monsterPool.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be in the normal monster pool`)
+    } else {
+      const bossShape = dungeon as DungeonDefinition & { boss: MonsterId | null; threatRequired: number | null }
+      if ((bossShape.boss === null) !== (bossShape.threatRequired === null)) errors.push(`${dungeon.id}: boss and threatRequired must both be authored or both be null`)
+    }
     if (!Number.isFinite(dungeon.encounterDelayMs) || dungeon.encounterDelayMs <= 0) errors.push(`${dungeon.id}: encounterDelayMs must be positive`)
     dungeon.monsterPool.forEach((monsterId) => { if (!MONSTERS[monsterId]) errors.push(`${dungeon.id}: unknown monster ${monsterId}`); else if (isBossMonster(MONSTERS[monsterId])) errors.push(`${dungeon.id}: normal pool may not contain boss ${monsterId}`) })
     if (dungeon.encounterSequence) {
@@ -62,10 +77,8 @@ export const validateDungeonDefinitions = (content: Record<DungeonId, DungeonDef
         else if (isBossMonster(MONSTERS[monsterId])) errors.push(`${dungeon.id}: sequence may not contain boss ${monsterId}`)
         if (!dungeon.monsterPool.includes(monsterId)) errors.push(`${dungeon.id}: sequence monster ${monsterId} is not in monsterPool`)
       })
-      if (dungeon.encounterSequence.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be duplicated in encounterSequence`)
+      if (dungeon.boss && dungeon.encounterSequence.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be duplicated in encounterSequence`)
     }
-    if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
-    if (dungeon.monsterPool.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be in the normal monster pool`)
     if (dungeon.unlock?.type === 'boss-kill' && (!MONSTERS[dungeon.unlock.bossId] || !isBossMonster(MONSTERS[dungeon.unlock.bossId]))) errors.push(`${dungeon.id}: unlock boss must be a known boss monster`)
     if (dungeon.unlock?.type === 'all-boss-kills') dungeon.unlock.bossIds.forEach((bossId) => { if (!MONSTERS[bossId] || !isBossMonster(MONSTERS[bossId])) errors.push(`${dungeon.id}: unlock boss must be a known boss monster: ${bossId}`) })
   })

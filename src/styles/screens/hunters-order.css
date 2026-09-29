@@ -5,8 +5,8 @@
 .hunter-tab-rail .button { flex: 0 0 auto; }
 .hunter-contract-view { display: grid; gap: 18px; min-width: 0; }
 .hunter-board-heading, .hunter-offer-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
-.hunter-board-heading h2, .hunter-ground-panel h2, .hunter-rank-card h2, .hunter-empty-state h2 { margin: 5px 0 0; color: var(--ui-text); font-size: 20px; }
-.hunter-board-heading p, .hunter-ground-panel p, .hunter-empty-state p { max-width: 620px; margin: 6px 0 0; color: var(--ui-text-muted); font-size: var(--text-sm); line-height: 1.5; }
+.hunter-board-heading h2, .hunter-rank-card h2, .hunter-empty-state h2 { margin: 5px 0 0; color: var(--ui-text); font-size: 20px; }
+.hunter-board-heading p, .hunter-empty-state p { max-width: 620px; margin: 6px 0 0; color: var(--ui-text-muted); font-size: var(--text-sm); line-height: 1.5; }
 .hunter-card-kicker { display: inline-flex; align-items: center; gap: 7px; color: var(--gold); font: var(--text-micro) var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
 .hunter-currency-line { display: grid; gap: 4px; justify-items: end; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
 .hunter-currency-line strong { color: var(--gold); font-size: var(--text-lg); }
@@ -37,18 +37,9 @@
 .hunter-rank-unlocks ul, .guild-v3-next-unlocks ul { display: grid; gap: 5px; margin: 9px 0 0; padding-left: 18px; color: var(--ui-text-muted); font-size: 12px; }
 .hunter-stat-row { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 10px; padding-top: 14px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: var(--text-xs); }
 .hunter-stat-row strong { color: var(--ui-text); font-family: var(--font-mono); }
-.hunter-ground-panel { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 12px; }
-.hunter-ground-panel > .card { min-width: 0; }
-.hunter-ground-panel > .card:first-child { display: grid; justify-items: start; align-content: start; gap: 12px; }
-.hunter-ground-meta { display: flex; flex-wrap: wrap; gap: 18px; color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); }
-.hunter-ground-meta strong { color: var(--ui-text); }
-.hunter-ground-roster { display: grid; align-content: start; gap: 0; }
-.hunter-ground-roster > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--ui-border); color: var(--ui-text-soft); font-size: var(--text-sm); }
-.hunter-ground-roster > div:last-child { border: 0; }
-.hunter-ground-roster strong { color: var(--gold); font: var(--text-micro) var(--font-mono); text-transform: uppercase; }
 .bestiary-screen.bestiary-embedded { width: 100%; max-width: none; margin: 0; padding: 0; }
 .bestiary-embedded .screen-grid { margin-top: 0; }
-@media (max-width: 900px) { .hunter-offer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hunter-ground-panel { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .hunter-offer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 650px) { .hunters-order-header, .hunter-board-heading { align-items: flex-start; flex-direction: column; } .hunter-header-insignia { display: flex; min-width: 0; align-items: center; } .hunter-offer-grid { grid-template-columns: minmax(0, 1fr); } .hunter-active-contract { grid-template-columns: 40px minmax(0, 1fr); } .hunter-active-contract > .game-tooltip-trigger { grid-column: 2; justify-self: start; } .hunter-currency-line { justify-items: start; } .hunter-stat-row { grid-template-columns: 1fr auto; } }
 
 .bestiary-hunter-data { display: grid; gap: 10px; margin: 14px 0; padding: 14px; border: 1px solid color-mix(in srgb, var(--gold) 24%, var(--ui-border)); border-radius: 10px; background: color-mix(in srgb, var(--gold) 4%, var(--ui-panel)); }
@@ -130,7 +121,7 @@
 .hunter-overview-target { display: flex; align-items: center; gap: 12px; }
 .hunter-overview-target-icon { display: grid; flex: 0 0 46px; place-items: center; width: 46px; height: 46px; border: 1px solid color-mix(in srgb, var(--gold) 34%, var(--ui-border)); border-radius: 9px; color: var(--gold); background: color-mix(in srgb, var(--gold) 7%, var(--ui-panel)); }
 .hunter-overview-target > div > span { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .08em; }
-.hunter-overview-target h2, .hunter-overview-ground h2, .hunter-ground-banner h2 { margin: 3px 0 0; color: var(--ui-text); font-size: var(--text-lg); }
+.hunter-overview-target h2, .hunter-overview-ground h2 { margin: 3px 0 0; color: var(--ui-text); font-size: var(--text-lg); }
 .hunter-overview-progress-label { display: flex; justify-content: space-between; gap: 12px; color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); }
 .hunter-overview-progress-label strong, .hunter-overview-progress-label b { color: var(--ui-text); }
 .hunter-overview-rewards { display: flex; justify-content: space-between; gap: 8px; padding-top: 9px; border-top: 1px solid var(--ui-border); color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
@@ -205,39 +196,6 @@
 .hunter-upgrade-final { color: var(--ui-success); font-size: var(--text-xs); }
 .hunter-upgrade-purchase { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; margin-top: auto; padding-top: 9px; border-top: 1px solid var(--ui-border); color: var(--gold); font: var(--text-xs) var(--font-mono); }
 .hunter-upgrade-purchase > * { width: auto; }
-.hunter-grounds-stack { display: grid; gap: 16px; }
-.hunter-ground-banner { display: grid; grid-template-columns: 1fr auto; gap: 12px 24px; border-left: 3px solid var(--gold); }
-.hunter-ground-banner p { max-width: 650px; margin: 5px 0 0; color: var(--ui-text-muted); font-size: var(--text-sm); }
-.hunter-ground-counts { display: flex; gap: 16px; }
-.hunter-ground-counts strong { display: grid; color: var(--gold); font: 600 var(--text-xl) var(--font-mono); }
-.hunter-ground-counts small { color: var(--ui-text-muted); font: 9px var(--font-mono); }
-.hunter-ground-authorization { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 9px; border-top: 1px solid var(--ui-border); }
-.hunter-ground-authorization strong { color: var(--ui-text); font-size: var(--text-sm); }
-.hunter-ground-quarry-section { display: grid; gap: 10px; }
-.hunter-ground-quarry-section > header { display: flex; justify-content: space-between; align-items: end; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--ui-border); }
-.hunter-ground-quarry-section h2 { margin: 3px 0 0; color: var(--ui-text); font-size: var(--text-lg); }
-.hunter-ground-quarry-section > header > span { color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); }
-.hunter-quarry-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.hunter-quarry-card { display: grid; align-content: start; gap: 9px; min-width: 0; padding: 13px; }
-.hunter-quarry-card.is-authorized { border-color: color-mix(in srgb, var(--gold) 42%, var(--ui-border)); }
-.hunter-quarry-card.is-current-target { box-shadow: inset 0 0 0 1px var(--gold); }
-.hunter-quarry-card.is-blocked { opacity: .72; }
-.hunter-quarry-card-heading { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.hunter-quarry-card-heading > span { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; color: var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--ui-panel)); }
-.hunter-quarry-card-heading small { color: var(--ui-text-muted); font: 9px var(--font-mono); }
-.hunter-quarry-card-heading h3 { margin: 2px 0 0; color: var(--ui-text); font-size: var(--text-sm); }
-.hunter-quarry-meta { display: flex; flex-wrap: wrap; gap: 6px; }
-.hunter-quarry-meta span { padding: 3px 6px; border: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: 10px; }
-.hunter-quarry-state { min-height: 22px; }
-.hunter-quarry-card > .button { width: 100%; }
-.hunter-apex-card { display: grid; grid-template-columns: auto minmax(180px, 1fr) minmax(190px, .8fr) auto; align-items: center; gap: 14px; border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-border)); }
-.hunter-apex-card.is-authorized { border-color: var(--gold); }
-.hunter-apex-crest { display: grid; place-items: center; width: 46px; height: 46px; color: var(--ui-accent); }
-.hunter-apex-card h2 { margin: 4px 0; color: var(--ui-text); font-size: var(--text-md); }
-.hunter-apex-card p { margin: 0; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.5; }
-.hunter-apex-requirements { display: grid; gap: 6px; color: var(--ui-text-muted); font-size: var(--text-xs); }
-.hunter-apex-requirements span { display: flex; justify-content: space-between; gap: 8px; }
-.hunter-apex-requirements strong { color: var(--ui-text); text-align: right; }
 .hunter-active-objective, .hunter-active-details { display: flex; justify-content: space-between; gap: 10px; align-items: center; color: var(--ui-text-muted); font: var(--text-xs) var(--font-mono); }
 .hunter-active-objective strong, .hunter-active-details strong { color: var(--ui-text); }
 .hunter-active-objective span { color: var(--gold); }
@@ -301,6 +259,6 @@
 .developer-ready-action { display: grid; gap: 3px; justify-items: center; }
 .developer-ready-action > span { color: var(--ui-accent); font: 9px var(--font-mono); }
 .developer-ready-action > small { max-width: 180px; color: var(--ui-text-muted); font-size: 9px; text-align: center; }
-@media (max-width: 900px) { .hunter-command-header { grid-template-columns: 1fr; } .hunter-command-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } .hunter-rank-layout { grid-template-columns: 1fr; } .hunter-quarry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hunter-apex-card { grid-template-columns: auto minmax(0, 1fr); } .hunter-apex-requirements { grid-column: 2; } .hunter-apex-card > .game-tooltip-trigger { grid-column: 2; justify-self: start; } }
-@media (max-width: 640px) { .hunter-command-header { padding: 13px; } .hunter-command-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .hunter-overview-grid { grid-template-columns: 1fr; } .hunter-rank-ladder { grid-template-columns: repeat(6, 95px); } .hunter-rank-detail { grid-template-columns: 1fr; } .hunter-quarry-grid { grid-template-columns: 1fr; } .hunter-ground-banner { grid-template-columns: 1fr; } .hunter-ground-counts { grid-row: 2; } .hunter-ground-authorization { grid-column: 1; } .hunter-apex-card { grid-template-columns: 1fr; } .hunter-apex-requirements, .hunter-apex-card > .game-tooltip-trigger { grid-column: 1; } .developer-scenario-card-compact { grid-template-columns: 1fr; } .developer-scenario-card-actions { justify-content: flex-start; flex-wrap: wrap; } .scenario-ready-flags { grid-template-columns: repeat(2, minmax(0, 1fr)); } .scenario-ready-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .developer-scenario-group > header { align-items: flex-start; } .developer-scenario-group > header > .button:first-child { align-items: flex-start; flex-wrap: wrap; } .developer-scenario-group > header small { width: 100%; margin-left: 24px; } }
+@media (max-width: 900px) { .hunter-command-header { grid-template-columns: 1fr; } .hunter-command-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } .hunter-rank-layout { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .hunter-command-header { padding: 13px; } .hunter-command-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .hunter-overview-grid { grid-template-columns: 1fr; } .hunter-rank-ladder { grid-template-columns: repeat(6, 95px); } .hunter-rank-detail { grid-template-columns: 1fr; } .developer-scenario-card-compact { grid-template-columns: 1fr; } .developer-scenario-card-actions { justify-content: flex-start; flex-wrap: wrap; } .scenario-ready-flags { grid-template-columns: repeat(2, minmax(0, 1fr)); } .scenario-ready-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .developer-scenario-group > header { align-items: flex-start; } .developer-scenario-group > header > .button:first-child { align-items: flex-start; flex-wrap: wrap; } .developer-scenario-group > header small { width: 100%; margin-left: 24px; } }
 @media (max-width: 480px) { .bestiary-hunter-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -2,15 +2,13 @@ import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS, HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/huntersOrder'
 import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
-import { HUNTER_APEX_CONTRACT } from '../../content/huntersOrder/hunterApex'
 import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
 import { MONSTERS, isBossMonster } from '../../content/monsters'
 import { pushNotification } from '../../engine'
-import { resolveBossThreatRequirement } from '../combat/combatThreat'
 import type { DungeonId, GameState, HunterContractState, HunterContractTarget, HunterRankId, HunterUpgradeId, MonsterId } from '../../types'
 
 const normalTargets = HUNTER_REGULAR_MONSTER_IDS.filter((id) => MONSTERS[id]?.hunter?.exclusive)
-const starterTargets = normalTargets
+const starterTargets = normalTargets.filter((id) => MONSTERS[id]?.hunter?.contractTier === 'routine' && !MONSTERS[id]?.hunter?.minimumRank)
 const safeInt = (n: number) => Math.max(0, Math.floor(Number.isFinite(n) ? n : 0))
 const orderFor = (state: Pick<GameState, 'progress'>) => state.progress.huntersOrder
 const tierOrder = { routine: 0, special: 1, prestigious: 2 } as const
@@ -23,7 +21,10 @@ export const isHunterRankAtLeast = (current: string, required: string, ranks: re
   const requiredIndex = ranks.findIndex((rank) => rank.id === required)
   return currentIndex >= 0 && requiredIndex >= 0 && currentIndex >= requiredIndex
 }
-export const canOfferHunterApexContract = (reputation: number) => isHunterRankAtLeast(getHunterRank(reputation).id, HUNTER_APEX_CONTRACT.requiredRank)
+export const isHunterMonsterRankEligible = (state: Pick<GameState, 'progress'>, monsterId: MonsterId) => {
+  const minimumRank = MONSTERS[monsterId]?.hunter?.minimumRank
+  return !minimumRank || isHunterRankAtLeast(getHunterRank(orderFor(state).reputation).id, minimumRank)
+}
 
 export const getHunterRankProgress = (reputation: number) => {
   const currentRank = getHunterRank(reputation)
@@ -95,7 +96,7 @@ export const getHunterAuthorization = (state: Pick<GameState, 'progress'>, monst
   const rank = getHunterRank(orderFor(state).reputation)
   const monsterTier = tierOrder[metadata.contractTier]
   if (rank.reputation < requiredRankForTier(metadata.contractTier)) return { authorized: false, reason: 'contract-tier-locked' }
-  if (monsterId === HUNTER_APEX_CONTRACT.monsterId && !isHunterRankAtLeast(rank.id, HUNTER_APEX_CONTRACT.requiredRank)) return { authorized: false, reason: 'contract-tier-locked' }
+  if (metadata.minimumRank && !isHunterRankAtLeast(rank.id, metadata.minimumRank)) return { authorized: false, reason: 'contract-tier-locked' }
   const active = orderFor(state).activeContract
   if (!active) return { authorized: false, reason: 'contract-required' }
   const contractTier = tierOrder[active.tier]
@@ -112,14 +113,14 @@ const rankIndex = (state: Pick<GameState, 'progress'>) => HUNTER_RANKS.findIndex
 const makeTargetSpecs = (state: Pick<GameState, 'progress'>): HunterContractTarget[] => {
   const order = orderFor(state)
   const blocked = new Set(order.blockedTargets)
-  const candidates: HunterContractTarget[] = normalTargets.filter((id) => !blocked.has(id)).map((monsterId) => ({ type: 'monster', monsterId }))
-  const families = [...new Set(normalTargets.filter((id) => !blocked.has(id)).map((id) => MONSTERS[id].hunter!.family))]
-  const alignments = [...new Set(normalTargets.filter((id) => !blocked.has(id)).map((id) => MONSTERS[id].hunter!.alignment))]
+  const rankEligibleTargets = normalTargets.filter((id) => isHunterMonsterRankEligible(state, id))
+  const candidates: HunterContractTarget[] = rankEligibleTargets.filter((id) => !blocked.has(id)).map((monsterId) => ({ type: 'monster', monsterId }))
+  const families = [...new Set(rankEligibleTargets.filter((id) => !blocked.has(id)).map((id) => MONSTERS[id].hunter!.family))]
+  const alignments = [...new Set(rankEligibleTargets.filter((id) => !blocked.has(id)).map((id) => MONSTERS[id].hunter!.alignment))]
   const index = rankIndex(state)
   if (index >= 1) families.forEach((familyId) => candidates.push({ type: 'family', familyId }))
   if (index >= 2) alignments.forEach((alignmentId) => candidates.push({ type: 'alignment', alignmentId }))
   if (index >= 3) candidates.push({ type: 'region', dungeonId: 'hunters-ground' })
-  if (canOfferHunterApexContract(orderFor(state).reputation) && MONSTERS[HUNTER_APEX_CONTRACT.monsterId]?.hunter?.exclusive) candidates.push({ type: 'boss', monsterId: HUNTER_APEX_CONTRACT.monsterId })
   return candidates.filter((spec) => eligibleMembers(spec).some((id) => !blocked.has(id)))
 }
 
@@ -137,7 +138,7 @@ const chooseQuality = (state: Pick<GameState, 'progress'>, availableTypes: Reado
 const archetypesByTier: Record<HunterContractState['tier'], readonly HunterContractTarget['type'][]> = {
   routine: ['monster', 'family'],
   special: ['monster', 'family', 'alignment', 'region'],
-  prestigious: ['family', 'alignment', 'region', 'boss'],
+  prestigious: ['monster', 'family', 'alignment', 'region', 'boss'],
 }
 
 const chooseWeightedTargetSpec = (state: Pick<GameState, 'progress'>, available: HunterContractTarget[]) => {
@@ -156,11 +157,11 @@ const chooseWeightedTargetSpec = (state: Pick<GameState, 'progress'>, available:
   return fallback[Math.floor(nextHunterRandom(state) * fallback.length)]
 }
 
-export interface HunterContractGenerationOptions { archetype?: HunterContractTarget['type']; tier?: HunterContractState['tier'] }
+export interface HunterContractGenerationOptions { archetype?: HunterContractTarget['type']; tier?: HunterContractState['tier']; monsterId?: MonsterId }
 export const generateHunterContractChoices = (state: Pick<GameState, 'progress'>, options: HunterContractGenerationOptions = {}): HunterContractState[] => {
   const order = orderFor(state)
   if (!isHuntersOrderUnlocked(state) || !isHunterContractBoardUnlocked(state)) return []
-  const pool = makeTargetSpecs(state).filter((spec) => !options.archetype || spec.type === options.archetype)
+  const pool = makeTargetSpecs(state).filter((spec) => (!options.archetype || spec.type === options.archetype) && (!options.monsterId || spec.type === 'monster' && spec.monsterId === options.monsterId))
   const selected: HunterContractState[] = []
   const seen = new Set<string>()
   const count = Math.min(getHunterContractChoiceCount(state), pool.length)
@@ -236,7 +237,7 @@ export const requestHunterContractBoard = (state: GameState) => {
   return order.availableContracts.length > 0
 }
 
-export const getHunterBlockableTargets = (_state: Pick<GameState, 'progress'>) => normalTargets
+export const getHunterBlockableTargets = (state: Pick<GameState, 'progress'>) => normalTargets.filter((id) => isHunterMonsterRankEligible(state, id))
 
 export const acceptHunterContract = (state: GameState, contractId: string) => {
   const order = state.progress.huntersOrder
@@ -283,7 +284,7 @@ export const recordHunterKill = (state: GameState, monsterId: MonsterId, dungeon
   order.activeContract = null
   order.generationCount += 1
   order.availableContracts = isHunterContractBoardUnlocked(state) ? generateHunterContractChoices(state) : []
-  pushNotification(state, `Hunt Contract complete - +${reputationReward} Reputation - +${marksAwarded} Hunter Marks.`, 'success')
+  pushNotification(state, `HUNT CONTRACT COMPLETE · ${getHunterContractTargetLabel(contract)} · ${contract.target} / ${contract.target} · +${reputationReward} Hunter Reputation · +${marksAwarded} Hunter Marks.`, 'success', { key: `hunter-contract-complete:${contract.id}`, cooldownMs: 1000 })
   return true
 }
 
@@ -312,7 +313,7 @@ export const rerollHunterContracts = (state: GameState) => {
 
 export const setHunterTargetBlocked = (state: GameState, monsterId: MonsterId, blocked: boolean) => {
   const order = state.progress.huntersOrder
-  if (!normalTargets.includes(monsterId) || getHunterBlockSlotCount(state) <= 0) return false
+  if (!getHunterBlockableTargets(state).includes(monsterId) || getHunterBlockSlotCount(state) <= 0) return false
   const blockedTargets = order.blockedTargets
   const exists = blockedTargets.includes(monsterId)
   if (exists === blocked) return false
@@ -350,6 +351,11 @@ export const normalizeHuntersOrderProgress = (state: GameState) => {
   order.blockedTargets = order.blockedTargets.filter((id) => normalTargets.includes(id)).slice(0, getHunterBlockSlotCount(state))
   for (const upgrade of HUNTER_UPGRADES) order.purchasedUpgrades[upgrade.id] = Math.min(upgrade.maxRank, safeInt(order.purchasedUpgrades[upgrade.id] ?? 0))
   order.rankId = getHunterRank(order.reputation).id
+  const migrateNightglassBossContract = (contract: HunterContractState): HunterContractState => contract.targetSpec.type === 'boss' && contract.targetSpec.monsterId === 'nightglass-alpha'
+    ? { ...contract, targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' }, tier: 'prestigious' }
+    : contract
+  order.activeContract = order.activeContract ? migrateNightglassBossContract(order.activeContract) : null
+  order.availableContracts = order.availableContracts.map(migrateNightglassBossContract)
   if (!isHunterContractBoardUnlocked(state)) order.availableContracts = []
   return order
 }
@@ -366,11 +372,11 @@ export const debugCompleteActiveHunterContract = (state: GameState) => {
   return true
 }
 
-const rankForTargetType: Partial<Record<HunterContractTarget['type'], HunterRankId>> = { family: 'scout', alignment: 'stalker', region: 'warden', boss: HUNTER_APEX_CONTRACT.requiredRank }
+const rankForTargetType: Partial<Record<HunterContractTarget['type'], HunterRankId>> = { family: 'scout', alignment: 'stalker', region: 'warden' }
 export const debugSetHunterRngSeed = (state: GameState, seed: number) => { state.progress.huntersOrder.rngState = safeInt(seed) || 1 }
 export const debugRegenerateHunterContractBoard = (state: GameState, options: HunterContractGenerationOptions = {}) => {
   debugSetHuntersOrderUnlocked(state, true)
-  const requiredRankId = options.archetype ? rankForTargetType[options.archetype] : undefined
+  const requiredRankId = options.monsterId ? MONSTERS[options.monsterId]?.hunter?.minimumRank : options.archetype ? rankForTargetType[options.archetype] : undefined
   const requiredRank = requiredRankId ? HUNTER_RANKS.find((rank) => rank.id === requiredRankId) : undefined
   const tierReputation = options.tier ? requiredRankForTier(options.tier) : 0
   if (requiredRank || tierReputation) state.progress.huntersOrder.reputation = Math.max(state.progress.huntersOrder.reputation, requiredRank?.reputation ?? 0, tierReputation)
@@ -408,17 +414,12 @@ export const clearHunterTargetBlocks = (state: GameState) => {
   return true
 }
 export const debugClearHunterTargetBlocks = clearHunterTargetBlocks
-export const debugGrantNightglassBossContract = (state: GameState) => {
-  const apexRank = HUNTER_RANKS.find((rank) => rank.id === HUNTER_APEX_CONTRACT.requiredRank)
-  if (!apexRank) return false
+export const debugGrantNightglassContract = (state: GameState) => {
+  const masterRank = HUNTER_RANKS.find((rank) => rank.id === MONSTERS['nightglass-alpha'].hunter?.minimumRank)
+  if (!masterRank) return false
   debugSetHuntersOrderUnlocked(state, true)
-  state.progress.huntersOrder.reputation = Math.max(state.progress.huntersOrder.reputation, apexRank.reputation)
+  state.progress.huntersOrder.reputation = Math.max(state.progress.huntersOrder.reputation, masterRank.reputation)
   state.progress.huntersOrder.rankId = getHunterRank(state.progress.huntersOrder.reputation).id
-  const [bossContract] = debugRegenerateHunterContractBoard(state, { archetype: 'boss', tier: 'prestigious' })
-  return bossContract?.targetSpec.type === 'boss' && bossContract.targetSpec.monsterId === HUNTER_APEX_CONTRACT.monsterId
-}
-
-export const debugSetHunterApexThreatReady = (state: GameState) => {
-  state.combat.dungeonId = 'hunters-ground'
-  state.combat.threatCleared = resolveBossThreatRequirement('hunters-ground', state.worldTier.current)
+  const [nightglassContract] = debugRegenerateHunterContractBoard(state, { archetype: 'monster', tier: 'prestigious', monsterId: 'nightglass-alpha' })
+  return nightglassContract?.targetSpec.type === 'monster' && nightglassContract.targetSpec.monsterId === 'nightglass-alpha'
 }

@@ -27,4 +27,11 @@ describe('DefeatSummaryModal', () => {
     expect(useGameStore.getState().combat.active).toBe(false)
     expect(useGameStore.getState().combat.enemyId).toBeNull()
   })
+
+  it('uses bossless encounter copy for a Gloamridge defeat', () => {
+    combatDefeatSink.push({ source: { kind: 'system' }, dungeonId: 'hunters-ground', target: 'player', targetMonsterId: 'nightglass-alpha', category: 'death', sourceId: 'player-defeated' })
+    render(<TooltipProvider><DefeatSummaryModal /></TooltipProvider>)
+    expect(screen.getByText('Encounter ended.')).toBeTruthy()
+    expect(screen.queryByText('Threat progress reset to 0.')).toBeNull()
+  })
 })

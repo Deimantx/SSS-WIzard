@@ -1,5 +1,5 @@
 import { BALANCE } from '../../core/balance/balance'
-import { DUNGEONS, chooseMonster } from '../../content/dungeons/dungeons'
+import { DUNGEONS, chooseMonster, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
@@ -40,13 +40,14 @@ const isHunterGround = (dungeonId: DungeonId) => getCombatLocationByDungeonId(du
 
 export const canQueueDungeonBoss = (state: GameState, dungeonId: DungeonId) => {
   const dungeon = DUNGEONS[dungeonId]
-  if (!dungeon || !isHunterGround(dungeonId)) return Boolean(dungeon)
+  if (!dungeon || !hasBossEncounter(dungeon)) return false
+  if (!isHunterGround(dungeonId)) return true
   return getHunterAuthorization(state, dungeon.boss, dungeonId).authorized
 }
 
 export const queueAutoHuntBoss = (state: GameState, dungeonId: DungeonId) => {
   const dungeon = DUNGEONS[dungeonId]
-  if (!dungeon || !state.progress.autoHuntBossByDungeon[dungeonId] || !canQueueDungeonBoss(state, dungeonId)) return false
+  if (!dungeon || !hasBossEncounter(dungeon) || !state.progress.autoHuntBossByDungeon[dungeonId] || !canQueueDungeonBoss(state, dungeonId)) return false
   const requirement = resolveBossThreatRequirement(dungeonId, state.worldTier.current)
   const currentEnemyId = state.combat.enemyId
   if (state.combat.threatCleared < requirement || state.combat.pendingBossId || (currentEnemyId && isBossMonster(MONSTERS[currentEnemyId]))) return false
@@ -195,14 +196,16 @@ export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => 
       ? state.combat.dungeonSequenceIndex!
       : 0
     state.combat.dungeonSequenceIndex = sequenceIndex
-    const nextEnemyId = sequenceIndex < dungeon.encounterSequence.length ? dungeon.encounterSequence[sequenceIndex] : dungeon.boss
+    const nextEnemyId = sequenceIndex < dungeon.encounterSequence.length ? dungeon.encounterSequence[sequenceIndex] : hasBossEncounter(dungeon) ? dungeon.boss : null
+    if (!nextEnemyId) { state.combat.active = false; return false }
     const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
     if (!spawned && state.combat.active) state.combat.encounterTimerMs = dungeon.encounterDelayMs
     return spawned
   }
-  if (state.combat.pendingBossId && (state.combat.pendingBossId !== dungeon.boss || !canQueueDungeonBoss(state, dungeon.id))) {
+  if (!hasBossEncounter(dungeon)) state.combat.pendingBossId = null
+  if (hasBossEncounter(dungeon) && state.combat.pendingBossId && (state.combat.pendingBossId !== dungeon.boss || !canQueueDungeonBoss(state, dungeon.id))) {
     state.combat.pendingBossId = null
-    if (isHunterGround(dungeon.id)) pushNotification(state, 'Auto Hunt paused: the active Hunt Contract does not authorize the Apex.', 'warning', { key: 'hunter-apex-auto-hunt-unauthorized', cooldownMs: 1000 })
+    if (isHunterGround(dungeon.id)) pushNotification(state, 'Auto Hunt paused: the active Hunt Contract does not authorize this encounter.', 'warning', { key: 'hunter-auto-hunt-unauthorized', cooldownMs: 1000 })
   }
   queueAutoHuntBoss(state, dungeon.id)
   if (state.combat.pendingBossId) {
@@ -341,7 +344,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.combat.encounterTimerMs = 0
       appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. ${dungeon.name} cleared.`)
       pushNotification(state, `${dungeon.name.toUpperCase()} CLEARED`, 'success', { key: `dungeon-cleared:${dungeon.id}`, cooldownMs: 1000 })
-    } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. Threat resets.`)
+    } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}.${hasBossEncounter(dungeon) ? ' Threat resets.' : ''}`)
     if (unlockedWorldTier) pushNotification(state, `WORLD TIER ${unlockedWorldTier} UNLOCKED`, 'success')
   } else if (sequenceDungeon) {
     const sequenceLength = dungeon.encounterSequence?.length ?? 0
@@ -354,16 +357,16 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
     if (state.progress.tutorialStage === 'combat') { state.progress.tutorialStage = 'first-kill'; pushNotification(state, 'FIRST VICTORY · The Tower is ready for Acolyte work.', 'success', { key: 'tutorial-first-kill', cooldownMs: 1000 }) }
-    const requirement = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+    const requirement = hasBossEncounter(dungeon) ? resolveBossThreatRequirement(dungeon.id, state.worldTier.current) : 0
     const beforeThreat = Math.max(0, state.combat.threatCleared)
-    const threatGain = resolveThreatGainForKill(state, enemyId, encounterWorldTier)
+    const threatGain = hasBossEncounter(dungeon) ? resolveThreatGainForKill(state, enemyId, encounterWorldTier) : 0
     const afterThreat = Math.min(requirement, beforeThreat + threatGain)
     state.combat.threatCleared = afterThreat
     if (enemyId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.lifetimeKillsByMonster[enemyId])
     if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
-    if (beforeThreat < requirement && afterThreat >= requirement) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
-    if (afterThreat >= requirement) queueAutoHuntBoss(state, dungeon.id)
+    if (hasBossEncounter(dungeon) && beforeThreat < requirement && afterThreat >= requirement) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
+    if (hasBossEncounter(dungeon) && afterThreat >= requirement) queueAutoHuntBoss(state, dungeon.id)
   }
   if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
   if (encounterWorldTier === 2 && state.worldTier.highestUnlocked >= 2) state.progress.chronicle.eventFlags['first-wt2-kill'] = true
@@ -412,7 +415,8 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
     const sequenceDungeon = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'
-    appendLog(state, sequenceDungeon ? 'The wizard falls. Dungeon run reset.' : 'The wizard falls. Threat resets to 0.')
+    const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
+    appendLog(state, sequenceDungeon ? 'The wizard falls. Dungeon run reset.' : dungeon && hasBossEncounter(dungeon) ? 'The wizard falls. Threat resets to 0.' : 'The wizard falls. Encounter ended.')
     return true
   }
   if (state.debug.playerImmortal && state.player.health <= 0) state.player.health = 1

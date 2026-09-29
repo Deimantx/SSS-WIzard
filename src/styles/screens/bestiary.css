@@ -16,6 +16,12 @@
 .bestiary-entry-art img, .bestiary-portrait img { display: block; width: 78%; height: 78%; object-fit: contain; }
 .bestiary-entry-card.undiscovered .bestiary-entry-art { border-color: var(--ui-border); color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel) 75%, transparent); filter: grayscale(1); }
 .bestiary-entry-card { grid-template-rows: 64px minmax(0, 1fr); min-height: 150px; }
+.bestiary-embedded .bestiary-entry-card { grid-template-columns: 50px minmax(0, 1fr); grid-template-rows: minmax(78px, auto); align-items: center; gap: 8px; min-height: 90px; padding: 8px; }
+.bestiary-embedded .bestiary-entry-art { width: 50px; height: 58px; }
+.bestiary-embedded .bestiary-entry-name { min-height: 0; }
+.bestiary-embedded .bestiary-entry-copy { gap: 4px; }
+.bestiary-contract-match { color: var(--gold) !important; font-weight: 700 !important; }
+.bestiary-embedded .bestiary-entry-card:not(.undiscovered) { border-left: 2px solid color-mix(in srgb, var(--bestiary-color, var(--ui-accent)) 36%, var(--ui-border)); }
 .bestiary-entry-art { height: 64px; }
 .bestiary-entry-copy { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 0 1px; }
 .bestiary-entry-name { display: -webkit-box; min-height: 2.3em; overflow: hidden; color: var(--ui-text); font-size: var(--text-sm); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
@@ -33,6 +39,7 @@
 .bestiary-portrait::after { position: absolute; inset: -7px; border: 1px dashed color-mix(in srgb, var(--bestiary-color) 33%, transparent); border-radius: 50%; content: ''; }
 .bestiary-portrait.boss { width: 105px; height: 105px; font-size: 46px; }
 .bestiary-dossier-hero > div:last-child { min-width: 0; }
+.bestiary-dossier-hero > div:last-child { display: grid; justify-items: start; gap: 4px; }
 .bestiary-dossier-category { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
 .bestiary-dossier-hero h2 { margin: 4px 0 4px; overflow-wrap: anywhere; color: var(--ui-text); font-size: var(--text-lg); }
 .bestiary-dossier-hero p { margin: 0 0 7px; color: var(--ui-text-muted); font-size: var(--text-xs); line-height: 1.45; }
@@ -72,6 +79,8 @@
 .bestiary-resonance-value { color: var(--resonance-color); font: 600 var(--text-sm) var(--font-mono); white-space: nowrap; }
 .bestiary-total-defeats { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .bestiary-total-defeats strong { color: var(--ui-text-soft); }
+.bestiary-hunter-summary > .is-contract { grid-column: span 1; align-content: start; }
+.bestiary-hunter-summary .button { width: fit-content; min-height: 27px; padding: 4px 8px; font-size: 9px; }
 
 @media (max-width: 760px) {
   .bestiary-stat-grid { grid-template-columns: 1fr; }

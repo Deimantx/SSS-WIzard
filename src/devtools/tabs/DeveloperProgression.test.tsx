@@ -26,7 +26,7 @@ describe('Developer progression tester actions', () => {
     expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec.type).toBe('monster')
   })
 
-  it('exposes forced board fixtures, authored Hunter upgrades, and Apex-ready Gloamridge state', async () => {
+  it('exposes forced board fixtures, authored Hunter upgrades, and Master Quarry contract fixture', async () => {
     const user = userEvent.setup()
     render(<TooltipProvider><DeveloperProgression /></TooltipProvider>)
     await user.click(screen.getByRole('button', { name: 'Force Special' }))
@@ -35,12 +35,9 @@ describe('Developer progression tester actions', () => {
     await user.click(screen.getByText('Force an authored Commission template'))
     await user.click(screen.getByRole('button', { name: 'Force Produce Water Fragments' }))
     expect(useGameStore.getState().progress.arcaneGuild.availableCommissions[0]?.templateId).toBe('produce-water-fragments')
-    await user.click(screen.getByRole('button', { name: 'Grant Nightglass Boss Contract' }))
-    expect(useGameStore.getState().progress.huntersOrder.availableContracts[0]?.targetSpec).toEqual({ type: 'boss', monsterId: 'nightglass-alpha' })
+    await user.click(screen.getByRole('button', { name: 'Grant Nightglass Contract' }))
+    expect(useGameStore.getState().progress.huntersOrder.availableContracts[0]?.targetSpec).toEqual({ type: 'monster', monsterId: 'nightglass-alpha' })
     expect(useGameStore.getState().progress.huntersOrder.rankId).toBe('master-hunter')
-    await user.click(screen.getByRole('button', { name: 'Set Gloamridge Apex Threat' }))
-    expect(useGameStore.getState().combat.dungeonId).toBe('hunters-ground')
-    expect(useGameStore.getState().combat.threatCleared).toBeGreaterThanOrEqual(16000)
     await user.click(screen.getByText('Rank and archetype fixtures'))
     await user.click(screen.getByText('Grant an upgrade without rank or Mark requirements'))
     await user.click(screen.getByRole('button', { name: /Grant Trail Kit/ }))

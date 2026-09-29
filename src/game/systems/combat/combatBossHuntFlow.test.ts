@@ -52,12 +52,12 @@ describe('targeted Boss and Auto Hunt flow', () => {
     expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(false)
   })
 
-  it('does not queue a Hunter Apex without its matching Boss Contract', () => {
+  it('does not queue a boss in Gloamridge with a Hunter contract active', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'hunters-ground'
     state.combat.targetEnemyId = 'ashen-tracker'
-    state.combat.threatCleared = DUNGEONS['hunters-ground'].threatRequired
+    state.combat.threatCleared = 0
     state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
     state.progress.autoHuntBossUnlocked = true
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
@@ -68,12 +68,12 @@ describe('targeted Boss and Auto Hunt flow', () => {
     expect(useGameStore.getState().combat.pendingBossId).toBeNull()
   })
 
-  it('queues the Hunter Apex once a matching Boss Contract authorizes it', () => {
+  it('keeps Gloamridge bossless even when legacy Auto Hunt and boss-contract state is present', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.dungeonId = 'hunters-ground'
     state.combat.targetEnemyId = 'ashen-tracker'
-    state.combat.threatCleared = DUNGEONS['hunters-ground'].threatRequired
+    state.combat.threatCleared = 999999
     state.progress.autoHuntBossUnlocked = true
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.progress.huntersOrder.reputation = 32500
@@ -82,6 +82,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
 
     useGameStore.getState().toggleAutoHunt('hunters-ground')
 
-    expect(useGameStore.getState().combat.pendingBossId).toBe('nightglass-alpha')
+    expect(DUNGEONS['hunters-ground'].boss).toBeNull()
+    expect(useGameStore.getState().combat.pendingBossId).toBeNull()
   })
 })

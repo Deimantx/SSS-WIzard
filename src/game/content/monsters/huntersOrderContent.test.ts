@@ -17,20 +17,20 @@ describe('Gloamridge quarry combat identities', () => {
     expect(runeHorn.actions['rune-charge'].effects.some((effect) => effect.type === 'apply-status' && effect.statusId === 'chilled')).toBe(true)
   })
 
-  it('makes Nightglass Alpha a marked, phased Apex whose Power sits between Greatbear and Edrin', () => {
+  it('makes Nightglass Alpha a prestigious normal quarry with one ordinary action pattern', () => {
     const alpha = MONSTERS['nightglass-alpha']
     const traits = getTraitDefinitions(alpha.traitIds)
 
-    expect(alpha.actionPatterns.frenzy).toBeDefined()
+    expect(alpha).toMatchObject({ bestiaryCategory: 'monster', maxHealth: 1000, basicAttackDamage: 40, basicAttackTimeMs: 1950, defense: 28, hunter: { contractTier: 'prestigious', minimumRank: 'master-hunter' } })
+    expect(alpha.actionPatterns.frenzy).toBeUndefined()
     expect(alpha.actions['shadow-mark']).toBeDefined()
     expect(alpha.actions['alpha-pounce']).toBeDefined()
-    expect(traits.some((trait) => trait.id === 'nightglass-alpha-hide' && trait.modifiers?.some((modifier) => modifier.key === 'damage-taken-percent'))).toBe(true)
-    expect(traits.some((trait) => trait.id === 'nightglass-alpha-frenzy' && trait.rules?.some((rule) => rule.effects.some((effect) => effect.type === 'set-action-pattern' && effect.patternId === 'frenzy')))).toBe(true)
+    expect(traits.map((trait) => trait.id)).not.toEqual(expect.arrayContaining(['nightglass-alpha-hide', 'nightglass-alpha-frenzy']))
 
     const greatbearPower = resolveEnemyPowerRating('corrupted-greatbear', 1)
     const alphaPower = resolveEnemyPowerRating('nightglass-alpha', 1)
     const edrinPower = resolveEnemyPowerRating('archmage-edrin-shade', 1)
-    expect(alphaPower).toBeGreaterThan(greatbearPower)
-    expect(alphaPower).toBeLessThan(edrinPower)
+    expect(alphaPower).toBeLessThan(greatbearPower)
+    expect(edrinPower).toBeGreaterThan(alphaPower)
   })
 })

@@ -6,5 +6,5 @@ export const HUNTER_RANKS: readonly HunterRankDefinition[] = [
   { id: 'stalker', name: 'Stalker', reputation: 4000, unlocks: ['Alignment Contracts', 'Extended Trails', 'Target Blocks'] },
   { id: 'warden', name: 'Warden', reputation: 9000, unlocks: ['Region Contracts', 'Deep Pockets', 'Order Privilege'] },
   { id: 'veteran', name: 'Veteran', reputation: 17500, unlocks: ['Prestigious Contracts', 'Negotiated Rerolls'] },
-  { id: 'master-hunter', name: 'Master Hunter', reputation: 32500, unlocks: ['Nightglass Alpha Boss Contracts', 'Apex Hunt access'] },
+  { id: 'master-hunter', name: 'Master Hunter', reputation: 32500, unlocks: ['Nightglass Alpha Contracts', 'Master Quarry access'] },
 ]

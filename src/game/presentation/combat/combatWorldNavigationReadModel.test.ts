@@ -26,12 +26,14 @@ describe('combat world navigation read model', () => {
     expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })
 
-  it('models Gloamridge as a first-class targeted Hunting Ground with Apex Hunt presentation', () => {
+  it('models Gloamridge as a first-class targeted Hunting Ground without boss presentation', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     const ground = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'hunters-ground' }).selectedLocation
-    expect(ground).toMatchObject({ id: 'hunters-ground', name: 'Gloamridge', type: 'hunting-ground', typeLabel: 'HUNTING GROUND', encounterMode: 'targeted', bossHunt: { bossLabel: 'APEX HUNT' } })
+    expect(ground).toMatchObject({ id: 'hunters-ground', name: 'Gloamridge', type: 'hunting-ground', typeLabel: 'HUNTING GROUND', encounterMode: 'targeted', bossHunt: null, boss: null })
+    expect(ground?.targeting?.targets).toHaveLength(7)
+    expect(ground?.targeting?.targets.map((target) => target.monsterId)).toContain('nightglass-alpha')
   })
 
   it('shows authored combat identities and power before Bestiary discovery', () => {

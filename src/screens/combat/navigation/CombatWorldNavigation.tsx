@@ -3,10 +3,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { Card, GameTooltip } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
-import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS, type CombatContinentId, type CombatLocationId, type CombatRegionId } from '../../../game/content/world-navigation'
+import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatLocationByDungeonId, type CombatContinentId, type CombatLocationId, type CombatRegionId } from '../../../game/content/world-navigation'
+import { DUNGEONS } from '../../../game/content/dungeons/dungeons'
 import { buildCombatWorldNavigationViewModel, getFirstCombatLocationId, getFirstCombatRegionId, getInitialCombatLocationId } from '../../../game/presentation/combat/combatWorldNavigationReadModel'
 import type { CombatLocationViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import type { MonsterId } from '../../../game/types'
+import { setNavigationIntent, useNavigationIntent } from '../../../ui/navigation/navigationIntent'
 import { useGameStore } from '../../../store/gameStore'
 import { CombatLocationBrowser } from './CombatLocationBrowser'
 import { CombatLocationInspector } from './CombatLocationInspector'
@@ -17,6 +19,7 @@ type Selection = { continentId: CombatContinentId | null; regionId: CombatRegion
 
 export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHuntTarget, onBestiary, onReturnToCombat }: { onSelectLocation: (locationId: CombatLocationId) => void; onEnterLocation: (locationId: CombatLocationId, targetEnemyId?: MonsterId) => void; onHuntTarget: (locationId: CombatLocationId, targetEnemyId: MonsterId) => boolean; onBestiary: (location: CombatLocationViewModel, monsterId?: MonsterId | null) => void; onReturnToCombat: () => void }) {
   const { progress, combat, worldTier, lastEnteredDungeonId } = useGameStore(useShallow((state) => ({ progress: state.progress, combat: state.combat, worldTier: state.worldTier, lastEnteredDungeonId: state.ui.lastEnteredCombatDungeonId })))
+  const navigationIntent = useNavigationIntent()
   const [selection, setSelection] = useState<Selection>(() => {
     const initialLocationId = getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress })
     const location = COMBAT_LOCATIONS[initialLocationId]
@@ -26,13 +29,32 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
   const [lootRequest, setLootRequest] = useState<{ location: CombatLocationViewModel; targetMonsterId: MonsterId | null } | null>(null)
   const [selectedTargetEnemyId, setSelectedTargetEnemyId] = useState<MonsterId | null>(null)
   const targetContextRef = useRef<{ locationId: CombatLocationId | null; activeTargetEnemyId: MonsterId | null }>({ locationId: null, activeTargetEnemyId: null })
+  const preserveSelectedTargetForLocationRef = useRef<CombatLocationId | null>(null)
+
+  useEffect(() => {
+    const dungeonId = navigationIntent.combatDungeonId
+    if (!dungeonId) return
+    const location = getCombatLocationByDungeonId(dungeonId)
+    const dungeon = DUNGEONS[dungeonId]
+    if (location && dungeon) {
+      setSelection({ continentId: COMBAT_REGIONS[location.regionId]?.continentId ?? 'continent-1', regionId: location.regionId, locationId: location.id })
+      const target = navigationIntent.combatMonsterId
+      const validTarget = target && dungeon.monsterPool.includes(target) && location.targetMetadata?.[target] ? target : null
+      setSelectedTargetEnemyId(validTarget)
+      preserveSelectedTargetForLocationRef.current = validTarget ? location.id : null
+      onSelectLocation(location.id)
+    }
+    setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
+  }, [navigationIntent.combatDungeonId, navigationIntent.combatMonsterId, onSelectLocation])
 
   useEffect(() => {
     const targeting = viewModel.selectedLocation?.targeting
     const locationId = viewModel.selectedLocation?.id ?? null
     const activeTargetEnemyId = targeting?.activeTargetEnemyId ?? null
     const previousContext = targetContextRef.current
-    if (previousContext.locationId !== locationId || previousContext.activeTargetEnemyId !== activeTargetEnemyId) setSelectedTargetEnemyId(activeTargetEnemyId)
+    if (preserveSelectedTargetForLocationRef.current) {
+      if (preserveSelectedTargetForLocationRef.current === locationId) preserveSelectedTargetForLocationRef.current = null
+    } else if (previousContext.locationId !== locationId || previousContext.activeTargetEnemyId !== activeTargetEnemyId) setSelectedTargetEnemyId(activeTargetEnemyId)
     else if (selectedTargetEnemyId && targeting && !targeting.targets.some((target) => target.monsterId === selectedTargetEnemyId)) setSelectedTargetEnemyId(null)
     else if (!targeting) setSelectedTargetEnemyId(null)
     targetContextRef.current = { locationId, activeTargetEnemyId }

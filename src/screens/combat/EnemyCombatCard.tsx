@@ -1,7 +1,7 @@
 import { BookOpen, Crosshair, Heart, Package, Shield } from 'lucide-react'
 import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent, type Ref } from 'react'
 import type { DungeonId, MonsterId } from '../../game/types'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
 import { getMonsterTraits } from '../../game/systems/combat/traitRuntime'
@@ -60,10 +60,11 @@ export function EnemyCombatCard({ selectedDungeonId, selectedMonsterId, cardRef,
     const dungeon = DUNGEONS[resolveEnemyPreviewDungeonId({ combatActive, combatDungeonId, selectedDungeonId })]
     const threatRequired = resolveBossThreatRequirement(dungeon.id, useGameStore.getState().worldTier.current)
     const sequence = getCombatEncounterMode(getCombatLocationByDungeonId(dungeon.id)) === 'sequence' ? dungeon.encounterSequence : null
-    const selectedPreview = selectedMonsterId && (dungeon.monsterPool.includes(selectedMonsterId) || dungeon.boss === selectedMonsterId) ? MONSTERS[selectedMonsterId] : null
-    const bossPreview = MONSTERS[dungeon.boss]
-    const routeSummary = sequence ? `FIXED RUN · ${sequence.length + 1} ENCOUNTERS` : `${dungeon.monsterPool.length} normal threats · ${formatNumber(threatRequired)} Threat`
-    return <section ref={cardRef} className="combat-actor-card combat-enemy-card combat-enemy-empty combat-enemy-transition-enter"><header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">ENEMY PREVIEW</span><h2>{combatActive ? 'NEXT THREAT' : selectedPreview ? 'SELECTED TARGET' : 'SELECTED ROUTE'}</h2></div><Status tone="neutral">{combatActive ? 'Searching' : 'Standby'}</Status></header>{combatActive ? <div className="combat-empty-actor"><Shield size={27} aria-hidden="true" /><span className="combat-subsection-label">ACTIVE RUN · {dungeon.name}</span><strong>Searching...</strong></div> : <div className="combat-route-preview"><MonsterPortrait monster={selectedPreview ?? bossPreview} boss={!selectedPreview && selectedPreview !== bossPreview} /><div><span className="combat-subsection-label">{selectedPreview ? 'TARGET' : 'BOSS PREVIEW'}</span><strong>{(selectedPreview ?? bossPreview).name}</strong><small>{selectedPreview ? selectedPreview.subtitle : routeSummary}</small></div></div>}</section>
+    const selectedPreview = selectedMonsterId && (dungeon.monsterPool.includes(selectedMonsterId) || (hasBossEncounter(dungeon) && dungeon.boss === selectedMonsterId)) ? MONSTERS[selectedMonsterId] : null
+    const bossPreview = hasBossEncounter(dungeon) ? MONSTERS[dungeon.boss] : null
+    const routeSummary = sequence ? `FIXED RUN · ${sequence.length + 1} ENCOUNTERS` : hasBossEncounter(dungeon) ? `${dungeon.monsterPool.length} normal threats · ${formatNumber(threatRequired)} Threat` : `${dungeon.monsterPool.length} authorized quarry · Hunt Contract required`
+    const previewMonster = selectedPreview ?? bossPreview ?? MONSTERS[dungeon.monsterPool[0]]
+    return <section ref={cardRef} className="combat-actor-card combat-enemy-card combat-enemy-empty combat-enemy-transition-enter"><header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">ENEMY PREVIEW</span><h2>{combatActive ? 'NEXT THREAT' : selectedPreview ? 'SELECTED TARGET' : 'SELECTED ROUTE'}</h2></div><Status tone="neutral">{combatActive ? 'Searching' : 'Standby'}</Status></header>{combatActive ? <div className="combat-empty-actor"><Shield size={27} aria-hidden="true" /><span className="combat-subsection-label">ACTIVE RUN · {dungeon.name}</span><strong>Searching...</strong></div> : <div className="combat-route-preview"><MonsterPortrait monster={previewMonster} boss={Boolean(!selectedPreview && bossPreview)} /><div><span className="combat-subsection-label">{selectedPreview ? 'TARGET' : bossPreview ? 'BOSS PREVIEW' : 'LOCATION PREVIEW'}</span><strong>{previewMonster.name}</strong><small>{selectedPreview ? selectedPreview.subtitle : routeSummary}</small></div></div>}</section>
   }
 
   const monsterDungeon = getMonsterDungeon(enemy.id)

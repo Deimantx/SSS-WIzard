@@ -1,4 +1,4 @@
-import { DUNGEONS, getDungeonUnlockRequirement, isDungeonCompleted, isDungeonUnlocked } from '../../content/dungeons/dungeons'
+import { DUNGEONS, getDungeonUnlockRequirement, hasBossEncounter, isDungeonCompleted, isDungeonUnlocked } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 import { getEliteZoneAffix } from '../../content/elite-affixes'
@@ -45,7 +45,7 @@ const getLocationState = (locationId: CombatLocationId, progress: GameState['pro
   const dungeon = DUNGEONS[location.dungeonId]
   const active = Boolean(combat.active && combat.dungeonId === dungeon.id)
   const encounterMode = getCombatEncounterMode(location)
-  if (encounterMode === 'targeted' && active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
+  if (encounterMode === 'targeted' && hasBossEncounter(dungeon) && active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
   if (active) return 'active'
   if (isDungeonCompleted(dungeon.id, progress)) return 'completed'
   return 'available'
@@ -63,7 +63,7 @@ const buildTarget = (monsterId: MonsterId, difficulty: CombatTargetDifficulty, o
 }
 
 const buildSequence = (dungeon: typeof DUNGEONS[DungeonId], progress: GameState['progress'], combat: CombatState, worldTier: GameState['worldTier']['current']) => {
-  if (!dungeon.encounterSequence) return null
+  if (!dungeon.encounterSequence || !hasBossEncounter(dungeon)) return null
   const encounterIds = [...dungeon.encounterSequence, dungeon.boss]
   const activeIndex = combat.active && combat.dungeonId === dungeon.id && Number.isInteger(combat.dungeonSequenceIndex) && combat.dungeonSequenceIndex! >= 0 && combat.dungeonSequenceIndex! < encounterIds.length ? combat.dungeonSequenceIndex : null
   const steps: CombatDungeonSequenceStepViewModel[] = encounterIds.map((monsterId, index) => {
@@ -125,9 +125,9 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     description: definition.description ?? dungeon.ui?.description ?? 'A dangerous location beyond the tower gate.',
     encounterMode,
     zoneAffix: zoneAffix ? { id: zoneAffix.id, name: zoneAffix.name, description: zoneAffix.description } : null,
-    bossHunt: contentVisible && encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }) : null,
+    bossHunt: contentVisible && hasBossEncounter(dungeon) && encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }) : null,
     encounters: contentVisible ? dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)) : [],
-    boss: contentVisible ? buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier) : null,
+    boss: contentVisible && hasBossEncounter(dungeon) ? buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier) : null,
     targeting: contentVisible && encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,
     sequence: contentVisible && encounterMode === 'sequence' ? buildSequence(dungeon, progress, combat, currentWorldTier) : null,
     firstClearUnlockPreview: definition.firstClearUnlockPreview ?? [],

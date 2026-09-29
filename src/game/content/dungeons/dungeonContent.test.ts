@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../../../store/initialState";
-import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, validateDungeonDefinitions } from "./dungeons";
+import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter, isDungeonCompleted, isDungeonUnlocked, validateDungeonDefinitions } from "./dungeons";
 import { ACT1_DUNGEONS } from "./act1";
 import { MONSTERS, validateMonsterDefinitions } from "../monsters";
 import { ACT1_MONSTERS } from "../monsters/act1";
@@ -50,6 +50,17 @@ describe("Act 0 and Act 1 dungeon content", () => {
       },
     };
     expect(validateDungeonDefinitions(content, DUNGEON_ORDER)).toEqual([]);
+  });
+
+  it("models Gloamridge as a bossless Hunting Ground and never marks it boss-complete", () => {
+    const state = contentTestState();
+    expect(DUNGEONS["hunters-ground"].monsterPool).toHaveLength(7);
+    expect(DUNGEONS["hunters-ground"].boss).toBeNull();
+    expect(DUNGEONS["hunters-ground"].threatRequired).toBeNull();
+    expect(hasBossEncounter(DUNGEONS["hunters-ground"])).toBe(false);
+    expect(isDungeonCompleted("hunters-ground", state.progress)).toBe(false);
+    const mismatched = { ...DUNGEONS, "hunters-ground": { ...DUNGEONS["hunters-ground"], threatRequired: 10 } } as unknown as typeof DUNGEONS;
+    expect(validateDungeonDefinitions(mismatched, DUNGEON_ORDER)).toContain("hunters-ground: boss and threatRequired must both be authored or both be null");
   });
 
   it("authors the stable dungeon order, pools, bosses, unlocks, and delay", () => {

@@ -35,7 +35,7 @@ describe('Power-based Boss Threat', () => {
   it('uses enemy Power at the captured encounter tier for targeted kills', () => {
     const state = prepareCombat()
     expect(usesPowerBasedThreat(getCombatLocationByDungeonId('whispering-woods'))).toBe(true)
-    expect(usesPowerBasedThreat(getCombatLocationByDungeonId('hunters-ground'))).toBe(true)
+    expect(usesPowerBasedThreat(getCombatLocationByDungeonId('hunters-ground'))).toBe(false)
     expect(resolveThreatGainForKill(state, 'forest-wisp', 1)).toBe(resolveEnemyPowerRating('forest-wisp', 1))
     expect(resolveThreatGainForKill(state, 'tempest-stag', 1)).toBeGreaterThan(resolveThreatGainForKill(state, 'forest-wisp', 1))
     expect(resolveThreatGainForKill(state, 'forest-wisp', 2)).toBe(resolveEnemyPowerRating('forest-wisp', 2))
@@ -63,6 +63,16 @@ describe('Power-based Boss Threat', () => {
     const sequence = prepareCombat('abandoned-catacombs')
     expect(resolveThreatGainForKill(sequence, 'restless-skeleton', 1)).toBe(0)
     expect(resolveThreatGainForKill(prepareCombat('fractured-approach'), 'warded-husk', 1)).toBe(0)
+  })
+
+  it('keeps the bossless Hunting Ground at zero Threat', () => {
+    const ground = prepareCombat('hunters-ground')
+    expect(resolveBossThreatRequirement('hunters-ground', 5)).toBe(0)
+    expect(resolveThreatGainForKill(ground, 'nightglass-alpha', 5)).toBe(0)
+    ground.combat.enemyId = 'nightglass-alpha'
+    ground.combat.enemyHp = 0
+    finishEnemy(ground)
+    expect(ground.combat.log.some((entry) => /Threat/.test(entry))).toBe(false)
   })
 
   it('announces the Guild and Hunter Order on their first unlock kills only', () => {

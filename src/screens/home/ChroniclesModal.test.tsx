@@ -8,6 +8,9 @@ import { resetAllUiPreferences, setUiPreferences } from '../../ui/preferences/ui
 vi.mock('../../components/ArcaneAtmosphere', () => ({ ArcaneAtmosphere: () => null }))
 
 describe('Chronicles Overview and modal', () => {
+  const completeElementalOpening = (state: ReturnType<typeof useGameStore.getState>) => {
+    state.progress.chronicle.completedObjectiveIds.push('m1a-enter-elemental-counter-zone', 'm1b-exploit-elemental-weakness', 'm2a-elemental-frontier', 'm2b-equip-elemental-ward', 'm2c-test-elemental-ward', 'm2d-defeat-elemental-boss')
+  }
   beforeEach(() => {
     window.localStorage.clear()
     resetAllUiPreferences()
@@ -49,6 +52,7 @@ describe('Chronicles Overview and modal', () => {
     const user = userEvent.setup()
     useGameStore.setState((state) => {
       state.progress.chronicle.completedObjectiveIds = ['m1-choose-school', 'm2-first-blood', 'c1-enter-whispering-woods', 'c2-auto-cast']
+      completeElementalOpening(state)
     })
     render(<GameShell />)
 
@@ -63,6 +67,7 @@ describe('Chronicles Overview and modal', () => {
     const user = userEvent.setup()
     useGameStore.setState((state) => {
       state.progress.chronicle.completedObjectiveIds = ['m1-choose-school', 'm2-first-blood', 'c1-enter-whispering-woods', 'c2-auto-cast']
+      completeElementalOpening(state)
     })
     render(<GameShell />)
 
@@ -78,6 +83,7 @@ describe('Chronicles Overview and modal', () => {
     setUiPreferences({ screenState: { chronicles: { statusFilters: ['current'], trackFilters: ['main'], showOptional: false } } })
     useGameStore.setState((state) => {
       state.progress.chronicle.completedObjectiveIds = ['m1-choose-school', 'm2-first-blood']
+      completeElementalOpening(state)
     })
     render(<GameShell />)
 
@@ -92,6 +98,7 @@ describe('Chronicles Overview and modal', () => {
     const user = userEvent.setup()
     useGameStore.setState((state) => {
       state.progress.chronicle.completedObjectiveIds = ['m1-choose-school', 'm2-first-blood']
+      completeElementalOpening(state)
     })
     render(<GameShell />)
 

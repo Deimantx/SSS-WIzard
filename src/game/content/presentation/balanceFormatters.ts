@@ -245,6 +245,7 @@ export const formatAutoCastCondition = (condition: AutoCastCondition | undefined
   if (condition.type === 'self-status-missing') return `when the caster lacks ${condition.statusId}`
   if (condition.type === 'target-status-missing') return `when the target lacks ${condition.statusId}`
   if (condition.type === 'self-has-cleanseable-debuff') return 'when the caster has a cleanseable debuff'
+  if (condition.type === 'elemental-ward-expiring') return `when the ${condition.element} Ward expires within ${trimNumber(condition.remainingMs / 1000)}s`
   return condition.conditions.map(formatAutoCastCondition).join(' and ')
 }
 

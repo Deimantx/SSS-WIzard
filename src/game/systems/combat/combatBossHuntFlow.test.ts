@@ -8,7 +8,7 @@ const installActiveReadyRun = () => {
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   state.combat.targetEnemyId = 'forest-wisp'
-  state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired
+  state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
   state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
   state.progress.autoHuntBossUnlocked = true
   useGameStore.setState(state)

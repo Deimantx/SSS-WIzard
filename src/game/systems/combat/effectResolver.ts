@@ -3,6 +3,8 @@ import { MONSTERS } from "../../content/monsters";
 import { getMonsterPrimaryAffinity } from "../../content/monsters/monsterTypes";
 import { getElementMatchup, getElementMultiplier, isElementId, type ElementId } from "../../content/elements/elements";
 import { getElementalWardMultiplier } from './elementalWardRuntime';
+import { applyElementalWard } from './elementalWardRuntime';
+import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { STATUS_DEFINITIONS } from "../../content/statuses";
 import { appendLog } from "../../engine";
 import type { GameState, SpellId, StatusId, TraitId } from "../../types";
@@ -67,6 +69,21 @@ import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRu
 
 const MAX_EFFECT_DEPTH = 20;
 const finiteDamage = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
+const ELEMENTAL_TUTORIAL_DUNGEONS = new Set(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin']);
+
+/** Resolves legacy enemy-authored Physical damage into one effective combat identity. */
+export const resolveEffectiveDamageType = (authoredDamageType: DamageType, source: CombatSource): DamageType => {
+  if (authoredDamageType !== 'physical' || source.actor !== 'enemy') return authoredDamageType;
+  const root = getRootCombatSourceProvenance(source);
+  const monsterId = source.sourceMonsterId ?? root.originMonsterId ?? root.sourceMonsterId;
+  const monster = monsterId ? MONSTERS[monsterId] : undefined;
+  return monster ? getMonsterPrimaryAffinity(monster) : authoredDamageType;
+};
+
+const resolveDamageTags = (tags: CombatTag[], authoredDamageType: DamageType, effectiveDamageType: DamageType): CombatTag[] =>
+  authoredDamageType === 'physical' && authoredDamageType !== effectiveDamageType
+    ? [...new Set([...tags.filter((tag) => tag !== 'physical'), effectiveDamageType])]
+    : tags;
 
 const targetActor = (
   source: CombatSource,
@@ -231,17 +248,14 @@ const calculateCombatDamageWithRolls = (
   rolls: DamageRolls = {},
   includeBarrier = true,
 ): DamageBreakdown => {
+  const effectiveDamageType = resolveEffectiveDamageType(damageType, source);
+  const effectiveTags = resolveDamageTags(tags, damageType, effectiveDamageType);
   const enemyDamageMultiplier = source.actor === 'enemy' ? getActiveEncounterWorldTierDefinition(state).enemyDamageMultiplier : 1
   const scaledRaw = raw * enemyDamageMultiplier
   const amount = Number.isFinite(scaledRaw) ? Math.max(0, scaledRaw) : 0;
-  const direct = isDirectHit(tags);
+  const direct = isDirectHit(effectiveTags);
   const root = getRootCombatSourceProvenance(source);
-  const sourceMonsterId = source.sourceMonsterId ?? root.originMonsterId ?? root.sourceMonsterId;
-  const attackingElement = isElementId(damageType)
-    ? damageType
-    : damageType === 'physical' && source.actor === 'enemy' && sourceMonsterId && MONSTERS[sourceMonsterId]
-      ? getMonsterPrimaryAffinity(MONSTERS[sourceMonsterId])
-      : null;
+  const attackingElement = isElementId(effectiveDamageType) ? effectiveDamageType : null;
   const targetAffinity = target === 'enemy' && state.combat.enemyId
     ? getMonsterPrimaryAffinity(MONSTERS[state.combat.enemyId])
     : null;
@@ -251,11 +265,11 @@ const calculateCombatDamageWithRolls = (
     ? getCritDamageMultiplier(state, source.actor, source)
     : 1;
   const blockChance = direct ? getBlockChance(state, target, source) : 0;
-  const resistance = getResistance(state, target, damageType, {
+  const resistance = getResistance(state, target, effectiveDamageType, {
     source,
-    sourceTags: tags,
+    sourceTags: effectiveTags,
   });
-  if (amount <= 0 || isImmuneToDamage(state, target, damageType))
+  if (amount <= 0 || isImmuneToDamage(state, target, effectiveDamageType))
     return emptyDamageBreakdown(
       amount,
       resistance,
@@ -263,12 +277,12 @@ const calculateCombatDamageWithRolls = (
       critChance,
       critMultiplier,
       blockChance,
-      amount > 0 && isImmuneToDamage(state, target, damageType),
+      amount > 0 && isImmuneToDamage(state, target, effectiveDamageType),
       rolls,
       attackingElement,
       targetAffinity,
     );
-  const modifierContext = { source, sourceTags: tags, damageType };
+  const modifierContext = { source, sourceTags: effectiveTags, damageType: effectiveDamageType };
   let sourceModified =
     amount *
     (1 +
@@ -278,7 +292,7 @@ const calculateCombatDamageWithRolls = (
         "damage-dealt-percent",
         modifierContext,
       ));
-  if (tags.includes("basic-attack"))
+  if (effectiveTags.includes("basic-attack"))
     sourceModified *=
       1 +
       getCombatModifiers(
@@ -297,7 +311,7 @@ const calculateCombatDamageWithRolls = (
         "spell-damage-percent",
         modifierContext,
       );
-  if (tags.includes("melee"))
+  if (effectiveTags.includes("melee"))
     sourceModified *=
       1 +
       getCombatModifiers(
@@ -306,7 +320,7 @@ const calculateCombatDamageWithRolls = (
         "melee-damage-percent",
         modifierContext,
       );
-  if (tags.includes("ranged"))
+  if (effectiveTags.includes("ranged"))
     sourceModified *=
       1 +
       getCombatModifiers(
@@ -315,7 +329,7 @@ const calculateCombatDamageWithRolls = (
         "ranged-damage-percent",
         modifierContext,
       );
-  if (tags.includes("dot"))
+  if (effectiveTags.includes("dot"))
     sourceModified *=
       1 +
       getCombatModifiers(
@@ -416,6 +430,10 @@ const applyDamage = (
   // A dead or missing target is not a Hit target. This guard must precede all
   // direct-hit RNG so post-lethal effects cannot shift deterministic state.
   if (!isCombatActorAlive(state, target)) return 0;
+  const effectiveComponents = components.map((component) => ({
+    ...component,
+    damageType: resolveEffectiveDamageType(component.damageType, source),
+  }));
   const rolls: DamageRolls = {};
   if (isDirectHit(tags)) {
     rolls.critical =
@@ -428,14 +446,14 @@ const applyDamage = (
       ? (resolution?.arcaneCoreDamageMultiplier ?? 1) *
         (source.spellDamageMultiplier ?? 1)
       : 1;
-  const breakdowns = components.map((component) =>
+  const breakdowns = effectiveComponents.map((component, index) =>
     calculateCombatDamageWithRolls(
       state,
       component.raw * castMultiplier,
       component.damageType,
       source,
       target,
-      tags,
+      resolveDamageTags(tags, components[index]?.damageType ?? component.damageType, component.damageType),
       rolls,
       false,
     ),
@@ -460,12 +478,13 @@ const applyDamage = (
       );
       remainingBarrier = Math.max(0, remainingBarrier - barrierAbsorbed);
       return {
-        damageType: components[index]?.damageType ?? "physical",
+        damageType: effectiveComponents[index]?.damageType ?? "physical",
         attackingElement: breakdown.attackingElement,
         targetAffinity: breakdown.targetAffinity,
         affinityMultiplier: breakdown.affinityMultiplier,
         damageAfterAffinity: breakdown.damageAfterAffinity,
         wardMultiplier: breakdown.wardMultiplier,
+        wardPrevented: Math.max(0, breakdown.afterDefense - breakdown.afterWard),
         mitigationMultiplier: breakdown.mitigationMultiplier,
         finalDamage: breakdown.finalDamage,
         matchup: breakdown.matchup,
@@ -577,6 +596,15 @@ const applyDamage = (
       return { ...component, healthDamage };
     });
   const dealt = Math.max(0, previousHp - currentHp);
+  if (target === 'player' && componentEvents.some((component) => (component.wardPrevented ?? 0) > 0) && !state.progress.chronicle.eventFlags['first-elemental-ward-mitigation']) {
+    state.progress.chronicle.eventFlags['first-elemental-ward-mitigation'] = true;
+    reconcileChronicleProgress(state)
+  }
+  if (target === 'enemy' && dealt > 0 && state.combat.dungeonId && ELEMENTAL_TUTORIAL_DUNGEONS.has(state.combat.dungeonId)
+    && breakdowns.some((breakdown) => breakdown.matchup === 'strong' && breakdown.finalDamage > 0) && !state.progress.chronicle.eventFlags['first-elemental-weakness-hit']) {
+    state.progress.chronicle.eventFlags['first-elemental-weakness-hit'] = true;
+    reconcileChronicleProgress(state)
+  }
   const cascade = resolution ?? createCombatResolutionContext();
   if (source.actor === "player" && source.kind === "spell")
     cascade.spellHealthDamageTotal =
@@ -588,7 +616,7 @@ const applyDamage = (
         : dealt;
   else state.combat.lastDamageTaken = dealt;
   const damageTypes = [
-    ...new Set(components.map((component) => component.damageType)),
+    ...new Set(effectiveComponents.map((component) => component.damageType)),
   ];
   const first = breakdowns[0];
   const blockedAmount = breakdowns.reduce(
@@ -996,6 +1024,14 @@ export const executeCombatEffect = (
       }
       break;
     }
+    case 'apply-elemental-ward':
+      if (target === 'player') applyElementalWard(state, {
+        element: effect.element,
+        reduction: effect.reduction,
+        durationMs: effect.durationMs,
+        sourceId: effect.sourceId,
+      });
+      break;
     case "consume-barrier": {
       if ((effect.mode ?? "all") !== "all") break;
       const before = getActiveBarrier(state, target);

@@ -3,7 +3,11 @@ import { DUNGEON_ORDER, DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons
 import { createInitialState } from '../../../store/initialState'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
 import { COMBAT_LOCATION_TYPE_METADATA } from './worldNavigationTypes'
+import { MONSTERS } from '../monsters'
+import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../monsters/elementalTutorial'
+import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { validateCombatWorldNavigation, type CombatWorldNavigationContent } from './worldNavigationValidation'
+import { getElementMultiplier } from '../elements/elements'
 
 const validContent = (): CombatWorldNavigationContent => ({
   continents: { ...COMBAT_CONTINENTS },
@@ -12,6 +16,40 @@ const validContent = (): CombatWorldNavigationContent => ({
 })
 
 describe('combat world navigation content', () => {
+  it('authors four pure elemental tutorial zones with five correctly powered encounters each', () => {
+    const expected = { 'stonewake-hollow': 'earth', 'galecrest-heights': 'air', 'tideglass-caverns': 'water', 'emberfall-basin': 'fire' } as const
+    for (const [dungeonId, element] of Object.entries(expected) as Array<[keyof typeof expected, (typeof expected)[keyof typeof expected]]>) {
+      const roster = ELEMENTAL_TUTORIAL_ZONE_ROSTERS[dungeonId]
+      expect(roster.element).toBe(element)
+      const location = COMBAT_LOCATIONS[dungeonId]
+      expect(location.primaryElement).toBe(element)
+      const ids = [...roster.normalEnemyIds, roster.bossId]
+      expect(ids).toHaveLength(5)
+      ids.forEach((id, index) => {
+        const monster = MONSTERS[id]
+        expect(monster.primaryAffinity).toBe(element)
+        expect(monster.basicAttackElement).toBe(element)
+        expect(monster.resonanceYield).toEqual({ [element]: expect.any(Number) })
+        const powerTarget = [15, 20, 25, 35, 55][index]
+        expect(resolveEnemyPowerRating(id, 1)).toBeGreaterThanOrEqual(powerTarget - 2.5)
+        expect(resolveEnemyPowerRating(id, 1)).toBeLessThanOrEqual(powerTarget + 2.5)
+        for (const action of Object.values(monster.actions)) for (const effect of action.effects) if (effect.type === 'deal-damage') expect(effect.components.every((component) => component.damageType === element)).toBe(true)
+      })
+    }
+  })
+  it('preserves the intended strong and inverse resisted matchups against each tutorial boss', () => {
+    const cases = [
+      ['water', 'pyre-guardian', 'fire'],
+      ['air', 'deepwater-oracle', 'water'],
+      ['earth', 'tempest-roc', 'air'],
+      ['fire', 'heartstone-colossus', 'earth'],
+    ] as const
+    for (const [attacking, bossId, defending] of cases) {
+      expect(MONSTERS[bossId].primaryAffinity).toBe(defending)
+      expect(getElementMultiplier(attacking, MONSTERS[bossId].primaryAffinity)).toBe(1.5)
+      expect(getElementMultiplier(defending, attacking)).toBe(0.5)
+    }
+  })
   it('exposes roster-derived elements on canonical locations', () => {
     expect(Object.values(COMBAT_LOCATIONS).every((location) => Array.isArray(location.elementsPresent))).toBe(true)
     expect(COMBAT_LOCATIONS['ashen-watch'].elementsPresent).toContain('fire')
@@ -32,7 +70,7 @@ describe('combat world navigation content', () => {
   it('keeps continent, region, and location relationships explicit', () => {
     expect(COMBAT_CONTINENTS['continent-1'].regionIds).toEqual(['first-frontier', 'elemental-scar', 'shattered-meridian', 'black-sigil-reach'])
     expect(COMBAT_REGIONS['first-frontier'].continentId).toBe('continent-1')
-    expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'])
+    expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin', 'whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'])
     expect(COMBAT_LOCATIONS['whispering-woods']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'whispering-woods' })
     expect(COMBAT_LOCATIONS['howling-den']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', dungeonId: 'howling-den', zoneAffixId: 'frenzied' })
     expect(Object.entries(COMBAT_LOCATIONS['howling-den'].targetMetadata ?? {}).map(([monsterId, metadata]) => [monsterId, metadata.difficulty, metadata.order])).toEqual([
@@ -43,7 +81,7 @@ describe('combat world navigation content', () => {
       ['moonblind-jackal', 'hard', 5],
       ['den-stalker', 'apex', 6],
     ])
-    expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ regionId: 'first-frontier', type: 'hunting-ground', dungeonId: 'hunters-ground', order: 3 })
+    expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ regionId: 'first-frontier', type: 'hunting-ground', dungeonId: 'hunters-ground', order: 7 })
     expect(COMBAT_LOCATIONS['abandoned-catacombs']).toMatchObject({ encounterMode: 'sequence', dungeonId: 'abandoned-catacombs', firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },
       { id: 'dark-portal', label: 'Dark Portal' },
@@ -112,8 +150,8 @@ describe('combat world navigation content', () => {
     }
     expect(COMBAT_REGIONS['shattered-meridian'].locationIds).toEqual(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian'])
     expect(COMBAT_REGIONS['black-sigil-reach'].locationIds).toEqual(['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'])
-    expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(16)
-    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(5)
+    expect(Object.values(COMBAT_LOCATIONS)).toHaveLength(20)
+    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'combat-zone')).toHaveLength(9)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'hunting-ground')).toHaveLength(1)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'elite-zone')).toHaveLength(5)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'dungeon')).toHaveLength(5)

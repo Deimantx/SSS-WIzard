@@ -15,6 +15,10 @@
 .combat-zone-type-filter:hover,
 .combat-zone-type-filter:focus-visible { border-color: color-mix(in srgb, var(--ui-accent) 64%, var(--ui-border)); color: var(--ui-text); background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-panel-strong)); transform: translateY(-1px); }
 .combat-zone-type-filter.is-selected { border-color: color-mix(in srgb, var(--ui-accent) 75%, var(--ui-border)); color: var(--ui-text); background: linear-gradient(105deg, color-mix(in srgb, var(--ui-accent) 16%, var(--ui-panel-strong)), var(--ui-panel-strong)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 12%, transparent), 0 8px 20px color-mix(in srgb, var(--ui-accent) 8%, transparent); }
+.combat-element-filters { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.combat-element-filters > .game-tooltip-trigger { display: inline-flex; }
+.combat-element-filter { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px 9px; border: 1px solid var(--ui-border); border-radius: 999px; color: var(--ui-text-muted); background: color-mix(in srgb, var(--ui-panel-strong) 78%, transparent); cursor: pointer; font: 600 var(--text-micro) var(--font-mono); }
+.combat-element-filter:hover, .combat-element-filter:focus-visible, .combat-element-filter.is-selected { border-color: color-mix(in srgb, var(--ui-accent) 65%, var(--ui-border)); color: var(--ui-text); background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-panel-strong)); }
 .combat-world-navigation-body { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: 8px; min-width: 0; min-height: 0; }
 .combat-location-browser,
 .combat-location-inspector { min-width: 0; min-height: 0; border: 1px solid var(--ui-border); border-radius: 8px; background: color-mix(in srgb, var(--ui-panel-strong) 82%, transparent); }
@@ -36,6 +40,10 @@
 .combat-location-card-copy { display: grid; min-width: 0; gap: 4px; }
 .combat-location-card-copy strong { overflow: hidden; color: var(--ui-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .combat-location-card-copy small { overflow: hidden; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .05em; text-overflow: ellipsis; white-space: nowrap; }
+.combat-location-card-copy small { display: flex; align-items: center; gap: 6px; }
+.combat-location-element-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--ui-accent) 35%, var(--ui-border)); border-radius: 999px; color: var(--ui-accent); font-size: 8px; letter-spacing: .06em; }
+.combat-location-filter-empty { display: grid; place-content: center; gap: 5px; min-height: 120px; padding: 16px; color: var(--ui-text-muted); text-align: center; }
+.combat-location-filter-empty strong { color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); letter-spacing: .1em; }
 .combat-location-card .status { align-self: start; margin-top: 1px; font-size: 8px; }
 .combat-location-card-lock { position: absolute; right: 8px; bottom: 7px; color: var(--ui-text-disabled); }
 .combat-location-inspector { display: flex; max-height: 400px; flex-direction: column; overflow: hidden; }

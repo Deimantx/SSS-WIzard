@@ -42,6 +42,16 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('button', { name: /Howling Den, ELITE ZONE, LOCKED/ })).toBeTruthy()
   })
 
+  it('filters locations by registry element and clears the filter on a second click', () => {
+    renderNavigation()
+    const fireFilter = screen.getByRole('button', { name: 'Fire' })
+    fireEvent.click(fireFilter)
+    expect(screen.getByRole('button', { name: /Emberfall Basin, COMBAT ZONE/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Galecrest Heights, COMBAT ZONE/ })).toBeNull()
+    fireEvent.click(fireFilter)
+    expect(screen.getByRole('button', { name: /Galecrest Heights, COMBAT ZONE/ })).toBeTruthy()
+  })
+
   it('renders targeted Whispering Woods cards without legacy inspector metrics', () => {
     const onHuntTarget = vi.fn(() => true)
     renderNavigation(vi.fn(), onHuntTarget)

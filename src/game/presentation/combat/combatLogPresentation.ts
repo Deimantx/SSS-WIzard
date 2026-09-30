@@ -82,6 +82,12 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
   } else if (entry.damageType || entry.healthDamage !== undefined) {
     const resolvedDamage = entry.amount ?? entry.healthDamage ?? 0
     result = `${formatNumber(resolvedDamage)} ${damageLabel(entry.damageType)}`
+    const elements = [...new Set((entry.damageComponents ?? []).flatMap((component) => component.attackingElement ? [component.attackingElement] : []))]
+    if (elements.length) result += ` · ${elements.map((element) => element.toUpperCase()).join('/')}`
+    const matchups = [...new Set((entry.damageComponents ?? []).flatMap((component) => component.matchup && component.matchup !== 'neutral' ? [component.matchup === 'strong' ? 'STRONG' : 'RESISTED'] : []))]
+    if (matchups.length) result += ` · ${matchups.join('/')}`
+    const wardPrevented = (entry.damageComponents ?? []).reduce((sum, component) => sum + (component.wardPrevented ?? 0), 0)
+    if (wardPrevented > 0) result += ` · WARD −${formatNumber(wardPrevented)}`
     if (entry.critical) result += ' · CRIT'
     if (entry.blocked) result += ' · BLOCK'
     if (entry.barrierAbsorbed) result += ` · ${formatNumber(entry.barrierAbsorbed)} absorbed`

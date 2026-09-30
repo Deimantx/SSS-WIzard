@@ -27,4 +27,12 @@ describe('BestiaryStats', () => {
     const labels = [...(defences?.querySelectorAll('.bestiary-defence-stat-row') ?? [])].map((row) => row.querySelector('span')?.textContent)
     expect(labels).toEqual(['Defense', 'Damage Reduction', 'Block Chance', 'Fire', 'Water', 'Earth', 'Air'])
   })
+
+  it('shows elemental affinity, weakness, resistance, and basic attack identity', () => {
+    const { container } = render(<TooltipProvider><BestiaryStats monster={MONSTERS['pyre-guardian']} /></TooltipProvider>)
+    const profile = [...container.querySelectorAll('.bestiary-section')].find((section) => section.textContent?.includes('ELEMENTAL PROFILE'))
+    expect(profile?.textContent).toContain('Fire')
+    expect(profile?.textContent).toContain('Earth')
+    expect(profile?.textContent).toContain('Water')
+  })
 })

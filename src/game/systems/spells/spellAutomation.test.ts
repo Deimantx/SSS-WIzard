@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { applyElementalWard } from '../combat/elementalWardRuntime'
 import { evaluateSpellAutomation, getNextAutoCastEligibilityBoundaryMs, getSpellAutomationPriorityPreview, getSpellAutomationTargetOptions, normalizeSpellAutomationConfig, selectNextAutomatedSpell, selectNextAutomatedSpellFast } from './spellAutomation'
 
 describe('spell automation evaluator', () => {
@@ -95,6 +96,24 @@ describe('spell automation evaluator', () => {
     }
 
     expect(getNextAutoCastEligibilityBoundaryMs(state, 1, 10)).toBe(1_500)
+  })
+
+  it('waits until a matching Ward is nearly expired before making its spell eligible', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.enemyId = 'emberfall-flame-hound'
+    state.combat.arcaneCoreRuntime.elapsedMs = 1_000
+    state.progress.spellRanks['fire-ward'] = 1
+    state.activities.autoCast['fire-ward'] = true
+    const automation = { conditions: [{ type: 'elemental-ward-expiring' as const, element: 'fire' as const, sourceId: 'fire-ward', remainingMs: 2_500 }], targetRule: 'self' as const }
+    applyElementalWard(state, { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', durationMs: 22_000 })
+    const slot = { spellId: 'fire-ward' as const, autoCast: true, automation }
+    state.combat.activeSpellLoadout = { presetId: null, presetName: 'Ward Test', signature: 'fire-ward:1', slots: [slot] }
+
+    expect(evaluateSpellAutomation(state, slot).eligible).toBe(false)
+    expect(getNextAutoCastEligibilityBoundaryMs(state, 1, 10)).toBe(19_500)
+    state.combat.arcaneCoreRuntime.elapsedMs += 19_500
+    expect(evaluateSpellAutomation(state, slot).eligible).toBe(true)
   })
 
   it('hard-blocks AUTO evaluation while a manual spell is queued', () => {

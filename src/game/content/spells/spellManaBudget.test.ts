@@ -9,7 +9,7 @@ describe('authored spell Mana budgets', () => {
     const demand = (spell: (typeof SPELLS)[keyof typeof SPELLS]) => spell.manaCost / (spell.cooldownMs / 1000)
 
     for (const school of Object.keys(targets) as Array<keyof typeof targets>) {
-      const spells = Object.values(SPELLS).filter((spell) => spell.school === school)
+      const spells = Object.values(SPELLS).filter((spell) => spell.school === school && !spell.id.endsWith('-ward'))
       const starter = spells.find((spell) => spell.unlockLevel === 0)
       expect(starter?.manaCost).toBe(starterCosts[school])
       expect(spells.filter((spell) => spell.unlockLevel > 0).every((spell) => spell.manaCost <= 100)).toBe(true)

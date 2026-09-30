@@ -179,6 +179,7 @@ const effectMeaning = (effect: CombatEffect): string => {
     case 'deal-damage': return effect.components.map((component) => `Deal ${formatMagnitude(component.magnitude, `${DAMAGE_TYPE_NAMES[component.damageType]} damage`)}`).join(' and ')
     case 'heal': return `Restore ${formatMagnitude(effect.magnitude, 'Health')}`
     case 'gain-barrier': return `${effect.mode === 'replace' ? 'Set' : 'Gain'} ${formatMagnitude(effect.magnitude, 'Barrier')}`
+    case 'apply-elemental-ward': return `Reduce incoming ${titleCase(effect.element)} damage by ${Math.round(effect.reduction * 100)}%${effect.durationMs ? ` for ${formatTime(effect.durationMs)}` : ''}`
     case 'consume-barrier': return `Consume all Barrier${effect.target === 'opponent' ? ' from the opponent' : ''}`
     case 'restore-resource': return `Restore ${formatMagnitude(effect.magnitude, 'Mana')}`
     case 'drain-resource': return `Drain ${formatMagnitude(effect.magnitude, 'Mana')}`

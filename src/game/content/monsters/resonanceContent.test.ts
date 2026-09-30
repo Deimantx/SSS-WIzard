@@ -6,7 +6,7 @@ import { MONSTERS } from './index'
 describe('Whispering Woods Phase 1 Resonance authoring', () => {
   it('authors a valid non-empty profile for every normal-pool enemy and its boss', () => {
     const dungeon = DUNGEONS['whispering-woods']
-    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+    ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
       expect(profile, `${monsterId} should have a Phase 1 profile`).toBeTruthy()
       expect(Object.keys(profile ?? {}).length).toBeGreaterThan(0)
@@ -26,7 +26,7 @@ describe('Elemental Scar Resonance authoring', () => {
     ['rootscar-hollow', 'earth'],
   ] as const)('authors only the %s profile for every target and its boss', (dungeonId, resonanceType) => {
     const dungeon = DUNGEONS[dungeonId]
-    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+    ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
       expect(profile, `${monsterId} should have an Elemental Scar profile`).toBeTruthy()
       expect(profile && Object.keys(profile)).toEqual([resonanceType])
@@ -70,7 +70,7 @@ describe('Shattered Meridian Resonance authoring', () => {
   ] as const)('authors the requested resonance progression for %s', (dungeonId, firstProfile) => {
     const dungeon = DUNGEONS[dungeonId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(firstProfile)
-    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+    ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
       expect(profile, `${monsterId} should have a Shattered Meridian profile`).toBeTruthy()
       Object.entries(profile ?? {}).forEach(([type, amount]) => {
@@ -85,7 +85,7 @@ describe('Shattered Meridian Resonance authoring', () => {
     const dungeon = DUNGEONS['broken-meridian']
     expect(dungeon.encounterSequence).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'])
     ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? [])].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toBeUndefined())
-    expect(MONSTERS[dungeon.boss].resonanceYield).toEqual({ fire: 100, water: 100, earth: 100, air: 100 })
+    expect(MONSTERS[dungeon.boss!].resonanceYield).toEqual({ fire: 100, water: 100, earth: 100, air: 100 })
   })
 })
 
@@ -96,8 +96,8 @@ describe('Black Sigil Reach Resonance authoring', () => {
   ] as const)('authors the requested mixed profile progression for %s', (dungeonId, firstProfile, bossProfile) => {
     const dungeon = DUNGEONS[dungeonId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(firstProfile)
-    expect(MONSTERS[dungeon.boss].resonanceYield).toEqual(bossProfile)
-    ;[...dungeon.monsterPool, dungeon.boss].forEach((monsterId) => {
+    expect(MONSTERS[dungeon.boss!].resonanceYield).toEqual(bossProfile)
+    ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield ?? {}
       expect(Object.keys(profile).every((type) => type === (dungeonId === 'hall-of-unbound-names' ? 'air' : 'earth') || type === (dungeonId === 'hall-of-unbound-names' ? 'water' : 'fire'))).toBe(true)
       expect(profile).not.toHaveProperty('arcane')

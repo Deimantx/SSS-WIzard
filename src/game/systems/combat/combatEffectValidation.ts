@@ -1,5 +1,5 @@
 import type { CombatCondition, CombatEffect, CombatModifier, CombatSource, CombatTag, CombatTriggerRule, DamageType, ModifierKey, StatusDefinition, StatusId } from './combatTypes'
-import { ELEMENT_IDS } from '../../content/elements/elements'
+import { ELEMENT_IDS, isElementId } from '../../content/elements/elements'
 
 export const DAMAGE_TYPES: readonly DamageType[] = ['physical', ...ELEMENT_IDS]
 export const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'guardian', 'summon', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', ...DAMAGE_TYPES]
@@ -161,6 +161,15 @@ const validateCombatEffectInternal = (value: unknown, owner: string, context: Co
     errors.push(...validateMagnitude(value.magnitude, `${owner}.magnitude`, context))
     if (value.mode !== undefined && value.mode !== 'add' && value.mode !== 'replace' && value.mode !== 'replace-if-stronger') errors.push(`${owner}: invalid Barrier mode`)
     if (value.durationMs !== undefined && value.durationMs !== null && (!isFiniteNumber(value.durationMs) || value.durationMs < 0)) errors.push(`${owner}: invalid Barrier duration`)
+    if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
+    return errors
+  }
+  if (value.type === 'apply-elemental-ward') {
+    if (!isTarget(value.target) || value.target !== 'self') errors.push(`${owner}: elemental Ward must target self`)
+    if (!isElementId(value.element)) errors.push(`${owner}: invalid Ward element`)
+    if (!isFiniteNumber(value.reduction) || value.reduction <= 0 || value.reduction >= 1) errors.push(`${owner}: Ward reduction must be between 0 and 1`)
+    if (!isFiniteNumber(value.durationMs) || value.durationMs <= 0) errors.push(`${owner}: Ward duration must be positive and finite`)
+    if (typeof value.sourceId !== 'string' || !value.sourceId.trim()) errors.push(`${owner}: Ward source id is required`)
     if (value.tags !== undefined && (!Array.isArray(value.tags) || !value.tags.every(isTag))) errors.push(`${owner}: invalid tags`)
     return errors
   }

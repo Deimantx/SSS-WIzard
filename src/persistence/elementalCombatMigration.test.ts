@@ -14,11 +14,17 @@ describe('Combat V2 save migration', () => {
 
   it('validates and retains bounded elemental Ward state in the current schema', () => {
     const initial = createInitialState()
-    const current = migrateSave({ ...initial, combat: { ...initial.combat, elementalDamageReductions: [
+    const current = migrateSave({ ...initial, combat: { ...initial.combat, active: true, elementalDamageReductions: [
       { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 5000 },
       { element: 'unknown', reduction: 0.15, sourceId: 'bad' },
       { element: 'water', reduction: 1, sourceId: 'immune' },
     ] } } as never)
     expect(current.combat.elementalDamageReductions).toEqual([{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 5000 }])
+  })
+
+  it('opens the elemental frontier for players with progress from before this tutorial', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 55, progress: { ...initial.progress, lifetimeKills: 12 } })
+    expect(migrated.progress.chronicle.eventFlags['elemental-tutorial-zones-opened']).toBe(true)
   })
 })

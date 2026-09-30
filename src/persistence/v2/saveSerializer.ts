@@ -32,7 +32,7 @@ export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSaved
     sigils: clone(state.sigils),
     guardians: clone(state.guardians),
     activities,
-    combat: Object.fromEntries(PERSISTED_COMBAT_FIELDS_V1.map((field) => [field, clone(state.combat[field])])) as PersistedCombatStateV1,
+    combat: Object.fromEntries(PERSISTED_COMBAT_FIELDS_V1.map((field) => [field, field === 'elementalDamageReductions' && !state.combat.active ? [] : clone(state.combat[field])])) as PersistedCombatStateV1,
     progress: clone(state.progress),
     storyProgress: clone(state.storyProgress),
     darkPortal: clone(state.darkPortal),

@@ -1,5 +1,5 @@
 import { MONSTERS, isBossMonster } from '../monsters'
-import { ABANDONED_CATACOMBS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, WHISPERING_WOODS_DUNGEON } from './act0'
+import { ABANDONED_CATACOMBS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, WHISPERING_WOODS_DUNGEON, STONEWAKE_HOLLOW_DUNGEON, GALECREST_HEIGHTS_DUNGEON, TIDEGLASS_CAVERNS_DUNGEON, EMBERFALL_BASIN_DUNGEON } from './act0'
 import { ACT1_DUNGEONS } from './act1'
 import type { DungeonId, GameState, MonsterId } from '../../types'
 
@@ -24,7 +24,7 @@ export type DungeonDefinition = BossDungeonDefinition | BosslessDungeonDefinitio
 
 export const hasBossEncounter = (dungeon: DungeonDefinition): dungeon is BossDungeonDefinition => dungeon.boss !== null && dungeon.threatRequired !== null
 
-const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, ABANDONED_CATACOMBS_DUNGEON] as const
+const ACT0_DUNGEONS = [WHISPERING_WOODS_DUNGEON, HOWLING_DEN_DUNGEON, HUNTERS_GROUND_DUNGEON, ABANDONED_CATACOMBS_DUNGEON, STONEWAKE_HOLLOW_DUNGEON, GALECREST_HEIGHTS_DUNGEON, TIDEGLASS_CAVERNS_DUNGEON, EMBERFALL_BASIN_DUNGEON] as const
 export const DUNGEON_ORDER: DungeonId[] = [...ACT0_DUNGEONS, ...ACT1_DUNGEONS].map((dungeon) => dungeon.id)
 type DungeonRegistryEntry = (typeof ACT0_DUNGEONS)[number] | (typeof ACT1_DUNGEONS)[number]
 type DungeonRegistry = { [Dungeon in DungeonRegistryEntry as Dungeon['id']]: Dungeon & DungeonDefinition }

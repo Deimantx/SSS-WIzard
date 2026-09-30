@@ -40,4 +40,9 @@ describe('presentCombatLogEntry', () => {
     expect(presentation.semanticClass).toBe('log-resonance')
     expect(presentation.accessibilityText).not.toContain('{')
   })
+
+  it('shows elemental matchup and Ward prevention from resolved damage metadata', () => {
+    const presentation = presentCombatLogEntry({ ...spellDamageEntry, damageComponents: [{ damageType: 'fire', attackingElement: 'fire', targetAffinity: 'earth', affinityMultiplier: 1.5, matchup: 'strong', wardMultiplier: 0.85, wardPrevented: 12, raw: 100, amount: 88, healthDamage: 88, barrierAbsorbed: 0, immune: false }] }, 2_000)
+    expect(presentation.result).toContain('FIRE · STRONG · WARD −12')
+  })
 })

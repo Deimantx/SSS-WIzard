@@ -14,7 +14,9 @@ export type ActivityStatus = 'running' | 'flux-limited' | 'paused' | 'waiting-fl
 export type ChronicleChapterId = 'first-frontier' | 'shattered-frontier'
 export type ChronicleTrack = 'main' | 'combat' | 'magic' | 'tower' | 'guild' | 'region' | 'equipment'
 export type ChronicleObjectiveId =
-  | 'm1-choose-school' | 'm2-first-blood' | 'm3-heart-of-the-woods' | 'm4-break-the-den' | 'm5-fallen-archmage'
+  | 'm1-choose-school' | 'm1a-enter-elemental-counter-zone' | 'm1b-exploit-elemental-weakness'
+  | 'm2-first-blood' | 'm2a-elemental-frontier' | 'm2b-equip-elemental-ward' | 'm2c-test-elemental-ward' | 'm2d-defeat-elemental-boss'
+  | 'm3-heart-of-the-woods' | 'm4-break-the-den' | 'm5-fallen-archmage'
   | 'c1-enter-whispering-woods' | 'c2-auto-cast'
   | 'mg1-strengthen-artifact' | 'mg2-expand-spellbook' | 'mg3-four-spell-arsenal'
   | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle' | 't5-read-a-sigil'
@@ -22,7 +24,7 @@ export type ChronicleObjectiveId =
   | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m6-world-tier-two'
   | 'sf-bind-guardian' | 'sf-fight-together' | 'sf-socket-first-crystal' | 'sf-step-into-harder-world'
   | `sigil-${string}`
-export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill' | 'first-sigil-earned'
+export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill' | 'first-sigil-earned' | 'first-elemental-weakness-hit' | 'elemental-tutorial-zones-opened' | 'first-elemental-ward-equipped' | 'first-elemental-ward-mitigation' | 'first-elemental-tutorial-boss-defeated' | 'starting-counter-zone-entered'
 export type GuildRankId = 'outsider' | 'initiate' | 'apprentice' | 'adept' | 'magister' | 'circle-master'
 export type GuildRequestKind = 'donation' | 'dungeon-kills' | 'monster-kills' | 'boss-kill'
 export type GuildSkillNodeId =
@@ -95,11 +97,16 @@ export type CanonicalSpellId =
   | 'water-bolt' | 'mending-waters' | 'frost-touch' | 'regeneration' | 'frozen-current' | 'cleansing-tide' | 'deep-freeze' | 'healing-tide'
   | 'stone-shard' | 'stone-skin' | 'earthen-barrier' | 'harden' | 'rockfall' | 'rend-armor' | 'tremors' | 'living-mountain'
   | 'wind-blade' | 'lightning-spark' | 'gust' | 'chain-lightning' | 'tailwind' | 'static-charge' | 'thunderstrike' | 'eye-of-the-storm'
+  | 'fire-ward' | 'water-ward' | 'air-ward' | 'earth-ward'
 /** Legacy IDs remain type-compatible only so old persisted callers can be normalized. */
 export type LegacySpellId = 'ignite' | 'fireball' | 'water-ward' | 'flow-mend' | 'frostbite' | 'earth-spike' | 'stoneguard' | 'fortify' | 'air-lance' | 'quickening' | 'shock-spark'
 export type SpellId = CanonicalSpellId | LegacySpellId
 export type SpellPresetId = string
 export type MonsterId = 'forest-wisp' | 'thornling' | 'dewbound-sprite' | 'cinder-moth' | 'stone-root' | 'grove-sentinel' | 'tempest-stag' | 'forest-heart' | 'cavefang-wolf' | 'razorclaw-lynx' | 'corrupted-dire-wolf' | 'bonehide-boar' | 'moonblind-jackal' | 'den-stalker' | 'corrupted-greatbear' | 'restless-skeleton' | 'grave-wraith' | 'fallen-acolyte' | 'archmage-edrin-shade' | 'warded-husk' | 'rift-wolf' | 'arcane-scavenger' | 'withered-watcher' | 'corrupted-elemental-gatekeeper' | 'tidefang-serpent' | 'brinebound-sentinel' | 'abyssal-archivist' | 'emberwing-harrier' | 'charred-warden' | 'pyre-colossus' | 'sporeback-brute' | 'vinebound-reaver' | 'scarwood-behemoth' | 'ashen-tracker' | 'gloamfang-stalker' | 'runehorn-brute' | 'veilwing-harrier' | 'cinderback-mauler' | 'gloomroot-hexer' | 'nightglass-alpha'
+  | 'stonewake-gravel-wisp' | 'stonewake-rootback-crawler' | 'stonewake-shardhide-golem' | 'stonewake-stonebound-warden' | 'heartstone-colossus'
+  | 'galecrest-zephyr-wisp' | 'galecrest-gale-imp' | 'galecrest-razorwing' | 'galecrest-stormcaller-adept' | 'tempest-roc'
+  | 'tideglass-tide-wisp' | 'tideglass-reef-crawler' | 'tideglass-current-serpent' | 'tideglass-drowned-channeler' | 'deepwater-oracle'
+  | 'emberfall-ember-wisp' | 'emberfall-ashling' | 'emberfall-flame-hound' | 'emberfall-ashen-adept' | 'pyre-guardian'
   | 'drowned-acolyte' | 'reliquary-slime' | 'mist-wraith' | 'rune-leech' | 'drowned-keeper'
   | 'cinder-hound' | 'ash-cultist' | 'fire-elemental' | 'lava-eel' | 'flamebound-revenant'
   | 'thorn-maw' | 'rootbound-stalker' | 'briar-sprite' | 'moss-carapace' | 'rootscar-ancient'
@@ -140,7 +147,7 @@ export interface CrystalState {
 
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
-export type DungeonId = 'whispering-woods' | 'howling-den' | 'hunters-ground' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate'
+export type DungeonId = 'whispering-woods' | 'howling-den' | 'hunters-ground' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate' | 'stonewake-hollow' | 'galecrest-heights' | 'tideglass-caverns' | 'emberfall-basin'
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet'
 export type EquipmentPosition = 'weapon' | 'armor' | 'head'
 /** Permanent Artifacts grouped by authored Act ownership. */
@@ -210,6 +217,7 @@ export type AutoCastCondition =
   | { type: 'self-status-missing'; statusId: StatusId }
   | { type: 'target-status-missing'; statusId: StatusId }
   | { type: 'self-has-cleanseable-debuff' }
+  | { type: 'elemental-ward-expiring'; element: CombatElementId; sourceId: string; remainingMs: number }
   | { type: 'all'; conditions: AutoCastCondition[] }
 export interface EquipmentStats {
   spellPowerPct?: number
@@ -493,6 +501,7 @@ export type SpellAutomationCondition =
   /** Compatibility conditions used by authored spell defaults from older saves. */
   | { type: 'player-barrier-below'; value: number }
   | { type: 'player-has-cleanseable-debuff' }
+  | { type: 'elemental-ward-expiring'; element: CombatElementId; sourceId: string; remainingMs: number }
 
 export interface SpellAutomationConfig {
   conditions: SpellAutomationCondition[]

@@ -1,6 +1,7 @@
 import type { DungeonId, MonsterId } from '../../types'
 import type { EliteZoneAffixId } from '../elite-affixes'
 import type { ElementId } from '../elements/elements'
+import type { ChronicleEventId } from '../../types'
 
 export type CombatContinentId = string
 export type CombatRegionId = string
@@ -28,6 +29,10 @@ export type CombatNavigationUnlockCondition =
   | { type: 'always' }
   | { type: 'boss-kill'; bossId: MonsterId; count?: number }
   | { type: 'all-boss-kills'; bossIds: MonsterId[] }
+  | { type: 'chronicle-event'; eventId: ChronicleEventId }
+  | { type: 'starter-advantage'; targetElement: ElementId }
+  | { type: 'any'; conditions: CombatNavigationUnlockCondition[] }
+  | { type: 'all'; conditions: CombatNavigationUnlockCondition[] }
 
 export interface CombatContinentDefinition {
   id: CombatContinentId

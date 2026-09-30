@@ -1,6 +1,6 @@
-import { DUNGEONS, getDungeonUnlockRequirement, hasBossEncounter, isDungeonCompleted, isDungeonUnlocked } from '../../content/dungeons/dungeons'
+import { DUNGEONS, getDungeonUnlockRequirement, hasBossEncounter, isDungeonCompleted } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
-import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
+import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/world-navigation'
 import { getEliteZoneAffix } from '../../content/elite-affixes'
 import { buildCombatBossHuntPresentation } from './combatBossHuntPresentation'
 import type { CombatNavigationUnlockCondition, CombatContinentId, CombatLocationDefinition, CombatLocationId, CombatRegionId, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
@@ -12,30 +12,26 @@ import type { CombatContinentSummaryViewModel, CombatDungeonSequenceStepViewMode
 
 const sorted = <T extends { order: number }>(entries: T[]) => [...entries].sort((left, right) => left.order - right.order)
 
-const isConditionUnlocked = (condition: CombatNavigationUnlockCondition | undefined, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
-  if (!condition || condition.type === 'always') return true
-  if (condition.type === 'boss-kill') return (progress.bossKillsByBoss[condition.bossId] ?? 0) >= (condition.count ?? 1)
-  return condition.bossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) >= 1)
-}
+type NavigationProgress = Pick<GameState['progress'], 'bossKillsByBoss'> & Partial<Pick<GameState['progress'], 'startingSchoolId' | 'chronicle'>>
+const isConditionUnlocked = (condition: CombatNavigationUnlockCondition | undefined, progress: NavigationProgress) => isCombatNavigationConditionUnlocked(condition, progress)
 
-const getConditionText = (condition: CombatNavigationUnlockCondition | undefined) => {
+const getConditionText = (condition: CombatNavigationUnlockCondition | undefined): string | null => {
   if (!condition || condition.type === 'always') return null
   if (condition.type === 'boss-kill') return `Defeat ${MONSTERS[condition.bossId]?.name ?? condition.bossId}`
+  if (condition.type === 'chronicle-event') return condition.eventId === 'elemental-tutorial-zones-opened' ? 'Defeat an enemy in your counter zone' : 'Complete the related Chronicle step'
+  if (condition.type === 'starter-advantage') return `Strong with your starting school or complete the Elemental Frontier`
+  if (condition.type === 'any') return condition.conditions.map(getConditionText).filter(Boolean).join(' or ')
+  if (condition.type === 'all') return condition.conditions.map(getConditionText).filter(Boolean).join(' and ')
   const names = condition.bossIds.map((bossId) => MONSTERS[bossId]?.name ?? bossId)
   return `Defeat ${names.slice(0, -1).join(', ')}${names.length > 1 ? `, and ${names[names.length - 1]}` : names[0]}`
 }
 
-const isRegionUnlocked = (regionId: CombatRegionId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
+const isRegionUnlocked = (regionId: CombatRegionId, progress: NavigationProgress) => {
   const region = COMBAT_REGIONS[regionId]
   return Boolean(region && isConditionUnlocked(region.unlock, progress))
 }
 
-const isLocationUnlocked = (locationId: CombatLocationId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
-  const location = COMBAT_LOCATIONS[locationId]
-  if (!location || !isRegionUnlocked(location.regionId, progress)) return false
-  if (!isConditionUnlocked(location.unlock, progress)) return false
-  return location.dungeonId ? isDungeonUnlocked(DUNGEONS[location.dungeonId], progress) : !location.prototype
-}
+const isLocationUnlocked = (locationId: CombatLocationId, progress: NavigationProgress) => isCombatLocationUnlocked(locationId, progress)
 
 const getLocationState = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState, worldTier: GameState['worldTier']['current'] = 1): CombatLocationState => {
   const location = COMBAT_LOCATIONS[locationId]
@@ -139,34 +135,35 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
   }
 }
 
-const buildContinentSummary = (continentId: CombatContinentId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>): CombatContinentSummaryViewModel => {
+const buildContinentSummary = (continentId: CombatContinentId, progress: NavigationProgress): CombatContinentSummaryViewModel => {
   const continent = COMBAT_CONTINENTS[continentId]
   const unlocked = Boolean(continent && isConditionUnlocked(continent.unlock, progress))
   return { id: continentId, name: continent?.name ?? 'Unknown Continent', description: continent?.description ?? '', state: unlocked ? 'available' : 'locked', unlockText: unlocked ? null : getConditionText(continent?.unlock) }
 }
 
-const buildRegionSummary = (regionId: CombatRegionId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>): CombatRegionSummaryViewModel => {
+const buildRegionSummary = (regionId: CombatRegionId, progress: NavigationProgress): CombatRegionSummaryViewModel => {
   const region = COMBAT_REGIONS[regionId]
   const unlocked = Boolean(region && isRegionUnlocked(regionId, progress))
   return { id: regionId, name: region?.name ?? 'Unknown Region', description: region?.description ?? '', state: unlocked ? 'available' : 'locked', unlockText: unlocked ? null : getConditionText(region?.unlock), locationCount: region?.locationIds.length ?? 0 }
 }
 
-const firstUnlockedRegion = (continentId: CombatContinentId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
+const firstUnlockedRegion = (continentId: CombatContinentId, progress: NavigationProgress) => {
   const continent = COMBAT_CONTINENTS[continentId]
   return sorted((continent?.regionIds ?? []).map((regionId) => COMBAT_REGIONS[regionId]).filter((region): region is NonNullable<typeof region> => Boolean(region))).find((region) => isRegionUnlocked(region.id, progress)) ?? null
 }
 
-const firstLocationInRegion = (regionId: CombatRegionId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => {
+const firstLocationInRegion = (regionId: CombatRegionId, progress: NavigationProgress) => {
   const region = COMBAT_REGIONS[regionId]
   return sorted((region?.locationIds ?? []).map((locationId) => COMBAT_LOCATIONS[locationId]).filter((location): location is NonNullable<typeof location> => Boolean(location))).find((location) => isLocationUnlocked(location.id, progress))?.id ?? region?.locationIds[0] ?? null
 }
 
-export const getFirstCombatRegionId = (continentId: CombatContinentId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => firstUnlockedRegion(continentId, progress)?.id ?? null
-export const getFirstCombatLocationId = (regionId: CombatRegionId, progress: Pick<GameState['progress'], 'bossKillsByBoss'>) => firstLocationInRegion(regionId, progress)
+export const getFirstCombatRegionId = (continentId: CombatContinentId, progress: NavigationProgress) => firstUnlockedRegion(continentId, progress)?.id ?? null
+export const getFirstCombatLocationId = (regionId: CombatRegionId, progress: NavigationProgress) => firstLocationInRegion(regionId, progress)
 
-export function getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress }: { combat: Pick<CombatState, 'active' | 'dungeonId'>; lastEnteredDungeonId?: DungeonId; progress: Pick<GameState['progress'], 'bossKillsByBoss'> }): CombatLocationId {
+export function getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress }: { combat: Pick<CombatState, 'active' | 'dungeonId'>; lastEnteredDungeonId?: DungeonId; progress: NavigationProgress }): CombatLocationId {
   if (combat.active && combat.dungeonId) return getCombatLocationByDungeonId(combat.dungeonId)?.id ?? 'whispering-woods'
-  if (lastEnteredDungeonId && isLocationUnlocked(lastEnteredDungeonId, progress)) return lastEnteredDungeonId
+  const lastEnteredLocation = lastEnteredDungeonId ? getCombatLocationByDungeonId(lastEnteredDungeonId) : null
+  if (lastEnteredLocation && isLocationUnlocked(lastEnteredLocation.id, progress)) return lastEnteredLocation.id
   const firstContinent = sorted(Object.values(COMBAT_CONTINENTS)).find((continent) => isConditionUnlocked(continent.unlock, progress))
   const region = firstContinent ? firstUnlockedRegion(firstContinent.id, progress) : null
   return region ? firstLocationInRegion(region.id, progress) ?? 'whispering-woods' : 'whispering-woods'

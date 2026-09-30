@@ -1,11 +1,12 @@
-import { DUNGEONS } from '../dungeons/dungeons'
-import type { DungeonId } from '../../types'
+import { DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons'
+import type { DungeonId, GameState } from '../../types'
 import { MONSTERS } from '../monsters'
 import { getMonsterPrimaryAffinity } from '../monsters/monsterTypes'
 import { ELEMENT_IDS } from '../elements/elements'
+import { getElementMultiplier } from '../elements/elements'
 import type { CombatContinentDefinition, CombatContinentId, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
 
-const firstFrontierLocationIds: readonly CombatLocationId[] = ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs']
+const firstFrontierLocationIds: readonly CombatLocationId[] = ['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin', 'whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs']
 const elementalScarLocationIds: readonly CombatLocationId[] = ['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin']
 const shatteredMeridianLocationIds: readonly CombatLocationId[] = ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian']
 const blackSigilReachLocationIds: readonly CombatLocationId[] = ['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate']
@@ -71,8 +72,32 @@ const dungeonLocation = (regionId: CombatRegionId, dungeonId: DungeonId, type: C
 })
 
 export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition> = {
+  'stonewake-hollow': {
+    ...dungeonLocation('first-frontier', 'stonewake-hollow', 'combat-zone', 1),
+    name: 'Stonewake Hollow', description: 'An Earth frontier of barriers and heavy, deliberate attacks.', primaryElement: 'earth', elementsPresent: ['earth'], encounterMode: 'targeted',
+    targetMetadata: { 'stonewake-gravel-wisp': { difficulty: 'easy', order: 1 }, 'stonewake-rootback-crawler': { difficulty: 'easy', order: 2 }, 'stonewake-shardhide-golem': { difficulty: 'standard', order: 3 }, 'stonewake-stonebound-warden': { difficulty: 'hard', order: 4 } },
+    unlock: { type: 'any', conditions: [{ type: 'starter-advantage', targetElement: 'earth' }, { type: 'chronicle-event', eventId: 'elemental-tutorial-zones-opened' }] },
+  },
+  'galecrest-heights': {
+    ...dungeonLocation('first-frontier', 'galecrest-heights', 'combat-zone', 2),
+    name: 'Galecrest Heights', description: 'An Air frontier of haste and multi-hit pressure.', primaryElement: 'air', elementsPresent: ['air'], encounterMode: 'targeted',
+    targetMetadata: { 'galecrest-zephyr-wisp': { difficulty: 'easy', order: 1 }, 'galecrest-gale-imp': { difficulty: 'easy', order: 2 }, 'galecrest-razorwing': { difficulty: 'standard', order: 3 }, 'galecrest-stormcaller-adept': { difficulty: 'hard', order: 4 } },
+    unlock: { type: 'any', conditions: [{ type: 'starter-advantage', targetElement: 'air' }, { type: 'chronicle-event', eventId: 'elemental-tutorial-zones-opened' }] },
+  },
+  'tideglass-caverns': {
+    ...dungeonLocation('first-frontier', 'tideglass-caverns', 'combat-zone', 3),
+    name: 'Tideglass Caverns', description: 'A Water frontier of barriers, healing, and dragging currents.', primaryElement: 'water', elementsPresent: ['water'], encounterMode: 'targeted',
+    targetMetadata: { 'tideglass-tide-wisp': { difficulty: 'easy', order: 1 }, 'tideglass-reef-crawler': { difficulty: 'easy', order: 2 }, 'tideglass-current-serpent': { difficulty: 'standard', order: 3 }, 'tideglass-drowned-channeler': { difficulty: 'hard', order: 4 } },
+    unlock: { type: 'any', conditions: [{ type: 'starter-advantage', targetElement: 'water' }, { type: 'chronicle-event', eventId: 'elemental-tutorial-zones-opened' }] },
+  },
+  'emberfall-basin': {
+    ...dungeonLocation('first-frontier', 'emberfall-basin', 'combat-zone', 4),
+    name: 'Emberfall Basin', description: 'A Fire frontier of direct strikes and lingering burns.', primaryElement: 'fire', elementsPresent: ['fire'], encounterMode: 'targeted',
+    targetMetadata: { 'emberfall-ember-wisp': { difficulty: 'easy', order: 1 }, 'emberfall-ashling': { difficulty: 'easy', order: 2 }, 'emberfall-flame-hound': { difficulty: 'standard', order: 3 }, 'emberfall-ashen-adept': { difficulty: 'hard', order: 4 } },
+    unlock: { type: 'any', conditions: [{ type: 'starter-advantage', targetElement: 'fire' }, { type: 'chronicle-event', eventId: 'elemental-tutorial-zones-opened' }] },
+  },
   'whispering-woods': {
-    ...dungeonLocation('first-frontier', 'whispering-woods', 'combat-zone', 1),
+    ...dungeonLocation('first-frontier', 'whispering-woods', 'combat-zone', 5),
     encounterMode: 'targeted',
     targetMetadata: {
       'forest-wisp': { difficulty: 'easy', order: 1 },
@@ -85,7 +110,7 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
     },
   },
   'howling-den': {
-    ...dungeonLocation('first-frontier', 'howling-den', 'elite-zone', 2),
+    ...dungeonLocation('first-frontier', 'howling-den', 'elite-zone', 6),
     encounterMode: 'targeted',
     zoneAffixId: 'frenzied',
     targetMetadata: {
@@ -97,9 +122,9 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       'den-stalker': { difficulty: 'apex', order: 6 },
     },
   },
-  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 3), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 }, 'veilwing-harrier': { difficulty: 'standard', order: 4 }, 'cinderback-mauler': { difficulty: 'hard', order: 5 }, 'gloomroot-hexer': { difficulty: 'hard', order: 6 }, 'nightglass-alpha': { difficulty: 'hard', order: 7 } } },
+  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 7), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 }, 'veilwing-harrier': { difficulty: 'standard', order: 4 }, 'cinderback-mauler': { difficulty: 'hard', order: 5 }, 'gloomroot-hexer': { difficulty: 'hard', order: 6 }, 'nightglass-alpha': { difficulty: 'hard', order: 7 } } },
   'abandoned-catacombs': {
-    ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 4),
+    ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 8),
     encounterMode: 'sequence',
     firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },
@@ -270,6 +295,25 @@ export const getCombatLocation = (locationId: CombatLocationId | null | undefine
 export const getCombatLocationByDungeonId = (dungeonId: DungeonId | null | undefined) => {
   if (!dungeonId) return null
   return Object.values(COMBAT_LOCATIONS).find((location) => location.dungeonId === dungeonId) ?? null
+}
+
+type NavigationProgress = Pick<GameState['progress'], 'bossKillsByBoss'> & Partial<Pick<GameState['progress'], 'startingSchoolId' | 'chronicle'>>
+
+export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDefinition['unlock'] | CombatRegionDefinition['unlock'] | CombatContinentDefinition['unlock'], progress: NavigationProgress): boolean => {
+  if (!condition || condition.type === 'always') return true
+  if (condition.type === 'boss-kill') return (progress.bossKillsByBoss[condition.bossId] ?? 0) >= (condition.count ?? 1)
+  if (condition.type === 'all-boss-kills') return condition.bossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) >= 1)
+  if (condition.type === 'chronicle-event') return progress.chronicle?.eventFlags[condition.eventId] === true
+  if (condition.type === 'starter-advantage') return Boolean(progress.startingSchoolId && getElementMultiplier(progress.startingSchoolId, condition.targetElement) > 1)
+  if (condition.type === 'any') return condition.conditions.some((entry) => isCombatNavigationConditionUnlocked(entry, progress))
+  return condition.conditions.every((entry) => isCombatNavigationConditionUnlocked(entry, progress))
+}
+
+export const isCombatLocationUnlocked = (locationId: CombatLocationId, progress: NavigationProgress): boolean => {
+  const location = COMBAT_LOCATIONS[locationId]
+  const region = location && COMBAT_REGIONS[location.regionId]
+  if (!location || !region || !isCombatNavigationConditionUnlocked(region.unlock, progress) || !isCombatNavigationConditionUnlocked(location.unlock, progress)) return false
+  return location.dungeonId ? isDungeonUnlocked(DUNGEONS[location.dungeonId], progress) : !location.prototype
 }
 
 export const getCombatEncounterMode = (location: CombatLocationDefinition | null | undefined): CombatEncounterMode => location?.encounterMode ?? 'random-pool'

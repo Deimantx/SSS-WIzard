@@ -414,7 +414,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawChronicle = isRecord(rawProgress.chronicle) ? rawProgress.chronicle : {}
   const rawCompleted = Array.isArray(rawChronicle.completedObjectiveIds) ? rawChronicle.completedObjectiveIds : []
   const rawGranted = Array.isArray(rawChronicle.grantedUnlockRewardIds) ? rawChronicle.grantedUnlockRewardIds : []
-  const chronicleEventIds: ChronicleEventId[] = ['first-fragment-transmuted', 'first-research-batch-completed', 'first-guardian-combat-completed', 'first-wt2-kill']
+  const chronicleEventIds: ChronicleEventId[] = ['first-fragment-transmuted', 'first-research-batch-completed', 'first-guardian-combat-completed', 'first-wt2-kill', 'first-sigil-earned', 'first-elemental-weakness-hit', 'elemental-tutorial-zones-opened', 'first-elemental-ward-equipped', 'first-elemental-ward-mitigation', 'first-elemental-tutorial-boss-defeated', 'starting-counter-zone-entered']
   const validChronicleIds = CHRONICLE_OBJECTIVES.map((objective) => objective.id)
   migrated.progress.chronicle = {
     completedObjectiveIds: rawCompleted.filter((id): id is GameState['progress']['chronicle']['completedObjectiveIds'][number] => typeof id === 'string' && validChronicleIds.includes(id as typeof validChronicleIds[number])),
@@ -640,6 +640,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     const expiresAt = typeof entry.expiresAt === 'number' && Number.isFinite(entry.expiresAt) && entry.expiresAt >= 0 ? entry.expiresAt : undefined
     return [{ element: entry.element, sourceId: entry.sourceId, reduction: entry.reduction, ...(expiresAt === undefined ? {} : { expiresAt }) }]
   })
+  if (!migrated.combat.active) migrated.combat.elementalDamageReductions = []
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null
   const rawActiveLoadout = isRecord(rawCombat.activeSpellLoadout) ? rawCombat.activeSpellLoadout : null
@@ -1130,6 +1131,15 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellPresets(migrated, raw, sourceVersion)
   normalizeCombatState(migrated, raw, sourceVersion)
   normalizeDirectContentReferences(migrated, raw)
+  const historicalProgress = isRecord(raw.progress) ? raw.progress : {}
+  const historicalBossKills = isRecord(historicalProgress.bossKillsByBoss) ? historicalProgress.bossKillsByBoss : {}
+  const historicalTutorialStage = historicalProgress.tutorialStage
+  const existingOpeningProgress = (typeof historicalProgress.lifetimeKills === 'number' && historicalProgress.lifetimeKills > 0)
+    || (typeof historicalTutorialStage === 'string' && historicalTutorialStage !== 'choose-school' && historicalTutorialStage !== 'combat')
+    || Object.values(historicalBossKills).some((kills) => typeof kills === 'number' && kills > 0)
+  if (sourceVersion < SAVE_VERSION && existingOpeningProgress) {
+    for (const eventId of ['starting-counter-zone-entered', 'first-elemental-weakness-hit', 'elemental-tutorial-zones-opened', 'first-elemental-ward-equipped', 'first-elemental-ward-mitigation', 'first-elemental-tutorial-boss-defeated'] as const) migrated.progress.chronicle.eventFlags[eventId] = true
+  }
   reconcileChronicleProgress(migrated, { notify: false })
   if (sourceVersion < SAVE_VERSION && migrated.combat.active) {
     const dungeonId = migrated.combat.dungeonId

@@ -39,3 +39,7 @@ export const clearExpiredElementalWards = (state: GameState) => {
   const now = state.combat.arcaneCoreRuntime.elapsedMs
   state.combat.elementalDamageReductions = (state.combat.elementalDamageReductions ?? []).filter((ward) => ward.expiresAt === undefined || ward.expiresAt > now)
 }
+
+export const clearElementalWards = (state: GameState) => { state.combat.elementalDamageReductions = [] }
+export const debugApplyElementalWard = (state: GameState, element: ElementId) => applyElementalWard(state, { element, reduction: 0.15, sourceId: 'developer-ward-fixture', durationMs: 22_000 })
+export const debugExpireElementalWards = (state: GameState) => { const now = state.combat.arcaneCoreRuntime.elapsedMs; state.combat.elementalDamageReductions = (state.combat.elementalDamageReductions ?? []).map((ward) => ({ ...ward, expiresAt: now })) }

@@ -6,6 +6,7 @@ import { isSpellUnlocked } from './spellProgression'
 import { getSpellManaPreview } from '../../engine/spellCastPreview'
 import { getEffectiveManaCost } from '../combat/combatStats'
 import { manaRegenPerSecond } from '../../engine/channelingEngine'
+import { isElementId } from '../../content/elements/elements'
 import type { AutoCastCondition, CanonicalSpellId, GameState, SpellAutomationCondition, SpellAutomationConfig, SpellAutomationTargetRule, SpellDefinition, SpellPresetSlot, StatusId } from '../../types'
 
 export const MAX_AUTOMATION_CONDITIONS = 5
@@ -47,6 +48,11 @@ const isStatusId = (value: unknown): value is StatusId => typeof value === 'stri
 const clampPercent = (value: unknown) => Math.max(1, Math.min(100, Number.isFinite(Number(value)) ? Number(value) : 50))
 const clampSeconds = (value: unknown) => Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 1)
 const hasEnemyTarget = (spell: SpellDefinition) => spell.effects.some((effect) => effect.target === 'opponent')
+const getWardRemainingMs = (state: GameState, element: import('../../content/elements/elements').ElementId, sourceId: string) => {
+  const now = state.combat.arcaneCoreRuntime.elapsedMs
+  const ward = state.combat.elementalDamageReductions.find((entry) => entry.element === element && entry.sourceId === sourceId && (entry.expiresAt === undefined || entry.expiresAt > now))
+  return ward ? ward.expiresAt === undefined ? Number.POSITIVE_INFINITY : Math.max(0, ward.expiresAt - now) : null
+}
 
 export const getSpellAutomationTargetOptions = (spellId: CanonicalSpellId): Array<{ value: SpellAutomationTargetRule; label: string }> => {
   const spell = SPELLS[spellId]
@@ -63,6 +69,7 @@ const legacyConditionToAutomation = (condition: AutoCastCondition | undefined): 
   if (condition.type === 'target-status-missing') return [{ type: 'enemy-debuff', operator: 'missing', effectId: condition.statusId }]
   if (condition.type === 'barrier-below') return [{ type: 'player-barrier-below', value: Math.max(0, Number(condition.value) || 0) }]
   if (condition.type === 'self-has-cleanseable-debuff') return [{ type: 'player-has-cleanseable-debuff' }]
+  if (condition.type === 'elemental-ward-expiring') return [{ type: 'elemental-ward-expiring', element: condition.element, sourceId: condition.sourceId, remainingMs: condition.remainingMs }]
   return [{ type: 'always' }]
 }
 
@@ -91,6 +98,9 @@ const normalizeCondition = (raw: unknown): SpellAutomationCondition | null => {
     case 'boss': return { type: 'boss', operator: value.operator === 'is-not' ? 'is-not' : 'is' }
     case 'player-barrier-below': return { type: 'player-barrier-below', value: Math.max(0, Number(value.value) || 0) }
     case 'player-has-cleanseable-debuff': return { type: 'player-has-cleanseable-debuff' }
+    case 'elemental-ward-expiring': return isElementId(value.element) && typeof value.sourceId === 'string' && value.sourceId.trim() && Number.isFinite(value.remainingMs) && Number(value.remainingMs) >= 0
+      ? { type: 'elemental-ward-expiring', element: value.element, sourceId: value.sourceId, remainingMs: Number(value.remainingMs) }
+      : null
     default: return null
   }
 }
@@ -133,6 +143,7 @@ export const formatAutomationCondition = (condition: SpellAutomationCondition): 
   if (condition.type === 'boss') return `Enemy is ${condition.operator === 'is' ? '' : 'not '}Boss`
   if (condition.type === 'player-barrier-below') return `Player Barrier < ${Math.round(condition.value)}`
   if (condition.type === 'player-has-cleanseable-debuff') return 'Player has a cleanseable debuff'
+  if (condition.type === 'elemental-ward-expiring') return `${condition.element[0].toUpperCase()}${condition.element.slice(1)} Ward expires below ${formatSeconds(condition.remainingMs / 1000)}`
   const name = STATUS_DEFINITIONS[condition.effectId]?.name ?? 'Missing Effect'
   if (condition.operator === 'missing') return `Missing ${name}`
   if (condition.operator === 'has') return `Has ${name}`
@@ -197,6 +208,10 @@ const fastConditionPasses = (state: GameState, condition: SpellAutomationConditi
   }
   if (condition.type === 'player-barrier-below') return state.combat.playerBarrier < condition.value
   if (condition.type === 'player-has-cleanseable-debuff') return state.combat.playerStatuses.some((status) => STATUS_DEFINITIONS[status.statusId]?.classification === 'debuff' && STATUS_DEFINITIONS[status.statusId]?.cleanseable)
+  if (condition.type === 'elemental-ward-expiring') {
+    const remaining = getWardRemainingMs(state, condition.element, condition.sourceId)
+    return remaining === null || remaining <= condition.remainingMs
+  }
   const actor = condition.type === 'player-buff' ? 'player' : 'enemy'
   const status = activeStatus(state, actor, condition.effectId)
   if (condition.operator === 'missing') return !status
@@ -254,6 +269,11 @@ const evaluateCondition = (state: GameState, condition: SpellAutomationCondition
   if (condition.type === 'player-has-cleanseable-debuff') {
     const passed = state.combat.playerStatuses.some((status) => STATUS_DEFINITIONS[status.statusId]?.classification === 'debuff' && STATUS_DEFINITIONS[status.statusId]?.cleanseable)
     return conditionResult(condition, passed, passed ? 'Player has a cleanseable debuff.' : 'Player has no cleanseable debuff.')
+  }
+  if (condition.type === 'elemental-ward-expiring') {
+    const remaining = getWardRemainingMs(state, condition.element, condition.sourceId)
+    const passed = remaining === null || remaining <= condition.remainingMs
+    return conditionResult(condition, passed, passed ? `${condition.element} Ward needs refreshing.` : `${condition.element} Ward has ${formatSeconds(remaining! / 1000)} remaining.`)
   }
   const actor = condition.type === 'player-buff' ? 'player' : 'enemy'
   const status = activeStatus(state, actor, condition.effectId)
@@ -412,6 +432,11 @@ export const getNextAutoCastEligibilityBoundaryMs = (state: GameState, cooldownR
         const status = activeStatus(state, condition.type === 'player-buff' ? 'player' : 'enemy', condition.effectId)
         if (condition.operator === 'remaining-below' && status?.remainingMs !== null && status?.remainingMs !== undefined) next = addBoundary(next, Math.max(0, status.remainingMs - (condition.seconds ?? 0) * 1000))
         else if (condition.operator === 'has' && status?.remainingMs !== null && status?.remainingMs !== undefined) next = addBoundary(next, status.remainingMs)
+        return
+      }
+      if (condition.type === 'elemental-ward-expiring') {
+        const remaining = getWardRemainingMs(state, condition.element, condition.sourceId)
+        if (remaining !== null && Number.isFinite(remaining)) next = addBoundary(next, Math.max(0, remaining - condition.remainingMs))
         return
       }
       if (condition.type !== 'mana' || !Number.isFinite(manaDeltaPerSecond) || Math.abs(manaDeltaPerSecond) <= 1e-9) return

@@ -31,6 +31,9 @@ import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
 import { issueFirstHunterContract, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage, getHunterHarvestBonuses } from '../huntersOrder/huntersOrderRuntime'
+import { clearElementalWards } from './elementalWardRuntime'
+
+const ELEMENTAL_TUTORIAL_DUNGEONS = new Set<DungeonId>(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'])
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
@@ -62,6 +65,7 @@ export const stopHunterContractCombat = (state: GameState, notification?: string
   if (!dungeonId || !isHunterGround(dungeonId)) return false
   if (state.combat.enemyId) abandonCurrentEncounter(state)
   state.combat.active = false
+  clearElementalWards(state)
   state.combat.targetEnemyId = null
   state.combat.pendingBossId = null
   state.combat.encounterTimerMs = 0
@@ -286,6 +290,11 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const sequenceDungeon = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.length)
   const arcaneReward = getArcaneCoreReward(state.combat.dungeonId)
   const bossDefeated = isBossMonster(monster)
+  const tutorialDungeonId = state.combat.dungeonId
+  if (tutorialDungeonId && ELEMENTAL_TUTORIAL_DUNGEONS.has(tutorialDungeonId)) {
+    if (bossDefeated) state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+    else state.progress.chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
+  }
   const baseArcanePoints = arcaneReward ? (bossDefeated ? arcaneReward.bossKillPoints : arcaneReward.normalKillPoints) : 0
   const arcanePoints = Math.max(0, Math.round(resolveWorldTierArcanePointReward(baseArcanePoints, encounterWorldTier) * guildBonuses.combatArcanePointMultiplier))
   if (arcanePoints > 0) {
@@ -390,6 +399,7 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     report?.recordPlayerDeath()
     clearGuardianRuntime(state)
     state.combat.active = false
+    clearElementalWards(state)
     state.combat.targetEnemyId = null
     state.combat.enemyId = null
     state.combat.enemyWorldTier = null

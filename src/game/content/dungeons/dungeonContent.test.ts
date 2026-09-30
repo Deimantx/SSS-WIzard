@@ -69,6 +69,10 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "howling-den",
       "hunters-ground",
       "abandoned-catacombs",
+      "stonewake-hollow",
+      "galecrest-heights",
+      "tideglass-caverns",
+      "emberfall-basin",
       "fractured-approach",
       "flooded-reliquary",
       "ashen-watch",
@@ -95,10 +99,9 @@ describe("Act 0 and Act 1 dungeon content", () => {
     expect(DUNGEONS["howling-den"].boss).toBe("corrupted-greatbear");
     expect(DUNGEONS["abandoned-catacombs"].boss).toBe("archmage-edrin-shade");
     expect(
-      Object.values(DUNGEONS).every(
-        (dungeon) => dungeon.encounterDelayMs === 5000,
-      ),
+      DUNGEON_ORDER.filter((id) => !['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(id)).every((id) => DUNGEONS[id].encounterDelayMs === 5000),
     ).toBe(true);
+    for (const id of ['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'] as const) expect(DUNGEONS[id].encounterDelayMs).toBe(2500)
     const state = contentTestState();
     expect(
       isDungeonUnlocked(DUNGEONS["whispering-woods"], state.progress),
@@ -258,7 +261,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
   });
 
   it("keeps all authored monster records and exact action sequences", () => {
-    expect(Object.keys(MONSTERS)).toHaveLength(110);
+    expect(Object.keys(MONSTERS)).toHaveLength(130);
     expect(validateMonsterDefinitions()).toEqual([]);
     expect(labels("forest-wisp")).toEqual([
       "Basic",

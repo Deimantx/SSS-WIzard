@@ -28,6 +28,12 @@ describe('Chronicle runtime', () => {
     state.progress.startingSchoolId = 'fire'
     state.progress.lifetimeKills = 1
     state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.chronicle.eventFlags['starting-counter-zone-entered'] = true
+    state.progress.chronicle.eventFlags['first-elemental-weakness-hit'] = true
+    state.progress.chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
+    state.progress.chronicle.eventFlags['first-elemental-ward-equipped'] = true
+    state.progress.chronicle.eventFlags['first-elemental-ward-mitigation'] = true
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
 
     reconcileChronicleProgress(state, { notify: false })
     expect(state.progress.chronicle.completedObjectiveIds).toContain('m1-choose-school')
@@ -44,6 +50,12 @@ describe('Chronicle runtime', () => {
     state.progress.startingSchoolId = 'fire'
     state.progress.lifetimeKills = 1
     state.activities.channeling.acolytesAssigned = 1
+    state.progress.chronicle.eventFlags['starting-counter-zone-entered'] = true
+    state.progress.chronicle.eventFlags['first-elemental-weakness-hit'] = true
+    state.progress.chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
+    state.progress.chronicle.eventFlags['first-elemental-ward-equipped'] = true
+    state.progress.chronicle.eventFlags['first-elemental-ward-mitigation'] = true
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     reconcileChronicleProgress(state, { notify: false })
     recordChronicleEvent(state, 'first-fragment-transmuted')
     recordChronicleEvent(state, 'first-research-batch-completed')
@@ -66,7 +78,7 @@ describe('Chronicle runtime', () => {
   it('supports Chronicle-only tester completion and safe reset semantics', () => {
     const state = createInitialState()
     debugCompleteChroniclePrerequisites(state, 'm3-heart-of-the-woods')
-    expect(state.progress.chronicle.completedObjectiveIds).toEqual(['m1-choose-school', 'm2-first-blood'])
+    expect(state.progress.chronicle.completedObjectiveIds).toEqual(['m1-choose-school', 'm1a-enter-elemental-counter-zone', 'm1b-exploit-elemental-weakness', 'm2-first-blood', 'm2a-elemental-frontier', 'm2b-equip-elemental-ward', 'm2c-test-elemental-ward', 'm2d-defeat-elemental-boss'])
     debugCompleteChronicleObjective(state, 'm3-heart-of-the-woods')
     expect(state.progress.chronicle.completedObjectiveIds).toContain('m3-heart-of-the-woods')
 

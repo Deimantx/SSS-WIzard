@@ -11,7 +11,7 @@ const activeReadyState = () => {
   state.spellPresets.selectedPresetId = 'boss-selector-test'
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
-  state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired
+  state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
   return state
 }
 

@@ -138,6 +138,9 @@ export interface ChronicleReconciliationResult {
 
 export const reconcileChronicleProgress = (state: GameState, options: { notify?: boolean } = {}): ChronicleReconciliationResult => {
   const chronicle = state.progress.chronicle ?? (state.progress.chronicle = createInitialChronicleProgress())
+  const selectedPreset = state.spellPresets.presets.find((preset) => preset.id === state.spellPresets.selectedPresetId)
+  const starterWardId = state.progress.startingSchoolId ? `${state.progress.startingSchoolId}-ward` : null
+  if (starterWardId && selectedPreset?.slots.some((slot) => slot.spellId === starterWardId)) chronicle.eventFlags['first-elemental-ward-equipped'] = true
   const validIds = new Set(CHRONICLE_OBJECTIVES.map((objective) => objective.id))
   chronicle.completedObjectiveIds = [...new Set(chronicle.completedObjectiveIds.filter((id) => validIds.has(id)))]
   chronicle.grantedUnlockRewardIds = [...new Set(chronicle.grantedUnlockRewardIds.filter((id) => validIds.has(id)))]

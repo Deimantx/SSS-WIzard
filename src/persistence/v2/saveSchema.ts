@@ -76,7 +76,8 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
   if (Object.keys(player).some((key) => !playerFields.includes(key as typeof playerFields[number]))) return false
   if (!playerFields.every((key) => typeof player[key] === 'number' && Number.isFinite(player[key]))) return false
   const combat = value.combat as Record<string, unknown>
-  if (Object.keys(combat).some((key) => !combatFields.has(key)) || PERSISTED_COMBAT_FIELDS_V1.some((key) => !Object.prototype.hasOwnProperty.call(combat, key))) return false
+  if (Object.keys(combat).some((key) => !combatFields.has(key)) || PERSISTED_COMBAT_FIELDS_V1.some((key) => key !== 'elementalDamageReductions' && !Object.prototype.hasOwnProperty.call(combat, key))) return false
+  if (combat.elementalDamageReductions !== undefined && !Array.isArray(combat.elementalDamageReductions)) return false
   const inventory = value.inventory as Record<string, unknown>
   if (Object.entries(inventory).some(([id, quantity]) => !Object.prototype.hasOwnProperty.call(ITEMS, id) || typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 0)) return false
   const protectedItems = value.protectedItems as Record<string, unknown>

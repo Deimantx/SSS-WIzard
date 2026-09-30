@@ -10,7 +10,7 @@ describe('spell browser selectors', () => {
   it('builds the 32 authored entries plus UI-only future slots', () => {
     const state = createInitialState()
     const entries = getSpellBrowserEntries(state, filters())
-    expect(entries).toHaveLength(32 + SPELL_CATALOG_PLACEHOLDERS.length)
+    expect(entries).toHaveLength(Object.keys(SPELLS).length + SPELL_CATALOG_PLACEHOLDERS.length)
     expect(entries.filter((entry) => entry.kind === 'placeholder')).toHaveLength(SPELL_CATALOG_PLACEHOLDERS.length)
     expect(entries.filter((entry) => entry.kind === 'spell').every((entry) => entry.kind === 'spell' && !entry.unlocked)).toBe(true)
   })

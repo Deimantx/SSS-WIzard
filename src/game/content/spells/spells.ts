@@ -9,6 +9,7 @@ const damage = (school: 'fire' | 'water' | 'earth' | 'air', coefficient: number,
   type: 'deal-damage', target: 'opponent', components: [{ damageType: school, magnitude: { type: 'spell-power', coefficient } }], school, tags: ['direct', school], ...extra,
 })
 const barrier = (coefficient: number): CombatEffect => ({ type: 'gain-barrier', target: 'self', magnitude: { type: 'spell-power', coefficient }, mode: 'replace-if-stronger', durationMs: 10000, tags: ['barrier', 'earth'] })
+const elementalWard = (element: 'fire' | 'water' | 'air' | 'earth'): CombatEffect => ({ type: 'apply-elemental-ward', target: 'self', element, reduction: 0.15, durationMs: 22000, sourceId: `${element}-ward`, tags: ['buff', element] })
 const heal = (coefficient: number): CombatEffect => ({ type: 'heal', target: 'self', magnitude: { type: 'spell-power', coefficient }, tags: ['heal', 'direct', 'water'] })
 const status = (target: 'self' | 'opponent', statusId: Extract<keyof typeof STATUS_DEFINITIONS, string>, durationMs?: number, tags: CombatTag[] = ['status']) => ({ type: 'apply-status' as const, target, statusId, durationMs, tags })
 const spell = (definition: Omit<SpellDefinition, 'id'> & { id: CanonicalSpellId }): SpellDefinition => definition
@@ -49,6 +50,10 @@ export const SPELLS = {
   'static-charge': spell({ id: 'static-charge', name: 'Static Charge', school: 'air', description: 'Charges the next damaging Air Spell with extra damage.', unlockLevel: 28, manaCost: 10, castTimeMs: 900, cooldownMs: 10000, type: 'damage', effects: [damage('air', 0.5), status('self', 'static', 10000, ['buff', 'air'])], autoCondition: { type: 'always' } }),
   thunderstrike: spell({ id: 'thunderstrike', name: 'Thunderstrike', school: 'air', description: 'A devastating Air strike with bonus critical damage.', unlockLevel: 34, manaCost: 10, castTimeMs: 1450, cooldownMs: 16000, type: 'damage', effects: [damage('air', 1)], autoCondition: { type: 'always' } }),
   'eye-of-the-storm': spell({ id: 'eye-of-the-storm', name: 'Eye of the Storm', school: 'air', description: 'Improves cooldown recovery, critical chance, and action speed.', unlockLevel: 40, manaCost: 10, castTimeMs: 1700, cooldownMs: 25000, type: 'buff', effects: [status('self', 'eye-of-the-storm', 10000, ['buff', 'air'])], autoCondition: { type: 'self-status-missing', statusId: 'eye-of-the-storm' } }),
+  'fire-ward': spell({ id: 'fire-ward', name: 'Fire Ward', school: 'fire', description: 'Reduces incoming Fire damage by 15% for 22 seconds.', unlockLevel: 10, manaCost: 5, castTimeMs: 500, cooldownMs: 20000, type: 'buff', effects: [elementalWard('fire')], autoCondition: { type: 'elemental-ward-expiring', element: 'fire', sourceId: 'fire-ward', remainingMs: 2500 } }),
+  'water-ward': spell({ id: 'water-ward', name: 'Water Ward', school: 'water', description: 'Reduces incoming Water damage by 15% for 22 seconds.', unlockLevel: 10, manaCost: 5, castTimeMs: 500, cooldownMs: 20000, type: 'buff', effects: [elementalWard('water')], autoCondition: { type: 'elemental-ward-expiring', element: 'water', sourceId: 'water-ward', remainingMs: 2500 } }),
+  'air-ward': spell({ id: 'air-ward', name: 'Air Ward', school: 'air', description: 'Reduces incoming Air damage by 15% for 22 seconds.', unlockLevel: 10, manaCost: 5, castTimeMs: 500, cooldownMs: 20000, type: 'buff', effects: [elementalWard('air')], autoCondition: { type: 'elemental-ward-expiring', element: 'air', sourceId: 'air-ward', remainingMs: 2500 } }),
+  'earth-ward': spell({ id: 'earth-ward', name: 'Earth Ward', school: 'earth', description: 'Reduces incoming Earth damage by 15% for 22 seconds.', unlockLevel: 10, manaCost: 5, castTimeMs: 500, cooldownMs: 20000, type: 'buff', effects: [elementalWard('earth')], autoCondition: { type: 'elemental-ward-expiring', element: 'earth', sourceId: 'earth-ward', remainingMs: 2500 } }),
 } as unknown as Record<SpellId, SpellDefinition>
 
 export const LEGACY_SPELL_ID_MAP: Partial<Record<string, CanonicalSpellId>> = {
@@ -63,12 +68,12 @@ export const validateSpellDefinitions = () => {
   const errors: string[] = []
   const validationContext = createCombatValidationContext(STATUS_DEFINITIONS)
   const ids = Object.values(SPELLS).map((spell) => spell.id)
-  if (ids.length !== 32) errors.push(`expected 32 spells, received ${ids.length}`)
+  if (ids.length !== 36) errors.push(`expected 36 spells, received ${ids.length}`)
   if (new Set(ids).size !== ids.length) errors.push('duplicate spell id')
-  const expectedUnlockLevels = [0, 7, 8, 17, 22, 28, 34, 40]
+  const expectedUnlockLevels = [0, 7, 8, 10, 17, 22, 28, 34, 40]
   Object.keys(SCHOOLS).forEach((schoolId) => {
     const schoolSpells = Object.values(SPELLS).filter((spell) => spell.school === schoolId).sort((a, b) => a.unlockLevel - b.unlockLevel)
-    if (schoolSpells.length !== 8) errors.push(`${schoolId}: expected 8 spells, received ${schoolSpells.length}`)
+    if (schoolSpells.length !== 9) errors.push(`${schoolId}: expected 9 spells, received ${schoolSpells.length}`)
     if (schoolSpells.some((spell, index) => spell.unlockLevel !== expectedUnlockLevels[index])) errors.push(`${schoolId}: invalid unlock sequence`)
   })
   Object.entries(SPELLS).forEach(([key, spell]) => {

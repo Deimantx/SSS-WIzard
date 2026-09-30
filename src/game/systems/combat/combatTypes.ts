@@ -33,6 +33,7 @@ export type TraitId =
   | 'name-eater-silence' | 'bound-echo-repetition' | 'hollow-liturgist-curse' | 'whisper-archivist-erasure'
   | 'sigil-guardian-ward' | 'black-seal-parasite-corruption' | 'vault-devourer-regrowth' | 'inkbound-specter-curse'
   | 'gatebound-remnant-cleave' | 'black-rift-stalker-corruption' | 'portalbound-acolyte-mute' | 'sealbreaker-construct-ward'
+  | 'tutorial-living-stone' | 'tutorial-restorative-tide'
   | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate'
 
 export type CombatTag =
@@ -71,6 +72,7 @@ export interface CombatDamageComponentEvent {
   affinityMultiplier?: number
   damageAfterAffinity?: number
   wardMultiplier?: number
+  wardPrevented?: number
   mitigationMultiplier?: number
   finalDamage?: number
   matchup?: import('../../content/elements/elements').ElementMatchup
@@ -341,6 +343,7 @@ export type CombatEffect =
   | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number; lifeStealPercent?: number }
   | { type: 'heal'; target: EffectTarget; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'gain-barrier'; target: EffectTarget; magnitude: Magnitude; mode?: 'add' | 'replace' | 'replace-if-stronger'; durationMs?: number | null; tags?: CombatTag[] }
+  | { type: 'apply-elemental-ward'; target: EffectTarget; element: ElementId; reduction: number; durationMs: number; sourceId: string; tags?: CombatTag[] }
   | { type: 'consume-barrier'; target: EffectTarget; mode?: 'all' }
   | { type: 'restore-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }
   | { type: 'drain-resource'; target: EffectTarget; resource: ResourceId; magnitude: Magnitude; tags?: CombatTag[] }

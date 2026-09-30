@@ -22,5 +22,9 @@ export const ARCANE_CORE_REWARDS: Record<DungeonId, ArcaneCoreRewardDefinition> 
   'hall-of-unbound-names': { normalKillPoints: 6, bossKillPoints: 46 },
   'vault-of-the-black-sigil': { normalKillPoints: 6, bossKillPoints: 50 },
   'black-gate': { normalKillPoints: 7, bossKillPoints: 60 },
+  'stonewake-hollow': { normalKillPoints: 1, bossKillPoints: 8 },
+  'galecrest-heights': { normalKillPoints: 1, bossKillPoints: 8 },
+  'tideglass-caverns': { normalKillPoints: 1, bossKillPoints: 8 },
+  'emberfall-basin': { normalKillPoints: 1, bossKillPoints: 8 },
 }
 export const getArcaneCoreReward = (dungeonId: DungeonId | null) => dungeonId ? ARCANE_CORE_REWARDS[dungeonId] : null

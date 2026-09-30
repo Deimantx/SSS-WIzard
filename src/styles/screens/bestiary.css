@@ -48,6 +48,10 @@
 .bestiary-dossier-meta strong { color: var(--ui-text-soft); }
 .bestiary-section { display: grid; gap: 8px; padding-top: 11px; border-top: 1px solid var(--ui-border); }
 .bestiary-section-label { color: var(--bestiary-color); font: var(--text-micro) var(--font-mono); letter-spacing: .14em; }
+.bestiary-elemental-profile { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.bestiary-elemental-profile > div { display: grid; gap: 4px; min-width: 0; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); }
+.bestiary-elemental-profile small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .04em; }
+.bestiary-elemental-profile strong { color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
 .bestiary-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .bestiary-stat-grid > div { display: grid; gap: 4px; min-width: 0; padding: 8px; border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); }
 .bestiary-stat-grid span { color: var(--ui-text-muted); font: .55rem var(--font-mono); letter-spacing: .04em; }

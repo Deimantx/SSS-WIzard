@@ -91,6 +91,25 @@ describe('Save System V2', () => {
     expect(roundTrip.state?.combat.log).toEqual([])
   })
 
+  it('round-trips active Wards and strips stale Wards from inactive saves', () => {
+    const active = createInitialState()
+    active.combat.active = true
+    active.combat.dungeonId = 'emberfall-basin'
+    active.combat.elementalDamageReductions = [{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 21_000 }]
+    const activeDocument = serializeGameState(active, 456)
+    expect(validatePersistedGameStateV1(activeDocument)).toBe(true)
+    expect(validateV2RoundTrip(JSON.stringify(activeDocument), active).state?.combat.elementalDamageReductions).toEqual(active.combat.elementalDamageReductions)
+
+    const legacySchemaV2 = structuredClone(activeDocument) as unknown as { combat: Record<string, unknown> }
+    delete legacySchemaV2.combat.elementalDamageReductions
+    expect(validatePersistedGameStateV1(legacySchemaV2)).toBe(true)
+    expect(loadPersistedGameStateV1(legacySchemaV2 as unknown as typeof activeDocument).combat.elementalDamageReductions).toEqual([])
+
+    const inactive = createInitialState()
+    inactive.combat.elementalDamageReductions = active.combat.elementalDamageReductions
+    expect(serializeGameState(inactive, 457).combat.elementalDamageReductions).toEqual([])
+  })
+
   it('keeps empty contract boards empty and never consumes Hunter or Guild RNG while loading', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1

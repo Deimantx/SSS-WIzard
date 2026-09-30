@@ -6,6 +6,8 @@ import { equipItemAction } from './equipmentActions'
 import { getDefaultSpellAutomationConfig, getNextSpellPresetId } from '../../game/systems/spells'
 import { getSpellsForSchool, syncSpellUnlocksForSchool } from '../../game/systems/spells/spellProgression'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
+import { getTutorialCounterAffinity } from '../../game/content/elements/elements'
+import { COMBAT_LOCATIONS } from '../../game/content/world-navigation'
 import type { GameState, SchoolId, TutorialStage } from '../../game/types'
 
 /** Commits the authored fresh-profile opening in one state mutation. */
@@ -24,7 +26,7 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   const equipmentResult = equipItemAction(state, artifactId, 'weapon')
   if (!equipmentResult.ok) state.equipment.weapon = artifactId
 
-  const starterSpells = getSpellsForSchool(schoolId).filter((spell) => state.progress.spellRanks[spell.id] !== undefined).slice(0, 3)
+  const starterSpells = STARTING_SCHOOL_CONFIG[schoolId].starterSpellIds.map((id) => getSpellsForSchool(schoolId).find((spell) => spell.id === id)).filter((spell): spell is NonNullable<typeof spell> => Boolean(spell && state.progress.spellRanks[spell.id] !== undefined))
   const presetId = getNextSpellPresetId(state.spellPresets.presets)
   const slots = starterSpells.map((spell) => ({ spellId: spell.id, autoCast: true, automation: getDefaultSpellAutomationConfig(spell.id, true, false) }))
   state.spellPresets.presets.push({ id: presetId, name: `${SCHOOLS[schoolId].name} Initiate`, slots })
@@ -34,7 +36,9 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   state.progress.tutorialStage = 'combat'
   state.player.mana = state.player.maxMana
   state.ui.screen = 'combat'
-  state.ui.lastEnteredCombatDungeonId = 'whispering-woods'
+  const counterAffinity = getTutorialCounterAffinity(schoolId)
+  const counterLocation = counterAffinity ? Object.values(COMBAT_LOCATIONS).find((location) => location.regionId === 'first-frontier' && location.primaryElement === counterAffinity && location.type === 'combat-zone') : undefined
+  state.ui.lastEnteredCombatDungeonId = counterLocation?.dungeonId ?? 'whispering-woods'
   reconcileChronicleProgress(state)
   return true
 }

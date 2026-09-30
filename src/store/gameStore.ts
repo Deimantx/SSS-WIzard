@@ -18,8 +18,11 @@ import {
   getCombatEncounterMode,
   getCombatLocationByDungeonId,
   isCombatTargetForLocation,
+  isCombatLocationUnlocked,
   type CombatLocationId,
 } from "../game/content/world-navigation";
+import { clearElementalWards, debugApplyElementalWard, debugExpireElementalWards } from "../game/systems/combat/elementalWardRuntime";
+import { getTutorialCounterAffinity } from "../game/content/elements/elements";
 import { MONSTERS } from "../game/content/monsters";
 import { ITEMS } from "../game/content/items/items";
 import { LEGACY_SPELL_ID_MAP, SPELLS } from "../game/content/spells/spells";
@@ -498,9 +501,12 @@ const initializeDungeonRun = (
   combatTelemetryObserver.beginRun(dungeonId);
   dungeonStatisticsObserver.beginSession(dungeonId);
   resetAllCombatRuleRuntime(state);
+  clearElementalWards(state);
   resetArcaneCoreCombatRuntime(state);
   state.combat.active = true;
   state.combat.dungeonId = dungeonId;
+  const enteredLocation = getCombatLocationByDungeonId(dungeonId)
+  if (enteredLocation?.primaryElement && state.progress.startingSchoolId && enteredLocation.primaryElement === getTutorialCounterAffinity(state.progress.startingSchoolId)) state.progress.chronicle.eventFlags["starting-counter-zone-entered"] = true
   state.combat.targetEnemyId = targetEnemyId;
   state.combat.encounterTimerMs = 0;
   state.combat.dungeonSequenceIndex =
@@ -518,6 +524,7 @@ const initializeDungeonRun = (
     return;
   }
   pushNotification(state, `${dungeon.name} entered`, "info");
+  reconcileChronicleProgress(state);
 };
 
 export interface RecentAcquisition {
@@ -742,6 +749,9 @@ export interface GameActions {
   spawnDebugEnemy: (enemyId: MonsterId, dungeonId?: DungeonId) => void;
   setEnemyHealthPercent: (percent: number) => void;
   damagePlayerForDebug: (amount: number) => void;
+  debugApplyElementalWard: () => void;
+  debugExpireElementalWards: () => void;
+  debugClearElementalWards: () => void;
   applyPlayerStatus: (statusId: StatusId) => void;
   applyEnemyStatus: (statusId: StatusId) => void;
   removePlayerStatus: (statusId: StatusId) => void;
@@ -1906,6 +1916,7 @@ export const useGameStore = create<GameStore>()(
       };
       set((state) => {
         result = selectSpellPresetAction(state, id);
+        if (result.ok) reconcileChronicleProgress(state);
         return state;
       });
       return result;
@@ -1922,6 +1933,7 @@ export const useGameStore = create<GameStore>()(
       let result: SelectedPresetSlotMutationResult = { ok: false, reason: "missing-preset" };
       set((state) => {
         result = addSpellToSelectedPresetAction(state, spellId);
+        if (result.ok) reconcileChronicleProgress(state);
         return state;
       });
       return result;
@@ -1993,6 +2005,7 @@ export const useGameStore = create<GameStore>()(
       };
       set((state) => {
         result = applySpellPresetAction(state, id);
+        if (result.ok) reconcileChronicleProgress(state);
         return state;
       });
       return result;
@@ -2001,6 +2014,11 @@ export const useGameStore = create<GameStore>()(
       const dungeon = DUNGEONS[dungeonId];
       const currentState = get();
       if (!dungeon) return;
+      const location = getCombatLocationByDungeonId(dungeonId)
+      if (location && !isCombatLocationUnlocked(location.id, currentState.progress)) {
+        set((state) => { pushNotification(state, `${location.name} is locked. Defeat an enemy in your starter counter zone to open the other elemental frontiers.`, "warning"); return state })
+        return
+      }
       if (!isDungeonUnlocked(dungeon, currentState.progress)) {
         set((state) => {
           pushNotification(
@@ -2073,6 +2091,10 @@ export const useGameStore = create<GameStore>()(
           return state;
         });
         return false;
+      }
+      if (!isCombatLocationUnlocked(locationId, currentState.progress)) {
+        set((state) => { pushNotification(state, `${location.name} is locked. Defeat an enemy in your starter counter zone to open the other elemental frontiers.`, "warning"); return state })
+        return false
       }
       const authorization = getHunterAuthorization(currentState, targetEnemyId, dungeonId)
       if (!authorization.authorized) {
@@ -2180,6 +2202,7 @@ export const useGameStore = create<GameStore>()(
     leaveDungeon: () => {
       endActiveDungeonRun();
       return set((state) => {
+        clearElementalWards(state)
         clearCombatSpellRuntime(state);
         const sequence =
           getCombatEncounterMode(
@@ -2456,6 +2479,9 @@ export const useGameStore = create<GameStore>()(
         });
         return state;
       }),
+    debugApplyElementalWard: () => set((state) => { const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null; const element = enemy?.basicAttackElement ?? enemy?.primaryAffinity ?? 'fire'; debugApplyElementalWard(state, element); return state; }),
+    debugExpireElementalWards: () => set((state) => { debugExpireElementalWards(state); return state; }),
+    debugClearElementalWards: () => set((state) => { clearElementalWards(state); return state; }),
     applyPlayerStatus: (statusId) =>
       set((state) => {
         debugApplyStatus(state, "player", statusId);

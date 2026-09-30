@@ -257,7 +257,7 @@ describe('Whispering Woods targeted farming', () => {
   it('abandons a boss without boss progression and preserves Threat before spawning the target', () => {
     const state = prepare()
     state.combat.targetEnemyId = 'tempest-stag'
-    state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired
+    state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
     spawnEnemy(state, 'forest-heart')
     const bossKillsBefore = state.progress.bossKillsByBoss['forest-heart'] ?? 0
     const firstBossKillBefore = state.progress.firstBossKill
@@ -332,7 +332,7 @@ describe('Elemental Scar targeted farming', () => {
     const next = useGameStore.getState()
     expect(next.combat.active).toBe(false)
     expect(next.combat.dungeonId).toBeNull()
-    expect(next.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
+    expect(next.notifications.some((note) => note.text.toLowerCase().includes('locked'))).toBe(true)
   })
 
   it('requires a valid Hunt Target instead of falling back to a random pool', () => {

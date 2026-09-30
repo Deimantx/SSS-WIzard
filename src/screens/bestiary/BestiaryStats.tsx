@@ -4,6 +4,8 @@ import { GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
 import { EnemyResistanceStatList } from '../../components/combat/EnemyResistanceStatList'
+import { getElementCounter, getElementResistance, ELEMENT_DEFINITIONS } from '../../game/content/elements/elements'
+import { getMonsterPrimaryAffinity } from '../../game/content/monsters/monsterTypes'
 
 export function BestiaryStats({ monster }: { monster: MonsterDefinition }) {
   const stats = getMonsterDossierCombatStats(monster)
@@ -12,7 +14,11 @@ export function BestiaryStats({ monster }: { monster: MonsterDefinition }) {
   const defenseRows = rows.filter((row) => row.group === 'defense')
   const resistanceRows = rows.filter((row) => row.group === 'resistance')
   const hasImmunities = (monster.damageImmunities?.length ?? 0) > 0 || (monster.statusImmunities?.length ?? 0) > 0 || (monster.statusTagImmunities?.length ?? 0) > 0
+  const affinity = getMonsterPrimaryAffinity(monster)
+  const weakness = getElementCounter(affinity)
+  const resistance = getElementResistance(affinity)
   return <>
+    <section className="bestiary-section"><span className="bestiary-section-label">ELEMENTAL PROFILE</span><div className="bestiary-elemental-profile"><div><small>PRIMARY AFFINITY</small><strong style={{ color: `var(--semantic-damage-${affinity})` }}>{ELEMENT_DEFINITIONS[affinity].name}</strong></div><div><small>WEAK TO</small><strong>{weakness ? ELEMENT_DEFINITIONS[weakness].name : 'None'}</strong></div><div><small>RESISTS</small><strong>{resistance ? ELEMENT_DEFINITIONS[resistance].name : 'None'}</strong></div><div><small>BASIC ATTACK</small><strong>{ELEMENT_DEFINITIONS[monster.basicAttackElement ?? affinity].name}</strong></div></div></section>
     <section className="bestiary-section"><span className="bestiary-section-label">COMBAT STATS</span><EnemyCombatStatList rows={combatRows} className="bestiary-stat-grid" rowClassName="bestiary-stat-row" /></section>
     <section className="bestiary-section"><span className="bestiary-section-label">DEFENCES</span><div className="bestiary-defence-stack">
       <EnemyCombatStatList rows={defenseRows} className="bestiary-defence-core-grid" rowClassName="bestiary-defence-row bestiary-defence-stat-row" />

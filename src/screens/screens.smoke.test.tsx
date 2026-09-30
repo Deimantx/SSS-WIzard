@@ -145,7 +145,7 @@ describe('screen smoke coverage', () => {
     await user.click(screen.getByRole('tab', { name: 'SCHOOLS' }))
     expect(screen.getByRole('heading', { name: 'Magic schools' })).toBeTruthy()
     for (const label of ['Set all to Level 2', 'Set all to Level 8', 'Set all to Level 16', 'Set all to Level 20', 'Set cap to 20', 'Set cap to 40', 'Unlock all Rank-I spells', 'Reset spell cooldowns']) expect(screen.getByRole('button', { name: label })).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: 'Unlock Rank I' })).toHaveLength(32)
+    expect(screen.getAllByRole('button', { name: 'Unlock Rank I' })).toHaveLength(36)
     await user.click(screen.getByRole('button', { name: 'Player' }))
     await user.click(screen.getByRole('tab', { name: 'Character' }))
     expect(screen.getByRole('heading', { name: 'Player values & live controls' })).toBeTruthy()

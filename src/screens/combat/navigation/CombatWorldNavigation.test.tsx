@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '../../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../../store/initialState'
@@ -9,7 +9,17 @@ import { CombatWorldNavigation } from './CombatWorldNavigation'
 const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => true)) => render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onHuntTarget={onHuntTarget} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
 describe('CombatWorldNavigation', () => {
-  beforeEach(() => { useGameStore.setState(createInitialState()); setNavigationIntent({ combatDungeonId: null, combatMonsterId: null }) })
+  beforeEach(() => { const state = createInitialState(); state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true; useGameStore.setState(state); setNavigationIntent({ combatDungeonId: null, combatMonsterId: null }) })
+
+  it('locks fresh Whispering Woods entry until an elemental tutorial boss is defeated', () => {
+    const state = createInitialState()
+    useGameStore.setState(state)
+    expect(useGameStore.getState().combat.active).toBe(false)
+    useGameStore.getState().enterDungeon('whispering-woods')
+    expect(useGameStore.getState().combat.active).toBe(false)
+    const notifications = useGameStore.getState().notifications
+    expect(notifications[notifications.length - 1]?.text).toContain('Defeat any elemental tutorial boss')
+  })
 
   it('shows the type-based location filters with Combat Zones selected by default', () => {
     renderNavigation()
@@ -50,6 +60,40 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByRole('button', { name: /Galecrest Heights, COMBAT ZONE/ })).toBeNull()
     fireEvent.click(fireFilter)
     expect(screen.getByRole('button', { name: /Galecrest Heights, COMBAT ZONE/ })).toBeTruthy()
+  })
+
+  it('moves a mismatched selected location to the first unlocked match', () => {
+    const state = createInitialState()
+    state.progress.startingSchoolId = 'fire'
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+    useGameStore.setState(state)
+    const onSelectLocation = vi.fn()
+    render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+    expect(screen.getByRole('button', { name: /Stonewake Hollow/ }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Fire' }))
+    expect(screen.getByRole('button', { name: /Whispering Woods/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(onSelectLocation).toHaveBeenLastCalledWith('whispering-woods')
+  })
+
+  it('clears an incompatible element filter for direct navigation intent', async () => {
+    const state = createInitialState()
+    state.progress.startingSchoolId = 'earth'
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    useGameStore.setState(state)
+    renderNavigation()
+    fireEvent.click(screen.getByRole('button', { name: 'Fire' }))
+    expect(screen.getByRole('button', { name: 'Fire' }).getAttribute('aria-pressed')).toBe('true')
+    setNavigationIntent({ combatDungeonId: 'hunters-ground', combatMonsterId: null })
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Gloamridge' })).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'Fire' }).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('shows a clean empty state without a hidden location inspector when no filter matches', () => {
+    renderNavigation()
+    fireEvent.click(screen.getByRole('button', { name: 'Arcane' }))
+    expect(screen.getByText('NO MATCHING LOCATIONS')).toBeTruthy()
+    expect(screen.queryByRole('complementary', { name: 'Location details' })).toBeNull()
   })
 
   it('renders targeted Whispering Woods cards without legacy inspector metrics', () => {
@@ -184,6 +228,7 @@ describe('CombatWorldNavigation', () => {
   })
   it('distinguishes the selected target from the target currently being hunted', () => {
     const state = createInitialState()
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.targetEnemyId = 'cinder-moth'
@@ -387,6 +432,7 @@ describe('CombatWorldNavigation', () => {
 
   it('exposes the canonical manual Boss Engage action in the active Zone Boss section', () => {
     const state = createInitialState()
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'

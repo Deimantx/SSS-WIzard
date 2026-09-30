@@ -14,7 +14,8 @@ import type {
 } from "../../types";
 import { periodicDamageStatus } from "../statuses/periodicDamageStatus";
 import type { ResonanceYield } from "../resonance/resonance";
-import { isElementId, type ElementId } from "../elements/elements";
+import { ELEMENT_IDS, isElementId, type ElementId } from "../elements/elements";
+import { DEFENSE_K, MAX_DEFENSE_REDUCTION } from "../../core/balance/combatStats";
 
 export type MonsterPortraitIcon =
   | "wisp"
@@ -83,6 +84,44 @@ export const getMonsterPrimaryAffinity = (monster: Pick<MonsterDefinition, 'prim
 
 export const getMonsterBasicAttackElement = (monster: Pick<MonsterDefinition, 'primaryAffinity' | 'basicAttackElement' | 'resonanceYield'>): ElementId =>
   monster.basicAttackElement ?? getMonsterPrimaryAffinity(monster)
+
+export const getMonsterDamageProfile = (monster: MonsterDefinition): ElementId[] => {
+  const used = new Set<ElementId>([getMonsterBasicAttackElement(monster)])
+  const scan = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return
+    if (Array.isArray(value)) { value.forEach(scan); return }
+    const record = value as Record<string, unknown>
+    if (isElementId(record.damageType)) used.add(record.damageType)
+    Object.values(record).forEach(scan)
+  }
+  scan(monster.actions)
+  return ELEMENT_IDS.filter((element) => used.has(element))
+}
+
+/** Applies authored Act 0 Combat V2 identity and derives Basic damage from a target Power. */
+export const applyCombatV2Profile = (monster: MonsterDefinition, primaryAffinity: ElementId, targetPower: number, legacyPhysicalElement: ElementId = primaryAffinity): MonsterDefinition => {
+  const convert = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return
+    if (Array.isArray(value)) { value.forEach(convert); return }
+    const record = value as Record<string, unknown>
+    if (record.damageType === 'physical') record.damageType = legacyPhysicalElement
+    if (Array.isArray(record.tags) && record.tags.includes('physical')) record.tags = [...new Set([...record.tags.filter((tag) => tag !== 'physical'), legacyPhysicalElement])]
+    if (record.resistances && typeof record.resistances === 'object' && 'physical' in record.resistances) {
+      const resistances = record.resistances as Record<string, unknown>
+      delete resistances.physical
+    }
+    Object.values(record).forEach(convert)
+  }
+  convert(monster)
+  // Preserve authored durability and cadence; tune only the normal hit to land
+  // in the requested Power band under the canonical effective-health formula.
+  const defenseRating = Math.max(0, monster.defense ?? 0)
+  const defenseReduction = Math.min(MAX_DEFENSE_REDUCTION, defenseRating / (defenseRating + DEFENSE_K))
+  const effectiveHealth = monster.maxHealth / Math.max(0.01, 1 - defenseReduction)
+  const attackSeconds = Math.max(0.1, monster.basicAttackTimeMs / 1000)
+  const basicAttackDamage = (targetPower / 10) ** 2 * attackSeconds / effectiveHealth
+  return { ...monster, primaryAffinity, basicAttackElement: primaryAffinity, basicAttackDamage }
+}
 
 export const basic = (id: string): ActionStep => ({ id, type: "basic" });
 export const action = (id: string, actionId: string): ActionStep => ({

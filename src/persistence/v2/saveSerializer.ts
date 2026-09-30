@@ -1,6 +1,7 @@
 import type { GameState } from '../../game/types'
 import { PERSISTED_COMBAT_FIELDS_V1, type PersistedCombatStateV1, type PersistedGameStateV1 } from './persistedGameState'
 import { validatePersistedGameStateV1 } from './saveSchema'
+import { SAVE_VERSION } from '../../store/initialState'
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
@@ -10,6 +11,7 @@ export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSaved
   activities.transmutation = { jobs: clone(state.activities.transmutation.jobs) }
   const document: PersistedGameStateV1 = {
     schemaVersion: 2,
+    contentVersion: SAVE_VERSION,
     savedAt,
     player: {
       health: state.player.health,

@@ -52,6 +52,9 @@
 .bestiary-elemental-profile > div { display: grid; gap: 4px; min-width: 0; padding: 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); }
 .bestiary-elemental-profile small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); letter-spacing: .04em; }
 .bestiary-elemental-profile strong { color: var(--ui-text-soft); font: var(--text-xs) var(--font-mono); }
+.bestiary-damage-profile > span { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.bestiary-damage-profile > span > .game-tooltip-trigger { display: inline-flex; align-items: center; gap: 4px; }
+.bestiary-damage-profile > span > .game-tooltip-trigger > span { display: inline-flex; align-items: center; gap: 4px; color: inherit; font: var(--text-xs) var(--font-mono); }
 .bestiary-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .bestiary-stat-grid > div { display: grid; gap: 4px; min-width: 0; padding: 8px; border-radius: 6px; background: color-mix(in srgb, var(--ui-panel-strong) 70%, transparent); }
 .bestiary-stat-grid span { color: var(--ui-text-muted); font: .55rem var(--font-mono); letter-spacing: .04em; }
@@ -182,6 +185,9 @@
   justify-content: space-between;
   gap: 8px;
 }
+.bestiary-ability-card > div:first-child > strong { flex: 1; min-width: 0; }
+.bestiary-ability-damage-types { display: inline-flex; align-items: center; gap: 4px; }
+.bestiary-ability-damage-types > span { display: inline-flex; align-items: center; }
 .bestiary-ability-card strong {
   overflow: hidden;
   color: var(--ui-text);

@@ -27,7 +27,7 @@ describe('EnemyPatternRail', () => {
     const tooltip = await screen.findByRole('tooltip')
     expect(tooltip.textContent).toContain('Root Crush')
     expect(tooltip.textContent).toContain('ACTION TIME')
-    expect(tooltip.textContent).toContain('Physical Damage')
+    expect(tooltip.textContent).toContain('Earth Damage')
     expect(tooltip.textContent).toContain('Target: Player')
   })
 

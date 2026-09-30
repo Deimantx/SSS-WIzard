@@ -9,7 +9,9 @@ import { createCombatTestState } from './systems/combat/testCombatState'
 const resetCombatGame = () => {
   const game = useGameStore.getState()
   game.resetSave()
-  useGameStore.setState(createCombatTestState())
+  const state = createCombatTestState()
+  state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+  useGameStore.setState(state)
   return useGameStore.getState()
 }
 

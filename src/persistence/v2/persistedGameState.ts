@@ -115,6 +115,7 @@ export const PERSISTED_COMBAT_FIELDS_V1 = [
 /** Purpose-built V2 document. Runtime UI, debug state, and notifications have no fields here. */
 export interface PersistedGameStateV1 {
   schemaVersion: 2
+  contentVersion?: number
   savedAt: number
   player: Pick<GameState['player'], 'health' | 'mana' | 'baseMaxHealth' | 'baseMaxMana' | 'healthRegenTimerMs'>
   schools: GameState['schools']

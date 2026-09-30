@@ -25,7 +25,7 @@ describe('scaled enemy action output', () => {
     const effect = MONSTERS['forest-heart'].actions['heart-pulse'].effects[0]
     const magnitude = 'magnitude' in effect ? effect.magnitude : effect.type === 'deal-damage' ? effect.components[0]?.magnitude : undefined
     if (!magnitude) throw new Error('Expected Heart Pulse damage magnitude')
-    expect(resolveMagnitude(state, magnitude, source, 'player')).toBe(36)
+    expect(resolveMagnitude(state, magnitude, source, 'player')).toBeCloseTo(MONSTERS['forest-heart'].basicAttackDamage * 1.2)
 
     const original = MONSTERS['forest-heart'].basicAttackDamage
     try {
@@ -66,12 +66,13 @@ describe('scaled enemy action output', () => {
     expect(forceResolveEnemyAction(state, 'rending-claws', executeCombatEffects)).toBe(true)
     const bleeding = state.combat.playerStatuses.find((status) => status.statusId === 'bleeding')
     const tick = bleeding?.periodicEffects?.[0]
-    expect(tick).toMatchObject({ components: [{ magnitude: { type: 'flat', value: 7.6125 } }] })
+    const expectedTick = MONSTERS['razorclaw-lynx'].basicAttackDamage * 1.45 / 4
+    expect(tick).toMatchObject({ components: [{ magnitude: { type: 'flat', value: expectedTick } }] })
 
     const original = MONSTERS['razorclaw-lynx'].basicAttackDamage
     try {
       MONSTERS['razorclaw-lynx'].basicAttackDamage = 40
-      expect(bleeding?.periodicEffects?.[0]).toMatchObject({ components: [{ magnitude: { type: 'flat', value: 7.6125 } }] })
+      expect(bleeding?.periodicEffects?.[0]).toMatchObject({ components: [{ magnitude: { type: 'flat', value: expectedTick } }] })
     } finally {
       MONSTERS['razorclaw-lynx'].basicAttackDamage = original
     }

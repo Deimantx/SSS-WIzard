@@ -12,6 +12,7 @@ import {
   validateCombatTriggerRule,
 } from "../../systems/combat/combatEffectValidation";
 import { ACT1_TRAIT_DEFINITIONS } from "./act1Traits";
+import { ACT0_TUTORIAL_TRAITS } from './act0TutorialTraits';
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: "gain-barrier",
@@ -179,17 +180,6 @@ const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
       },
     ],
   },
-  "restless-skeleton-brittle-bones": {
-    id: "restless-skeleton-brittle-bones",
-    name: "Brittle Bones",
-    description: "Physical damage is reduced by 25%.",
-  },
-  "grave-wraith-ethereal-form": {
-    id: "grave-wraith-ethereal-form",
-    name: "Ethereal Form",
-    description:
-      "Physical damage is reduced by 50%; Fire, Water, Earth, and Air damage are increased by 25%.",
-  },
   "fallen-acolyte-grave-channeling": {
     id: "fallen-acolyte-grave-channeling",
     name: "Grave Channeling",
@@ -255,6 +245,7 @@ const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
 
 export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
   ...ACT0_TRAIT_DEFINITIONS,
+  ...ACT0_TUTORIAL_TRAITS,
   ...ACT1_TRAIT_DEFINITIONS,
 } as Record<TraitId, TraitDefinition>;
 

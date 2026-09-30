@@ -16,7 +16,7 @@ describe('BestiaryStats', () => {
     expect(combatLabels).toEqual(['Max Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
     expect(combat?.textContent).not.toContain('Defense')
     expect(combat?.textContent).not.toContain('Damage Reduction')
-    expect(defenceLabels).toEqual(['Defense', 'Damage Reduction', 'Fire', 'Water', 'Earth', 'Air'])
+    expect(defenceLabels).toEqual(['Defense', 'Damage Reduction'])
     expect(defences?.querySelector('.bestiary-defence-core-grid')?.children).toHaveLength(2)
   })
 
@@ -25,14 +25,16 @@ describe('BestiaryStats', () => {
     const { container } = render(<TooltipProvider><BestiaryStats monster={monster} /></TooltipProvider>)
     const defences = [...container.querySelectorAll('.bestiary-section')].find((section) => section.textContent?.includes('DEFENCES'))
     const labels = [...(defences?.querySelectorAll('.bestiary-defence-stat-row') ?? [])].map((row) => row.querySelector('span')?.textContent)
-    expect(labels).toEqual(['Defense', 'Damage Reduction', 'Block Chance', 'Fire', 'Water', 'Earth', 'Air'])
+    expect(labels).toEqual(['Defense', 'Damage Reduction', 'Block Chance'])
   })
 
   it('shows elemental affinity, weakness, resistance, and basic attack identity', () => {
-    const { container } = render(<TooltipProvider><BestiaryStats monster={MONSTERS['pyre-guardian']} /></TooltipProvider>)
+    const { container } = render(<TooltipProvider><BestiaryStats monster={MONSTERS['archmage-edrin-shade']} /></TooltipProvider>)
     const profile = [...container.querySelectorAll('.bestiary-section')].find((section) => section.textContent?.includes('ELEMENTAL PROFILE'))
     expect(profile?.textContent).toContain('Fire')
-    expect(profile?.textContent).toContain('Earth')
+    expect(profile?.textContent).toContain('Arcane')
     expect(profile?.textContent).toContain('Water')
+    expect(profile?.textContent).toContain('DAMAGE PROFILE')
+    expect(profile?.textContent).toContain('Arcane')
   })
 })

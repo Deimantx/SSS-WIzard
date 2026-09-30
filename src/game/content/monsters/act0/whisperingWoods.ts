@@ -11,6 +11,7 @@ import {
   scaledDot,
   scaledHeal,
   sourceCurrentBarrierPercent,
+  applyCombatV2Profile,
   type MonsterDefinition,
 } from "../monsterTypes";
 
@@ -471,6 +472,16 @@ export const WHISPERING_WOODS_MONSTERS = {
     resonanceYield: { earth: 80 },
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;
+
+const whisperingPowerProfiles = {
+  'forest-wisp': [300, 'air'], thornling: [340, 'earth'], 'dewbound-sprite': [380, 'water'],
+  'cinder-moth': [420, 'fire'], 'stone-root': [460, 'earth'], 'grove-sentinel': [520, 'earth'],
+  'tempest-stag': [600, 'air'], 'forest-heart': [850, 'earth'],
+} as const;
+for (const [id, [power, affinity]] of Object.entries(whisperingPowerProfiles) as Array<[keyof typeof whisperingPowerProfiles, readonly [number, import('../../elements/elements').ElementId]]>) {
+  const monster = WHISPERING_WOODS_MONSTERS[id]
+  if (monster) (WHISPERING_WOODS_MONSTERS as Partial<Record<MonsterId, MonsterDefinition>>)[id] = applyCombatV2Profile(monster, affinity, power)
+}
 
 export const WHISPERING_WOODS_MONSTER_IDS = [
   "forest-wisp",

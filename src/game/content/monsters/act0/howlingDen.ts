@@ -9,6 +9,7 @@ import {
   scaledDot,
   scaledMultiDamage,
   type MonsterDefinition,
+  applyCombatV2Profile,
 } from "../monsterTypes";
 
 export const HOWLING_DEN_MONSTERS = {
@@ -139,7 +140,7 @@ export const HOWLING_DEN_MONSTERS = {
             target: "opponent",
             components: [
               {
-                damageType: "physical",
+                damageType: "air",
                 magnitude: { type: "source-basic-damage-percent", value: 0.65 },
               },
               {
@@ -169,7 +170,7 @@ export const HOWLING_DEN_MONSTERS = {
         effects: [
           scaledMultiDamage(
             [
-              { damageType: "physical", coefficient: 0.9 },
+              { damageType: "air", coefficient: 0.9 },
               { damageType: "arcane", coefficient: 0.6 },
             ],
             ["direct"],
@@ -214,7 +215,7 @@ export const HOWLING_DEN_MONSTERS = {
         id: "tusk-charge",
         name: "Tusk Charge",
         actionTimeMs: 2300,
-        description: "A brutal charge deals Physical damage and delays the Wizard's current action.",
+        description: "A brutal Earth charge delays the Wizard's current action.",
         effects: [scaledDirectDamage("physical", 1.45), delayCurrentAction(500)],
         tags: ["special", "physical", "melee", "control", "direct"],
       },
@@ -262,9 +263,9 @@ export const HOWLING_DEN_MONSTERS = {
         id: "blood-trail",
         name: "Blood Trail",
         actionTimeMs: 1800,
-        description: "Physical damage opens a Bleeding wound.",
-        effects: [scaledDirectDamage("physical", 0.9), scaledDot("bleeding", "physical", 1.2, 8000)],
-        tags: ["special", "physical", "melee", "debuff", "direct"],
+        description: "Fire damage opens a lingering wounded burn.",
+        effects: [scaledDirectDamage("fire", 0.9), scaledDot("burning", "fire", 1.2, 8000)],
+        tags: ["special", "fire", "melee", "debuff", "direct"],
       },
     },
     actionPatterns: {
@@ -294,7 +295,7 @@ export const HOWLING_DEN_MONSTERS = {
         id: "shadow-pounce",
         name: "Shadow Pounce",
         actionTimeMs: 1800,
-        description: "Physical damage leaves the Wizard Fragile.",
+        description: "An Arcane strike leaves the Wizard Fragile.",
         effects: [scaledDirectDamage("physical", 1.2), applyStatus("fragile", "opponent", 6000)],
         tags: ["special", "physical", "melee", "debuff", "direct"],
       },
@@ -337,7 +338,7 @@ export const HOWLING_DEN_MONSTERS = {
     ui: {
       portraitIcon: "bear",
       bestiary: {
-        roleTags: ["Physical", "Stacking Debuff", "Ramping Damage", "Control", "2 Phases"],
+        roleTags: ["Earth", "Arcane", "Stacking Debuff", "Ramping Damage", "Control", "2 Phases"],
         phaseLabels: { default: "Thick Hide", corrupted: "Corrupted" },
         phaseOrder: ["default", "corrupted"],
       },
@@ -362,7 +363,7 @@ export const HOWLING_DEN_MONSTERS = {
         actionTimeMs: 2500,
         description:
           "The Greatbear shatters the ground, disrupting the Wizard's current Spell cast.",
-        effects: [scaledDirectDamage("physical", 1.2), delayCurrentAction(1000)],
+        effects: [scaledDirectDamage("earth", 1.2), applyStatus("tremored", "opponent", 2200), delayCurrentAction(1000)],
         tags: ["special", "physical", "control"],
       },
       "corrupted-roar": {
@@ -380,7 +381,7 @@ export const HOWLING_DEN_MONSTERS = {
         id: "savage-rampage",
         name: "Savage Rampage",
         actionTimeMs: 3000,
-        description: "A heavy Physical strike empowered by Corruption.",
+        description: "A heavy Earth strike empowered by Corruption.",
         effects: [
           {
             type: "deal-damage",
@@ -394,6 +395,14 @@ export const HOWLING_DEN_MONSTERS = {
           applyStatus("corruption", "opponent", 30000, 1),
         ],
         tags: ["special", "physical", "melee", "debuff", "direct"],
+      },
+      "corrupting-maul": {
+        id: "corrupting-maul",
+        name: "Corrupting Maul",
+        actionTimeMs: 2800,
+        description: "Earth and Arcane impacts crash together as the corruption surges.",
+        effects: [scaledMultiDamage([{ damageType: "earth", coefficient: 0.9 }, { damageType: "arcane", coefficient: 0.7 }], ["special", "direct", "earth", "arcane"])],
+        tags: ["special", "earth", "arcane", "melee", "direct"],
       },
     },
     actionPatterns: {
@@ -416,7 +425,7 @@ export const HOWLING_DEN_MONSTERS = {
           basic("basic-1"),
           action("savage-rampage-step-1", "savage-rampage"),
           basic("basic-2"),
-          action("crushing-maul-step-2", "crushing-maul"),
+          action("corrupting-maul-step", "corrupting-maul"),
           action("savage-rampage-step-2", "savage-rampage"),
           basic("basic-3"),
         ],
@@ -426,3 +435,13 @@ export const HOWLING_DEN_MONSTERS = {
     loot: [],
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;
+
+const howlingPowerProfiles = {
+  'cavefang-wolf': [650, 'air'], 'razorclaw-lynx': [700, 'air'], 'corrupted-dire-wolf': [760, 'arcane'],
+  'bonehide-boar': [820, 'earth'], 'moonblind-jackal': [880, 'arcane'], 'den-stalker': [950, 'air'],
+  'corrupted-greatbear': [1300, 'earth'],
+} as const;
+for (const [id, [power, affinity]] of Object.entries(howlingPowerProfiles) as Array<[keyof typeof howlingPowerProfiles, readonly [number, import('../../elements/elements').ElementId]]>) {
+  const monster = HOWLING_DEN_MONSTERS[id]
+  if (monster) (HOWLING_DEN_MONSTERS as Partial<Record<MonsterId, MonsterDefinition>>)[id] = applyCombatV2Profile(monster, affinity, power)
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DUNGEON_ORDER, DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
-import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
+import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS, isCombatLocationUnlocked } from './worldNavigation'
 import { COMBAT_LOCATION_TYPE_METADATA } from './worldNavigationTypes'
 import { MONSTERS } from '../monsters'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../monsters/elementalTutorial'
@@ -30,9 +30,9 @@ describe('combat world navigation content', () => {
         expect(monster.primaryAffinity).toBe(element)
         expect(monster.basicAttackElement).toBe(element)
         expect(monster.resonanceYield).toEqual({ [element]: expect.any(Number) })
-        const powerTarget = [15, 20, 25, 35, 55][index]
-        expect(resolveEnemyPowerRating(id, 1)).toBeGreaterThanOrEqual(powerTarget - 2.5)
-        expect(resolveEnemyPowerRating(id, 1)).toBeLessThanOrEqual(powerTarget + 2.5)
+        const powerBand = [[95, 115], [125, 155], [170, 210], [230, 280], [400, 500]][index]
+        expect(resolveEnemyPowerRating(id, 1)).toBeGreaterThanOrEqual(powerBand[0])
+        expect(resolveEnemyPowerRating(id, 1)).toBeLessThanOrEqual(powerBand[1])
         for (const action of Object.values(monster.actions)) for (const effect of action.effects) if (effect.type === 'deal-damage') expect(effect.components.every((component) => component.damageType === element)).toBe(true)
       })
     }
@@ -56,6 +56,21 @@ describe('combat world navigation content', () => {
     Object.values(COMBAT_LOCATIONS).forEach((location) => {
       if (location.primaryElement) expect(location.elementsPresent).toEqual([location.primaryElement])
     })
+    for (const id of ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'] as const) expect(COMBAT_LOCATIONS[id].primaryElement).toBeUndefined()
+  })
+
+  it('gates First Frontier locations through historical boss evidence', () => {
+    const state = createInitialState()
+    expect(isCombatLocationUnlocked('whispering-woods', state.progress)).toBe(false)
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+    expect(isCombatLocationUnlocked('whispering-woods', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('howling-den', state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    expect(isCombatLocationUnlocked('howling-den', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('hunters-ground', state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    expect(isCombatLocationUnlocked('hunters-ground', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('abandoned-catacombs', state.progress)).toBe(true)
   })
 
   it('defines Hunting Ground as an explicit location type', () => {

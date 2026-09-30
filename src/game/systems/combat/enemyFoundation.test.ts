@@ -44,10 +44,10 @@ describe("Act 0 enemy combat foundation", () => {
 
     const beforeTicks = state.combat.enemyHp;
     for (let index = 0; index < 8; index += 1) tickStatuses(state, 1000, executeCombatEffects);
-    expect(state.combat.enemyHp - beforeTicks).toBeCloseTo(900 * 0.05 * 8);
+    expect(state.combat.enemyHp - beforeTicks).toBeCloseTo(MONSTERS['forest-heart'].maxHealth * 0.05 * 8);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
 
-    state.combat.enemyHp = 800;
+    state.combat.enemyHp = 400;
     damageEnemy(state, 500, "spell");
     expect(state.combat.enemyActionPatternId).toBe("overgrown");
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
@@ -59,8 +59,8 @@ describe("Act 0 enemy combat foundation", () => {
     state.combat.enemyHp = 450;
     clearCurrentEnemyAction(state);
     expect(forceResolveEnemyAction(state, "overgrowth", executeCombatEffects)).toBe(true);
-    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(900 * 0.12);
-    expect(state.combat.enemyHp).toBeCloseTo(450 + 900 * 0.1);
+    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(MONSTERS['forest-heart'].maxHealth * 0.12);
+    expect(state.combat.enemyHp).toBeCloseTo(450 + MONSTERS['forest-heart'].maxHealth * 0.1);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
   });
 
@@ -68,7 +68,7 @@ describe("Act 0 enemy combat foundation", () => {
     const state = stateWithEnemy("archmage-edrin-shade");
     state.combat.enemyHp = 3001;
     damageEnemy(state, 2, "spell");
-    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(3000);
+    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(MONSTERS['archmage-edrin-shade'].maxHealth * 0.5);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "unbound-power")).toBe(true);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(false);
     expect(state.combat.enemyActionPatternId).toBe("unbound-opening");
@@ -80,10 +80,12 @@ describe("Act 0 enemy combat foundation", () => {
     damageEnemy(state, 2, "spell");
     clearCurrentEnemyAction(state);
     expect(startNextEnemyAction(state, executeCombatEffects)).toBe(true);
+    expect(state.combat.enemyCurrentActionId).toBe("arcane-ward");
+    expect(resolveCurrentEnemyAction(state, executeCombatEffects)).toBe(true);
     expect(state.combat.enemyCurrentActionId).toBe("arcane-disruption");
     expect(resolveCurrentEnemyAction(state, executeCombatEffects)).toBe(true);
     expect(state.combat.enemyActionPatternId).toBe("unbound");
-    expect(state.combat.playerStatuses.find((status) => status.statusId === "arcane-disruption")?.remainingMs).toBe(600000);
+    expect(state.combat.playerStatuses.find((status) => status.statusId === "arcane-disruption")?.remainingMs).toBe(12000);
     executeCombatEffects(state, [{ type: "cleanse", target: "self", mode: "all" }], { actor: "player", kind: "system", sourceId: "test-cleanse" });
     expect(state.combat.playerStatuses.some((status) => status.statusId === "arcane-disruption")).toBe(false);
 
@@ -100,13 +102,13 @@ describe("Act 0 enemy combat foundation", () => {
     state.combat.enemyHp = 5000;
     state.player.maxHealth = 1000;
     state.player.health = 1000;
-    state.combat.playerBarrier = 50;
+    state.combat.playerBarrier = 5;
     const events: CombatEvent[] = [];
     const action = MONSTERS["archmage-edrin-shade"].actions["soul-drain"];
-    executeCombatEffects(state, action.effects, { actor: "enemy", kind: "action", sourceId: "soul-drain", tags: ["special", "arcane", "magic", "direct"] }, 0, { push: (event) => events.push(event) });
+    executeCombatEffects(state, action.effects, { actor: "enemy", kind: "action", sourceId: "soul-drain", sourceMonsterId: "archmage-edrin-shade", tags: ["special", "arcane", "magic", "direct"] }, 0, { push: (event) => events.push(event) });
     const damage = events.find((event) => event.damageComponents !== undefined);
     expect(damage?.healthDamage).toBeGreaterThan(0);
-    expect(damage?.barrierAbsorbed).toBe(50);
+    expect(damage?.barrierAbsorbed).toBe(5);
     expect(state.combat.enemyHp).toBeCloseTo(5000 + (damage?.healthDamage ?? 0));
     expect(state.player.health).toBeCloseTo(1000 - (damage?.healthDamage ?? 0));
   });
@@ -116,12 +118,12 @@ describe("Act 0 enemy combat foundation", () => {
     state.player.maxHealth = 100000;
     state.player.health = 100000;
     const action = MONSTERS["archmage-edrin-shade"].actions["final-incantation"];
-    const source: CombatSource = { actor: "enemy", kind: "action", sourceId: "final-incantation", tags: ["special", "arcane", "magic", "direct"] };
+    const source: CombatSource = { actor: "enemy", kind: "action", sourceId: "final-incantation", sourceMonsterId: "archmage-edrin-shade", tags: ["special", "arcane", "magic", "direct"] };
     for (let cast = 0; cast < 11; cast += 1) {
       const events: CombatEvent[] = [];
       executeCombatEffects(state, action.effects, source, 0, { push: (event) => events.push(event) });
       const damage = events.find((event) => event.damageComponents !== undefined);
-      expect(damage?.damageComponents?.[0]?.raw).toBeCloseTo(120 * (1 + cast * 0.1));
+      expect(damage?.damageComponents?.[0]?.raw).toBeCloseTo(MONSTERS['archmage-edrin-shade'].basicAttackDamage * 2 * (1 + cast * 0.1));
       expect(state.combat.enemyStatuses.find((status) => status.statusId === "final-incantation-empowerment")?.stacks).toBe(cast + 1);
     }
   });
@@ -191,7 +193,7 @@ describe("Act 0 enemy combat foundation", () => {
 
   it("switches the Greatbear to its deterministic phase pattern at 50% Health", () => {
     const state = stateWithEnemy("corrupted-greatbear");
-    state.combat.enemyHp = 1210;
+    state.combat.enemyHp = 1201;
     damageEnemy(state, 100, "spell");
     expect(state.combat.enemyActionPatternId).toBe("corrupted");
     expect(
@@ -286,7 +288,7 @@ describe("Act 0 enemy combat foundation", () => {
   it("scales Savage Rampage from capped player Corruption, then adds one stack", () => {
     const action = MONSTERS["corrupted-greatbear"].actions["savage-rampage"];
     expect(action.actionTimeMs).toBe(3000);
-    expect(action.effects[0]).toMatchObject({ type: "deal-damage", components: [{ damageType: "physical" }] });
+    expect(action.effects[0]).toMatchObject({ type: "deal-damage", components: [{ damageType: "earth" }] });
     const magnitude = (action.effects[0] as Extract<(typeof action.effects)[number], { type: "deal-damage" }>).components[0].magnitude;
     const source: CombatSource = { actor: "enemy", kind: "action", sourceId: "savage-rampage" };
     const expectedBase = MONSTERS["corrupted-greatbear"].basicAttackDamage * 2;

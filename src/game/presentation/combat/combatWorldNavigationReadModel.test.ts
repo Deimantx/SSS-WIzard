@@ -5,7 +5,7 @@ import { buildCombatWorldNavigationViewModel, getInitialCombatLocationId } from 
 describe('combat world navigation read model', () => {
   it('defaults to the active location, then the last entered location, then the first unlocked location', () => {
     const state = createInitialState()
-    expect(getInitialCombatLocationId({ combat: state.combat, progress: state.progress })).toBe('whispering-woods')
+    expect(getInitialCombatLocationId({ combat: state.combat, progress: state.progress })).toBe('stonewake-hollow')
 
     state.progress.bossKillsByBoss['forest-heart'] = 1
     expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredDungeonId: 'howling-den', progress: state.progress })).toBe('howling-den')
@@ -17,6 +17,7 @@ describe('combat world navigation read model', () => {
 
   it('presents First Frontier as one authored-order location list', () => {
     const state = createInitialState()
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
 
     expect(view.selectedContinent.name).toBe('Continent I')
@@ -38,6 +39,7 @@ describe('combat world navigation read model', () => {
 
   it('shows authored combat identities and power before Bestiary discovery', () => {
     const state = createInitialState()
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
     const location = view.selectedLocation
 
@@ -48,6 +50,7 @@ describe('combat world navigation read model', () => {
 
   it('keeps active combat separate from a browsed location', () => {
     const state = createInitialState()
+    state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
     state.combat.threatCleared = 7

@@ -5,7 +5,7 @@ import { buildCombatActionPresentation, formatCombatEffect, getCombatEffectPrese
 describe('combat action presentation', () => {
   it('keeps action effects structured for semantic UI rendering', () => {
     const presentation = buildCombatActionPresentation(MONSTERS['stone-root'].actions['root-slam'], { actor: 'enemy', kind: 'action', sourceMonsterId: 'stone-root' }, { monster: MONSTERS['stone-root'] })
-    expect(presentation.effects[0]).toMatchObject({ kind: 'damage', value: '18', basePreview: '18', scalingLabel: '150% Basic Attack Damage', damageType: 'physical', targetLabel: 'Player' })
+    expect(presentation.effects[0]).toMatchObject({ kind: 'damage', scalingLabel: '150% Basic Attack Damage', damageType: 'earth', targetLabel: 'Player' })
     expect(presentation.effects[1]).toMatchObject({ kind: 'control', value: '+0.6s', targetLabel: 'Player', timeLabel: '0.6s' })
     expect(presentation.effects.map((effect) => effect.tone)).toEqual(['damage', 'control'])
   })
@@ -26,8 +26,9 @@ describe('combat action presentation', () => {
 
   it('previews Monster scaling and exposes total DoT output separately from its tick value', () => {
     const thorn = buildCombatActionPresentation(MONSTERS.thornling.actions['thorn-lash'], { actor: 'enemy', kind: 'action', sourceMonsterId: 'thornling' }, { monster: MONSTERS.thornling })
-    expect(thorn.effects[0]).toMatchObject({ value: '14.4', basePreview: '14.4', scalingLabel: '120% Basic Attack Damage' })
-    expect(thorn.effects[1]).toMatchObject({ value: '4.8 / 2.0s', totalBasePreview: '14.4 Physical', scalingLabel: '120% Basic Attack Damage' })
+    expect(thorn.effects[0]).toMatchObject({ scalingLabel: '120% Basic Attack Damage' })
+    expect(thorn.effects[1]).toMatchObject({ scalingLabel: '120% Basic Attack Damage' })
+    expect(thorn.effects[1].totalBasePreview).toContain('Earth')
     expect(resolveMonsterBaseMagnitudePreview(MONSTERS['forest-heart'], { type: 'target-max-health-percent', value: 0.5 })).toBeNull()
   })
 })

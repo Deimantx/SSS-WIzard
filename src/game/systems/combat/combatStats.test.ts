@@ -79,7 +79,7 @@ describe('universal combat stats foundation', () => {
     const before = state.player.health
     expect(resolveCurrentEnemyAction(state, executeCombatEffects)).toBe(true)
     expect(state.player.health).toBeLessThan(before)
-    expect(getEnemyCombatStats(state).basicAttackDamage).toBe(10)
+    expect(getEnemyCombatStats(state).basicAttackDamage).toBeCloseTo(12.2727, 3)
   })
 
   it('consumes two RNG draws for a direct hit and none for a periodic hit', () => {

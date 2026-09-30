@@ -31,7 +31,7 @@ describe('Developer Scenario Lab', () => {
   it('registers the focused combat, progression, research, and production scenarios', () => {
     render(<DeveloperScenarios />)
     for (const label of [
-      'Fresh Start', 'Forest Heart Ready', 'Howling Den / Greatbear Ready',
+      'Fresh Start', 'Whispering Woods Unlocked', 'Howling Den Unlocked', 'Forest Heart Ready', 'Howling Den / Greatbear Ready', 'Abandoned Catacombs Fresh Run', 'Edrin — Unbound Phase',
       'Hunter’s Order — First Contract', 'Gloamridge — Active Contract', 'Nightglass Alpha — Master Quarry',
       'Arcane Guild — Early Progression', 'Arcane Guild — Advancement Test',
       'Research Stress Test', 'Transmutation Stress Test',
@@ -90,6 +90,14 @@ describe('Developer Scenario Lab', () => {
     expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
     fireEvent.click(buttonFor('Howling Den / Greatbear Ready'))
     expect(useGameStore.getState().combat.enemyId).toBe('corrupted-greatbear')
+    fireEvent.click(buttonFor('Howling Den Unlocked'))
+    expect(useGameStore.getState().combat.dungeonId).toBe('howling-den')
+    fireEvent.click(buttonFor('Abandoned Catacombs Fresh Run'))
+    expect(useGameStore.getState().combat.dungeonId).toBe('abandoned-catacombs')
+    expect(useGameStore.getState().combat.enemyId).toBe('restless-skeleton')
+    fireEvent.click(buttonFor('Edrin — Unbound Phase'))
+    expect(useGameStore.getState().combat.enemyId).toBe('archmage-edrin-shade')
+    expect(['unbound-opening', 'unbound']).toContain(useGameStore.getState().combat.enemyActionPatternId)
     fireEvent.click(buttonFor('Nightglass Alpha — Master Quarry'))
     expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'monster', monsterId: 'nightglass-alpha' })
     expect(getNavigationIntent()).toMatchObject({ combatDungeonId: 'hunters-ground', combatMonsterId: 'nightglass-alpha' })

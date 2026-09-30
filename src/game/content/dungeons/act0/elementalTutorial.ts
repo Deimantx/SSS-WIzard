@@ -1,6 +1,6 @@
 import type { DungeonDefinition } from '../dungeons'
 
-const tutorialDungeon = (id: DungeonDefinition['id'], name: string, description: string, monsterPool: DungeonDefinition['monsterPool'], boss: Exclude<DungeonDefinition['boss'], null>): DungeonDefinition => ({ id, name, monsterPool, boss, threatRequired: 95, encounterDelayMs: 2500, unlock: { type: 'always' }, ui: { description } })
+const tutorialDungeon = (id: DungeonDefinition['id'], name: string, description: string, monsterPool: DungeonDefinition['monsterPool'], boss: Exclude<DungeonDefinition['boss'], null>): DungeonDefinition => ({ id, name, monsterPool, boss, threatRequired: 600, encounterDelayMs: 2500, unlock: { type: 'always' }, ui: { description } })
 
 export const STONEWAKE_HOLLOW_DUNGEON = tutorialDungeon('stonewake-hollow', 'Stonewake Hollow', 'A quiet Earth frontier of patient stone, rising barriers, and slow heavy blows.', ['stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden'], 'heartstone-colossus')
 export const GALECREST_HEIGHTS_DUNGEON = tutorialDungeon('galecrest-heights', 'Galecrest Heights', 'A high Air frontier where quicksteps and cutting currents cross the ridge.', ['galecrest-zephyr-wisp', 'galecrest-gale-imp', 'galecrest-razorwing', 'galecrest-stormcaller-adept'], 'tempest-roc')

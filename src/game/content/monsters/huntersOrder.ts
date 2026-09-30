@@ -1,5 +1,5 @@
 import type { MonsterId } from '../../types'
-import { action, applyStatus, basic, delayCurrentAction, scaledDirectDamage, scaledDot, type MonsterDefinition } from './monsterTypes'
+import { action, applyStatus, basic, delayCurrentAction, scaledDirectDamage, scaledDot, type MonsterDefinition, applyCombatV2Profile } from './monsterTypes'
 
 type HunterMonsterConfig = { id: MonsterId; name: string; subtitle: string; health: number; damage: number; attackTime: number; defense: number; color: string; icon: NonNullable<MonsterDefinition['ui']>['portraitIcon']; lootItem: MonsterDefinition['loot'][number]['itemId']; lootChance: number; family: string; alignment: string; resonance: NonNullable<MonsterDefinition['resonanceYield']> }
 const target = (config: HunterMonsterConfig): MonsterDefinition => ({
@@ -71,6 +71,16 @@ export const HUNTERS_ORDER_MONSTERS: Partial<Record<MonsterId, MonsterDefinition
       default: { id: 'default', steps: [basic('basic-1'), action('shadow-mark-step', 'shadow-mark'), basic('basic-2'), action('alpha-pounce-step-1', 'alpha-pounce'), basic('basic-3'), basic('basic-4'), action('alpha-pounce-step-2', 'alpha-pounce')] },
     },
   },
+}
+
+const gloamridgeProfiles = {
+  'ashen-tracker': [850, 'fire'], 'gloamfang-stalker': [900, 'air'], 'runehorn-brute': [980, 'earth'],
+  'veilwing-harrier': [1050, 'air'], 'cinderback-mauler': [1150, 'fire'],
+  'gloomroot-hexer': [1250, 'earth'], 'nightglass-alpha': [1500, 'arcane'],
+} as const
+for (const [id, [power, affinity]] of Object.entries(gloamridgeProfiles) as Array<[keyof typeof gloamridgeProfiles, readonly [number, import('../elements/elements').ElementId]]>) {
+  const monster = HUNTERS_ORDER_MONSTERS[id]
+  if (monster) (HUNTERS_ORDER_MONSTERS as Partial<Record<MonsterId, MonsterDefinition>>)[id] = applyCombatV2Profile(monster, affinity, power)
 }
 
 export const HUNTER_EXCLUSIVE_MONSTER_IDS: readonly MonsterId[] = Object.values(HUNTERS_ORDER_MONSTERS).flatMap((monster) => monster?.hunter?.exclusive ? [monster.id] : [])

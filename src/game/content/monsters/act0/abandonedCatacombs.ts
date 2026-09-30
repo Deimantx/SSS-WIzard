@@ -10,6 +10,7 @@ import {
   sourceStatusStackScaled,
   applyStatus,
   type MonsterDefinition,
+  applyCombatV2Profile,
 } from "../monsterTypes";
 
 export const ABANDONED_CATACOMBS_MONSTERS = {
@@ -24,7 +25,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     defense: 30,
     color: "#c9c3ae",
     ui: { portraitIcon: "skeleton" },
-    traitIds: ["restless-skeleton-brittle-bones"],
+    traitIds: [],
     resistances: { physical: 0.25 },
     actions: {
       "bone-cleaver": {
@@ -72,7 +73,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     defense: 20,
     color: "#8d9dc9",
     ui: { portraitIcon: "ghost" },
-    traitIds: ["grave-wraith-ethereal-form"],
+    traitIds: [],
     resistances: {
       physical: 0.5,
       fire: -0.25,
@@ -285,7 +286,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
         description: "Edrin fractures the Wizard's flow of Mana and recovery.",
         effects: [
           scaledDirectDamage("arcane", 0.8),
-          applyStatus("arcane-disruption", "opponent", 600000),
+          applyStatus("arcane-disruption", "opponent", 12000),
           { type: "set-action-pattern", target: "self", patternId: "unbound" },
         ],
         tags: ["special", "arcane", "magic", "debuff", "direct"],
@@ -306,11 +307,20 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
         ],
         tags: ["special", "arcane", "magic", "direct"],
       },
+      "arcane-ward": {
+        id: "arcane-ward",
+        name: "Arcane Ward",
+        actionTimeMs: 1800,
+        description: "Raises an Arcane Barrier equal to 15% of maximum Health.",
+        effects: [scaledBarrier(0.15)],
+        tags: ["special", "barrier", "arcane"],
+      },
     },
     actionPatterns: {
       default: {
         id: "default",
         steps: [
+          action("arcane-ward-step", "arcane-ward"),
           action("gravefire-step", "gravefire"),
           basic("basic-1"),
           action("frostbind-step", "frostbind"),
@@ -325,7 +335,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       },
       "unbound-opening": {
         id: "unbound-opening",
-        steps: [action("arcane-disruption-step", "arcane-disruption")],
+        steps: [action("arcane-ward-step", "arcane-ward"), action("arcane-disruption-step", "arcane-disruption")],
       },
       unbound: {
         id: "unbound",
@@ -345,3 +355,15 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     loot: [],
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;
+
+const catacombsPowerProfiles = {
+  'restless-skeleton': [1100, 'earth'], 'grave-wraith': [1250, 'water'],
+  'fallen-acolyte': [1400, 'arcane'], 'archmage-edrin-shade': [2200, 'arcane'],
+} as const;
+for (const [id, [power, affinity]] of Object.entries(catacombsPowerProfiles) as Array<[keyof typeof catacombsPowerProfiles, readonly [number, import('../../elements/elements').ElementId]]>) {
+  const monster = ABANDONED_CATACOMBS_MONSTERS[id]
+  if (monster) (ABANDONED_CATACOMBS_MONSTERS as Partial<Record<MonsterId, MonsterDefinition>>)[id] = {
+    ...applyCombatV2Profile(monster, affinity, power),
+    resistances: undefined,
+  }
+}

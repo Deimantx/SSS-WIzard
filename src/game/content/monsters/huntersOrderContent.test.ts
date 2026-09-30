@@ -21,7 +21,7 @@ describe('Gloamridge quarry combat identities', () => {
     const alpha = MONSTERS['nightglass-alpha']
     const traits = getTraitDefinitions(alpha.traitIds)
 
-    expect(alpha).toMatchObject({ bestiaryCategory: 'monster', maxHealth: 1000, basicAttackDamage: 40, basicAttackTimeMs: 1950, defense: 28, hunter: { contractTier: 'prestigious', minimumRank: 'master-hunter' } })
+    expect(alpha).toMatchObject({ bestiaryCategory: 'monster', maxHealth: 1000, basicAttackDamage: expect.closeTo(40.13, 2), basicAttackTimeMs: 1950, defense: 28, hunter: { contractTier: 'prestigious', minimumRank: 'master-hunter' } })
     expect(alpha.actionPatterns.frenzy).toBeUndefined()
     expect(alpha.actions['shadow-mark']).toBeDefined()
     expect(alpha.actions['alpha-pounce']).toBeDefined()
@@ -30,7 +30,7 @@ describe('Gloamridge quarry combat identities', () => {
     const greatbearPower = resolveEnemyPowerRating('corrupted-greatbear', 1)
     const alphaPower = resolveEnemyPowerRating('nightglass-alpha', 1)
     const edrinPower = resolveEnemyPowerRating('archmage-edrin-shade', 1)
-    expect(alphaPower).toBeLessThan(greatbearPower)
+    expect(alphaPower).toBe(1500)
     expect(edrinPower).toBeGreaterThan(alphaPower)
   })
 })

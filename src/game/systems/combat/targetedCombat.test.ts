@@ -14,6 +14,7 @@ const prepare = () => {
   state.progress.spellRanks['fire-bolt'] = 1
   state.spellPresets.presets = [{ id: 'targeted-test', name: 'Targeted Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
   state.spellPresets.selectedPresetId = 'targeted-test'
+  state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
   state.combat.active = true
   state.combat.dungeonId = 'whispering-woods'
   return state

@@ -1,7 +1,7 @@
 import type { TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
 
 const ACT1_TRAIT_IDS: TraitId[] = [
-  'drowned-acolyte-devotion', 'reliquary-slime-engulf', 'mist-wraith-fade', 'rune-leech-siphon', 'cinder-hound-flameblood', 'ash-cultist-fan', 'fire-elemental-emberheart', 'lava-eel-molten-hide', 'thorn-maw-venom', 'rootbound-stalker-ambush', 'briar-sprite-bloom', 'moss-carapace-regrowth', 'remnant-marauder-pressure', 'arcane-binder-binding', 'broken-construct-ward', 'rift-archer-precision', 'graveglass-shade-cursed', 'bone-shardling-brittle', 'silent-mourner-fade', 'crypt-guardian-ward', 'volt-wisp-static', 'static-armor-ward', 'gale-scribe-acceleration', 'charged-seeker-twin-arc', 'starbound-eye-gaze', 'astral-husk-weight', 'orbiting-fragment-ward', 'lenskeeper-disruption', 'meridian-warden-ward', 'fractured-channeler-split', 'arc-surge-vulnerability', 'linebreaker-disruption', 'name-eater-silence', 'bound-echo-repetition', 'hollow-liturgist-curse', 'whisper-archivist-erasure', 'sigil-guardian-ward', 'black-seal-parasite-corruption', 'vault-devourer-regrowth', 'inkbound-specter-curse', 'gatebound-remnant-cleave', 'black-rift-stalker-corruption', 'portalbound-acolyte-mute', 'sealbreaker-construct-ward', 'tutorial-living-stone', 'tutorial-restorative-tide',
+  'drowned-acolyte-devotion', 'reliquary-slime-engulf', 'mist-wraith-fade', 'rune-leech-siphon', 'cinder-hound-flameblood', 'ash-cultist-fan', 'fire-elemental-emberheart', 'lava-eel-molten-hide', 'thorn-maw-venom', 'rootbound-stalker-ambush', 'briar-sprite-bloom', 'moss-carapace-regrowth', 'remnant-marauder-pressure', 'arcane-binder-binding', 'broken-construct-ward', 'rift-archer-precision', 'graveglass-shade-cursed', 'bone-shardling-brittle', 'silent-mourner-fade', 'crypt-guardian-ward', 'volt-wisp-static', 'static-armor-ward', 'gale-scribe-acceleration', 'charged-seeker-twin-arc', 'starbound-eye-gaze', 'astral-husk-weight', 'orbiting-fragment-ward', 'lenskeeper-disruption', 'meridian-warden-ward', 'fractured-channeler-split', 'arc-surge-vulnerability', 'linebreaker-disruption', 'name-eater-silence', 'bound-echo-repetition', 'hollow-liturgist-curse', 'whisper-archivist-erasure', 'sigil-guardian-ward', 'black-seal-parasite-corruption', 'vault-devourer-regrowth', 'inkbound-specter-curse', 'gatebound-remnant-cleave', 'black-rift-stalker-corruption', 'portalbound-acolyte-mute', 'sealbreaker-construct-ward',
 ]
 
 const genericAct1Traits: Record<string, TraitDefinition> = Object.fromEntries(ACT1_TRAIT_IDS.map((id) => [id, {
@@ -21,13 +21,5 @@ export const ACT1_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
   'silent-mourner-fade': {
     id: 'silent-mourner-fade', name: 'Last Mourning', description: 'At 35% health, gains Spectral Fade once.',
     rules: [{ id: 'silent-mourner-fade-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 35 }, effects: [{ type: 'apply-status', target: 'self', statusId: 'spectral-fade' }], oncePerEncounter: true }],
-  },
-  'tutorial-living-stone': {
-    id: 'tutorial-living-stone', name: 'Living Stone', description: 'At 60% Health, gains one Barrier equal to 25% of its maximum Health.',
-    rules: [{ id: 'tutorial-living-stone-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 60 }, effects: [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.25 }, mode: 'replace-if-stronger', durationMs: null, tags: ['barrier'] }], oncePerEncounter: true }],
-  },
-  'tutorial-restorative-tide': {
-    id: 'tutorial-restorative-tide', name: 'Restorative Tide', description: 'At 55% Health, restores 15% of its maximum Health once.',
-    rules: [{ id: 'tutorial-restorative-tide-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 55 }, effects: [{ type: 'heal', target: 'self', magnitude: { type: 'source-max-health-percent', value: 0.15 }, tags: ['heal'] }], oncePerEncounter: true }],
   },
 }

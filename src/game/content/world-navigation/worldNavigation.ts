@@ -98,7 +98,9 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
   },
   'whispering-woods': {
     ...dungeonLocation('first-frontier', 'whispering-woods', 'combat-zone', 5),
+    name: 'Whispering Woods', description: 'A mixed-target forest where elemental affinities shape each encounter.', elementsPresent: ['air', 'earth', 'water', 'fire'],
     encounterMode: 'targeted',
+    unlock: { type: 'any', conditions: [{ type: 'chronicle-event', eventId: 'first-elemental-tutorial-boss-defeated' }, { type: 'boss-kill', bossId: 'forest-heart', count: 1 }] },
     targetMetadata: {
       'forest-wisp': { difficulty: 'easy', order: 1 },
       thornling: { difficulty: 'easy', order: 2 },
@@ -111,8 +113,10 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
   },
   'howling-den': {
     ...dungeonLocation('first-frontier', 'howling-den', 'elite-zone', 6),
+    name: 'Howling Den', description: 'An elite hunting ground where every normal foe gains Haste once at half Health.', elementsPresent: ['air', 'arcane', 'earth', 'fire'],
     encounterMode: 'targeted',
     zoneAffixId: 'frenzied',
+    unlock: { type: 'boss-kill', bossId: 'forest-heart', count: 1 },
     targetMetadata: {
       'cavefang-wolf': { difficulty: 'standard', order: 1 },
       'razorclaw-lynx': { difficulty: 'standard', order: 2 },
@@ -122,10 +126,12 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       'den-stalker': { difficulty: 'apex', order: 6 },
     },
   },
-  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 7), encounterMode: 'targeted', targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 }, 'veilwing-harrier': { difficulty: 'standard', order: 4 }, 'cinderback-mauler': { difficulty: 'hard', order: 5 }, 'gloomroot-hexer': { difficulty: 'hard', order: 6 }, 'nightglass-alpha': { difficulty: 'hard', order: 7 } } },
+  'hunters-ground': { ...dungeonLocation('first-frontier', 'hunters-ground', 'hunting-ground', 7), name: 'Gloamridge', description: 'A bossless ridge of deterministic Hunter’s Order quarry contracts.', elementsPresent: ['air', 'arcane', 'earth', 'fire'], encounterMode: 'targeted', unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear', count: 1 }, targetMetadata: { 'ashen-tracker': { difficulty: 'standard', order: 1 }, 'gloamfang-stalker': { difficulty: 'standard', order: 2 }, 'runehorn-brute': { difficulty: 'hard', order: 3 }, 'veilwing-harrier': { difficulty: 'standard', order: 4 }, 'cinderback-mauler': { difficulty: 'hard', order: 5 }, 'gloomroot-hexer': { difficulty: 'hard', order: 6 }, 'nightglass-alpha': { difficulty: 'hard', order: 7 } } },
   'abandoned-catacombs': {
     ...dungeonLocation('first-frontier', 'abandoned-catacombs', 'dungeon', 8),
+    name: 'Abandoned Catacombs', description: 'A fixed sequence through the old crypts, ending at Archmage Edrin’s Shade.', elementsPresent: ['water', 'earth', 'arcane'],
     encounterMode: 'sequence',
+    unlock: { type: 'boss-kill', bossId: 'corrupted-greatbear', count: 1 },
     firstClearUnlockPreview: [
       { id: 'black-portal-shard', label: 'Black Portal Shard' },
       { id: 'dark-portal', label: 'Dark Portal' },
@@ -287,7 +293,8 @@ Object.values(COMBAT_LOCATIONS).forEach((location) => {
   const roster = [...(dungeon.encounterSequence ?? dungeon.monsterPool), ...(dungeon.boss ? [dungeon.boss] : [])]
   const elementsPresent = ELEMENT_IDS.filter((element) => roster.some((monsterId) => MONSTERS[monsterId] && getMonsterPrimaryAffinity(MONSTERS[monsterId]) === element))
   location.elementsPresent = elementsPresent
-  if (elementsPresent.length === 1) location.primaryElement = elementsPresent[0]
+  if (['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(location.id) && elementsPresent.length === 1) location.primaryElement = elementsPresent[0]
+  else if (!['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(location.id)) delete location.primaryElement
 })
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined) => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null

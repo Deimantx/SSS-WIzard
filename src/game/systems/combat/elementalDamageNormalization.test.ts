@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { executeCombatEffects, resolveEffectiveDamageType } from './effectResolver'
+import { executeCombatEffects, resolveEffectiveDamageTags, resolveEffectiveDamageType } from './effectResolver'
 import { applyElementalWard } from './elementalWardRuntime'
 import type { CombatEvent, CombatEffect } from './combatTypes'
 
 describe('effective elemental damage normalization', () => {
+  it('normalizes event tags without mutating semantic tags or root provenance', () => {
+    expect(resolveEffectiveDamageTags(['special', 'direct', 'melee', 'physical'], ['fire'])).toEqual(['special', 'direct', 'melee', 'fire'])
+    expect(resolveEffectiveDamageTags(['magic', 'direct'], ['arcane'])).toEqual(['magic', 'direct', 'arcane'])
+    expect(resolveEffectiveDamageTags(['special', 'physical', 'melee'], ['fire', 'arcane'])).toEqual(['special', 'melee', 'fire', 'arcane'])
+    expect(resolveEffectiveDamageTags(['dot', 'physical'], ['water'])).toEqual(['dot', 'water'])
+    expect(resolveEffectiveDamageTags(['direct', 'physical'], ['physical', 'fire'])).toEqual(['direct', 'physical', 'fire'])
+  })
+
   it('normalizes a legacy enemy Physical hit to the source monster element in metadata and Ward math', () => {
     const state = createInitialState()
     state.combat.active = true

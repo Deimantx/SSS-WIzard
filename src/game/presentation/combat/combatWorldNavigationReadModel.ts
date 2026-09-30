@@ -18,7 +18,7 @@ const isConditionUnlocked = (condition: CombatNavigationUnlockCondition | undefi
 const getConditionText = (condition: CombatNavigationUnlockCondition | undefined): string | null => {
   if (!condition || condition.type === 'always') return null
   if (condition.type === 'boss-kill') return `Defeat ${MONSTERS[condition.bossId]?.name ?? condition.bossId}`
-  if (condition.type === 'chronicle-event') return condition.eventId === 'elemental-tutorial-zones-opened' ? 'Defeat an enemy in your counter zone' : 'Complete the related Chronicle step'
+  if (condition.type === 'chronicle-event') return condition.eventId === 'elemental-tutorial-zones-opened' ? 'Defeat an enemy in your counter zone' : condition.eventId === 'first-elemental-tutorial-boss-defeated' ? 'Defeat any elemental tutorial boss' : 'Complete the related Chronicle step'
   if (condition.type === 'starter-advantage') return `Strong with your starting school or complete the Elemental Frontier`
   if (condition.type === 'any') return condition.conditions.map(getConditionText).filter(Boolean).join(' or ')
   if (condition.type === 'all') return condition.conditions.map(getConditionText).filter(Boolean).join(' and ')

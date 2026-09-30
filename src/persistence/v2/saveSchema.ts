@@ -14,13 +14,14 @@ import { GUILD_RANKS } from '../../game/content/guild/guildRanks'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
 import { RESONANCE_TYPES } from '../../game/content/resonance/resonance'
 import { SCHOOLS } from '../../game/content/schools/schools'
+import { ELEMENT_IDS } from '../../game/content/elements/elements'
 
 const gameplayFields = [
   'player', 'schools', 'currencies', 'resonance', 'tower', 'worldTier', 'inventory', 'crystals',
   'protectedItems', 'equipment', 'arcaneCore', 'artifactProgress', 'sigils', 'guardians', 'activities',
   'combat', 'progress', 'storyProgress', 'darkPortal', 'spellPresets',
 ] as const
-const documentFields = new Set(['schemaVersion', 'savedAt', 'offlineBankMs', ...gameplayFields])
+const documentFields = new Set(['schemaVersion', 'contentVersion', 'savedAt', 'offlineBankMs', ...gameplayFields])
 const playerFields = ['health', 'mana', 'baseMaxHealth', 'baseMaxMana', 'healthRegenTimerMs'] as const
 const combatFields = new Set<string>(PERSISTED_COMBAT_FIELDS_V1)
 const isFiniteTree = (value: unknown): boolean => {
@@ -77,7 +78,14 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
   if (!playerFields.every((key) => typeof player[key] === 'number' && Number.isFinite(player[key]))) return false
   const combat = value.combat as Record<string, unknown>
   if (Object.keys(combat).some((key) => !combatFields.has(key)) || PERSISTED_COMBAT_FIELDS_V1.some((key) => key !== 'elementalDamageReductions' && !Object.prototype.hasOwnProperty.call(combat, key))) return false
-  if (combat.elementalDamageReductions !== undefined && !Array.isArray(combat.elementalDamageReductions)) return false
+  if (combat.elementalDamageReductions !== undefined && (!Array.isArray(combat.elementalDamageReductions)
+    || combat.elementalDamageReductions.length > 32
+    || combat.elementalDamageReductions.some((ward) => !isRecord(ward)
+      || !ELEMENT_IDS.includes(ward.element as typeof ELEMENT_IDS[number])
+      || typeof ward.sourceId !== 'string' || ward.sourceId.trim().length === 0
+      || typeof ward.reduction !== 'number' || !Number.isFinite(ward.reduction) || ward.reduction <= 0 || ward.reduction >= 1
+      || (ward.expiresAt !== undefined && (typeof ward.expiresAt !== 'number' || !Number.isFinite(ward.expiresAt) || ward.expiresAt < 0))))) return false
+  if (value.contentVersion !== undefined && (!Number.isInteger(value.contentVersion) || (value.contentVersion as number) < 0)) return false
   const inventory = value.inventory as Record<string, unknown>
   if (Object.entries(inventory).some(([id, quantity]) => !Object.prototype.hasOwnProperty.call(ITEMS, id) || typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 0)) return false
   const protectedItems = value.protectedItems as Record<string, unknown>

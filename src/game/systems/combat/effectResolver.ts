@@ -85,6 +85,11 @@ const resolveDamageTags = (tags: CombatTag[], authoredDamageType: DamageType, ef
     ? [...new Set([...tags.filter((tag) => tag !== 'physical'), effectiveDamageType])]
     : tags;
 
+export const resolveEffectiveDamageTags = (authoredTags: CombatTag[], effectiveDamageTypes: readonly DamageType[]): CombatTag[] => {
+  const tags = authoredTags.filter((tag) => tag !== 'physical' || effectiveDamageTypes.includes('physical'))
+  return [...new Set([...tags, ...effectiveDamageTypes.filter((type) => type !== 'physical')])]
+}
+
 const targetActor = (
   source: CombatSource,
   target: EffectTarget,
@@ -618,6 +623,7 @@ const applyDamage = (
   const damageTypes = [
     ...new Set(effectiveComponents.map((component) => component.damageType)),
   ];
+  const effectiveEventTags = resolveEffectiveDamageTags(tags, damageTypes);
   const first = breakdowns[0];
   const blockedAmount = breakdowns.reduce(
     (sum, breakdown) => sum + breakdown.blockedAmount,
@@ -648,7 +654,7 @@ const applyDamage = (
     source,
     eventTarget: target,
     changedActor: target,
-    sourceTags: tags,
+    sourceTags: effectiveEventTags,
     amount: resolvedBeforeBarrier,
     healthDamage: dealt,
     barrierDamage: totalBarrierAbsorbed,

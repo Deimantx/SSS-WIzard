@@ -15,6 +15,7 @@ import {
   type CombatFarmingBenchmarkResult,
 } from '../../../game/analysis/combat/combatFarmingBenchmark'
 import type { MonsterId, WorldTierId } from '../../../game/types'
+import { buildCombatV2ContentAudit } from '../../../game/systems/combat/combatContentAudit'
 import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import type { DeveloperCopy } from '../DeveloperCombat'
 import { Summary } from '../DeveloperTabPrimitives'
@@ -148,8 +149,13 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
 
   const cancelBenchmark = () => { cancelRequested.current = true }
   const exportPayload = buildExportPayload(buildSummary, durationMs, targetIds, worldTiers, results)
+  const contentAudit = useMemo(() => buildCombatV2ContentAudit(), [])
 
   return <div className="developer-balance-lab">
+    <Card title="Combat V2 content power and safety audit" action={<Status tone={contentAudit.some((row) => row.warnings.length > 0) ? 'warning' : 'success'}>{contentAudit.filter((row) => row.warnings.length > 0).length} WARNINGS</Status>}>
+      <p className="muted">Authored Act 0 profiles at WT1. Values are calculated on demand from the static Combat V2 roster.</p>
+      <div className="developer-balance-table-wrap"><table className="developer-balance-table"><thead><tr>{['ID', 'LOCATION', 'AFFINITY', 'POWER', 'HP', 'BASIC', 'INTERVAL', 'BASIC DPS', 'DIRECT ×', 'DOT ×', 'HEAL %', 'BARRIER %', 'PHYSICAL', 'AUDIT'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{contentAudit.map((row) => <tr key={row.id}><th scope="row">{row.id}</th><td>{row.location}</td><td>{row.affinity.toUpperCase()}</td><td>{row.power}</td><td>{formatNumber(row.hp)}</td><td>{formatDecimal(row.basicDamage)}</td><td>{(row.basicIntervalMs / 1000).toFixed(1)}s</td><td>{formatDecimal(row.basicDps)}</td><td>{row.maxRepeatableDirectCoefficient.toFixed(2)}</td><td>{row.dotTotalCoefficient.toFixed(2)}</td><td>{(row.repeatableHealPercent * 100).toFixed(0)}%</td><td>{(row.repeatableBarrierPercent * 100).toFixed(0)}%</td><td>{row.physicalComponentCount}</td><td>{row.warnings.length ? <span className="developer-balance-warning">{row.warnings.join(' · ')}</span> : <span className="developer-balance-positive">OK</span>}</td></tr>)}</tbody></table></div>
+    </Card>
     <Card title="Combat Balance Lab" action={<Status tone="active">ANALYSIS ONLY</Status>}>
       <div className="developer-balance-intro"><p className="muted">Canonical combat farming measurements for Whispering Woods. Results are transient and run against a cloned current build.</p><Button variant="secondary" onClick={refreshBuildSnapshot} tooltip="Refresh the build identity used as the benchmark source. This never equips or changes the live profile.">CURRENT BUILD</Button></div>
     </Card>

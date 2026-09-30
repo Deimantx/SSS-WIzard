@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
+import { MONSTERS } from '../../content/monsters'
 import { createCombatTestState } from './testCombatState'
 import { executeCombatEffects, damageEnemy, damagePlayer, getCombatDamagePreview } from './effectResolver'
 import { applyStatus, tickStatuses } from './statusRuntime'
@@ -11,7 +12,6 @@ import type { CombatSource, GameState, TraitDefinition, TraitId } from '../../ty
 import { advanceGameState } from '../simulation/advanceGameState'
 import { tickBarriers } from './barrierRuntime'
 import { castSpellAction } from '../../../store/actions/combatActions'
-import { MONSTERS } from '../../content/monsters'
 import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
@@ -217,7 +217,7 @@ describe('data-driven monster mechanics', () => {
     clearCurrentEnemyAction(root)
     expect(root.combat.enemyBarrier).toBe(42)
     forceResolveEnemyAction(root, 'root-slam', executeCombatEffects)
-    expect(root.player.health).toBeCloseTo(100 - 12 * 1.5 * 1.5 * (1 - playerDefenseReduction))
+    expect(root.player.health).toBeCloseTo(100 - MONSTERS['stone-root'].basicAttackDamage * 1.5 * 1.5 * (1 - playerDefenseReduction))
   })
 
   it('fires authored threshold rules once per encounter', () => {

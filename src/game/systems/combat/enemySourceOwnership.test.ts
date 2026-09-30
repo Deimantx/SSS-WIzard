@@ -47,7 +47,7 @@ describe('Enemy source ownership', () => {
     const downtimeHealth = state.player.health
     tickStatuses(state, 2_000, executeCombatEffects, { push: (event) => downtimeEvents.push(event) })
     const downtimeTick = downtimeEvents.find((event) => event.category === 'damage' && event.statusId === 'bleeding')
-    expect(state.player.health).toBeCloseTo(downtimeHealth - 7.6125, 6)
+    expect(state.player.health).toBeCloseTo(downtimeHealth - MONSTERS['razorclaw-lynx'].basicAttackDamage * 1.45 / 4, 6)
     expect(downtimeTick).toMatchObject({
       source: { kind: 'enemy', monsterId: 'razorclaw-lynx' },
       sourceMonsterId: 'razorclaw-lynx',
@@ -79,7 +79,7 @@ describe('Enemy source ownership', () => {
       const nextHealth = state.player.health
       tickStatuses(state, 2_000, executeCombatEffects, { push: (event) => nextEvents.push(event) })
       const nextTick = nextEvents.find((event) => event.category === 'damage' && event.statusInstanceKey === oldStatus.instanceKey)
-      expect(state.player.health).toBeCloseTo(nextHealth - 7.6125, 6)
+      expect(state.player.health).toBeCloseTo(nextHealth - MONSTERS['razorclaw-lynx'].basicAttackDamage * 1.45 / 4, 6)
       expect(state.combat.enemyBarrier).toBe(0)
       expect(nextTick).toMatchObject({ source: { kind: 'enemy', monsterId: 'razorclaw-lynx' }, sourceInstanceKey: 'enemy:1' })
 

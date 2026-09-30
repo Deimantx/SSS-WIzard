@@ -110,6 +110,50 @@ describe('Save System V2', () => {
     expect(serializeGameState(inactive, 457).combat.elementalDamageReductions).toEqual([])
   })
 
+  it('strictly validates persisted Ward rows and sanitizes malformed runtime input', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'emberfall-basin'
+    const valid = serializeGameState(state, 458)
+    const badEntries: unknown[] = [
+      { element: 'lightning', reduction: 0.2, sourceId: 'ward' },
+      { element: 'fire', reduction: Number.NaN, sourceId: 'ward' },
+      { element: 'fire', reduction: 0, sourceId: 'ward' },
+      { element: 'fire', reduction: 1, sourceId: 'ward' },
+      { element: 'fire', reduction: 0.2, sourceId: '  ' },
+      { element: 'fire', reduction: 0.2, sourceId: 'ward', expiresAt: -1 },
+      null,
+    ]
+    for (const ward of badEntries) {
+      const document = structuredClone(valid) as unknown as { combat: Record<string, unknown> }
+      document.combat.elementalDamageReductions = [ward]
+      expect(validatePersistedGameStateV1(document)).toBe(false)
+      expect(loadPersistedGameStateV1(document as unknown as typeof valid).combat.elementalDamageReductions).toEqual([])
+    }
+    const tooMany = structuredClone(valid) as unknown as { combat: Record<string, unknown> }
+    tooMany.combat.elementalDamageReductions = Array.from({ length: 33 }, (_, index) => ({ element: 'fire', reduction: 0.15, sourceId: `ward-${index}` }))
+    expect(validatePersistedGameStateV1(tooMany)).toBe(false)
+    const sanitizeMany = loadPersistedGameStateV1(tooMany as unknown as typeof valid)
+    expect(sanitizeMany.combat.elementalDamageReductions).toHaveLength(32)
+  })
+
+  it('reconciles progressed canonical V2 saves with no contentVersion before activation', () => {
+    const state = createInitialState()
+    state.progress.lifetimeKills = 8
+    state.progress.bossKillsByBoss['forest-heart'] = 1
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    const oldDocument = serializeGameState(state, 459) as unknown as Record<string, unknown>
+    delete oldDocument.contentVersion
+    const loaded = loadProfileGameFromRaw(JSON.stringify(oldDocument))
+    expect(loaded.progress.chronicle.eventFlags['elemental-tutorial-zones-opened']).toBe(true)
+    expect(loaded.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated']).toBe(true)
+    expect(loaded.progress.chronicle.completedObjectiveIds).toContain('m2d-defeat-elemental-boss')
+    expect(loaded.progress.chronicle.completedObjectiveIds).toContain('m3-heart-of-the-woods')
+    expect(loaded.progress.chronicle.completedObjectiveIds).toContain('m4-break-the-den')
+    expect(loaded.progress.bossKillsByBoss['corrupted-greatbear']).toBe(1)
+    expect(loadPersistedGameStateV1(serializeGameState(loaded)).progress.chronicle.completedObjectiveIds).toEqual(loaded.progress.chronicle.completedObjectiveIds)
+  })
+
   it('keeps empty contract boards empty and never consumes Hunter or Guild RNG while loading', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1

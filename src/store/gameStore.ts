@@ -2016,7 +2016,8 @@ export const useGameStore = create<GameStore>()(
       if (!dungeon) return;
       const location = getCombatLocationByDungeonId(dungeonId)
       if (location && !isCombatLocationUnlocked(location.id, currentState.progress)) {
-        set((state) => { pushNotification(state, `${location.name} is locked. Defeat an enemy in your starter counter zone to open the other elemental frontiers.`, "warning"); return state })
+        const requirement = location.id === 'whispering-woods' ? 'Defeat any elemental tutorial boss' : location.id === 'howling-den' ? 'Defeat the Forest Heart' : location.id === 'hunters-ground' || location.id === 'abandoned-catacombs' ? 'Defeat the Corrupted Greatbear' : 'Complete the location unlock requirement'
+        set((state) => { pushNotification(state, `${location.name} is locked. ${requirement}.`, "warning"); return state })
         return
       }
       if (!isDungeonUnlocked(dungeon, currentState.progress)) {

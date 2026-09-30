@@ -7,6 +7,11 @@ const EXPECTED_ELEMENTAL_SCAR_SCENARIOS = [
   'Guardian Selection Ready', 'Flooded Boss Ready', 'Ashen Boss Ready', 'Rootscar Boss Ready',
   '2 / 3 Regional Bosses Cleared', 'Crossroads Unlocked', 'Crossroads Start', 'Crossroads Keeper', 'World Tier III Ready',
 ]
+const EXPECTED_SHATTERED_MERIDIAN_SCENARIOS = [
+  'Crossroads Cleared / Shattered Meridian Open', 'Graveglass Boss Ready', 'Stormvault Boss Ready', 'Starfallen Boss Ready',
+  '1 / 3 Shattered Bosses Cleared', '2 / 3 Shattered Bosses Cleared', '3 / 3 Shattered Bosses Cleared',
+  'Broken Meridian Unlocked', 'Broken Meridian Start', 'Meridian Splitter', 'Meridian Splitter Cleared', 'WT4 Ready', 'Crystals Unlocked', 'Black Sigil Reach Open',
+]
 
 describe('Elemental Scar DevTools scenarios', () => {
   it('publishes the Phase 04 progression and combat fixtures', () => {
@@ -20,6 +25,27 @@ describe('Elemental Scar DevTools scenarios', () => {
     ensureDeveloperSandbox('Elemental Scar scenario test')
     try {
       for (const label of EXPECTED_ELEMENTAL_SCAR_SCENARIOS) {
+        const scenario = scenarios.find((entry) => entry.label === label)!
+        expect(scenario.run(), label).toBe(true)
+      }
+    } finally {
+      restoreAndExitDeveloperSandbox()
+    }
+  })
+})
+
+describe('Shattered Meridian DevTools scenarios', () => {
+  it('publishes the Phase 05 progression and combat fixtures', () => {
+    const scenarios = BUILT_IN_DEVELOPER_SCENARIOS(() => {})
+    const labels = new Set(scenarios.map((scenario) => scenario.label))
+    EXPECTED_SHATTERED_MERIDIAN_SCENARIOS.forEach((label) => expect(labels.has(label), label).toBe(true))
+  })
+
+  it('runs each fixture and proves the expected Shattered Meridian state', () => {
+    const scenarios = BUILT_IN_DEVELOPER_SCENARIOS(() => {})
+    ensureDeveloperSandbox('Shattered Meridian scenario test')
+    try {
+      for (const label of EXPECTED_SHATTERED_MERIDIAN_SCENARIOS) {
         const scenario = scenarios.find((entry) => entry.label === label)!
         expect(scenario.run(), label).toBe(true)
       }

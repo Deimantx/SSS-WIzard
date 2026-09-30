@@ -191,6 +191,15 @@ describe("Crystal System V1", () => {
     expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
   });
 
+  it("blocks high-Power Shattered Meridian cache drops until the first Splitter victory", () => {
+    const state = createInitialState();
+    expect(resolveCrystalCacheDrop(state, "graveglass-behemoth", 3, () => 0)).toBe(false);
+    expect(state.inventory["tier-1-crystal-cache"] ?? 0).toBe(0);
+    state.progress.bossKillsByBoss["meridian-splitter"] = 1;
+    expect(resolveCrystalCacheDrop(state, "graveglass-behemoth", 3, () => 0)).toBe(true);
+    expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
+  });
+
   it("can find one monster below the threshold at WT1 and above it at a higher tier", () => {
     const candidate = MONSTER_IDS.find((monsterId) => {
       const wt1 = resolveEnemyPowerRating(monsterId, 1);

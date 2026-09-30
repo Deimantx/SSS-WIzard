@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createInitialState } from '../../store/initialState'
+import { createInitialState, SAVE_VERSION } from '../../store/initialState'
 import { loadProfileGame, saveProfileGame, serializeGameState } from '../profileSaveManager'
 import { profileSaveBackupKey, profileSaveKey } from '../../profiles/profileKeys'
 import { setDeveloperSandboxSavePaused } from '../developerSandboxSaveGuard'
@@ -23,6 +23,8 @@ describe('Save System V2', () => {
 
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(2)
+    expect(document.contentVersion).toBe(SAVE_VERSION)
+    expect(SAVE_VERSION).toBe(59)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -173,6 +175,84 @@ describe('Save System V2', () => {
       expect(migrated.progress.bossKillsByBoss).toMatchObject(state.progress.bossKillsByBoss)
       expect(loadProfileGameFromRaw(JSON.stringify(serializeGameState(migrated, 501))).progress.chronicle.completedObjectiveIds).toEqual(migrated.progress.chronicle.completedObjectiveIds)
     }
+  })
+
+  it('reconciles 58-to-59 Shattered Meridian history through canonical V2 documents', () => {
+    const cases = [
+      { bosses: ['crossroads-keeper'], completed: [] },
+      { bosses: ['crossroads-keeper', 'graveglass-behemoth'], completed: [] },
+      { bosses: ['crossroads-keeper', 'graveglass-behemoth', 'storm-archivist'], completed: [] },
+      { bosses: ['crossroads-keeper', 'graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'], completed: ['sf-m3d-stabilize-shattered-meridian'] },
+      { bosses: ['crossroads-keeper', 'graveglass-behemoth', 'storm-archivist', 'fallen-astromancer', 'meridian-splitter'], completed: ['sf-m3d-stabilize-shattered-meridian', 'sf-m4-reach-meridian', 'sf-m5-meridian-splitter'] },
+    ] as const
+    for (const fixture of cases) {
+      const state = createInitialState()
+      state.progress.bossKillsByBoss = Object.fromEntries(fixture.bosses.map((bossId) => [bossId, 1])) as typeof state.progress.bossKillsByBoss
+      const document = serializeGameState(state, 600)
+      document.contentVersion = 58
+      const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+      for (const objectiveId of fixture.completed as readonly string[]) expect(migrated.progress.chronicle.completedObjectiveIds).toContain(objectiveId)
+      if ((fixture.bosses as readonly string[]).includes('meridian-splitter')) {
+        expect(migrated.worldTier.highestUnlocked).toBeGreaterThanOrEqual(4)
+        expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m3d-stabilize-shattered-meridian')
+        expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m4-reach-meridian')
+        expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m5-meridian-splitter')
+        expect(migrated.crystals.unlockedSlots).toBeGreaterThan(0)
+        expect(migrated.crystals.owned['force-t1']).toBe(1)
+        const reload = loadProfileGameFromRaw(JSON.stringify(serializeGameState(migrated, 601)))
+        expect(reload.crystals.owned['force-t1']).toBe(1)
+      }
+    }
+  })
+
+  it('preserves an active Shattered combat checkpoint while restarting only a removed action', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'graveglass-hollow'
+    state.combat.enemyId = 'graveglass-shade'
+    state.combat.targetEnemyId = 'graveglass-shade'
+    state.combat.enemyWorldTier = 3
+    state.combat.enemyHp = 4321
+    state.combat.enemyMaxHp = 5700
+    state.combat.enemyCurrentActionId = 'removed-phase-action'
+    state.combat.enemyActionPatternId = 'removed-pattern'
+    const document = serializeGameState(state, 602)
+    document.contentVersion = 58
+    const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'graveglass-hollow', enemyId: 'graveglass-shade', targetEnemyId: 'graveglass-shade', enemyWorldTier: 3, enemyHp: 4321, enemyActionPatternId: 'default', enemyCurrentActionId: null })
+  })
+
+  it('treats historical Broken Meridian entry as valid without granting a Splitter kill', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    state.progress.bossKillsByBoss['graveglass-behemoth'] = 1
+    state.progress.bossKillsByBoss['storm-archivist'] = 1
+    state.progress.bossKillsByBoss['fallen-astromancer'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'broken-meridian'
+    state.combat.enemyId = 'meridian-warden'
+    state.combat.targetEnemyId = 'meridian-warden'
+    const document = serializeGameState(state, 605)
+    document.contentVersion = 58
+    const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+    expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m3d-stabilize-shattered-meridian')
+    expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m4-reach-meridian')
+    expect(migrated.progress.chronicle.completedObjectiveIds).not.toContain('sf-m5-meridian-splitter')
+    expect(migrated.progress.bossKillsByBoss['meridian-splitter'] ?? 0).toBe(0)
+    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'broken-meridian', enemyId: 'meridian-warden', targetEnemyId: 'meridian-warden' })
+  })
+
+  it('keeps the starter Crystal reward idempotent when a legacy profile already recorded it', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.chronicle.grantedUnlockRewardIds.push('sf-socket-first-crystal')
+    state.crystals.owned['force-t1'] = 1
+    const document = serializeGameState(state, 603)
+    document.contentVersion = 58
+    const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+    expect(migrated.crystals.owned['force-t1']).toBe(1)
+    expect(loadProfileGameFromRaw(JSON.stringify(serializeGameState(migrated, 604))).crystals.owned['force-t1']).toBe(1)
   })
 
   it('keeps an active checkpoint and resets only a removed current enemy action', () => {

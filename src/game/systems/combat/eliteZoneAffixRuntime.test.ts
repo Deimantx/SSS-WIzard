@@ -4,6 +4,7 @@ import { MONSTERS } from '../../content/monsters'
 import { getActiveEliteZoneAffix, getActiveEliteZoneAffixId } from './eliteZoneAffixRuntime'
 import { getActorTraits, getMonsterTraits } from './traitRuntime'
 import { damageEnemy, spawnEnemy } from './combatRuntime'
+import { getActiveBarrier } from './barrierRuntime'
 
 const prepare = () => {
   const state = createInitialState()
@@ -50,6 +51,24 @@ describe('Elite Zone Affix runtime provider', () => {
     state.combat.enemyId = enemyId
     expect(getActiveEliteZoneAffixId(state)).toBe(affixId)
     expect(getActiveEliteZoneAffix(state)?.id).toBe(affixId)
+  })
+
+  it('limits Shattered Elite affixes to normal enemies and applies their authored mechanics', () => {
+    const warded = prepare()
+    warded.combat.dungeonId = 'graveglass-hollow'
+    expect(spawnEnemy(warded, 'graveglass-shade')).toBe(true)
+    expect(getActiveEliteZoneAffixId(warded)).toBe('warded')
+    expect(getActiveBarrier(warded, 'enemy')).toBe(Math.round(warded.combat.enemyMaxHp * 0.15))
+    warded.combat.enemyId = 'graveglass-behemoth'
+    expect(getActiveEliteZoneAffixId(warded)).toBeNull()
+
+    const relentless = prepare()
+    relentless.combat.dungeonId = 'starfallen-observatory'
+    relentless.combat.enemyId = 'starbound-eye'
+    expect(getActiveEliteZoneAffixId(relentless)).toBe('relentless')
+    expect(getActorTraits(relentless, 'enemy').flatMap((trait) => trait.modifiers ?? []).find((modifier) => modifier.key === 'status-duration-received-percent')?.value).toBe(-0.4)
+    relentless.combat.enemyId = 'fallen-astromancer'
+    expect(getActiveEliteZoneAffixId(relentless)).toBeNull()
   })
 
   it.each([

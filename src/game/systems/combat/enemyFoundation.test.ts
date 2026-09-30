@@ -34,6 +34,21 @@ const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1]) => {
 };
 
 describe("Act 0 enemy combat foundation", () => {
+  it("transitions Meridian Splitter once at half Health without healing or transition Barrier", () => {
+    const state = stateWithEnemy("meridian-splitter")
+    state.combat.dungeonId = "broken-meridian"
+    state.combat.enemyHp = Math.ceil(state.combat.enemyMaxHp * 0.51)
+    const hpBefore = state.combat.enemyHp
+    damageEnemy(state, Math.ceil(state.combat.enemyMaxHp * 0.02), "spell")
+    expect(state.combat.enemyActionPatternId).toBe("severed")
+    expect(state.combat.enemyStatuses.filter((status) => status.statusId === "meridian-overload")).toHaveLength(1)
+    expect(state.combat.enemyHp).toBeLessThan(hpBefore)
+    expect(getActiveBarrier(state, "enemy")).toBe(0)
+    damageEnemy(state, Math.ceil(state.combat.enemyMaxHp * 0.02), "spell")
+    expect(state.combat.enemyStatuses.filter((status) => status.statusId === "meridian-overload")).toHaveLength(1)
+    expect(state.combat.triggeredRuleIds.filter((id) => id.includes("meridian-splitter-severed-phase-threshold"))).toHaveLength(1)
+  })
+
   it("gives Forest Heart one threshold heal and phase transition", () => {
     const state = stateWithEnemy("forest-heart");
     state.combat.enemyHp = 316;
@@ -41,16 +56,16 @@ describe("Act 0 enemy combat foundation", () => {
     expect(state.combat.enemyHp).toBeGreaterThan(313);
     expect(state.combat.enemyHp).toBeLessThan(MONSTERS['forest-heart'].maxHealth * 0.5);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(false);
-    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+    expect(state.combat.enemyStatuses).toHaveLength(0);
     expect(state.combat.enemyActionPatternId).toBe("overgrown");
 
     for (let index = 0; index < 8; index += 1) tickStatuses(state, 1000, executeCombatEffects);
-    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+    expect(state.combat.enemyStatuses).toHaveLength(0);
 
     state.combat.enemyHp = 200;
     damageEnemy(state, 500, "spell");
     expect(state.combat.enemyActionPatternId).toBe("overgrown");
-    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+    expect(state.combat.enemyStatuses).toHaveLength(0);
     expect(state.combat.triggeredRuleIds.filter((id) => id.includes("forest-heart-living-core-threshold"))).toHaveLength(1);
   });
 
@@ -61,7 +76,7 @@ describe("Act 0 enemy combat foundation", () => {
     expect(forceResolveEnemyAction(state, "overgrowth", executeCombatEffects)).toBe(true);
     expect(getActiveBarrier(state, "enemy")).toBeCloseTo(MONSTERS['forest-heart'].maxHealth * 0.14);
     expect(state.combat.enemyHp).toBe(450);
-    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
+    expect(state.combat.enemyStatuses).toHaveLength(0);
   });
 
   it("gives Edrin Unbound Power without transition Barrier or Haste", () => {

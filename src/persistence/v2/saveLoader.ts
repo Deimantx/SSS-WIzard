@@ -24,6 +24,9 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   const allRegionalBosses = sideBosses.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
   const crossroadsKeeper = (progress.bossKillsByBoss['crossroads-keeper'] ?? 0) > 0
   const meridianSplitter = (progress.bossKillsByBoss['meridian-splitter'] ?? 0) > 0
+  const enteredBrokenMeridian = state.combat.active && state.combat.dungeonId === 'broken-meridian'
+  const shatteredBossIds = ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] as const
+  const allShatteredBosses = shatteredBossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
   const clearlyProgressed = progress.lifetimeKills > 0 || hasAnyBoss || progress.tutorialStage === 'complete' || forest || bear || edrin
   if (clearlyProgressed) chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
   if (hasAnyBoss || forest || bear || edrin) chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
@@ -41,7 +44,9 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   if (gatekeeper) completedHistoricalBosses.push('sf-m1-cross-fractured-approach', 'sf-m2-elemental-gatekeeper')
   if (allRegionalBosses || crossroadsKeeper || meridianSplitter) completedHistoricalBosses.push('sf-m3a-stabilize-elemental-scar')
   if (crossroadsKeeper || meridianSplitter) completedHistoricalBosses.push('sf-m3b-enter-crossroads', 'sf-m3c-crossroads-keeper')
+  if (allShatteredBosses || meridianSplitter || enteredBrokenMeridian) completedHistoricalBosses.push('sf-m3d-stabilize-shattered-meridian')
   if (meridianSplitter) completedHistoricalBosses.push('sf-m4-reach-meridian', 'sf-m5-meridian-splitter')
+  else if (enteredBrokenMeridian) completedHistoricalBosses.push('sf-m4-reach-meridian')
   const completedIds = new Set(chronicle.completedObjectiveIds)
   if (completedIds.has('sf-step-into-harder-world')) completedIds.add('sf-m6-world-tier-two')
   chronicle.completedObjectiveIds = [...completedIds]

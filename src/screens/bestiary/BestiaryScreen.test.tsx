@@ -44,7 +44,6 @@ describe('Bestiary combat navigation intent', () => {
     expect(screen.getByText('BOSS MECHANICS')).toBeTruthy()
     expect(screen.getByText('Below 35% HP')).toBeTruthy()
     expect(screen.getAllByText(/15%/).length).toBeGreaterThan(0)
-    expect(screen.queryByText('Rapid Regrow')).toBeNull()
     expect(screen.getByText('PHASES / ROTATIONS')).toBeTruthy()
     expect(screen.getAllByText('Overgrown').length).toBeGreaterThan(0)
   })
@@ -54,6 +53,5 @@ describe('Bestiary combat navigation intent', () => {
     renderBestiary()
 
     expect(screen.queryByText('BOSS MECHANICS')).toBeNull()
-    expect(screen.queryByText('Rapid Regrow')).toBeNull()
   })
 })

@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2ContentAudit } from './combatContentAudit'
+import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../../content/monsters/elementalTutorial'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
 import { getMonsterDamageProfile } from '../../content/monsters/monsterTypes'
+import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
+import type { TraitId } from './combatTypes'
+import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
+import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
+import { COMBAT_LOCATIONS } from '../../content/world-navigation/worldNavigation'
 const elementalScarSources = import.meta.glob('../../content/monsters/act1/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const tutorialSource = import.meta.glob('../../content/monsters/elementalTutorial.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const shatteredSources = import.meta.glob('../../content/monsters/act1/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const convertedAct1Sources = import.meta.glob('../../content/monsters/act1/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 
 describe('Combat V2 authored content audit', () => {
   it('keeps tutorial tiers in their intended WT1 Power bands and above passive regeneration pressure', () => {
@@ -57,6 +64,7 @@ describe('Combat V2 authored content audit', () => {
     expect(getMonsterDamageProfile(MONSTERS['flamebound-revenant'])).toEqual(['fire'])
     expect(getMonsterDamageProfile(MONSTERS['rootscar-ancient'])).toEqual(['earth'])
     expect(getMonsterDamageProfile(MONSTERS['crossroads-keeper'])).toEqual(['fire', 'water', 'air', 'earth', 'arcane'])
+    expect(getMonsterDamageProfile(MONSTERS['fallen-astromancer'])).toEqual(['fire', 'air', 'arcane'])
   })
 
   it('pins explicit Elemental Scar identities and deterministic WT1 target Power', () => {
@@ -103,5 +111,115 @@ describe('Combat V2 authored content audit', () => {
         expect(MONSTERS[id].basicAttackDamage).toBeGreaterThan(0)
       }
     }
+  })
+
+  it('emits an action description warning for a deliberately generic description', () => {
+    const monster = MONSTERS['graveglass-shade']
+    const original = monster.actions
+    try {
+      monster.actions = { ...original, 'audit-generic': { id: 'audit-generic', name: 'Audit Generic', actionTimeMs: 1000, description: `${monster.name} uses Audit Generic.`, effects: [], tags: ['special'] } }
+      expect(buildCombatV2ContentAudit().find((row) => row.id === monster.id)?.warnings).toContain('Generic or missing action description: Audit Generic')
+    } finally {
+      monster.actions = original
+    }
+  })
+
+  it('tracks default flat periodic healing and retains once-only Trait ownership', () => {
+    const monster = MONSTERS['forest-heart']
+    const originalActions = monster.actions
+    const originalTraitIds = monster.traitIds
+    const testTraitId = 'audit-periodic-heal-once' as TraitId
+    const originalTrait = TRAIT_DEFINITIONS[testTraitId]
+    try {
+      monster.actions = { ...originalActions, 'audit-regeneration': { id: 'audit-regeneration', name: 'Audit Regeneration', actionTimeMs: 1000, description: 'Applies the authored default Regeneration healing payload.', effects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration' }], tags: ['special', 'heal', 'buff'] } }
+      monster.traitIds = [...originalTraitIds, testTraitId]
+      TRAIT_DEFINITIONS[testTraitId] = { id: testTraitId, name: 'Audit Renewal', description: 'One encounter-only healing application.', rules: [{ id: 'audit-renewal', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration' }] }] }
+      const row = buildCombatV2ContentAudit().find((entry) => entry.id === monster.id)!
+      expect(row.defaultFlatPeriodicHealCount).toBe(2)
+      expect(row.defaultFlatPeriodicDamageCount).toBe(0)
+      expect(row.periodicHealPercent).toBeCloseTo((2 * 30) / monster.maxHealth)
+      expect(row.repeatableSustainPercent).toBeGreaterThan(row.repeatableBarrierPercent)
+      expect(row.onceOnlySustainPercent).toBeCloseTo(0.15 + 30 / monster.maxHealth)
+      expect(row.warnings).toContain('2 default flat periodic healing payload(s)')
+    } finally {
+      monster.actions = originalActions
+      monster.traitIds = originalTraitIds
+      if (originalTrait) TRAIT_DEFINITIONS[testTraitId] = originalTrait
+      else delete TRAIT_DEFINITIONS[testTraitId]
+    }
+  })
+
+  it('preserves one-time Elite Affix ownership for periodic healing', () => {
+    const location = COMBAT_LOCATIONS['graveglass-hollow']
+    const affix = ELITE_ZONE_AFFIXES.regenerative
+    const originalAffixId = location.zoneAffixId
+    const originalRules = affix.rules
+    try {
+      location.zoneAffixId = 'regenerative'
+      affix.rules = [{ id: 'audit-affix-regeneration', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration' }] }]
+      const monster = MONSTERS['graveglass-shade']
+      const row = buildCombatV2ContentAudit().find((entry) => entry.id === monster.id)!
+      expect(row.onceOnlyHealPercent).toBeCloseTo((6 * 5) / monster.maxHealth)
+      expect(row.defaultFlatPeriodicHealCount).toBe(1)
+    } finally {
+      location.zoneAffixId = originalAffixId
+      affix.rules = originalRules
+    }
+  })
+
+  it('uses explicit periodic payloads instead of also scanning the Status default in Damage Profile', () => {
+    const base = MONSTERS['tidefang-serpent']
+    const profileMonster = {
+      ...base,
+      primaryAffinity: 'water' as const,
+      basicAttackElement: 'water' as const,
+      traitIds: [],
+      actions: {
+        only: { id: 'only', name: 'Only', actionTimeMs: 1000, description: 'Applies the authored Earth payload.', effects: [{ type: 'apply-status' as const, target: 'opponent' as const, statusId: 'burning' as const, durationMs: 5000, periodicEffects: [{ type: 'deal-damage' as const, target: 'self' as const, components: [{ damageType: 'earth' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['dot' as const, 'earth' as const] }] }], tags: ['special' as const] },
+      },
+    }
+    expect(getMonsterDamageProfile(profileMonster)).toEqual(['water', 'earth'])
+  })
+
+  it('pins every Shattered Meridian WT1 target Power, identity, and elemental-only damage', () => {
+    const profiles: readonly [keyof typeof MONSTERS, number, string][] = [
+      ['graveglass-shade', 5700, 'water'], ['bone-shardling', 5950, 'earth'], ['silent-mourner', 6200, 'water'], ['crypt-guardian', 6450, 'earth'], ['epitaph-weaver', 6800, 'arcane'], ['tombglass-reaver', 7200, 'earth'], ['ossuary-oracle', 7600, 'arcane'], ['graveglass-behemoth', 9100, 'earth'],
+      ['volt-wisp', 5600, 'air'], ['gale-scribe', 5900, 'air'], ['charged-seeker', 6200, 'air'], ['thundercoil-serpent', 6500, 'air'], ['static-armor', 6800, 'air'], ['stormbound-curator', 7150, 'air'], ['tempest-engine', 7550, 'air'], ['storm-archivist', 9000, 'air'],
+      ['starbound-eye', 5800, 'arcane'], ['astral-husk', 6100, 'arcane'], ['orbiting-fragment', 6400, 'arcane'], ['lenskeeper-remnant', 6750, 'arcane'], ['comet-wraith', 7100, 'fire'], ['voidglass-custodian', 7500, 'arcane'], ['zenith-horror', 7900, 'fire'], ['fallen-astromancer', 9300, 'arcane'],
+      ['meridian-warden', 8000, 'earth'], ['fractured-channeler', 8350, 'water'], ['arc-surge-horror', 8700, 'arcane'], ['linebreaker-shade', 9050, 'air'], ['meridian-splitter', 11800, 'arcane'],
+    ]
+    for (const [id, targetPower, affinity] of profiles) {
+      expect(MONSTERS[id].primaryAffinity, id).toBe(affinity)
+      expect(MONSTERS[id].basicAttackElement, id).toBe(affinity)
+      expect(resolveEnemyPowerBreakdown(id, 1).power, id).toBe(targetPower)
+    }
+    const damageProfiles: ReadonlyArray<readonly [keyof typeof MONSTERS, readonly string[]]> = [
+      ['graveglass-shade', ['water', 'arcane']], ['bone-shardling', ['earth']], ['silent-mourner', ['water', 'arcane']], ['crypt-guardian', ['earth']], ['epitaph-weaver', ['arcane']], ['tombglass-reaver', ['earth']], ['ossuary-oracle', ['arcane']], ['graveglass-behemoth', ['earth', 'arcane']],
+      ['volt-wisp', ['air']], ['gale-scribe', ['air']], ['charged-seeker', ['air']], ['thundercoil-serpent', ['air']], ['static-armor', ['air']], ['stormbound-curator', ['air']], ['tempest-engine', ['air']], ['storm-archivist', ['air']],
+      ['starbound-eye', ['arcane']], ['astral-husk', ['arcane']], ['orbiting-fragment', ['arcane']], ['lenskeeper-remnant', ['arcane']], ['comet-wraith', ['fire']], ['voidglass-custodian', ['arcane']], ['zenith-horror', ['fire', 'air', 'arcane']], ['fallen-astromancer', ['fire', 'air', 'arcane']],
+      ['meridian-warden', ['earth', 'arcane']], ['fractured-channeler', ['fire', 'water']], ['arc-surge-horror', ['arcane']], ['linebreaker-shade', ['air', 'arcane']], ['meridian-splitter', ['fire', 'water', 'air', 'earth', 'arcane']],
+    ]
+    for (const [id, expected] of damageProfiles) expect(getMonsterDamageProfile(MONSTERS[id]), id).toEqual(expected)
+    const shatteredRows = buildCombatV2ContentAudit().filter((row) => row.region === 'shattered-meridian')
+    expect(shatteredRows).toHaveLength(profiles.length)
+    expect(shatteredRows.every((row) => row.physicalComponentCount === 0 && row.defaultFlatPeriodicDamageCount === 0 && row.defaultFlatPeriodicHealCount === 0)).toBe(true)
+    for (const [file, source] of Object.entries(shatteredSources)) {
+      expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|statusId:\s*['"]poisoned['"]|status:\s*\{\s*id:\s*['"]regeneration['"]|status:\s*\{\s*id:\s*['"]burning['"]|applyCombatV2Profile/)
+      expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
+    }
+  })
+
+  it('produces canonical WT1 through WT5 Power and stat comparisons', () => {
+    const rows = buildCombatV2MonsterWorldTierComparison('meridian-splitter')
+    expect(rows.map((row) => row.worldTier)).toEqual([1, 2, 3, 4, 5])
+    rows.forEach((row) => {
+      const profile = resolveWorldTierEnemyProfile('meridian-splitter', row.worldTier)
+      expect(row).toMatchObject({ power: resolveEnemyPowerBreakdown('meridian-splitter', row.worldTier).power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, defense: profile.defense })
+    })
+  })
+
+  it('finds common source mojibake markers in converted Act 1 combat definitions', () => {
+    expect(Object.keys(convertedAct1Sources).length).toBeGreaterThan(0)
+    for (const [file, source] of Object.entries(convertedAct1Sources)) expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
   })
 })

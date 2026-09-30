@@ -12,11 +12,11 @@ describe('combat Power audit reports', () => {
     expect(first.some((row) => row.encounterMode === 'sequence' && row.role === 'boss')).toBe(true)
   })
 
-  it('reports the Broken Meridian late-step Power drop without failing content validation', () => {
+  it('reports smooth authored Power progression through the Broken Meridian sequence', () => {
     const report = buildSequencePowerAudit(1).filter((row) => row.locationId === 'broken-meridian')
     expect(report.map((row) => row.monsterId)).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'meridian-splitter'])
-    expect(report.find((row) => row.monsterId === 'linebreaker-shade')?.largeNegativeDelta).toBe(true)
-    expect(report.find((row) => row.monsterId === 'linebreaker-shade')?.negativeDeltaPercent).toBeGreaterThan(15)
+    expect(report.find((row) => row.monsterId === 'linebreaker-shade')?.deltaFromPrevious).toBeGreaterThan(0)
+    expect(report.find((row) => row.monsterId === 'linebreaker-shade')?.largeNegativeDelta).toBe(false)
   })
 
   it('exposes diagnostic Boss ratios and difficulty inversions without hard-failing them', () => {

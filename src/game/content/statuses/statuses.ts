@@ -28,12 +28,6 @@ const heal = (value: number): CombatEffect => ({
   magnitude: { type: "flat", value },
   tags: ["heal", "hot"],
 });
-const maxHealthPercentHeal = (value: number): CombatEffect => ({
-  type: "heal",
-  target: "self",
-  magnitude: { type: "source-max-health-percent", value },
-  tags: ["heal", "hot"],
-});
 const modifier = (
   key: CombatModifier["key"],
   value: number,
@@ -542,17 +536,17 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     cleanseable: true,
     dispellable: false,
   },
-  "rapid-regrow": {
-    id: "rapid-regrow",
-    name: "Rapid Regrow",
-    description: "Restores 5% of the holder's Max Health every second for 8 seconds.",
+  "meridian-overload": {
+    id: "meridian-overload",
+    name: "Meridian Overload",
+    description: "Deals 15% more damage for the rest of the encounter.",
     classification: "buff",
-    tags: ["buff", "hot"],
-    defaultDurationMs: 8000,
+    tags: ["buff", "arcane"],
+    defaultDurationMs: null,
     stacking: { mode: "refresh" },
-    periodic: { intervalMs: 1000, effects: [maxHealthPercentHeal(0.05)] },
+    modifiers: [modifier("damage-dealt-percent", 0.15)],
     cleanseable: false,
-    dispellable: true,
+    dispellable: false,
   },
   "corrupted-fury": {
     id: "corrupted-fury",

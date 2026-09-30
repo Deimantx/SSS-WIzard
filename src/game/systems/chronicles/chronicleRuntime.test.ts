@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { CHRONICLE_OBJECTIVES } from '../../content/chronicles/chronicles'
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, evaluateChronicleCondition, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, getChronicleConditionValue, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
+import { isCombatLocationUnlocked } from '../../content/world-navigation/worldNavigation'
 
 describe('Chronicle runtime', () => {
   it('keeps first Arcane Guild Commission as one objective and gives the Tower milestone a distinct condition', () => {
@@ -102,8 +103,51 @@ describe('Chronicle runtime', () => {
     expect(getChronicleActiveChapter(state)).toBe('shattered-frontier')
     expect(getChronicleMainObjective(state)?.id).toBe('sf-m1-cross-fractured-approach')
     const progress = getChronicleChapterProgress(state, 'shattered-frontier')
-    expect(progress.requiredTotal).toBe(8)
+    expect(progress.requiredTotal).toBe(9)
     expect(progress.optionalTotal).toBeGreaterThan(0)
     expect(isChronicleChapterComplete(state, 'shattered-frontier')).toBe(false)
+  })
+
+  it('keeps Broken Meridian gated behind all three Shattered anchors and advances the Main Chronicle in order', () => {
+    const state = createInitialState()
+    debugCompleteChroniclePrerequisites(state, 'sf-m3d-stabilize-shattered-meridian')
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    reconcileChronicleProgress(state, { notify: false })
+    expect(isCombatLocationUnlocked('graveglass-hollow', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('stormvault-gallery', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('starfallen-observatory', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('broken-meridian', state.progress)).toBe(false)
+    expect(getChronicleMainObjective(state)?.id).toBe('sf-m3d-stabilize-shattered-meridian')
+    expect(getChronicleConditionValue(state, CHRONICLE_OBJECTIVES.find((objective) => objective.id === 'sf-m3d-stabilize-shattered-meridian')!.condition)).toEqual({ current: 0, target: 3 })
+
+    state.progress.bossKillsByBoss['graveglass-behemoth'] = 1
+    reconcileChronicleProgress(state, { notify: false })
+    expect(getChronicleConditionValue(state, CHRONICLE_OBJECTIVES.find((objective) => objective.id === 'sf-m3d-stabilize-shattered-meridian')!.condition)).toEqual({ current: 1, target: 3 })
+    expect(isCombatLocationUnlocked('broken-meridian', state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['storm-archivist'] = 1
+    reconcileChronicleProgress(state, { notify: false })
+    expect(getChronicleMainObjective(state)?.id).toBe('sf-m3d-stabilize-shattered-meridian')
+    expect(isCombatLocationUnlocked('broken-meridian', state.progress)).toBe(false)
+
+    state.progress.bossKillsByBoss['fallen-astromancer'] = 1
+    reconcileChronicleProgress(state, { notify: false })
+    expect(isCombatLocationUnlocked('broken-meridian', state.progress)).toBe(true)
+    expect(getChronicleMainObjective(state)?.id).toBe('sf-m4-reach-meridian')
+    state.combat.active = true
+    state.combat.dungeonId = 'broken-meridian'
+    reconcileChronicleProgress(state, { notify: false })
+    expect(getChronicleMainObjective(state)?.id).toBe('sf-m5-meridian-splitter')
+  })
+
+  it('requires an actual WT4 kill for the optional tier objective', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    reconcileChronicleProgress(state, { notify: false })
+    const objective = CHRONICLE_OBJECTIVES.find((entry) => entry.id === 'sf-c2-world-tier-four')!
+    expect(evaluateChronicleCondition(state, objective.condition)).toBe(false)
+    state.progress.chronicle.eventFlags['first-wt3-kill'] = true
+    expect(evaluateChronicleCondition(state, objective.condition)).toBe(false)
+    state.progress.chronicle.eventFlags['first-wt4-kill'] = true
+    expect(evaluateChronicleCondition(state, objective.condition)).toBe(true)
   })
 })

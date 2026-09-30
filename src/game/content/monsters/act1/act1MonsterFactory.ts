@@ -1,11 +1,14 @@
-import type { CombatEffect, CombatTag, DamageType, DungeonId, MonsterId, StatusId, TraitId } from '../../../types'
+import type { ActionStep, CombatEffect, CombatTag, DamageType, DungeonId, MonsterId, StatusId, TraitId } from '../../../types'
 import type { ElementId } from '../../elements/elements'
 import { action, applyStatus, basic, drainMana, gainBarrier, scaledDirectDamage, scaledDot, scaledHeal, scaledMultiDamage, type MonsterDefinition } from '../monsterTypes'
-import { DEFENSE_K, MAX_DEFENSE_REDUCTION } from '../../../core/balance/combatStats'
 import { STATUS_DEFINITIONS } from '../../statuses/statuses'
+import { deriveBasicDamageForTargetPower } from '../monsterTypes'
 
 type Special = { id: string; name: string; description?: string; actionTimeMs?: number; tags?: CombatTag[]; damage?: Array<{ type: DamageType; coefficient: number }>; status?: { id: StatusId; target?: 'self' | 'opponent'; stacks?: number }; dot?: { statusId: StatusId; damageType: DamageType; coefficient: number; durationMs: number }; barrier?: number; heal?: number; manaDrain?: number }
-export type Act1MonsterSpec = { dungeonId: DungeonId; id: MonsterId; name: string; subtitle: string; hp: number; damage: number; targetPower?: number; primaryAffinity?: ElementId; basicAttackElement?: ElementId; combatV2?: boolean; defense: number; time?: number; resistances?: Partial<Record<DamageType, number>>; resonanceYield?: MonsterDefinition['resonanceYield']; trait: TraitId; combatV2Traits?: TraitId[]; icon?: MonsterDefinition['ui']; color?: string; specials: Special[]; boss?: boolean }
+type Act1MonsterBase = { dungeonId: DungeonId; id: MonsterId; name: string; subtitle: string; hp: number; damage: number; defense: number; time?: number; resistances?: Partial<Record<DamageType, number>>; resonanceYield?: MonsterDefinition['resonanceYield']; icon?: MonsterDefinition['ui']; color?: string; specials: Special[]; boss?: boolean; patternSteps?: ActionStep[]; actionPatterns?: MonsterDefinition['actionPatterns']; defaultActionPatternId?: string }
+type LegacyAct1MonsterSpec = Act1MonsterBase & { combatV2?: false; primaryAffinity?: ElementId; basicAttackElement?: ElementId; targetPower?: number; trait: TraitId; combatV2Traits?: never }
+type CombatV2Act1MonsterSpec = Act1MonsterBase & { combatV2: true; primaryAffinity: ElementId; basicAttackElement: ElementId; targetPower: number; trait?: TraitId; combatV2Traits?: TraitId[] }
+export type Act1MonsterSpec = LegacyAct1MonsterSpec | CombatV2Act1MonsterSpec
 
 const getSpecialTags = (special: Special): CombatTag[] => {
   const tags = new Set<CombatTag>(['special'])
@@ -35,7 +38,7 @@ const describeSpecial = (special: Special): string => {
   if (special.barrier) clauses.push(`raises a Barrier equal to ${Math.round(special.barrier * 100)}% of Max Health`)
   if (special.heal) clauses.push(`restores ${Math.round(special.heal * 100)}% of Max Health`)
   if (special.manaDrain) clauses.push(`drains ${special.manaDrain} Mana`)
-  return clauses.length ? `${special.name} ${clauses.join(' and ')}.` : `${special.name} changes the fight through its authored effect.`
+  return clauses.length ? `${special.name} ${clauses.join(' and ')}.` : `${special.name} has no authored combat effect.`
 }
 
 const specialEffects = (special: Special): CombatEffect[] => [
@@ -50,16 +53,14 @@ export const makeAct1Monster = (spec: Act1MonsterSpec): MonsterDefinition => {
   const actions: MonsterDefinition['actions'] = Object.fromEntries(spec.specials.map((special, index) => [special.id, {
     id: special.id, name: special.name, actionTimeMs: special.actionTimeMs ?? 1800 + index * 180, description: special.description ?? describeSpecial(special), effects: specialEffects(special), tags: special.tags ?? getSpecialTags(special),
   }]))
-  const steps = spec.specials.length > 3
+  const steps = spec.patternSteps ?? (spec.specials.length > 3
     ? spec.specials.flatMap((special, index) => [action(`${special.id}-step`, special.id), ...(index === spec.specials.length - 1 ? [] : [basic(`basic-${index + 1}`)])])
-    : [basic('basic-1'), action(`${spec.specials[0].id}-step`, spec.specials[0].id), basic('basic-2'), action(`${spec.specials[1].id}-step`, spec.specials[1].id)]
-  const defenseReduction = Math.min(MAX_DEFENSE_REDUCTION, spec.defense / (spec.defense + DEFENSE_K))
-  const effectiveHealth = spec.hp / Math.max(0.01, 1 - defenseReduction)
-  const basicAttackDamage = spec.targetPower === undefined ? spec.damage : (spec.targetPower / 10) ** 2 * Math.max(0.1, (spec.time ?? 2300) / 1000) / effectiveHealth
+    : [basic('basic-1'), action(`${spec.specials[0].id}-step`, spec.specials[0].id), basic('basic-2'), action(`${spec.specials[1].id}-step`, spec.specials[1].id)])
+  const basicAttackDamage = spec.combatV2 ? deriveBasicDamageForTargetPower({ maxHealth: spec.hp, defense: spec.defense, basicAttackTimeMs: spec.time ?? 2300, targetPower: spec.targetPower }) : spec.damage
   return {
-    id: spec.id, bestiaryCategory: spec.boss ? 'boss' : 'monster', name: spec.name, subtitle: spec.subtitle, primaryAffinity: spec.primaryAffinity, basicAttackElement: spec.basicAttackElement ?? spec.primaryAffinity, maxHealth: spec.hp, basicAttackDamage, basicAttackTimeMs: spec.time ?? 2300, defense: spec.defense,
-    resistances: spec.resistances, resonanceYield: spec.resonanceYield, color: spec.color ?? '#9b8dbd', ui: spec.icon ?? { portraitIcon: spec.boss ? 'boss' : 'guardian' }, traitIds: spec.combatV2 ? (spec.combatV2Traits ?? []) : [spec.trait],
-    actions, actionPatterns: { default: { id: 'default', steps } }, defaultActionPatternId: 'default', loot: [],
+    id: spec.id, bestiaryCategory: spec.boss ? 'boss' : 'monster', name: spec.name, subtitle: spec.subtitle, primaryAffinity: spec.primaryAffinity, basicAttackElement: spec.basicAttackElement, maxHealth: spec.hp, basicAttackDamage, basicAttackTimeMs: spec.time ?? 2300, defense: spec.defense,
+    resistances: spec.resistances, resonanceYield: spec.resonanceYield, color: spec.color ?? '#9b8dbd', ui: spec.icon ?? { portraitIcon: spec.boss ? 'boss' : 'guardian' }, traitIds: spec.combatV2 ? (spec.combatV2Traits ?? (spec.trait ? [spec.trait] : [])) : [spec.trait],
+    actions, actionPatterns: spec.actionPatterns ?? { default: { id: 'default', steps } }, defaultActionPatternId: spec.defaultActionPatternId ?? 'default', loot: [],
   }
 }
 

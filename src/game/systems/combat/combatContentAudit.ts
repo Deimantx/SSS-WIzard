@@ -1,12 +1,15 @@
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
 import type { MonsterDefinition } from '../../content/monsters/monsterTypes'
-import type { MonsterId } from '../../types'
-import type { WorldTierId } from '../../types'
+import type { CombatEffect } from './combatTypes'
+import type { MonsterId, WorldTierId } from '../../types'
+import { WORLD_TIERS } from '../../content/world-tier/worldTiers'
 import { getMonsterDamageProfile } from '../../content/monsters/monsterTypes'
 import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
+import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
+import { COMBAT_LOCATIONS } from '../../content/world-navigation/worldNavigation'
 
 export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus',
@@ -22,17 +25,35 @@ export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'cinder-hound', 'ash-cultist', 'fire-elemental', 'lava-eel', 'emberwing-harrier', 'charred-warden', 'pyre-colossus', 'flamebound-revenant',
   'thorn-maw', 'rootbound-stalker', 'briar-sprite', 'moss-carapace', 'sporeback-brute', 'vinebound-reaver', 'scarwood-behemoth', 'rootscar-ancient',
   'arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct', 'crossroads-keeper',
+  'graveglass-shade', 'bone-shardling', 'silent-mourner', 'crypt-guardian', 'epitaph-weaver', 'tombglass-reaver', 'ossuary-oracle', 'graveglass-behemoth',
+  'volt-wisp', 'gale-scribe', 'charged-seeker', 'thundercoil-serpent', 'static-armor', 'stormbound-curator', 'tempest-engine', 'storm-archivist',
+  'starbound-eye', 'astral-husk', 'orbiting-fragment', 'lenskeeper-remnant', 'comet-wraith', 'voidglass-custodian', 'zenith-horror', 'fallen-astromancer',
+  'meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'meridian-splitter',
 ]
 
 export interface CombatV2ContentAuditRow {
-  id: MonsterId; name: string; location: string; affinity: string; damageProfile: string[]; power: number; hp: number; basicDamage: number; basicIntervalMs: number; basicDps: number
-  maxRepeatableDirectCoefficient: number; dotTotalCoefficient: number; repeatableHealPercent: number; repeatableBarrierPercent: number; onceOnlyHealPercent: number; onceOnlyBarrierPercent: number; physicalComponentCount: number; defaultFlatPeriodicCount: number; maxControlMs: number; patternCycleMs: number; warnings: string[]
+  id: MonsterId; name: string; region: CombatV2AuditRegionId; location: string; affinity: string; damageProfile: string[]; power: number; hp: number; basicDamage: number; basicIntervalMs: number; basicDps: number
+  maxRepeatableDirectCoefficient: number; dotTotalCoefficient: number; periodicDamageCoefficient: number; periodicHealPercent: number
+  repeatableHealPercent: number; repeatableBarrierPercent: number; onceOnlyHealPercent: number; onceOnlyBarrierPercent: number
+  repeatableSustainPercent: number; onceOnlySustainPercent: number; physicalComponentCount: number
+  defaultFlatPeriodicDamageCount: number; defaultFlatPeriodicHealCount: number; defaultFlatPeriodicCount: number
+  maxControlMs: number; patternCycleMs: number; warnings: string[]
 }
+
+export const COMBAT_V2_AUDIT_REGIONS = [
+  { id: 'all', label: 'All Combat V2' },
+  { id: 'tutorial', label: 'Tutorial' },
+  { id: 'first-frontier', label: 'First Frontier' },
+  { id: 'elemental-scar', label: 'Elemental Scar' },
+  { id: 'shattered-meridian', label: 'Shattered Meridian' },
+] as const
+export type CombatV2AuditRegionId = typeof COMBAT_V2_AUDIT_REGIONS[number]['id']
 
 const LOCATIONS: Record<string, string> = {
   'stonewake-hollow': 'Stonewake Hollow', 'galecrest-heights': 'Galecrest Heights', 'tideglass-caverns': 'Tideglass Caverns', 'emberfall-basin': 'Emberfall Basin',
   'whispering-woods': 'Whispering Woods', 'howling-den': 'Howling Den', 'hunters-ground': 'Gloamridge', 'abandoned-catacombs': 'Abandoned Catacombs',
   'fractured-approach': 'Fractured Approach', 'flooded-reliquary': 'Flooded Reliquary', 'ashen-watch': 'Ashen Watch', 'rootscar-hollow': 'Rootscar Hollow', 'crossroads-of-ruin': 'Crossroads of Ruin',
+  'graveglass-hollow': 'Graveglass Hollow', 'stormvault-gallery': 'Stormvault Gallery', 'starfallen-observatory': 'Starfallen Observatory', 'broken-meridian': 'Broken Meridian',
 }
 const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries({
   'stonewake-hollow': ['stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus'],
@@ -48,56 +69,118 @@ const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries
   'ashen-watch': ['cinder-hound', 'ash-cultist', 'fire-elemental', 'lava-eel', 'emberwing-harrier', 'charred-warden', 'pyre-colossus', 'flamebound-revenant'],
   'rootscar-hollow': ['thorn-maw', 'rootbound-stalker', 'briar-sprite', 'moss-carapace', 'sporeback-brute', 'vinebound-reaver', 'scarwood-behemoth', 'rootscar-ancient'],
   'crossroads-of-ruin': ['arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct', 'crossroads-keeper'],
+  'graveglass-hollow': ['graveglass-shade', 'bone-shardling', 'silent-mourner', 'crypt-guardian', 'epitaph-weaver', 'tombglass-reaver', 'ossuary-oracle', 'graveglass-behemoth'],
+  'stormvault-gallery': ['volt-wisp', 'gale-scribe', 'charged-seeker', 'thundercoil-serpent', 'static-armor', 'stormbound-curator', 'tempest-engine', 'storm-archivist'],
+  'starfallen-observatory': ['starbound-eye', 'astral-husk', 'orbiting-fragment', 'lenskeeper-remnant', 'comet-wraith', 'voidglass-custodian', 'zenith-horror', 'fallen-astromancer'],
+  'broken-meridian': ['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'meridian-splitter'],
 }).flatMap(([location, ids]) => (ids as string[]).map((id) => [id, location])))
+const regionForLocation = (location: string): Exclude<CombatV2AuditRegionId, 'all'> => {
+  if (['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(location)) return 'tutorial'
+  if (['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(location)) return 'first-frontier'
+  if (['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'].includes(location)) return 'elemental-scar'
+  return 'shattered-meridian'
+}
 
-const collectEffects = (monster: MonsterDefinition) => [
-  ...Object.values(monster.actions).flatMap((action) => action.effects ?? []),
-  ...monster.traitIds.flatMap((traitId) => TRAIT_DEFINITIONS[traitId]?.rules?.flatMap((rule) => rule.effects) ?? []),
+const collectAuthoredEffects = (monster: MonsterDefinition, affixId?: keyof typeof ELITE_ZONE_AFFIXES) => [
+  ...Object.values(monster.actions).flatMap((action) => (action.effects ?? []).map((effect) => ({ effect, onceOnly: false, sourceName: action.name }))),
+  ...monster.traitIds.flatMap((traitId) => (TRAIT_DEFINITIONS[traitId]?.rules ?? []).flatMap((rule) => rule.effects.map((effect) => ({ effect, onceOnly: rule.oncePerEncounter === true, sourceName: TRAIT_DEFINITIONS[traitId]?.name ?? traitId })))),
+  ...(affixId ? (ELITE_ZONE_AFFIXES[affixId]?.rules ?? []).flatMap((rule) => rule.effects.map((effect) => ({ effect, onceOnly: rule.oncePerEncounter === true, sourceName: ELITE_ZONE_AFFIXES[affixId]?.name ?? affixId }))) : []),
 ]
-const collectTraitEffects = (monster: MonsterDefinition, onceOnly: boolean) => monster.traitIds.flatMap((traitId) => TRAIT_DEFINITIONS[traitId]?.rules?.filter((rule) => onceOnly ? rule.oncePerEncounter === true : rule.oncePerEncounter !== true).flatMap((rule) => rule.effects) ?? [])
 const sourceBasicCoefficient = (value: unknown) => value && typeof value === 'object' && 'type' in value && value.type === 'source-basic-damage-percent' && 'value' in value && typeof value.value === 'number' ? value.value : 0
-const sourceHealthCoefficient = (value: unknown) => value && typeof value === 'object' && 'type' in value && value.type === 'source-max-health-percent' && 'value' in value && typeof value.value === 'number' ? value.value : 0
-const maximumEffectCoefficient = (effects: ReturnType<typeof collectEffects>, kind: 'damage' | 'heal' | 'barrier') => Math.max(0, ...effects.flatMap((effect) => {
-  if (kind === 'damage' && effect.type === 'deal-damage') return [effect.components.reduce((sum, component) => sum + sourceBasicCoefficient(component.magnitude), 0)]
-  if (kind === 'heal' && effect.type === 'heal') return [sourceHealthCoefficient(effect.magnitude)]
-  if (kind === 'barrier' && effect.type === 'gain-barrier') return [sourceHealthCoefficient(effect.magnitude)]
-  return []
-}))
+const sourceHealthCoefficient = (value: unknown, maxHealth: number) => {
+  if (!value || typeof value !== 'object' || !('type' in value) || !('value' in value) || typeof value.value !== 'number') return 0
+  if (value.type === 'source-max-health-percent') return value.value
+  if (value.type === 'flat') return maxHealth > 0 ? value.value / maxHealth : 0
+  return 0
+}
+const isGenericActionDescription = (monster: MonsterDefinition, action: MonsterDefinition['actions'][string]) => {
+  const description = action.description?.trim()
+  if (!description) return true
+  const normalized = description.toLowerCase().replace(/\s+/g, ' ')
+  const generic = `${monster.name} uses ${action.name}.`.toLowerCase()
+  return normalized === generic || /changes the fight through its authored effect|has no authored combat effect/i.test(normalized)
+}
+
+const BOSS_REPEATABLE_SUSTAIN_BUDGET = 0.3
+const BOSS_ONCE_SUSTAIN_BUDGET = 0.3
 
 export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2ContentAuditRow[] => COMBAT_V2_AUDIT_MONSTER_IDS.flatMap((id) => {
   const monster = MONSTERS[id]
   if (!monster) return []
   const power = resolveEnemyPowerBreakdown(id, worldTier)
   const profile = resolveWorldTierEnemyProfile(id, worldTier)
-  const effects = collectEffects(monster)
-  const periodicEffects = effects.flatMap((effect) => effect.type === 'apply-status' ? (effect.periodicEffects ?? STATUS_DEFINITIONS[effect.statusId]?.periodic?.effects ?? []).map((periodic) => ({ periodic, durationMs: effect.durationMs ?? STATUS_DEFINITIONS[effect.statusId]?.defaultDurationMs ?? 0, statusId: effect.statusId, fromDefault: effect.periodicEffects === undefined })) : [])
-  const dotTotalCoefficient = periodicEffects.reduce((sum, entry) => {
-    const intervalMs = STATUS_DEFINITIONS[entry.statusId]?.periodic?.intervalMs ?? 0
-    const ticks = intervalMs > 0 ? Math.floor(entry.durationMs / intervalMs) : 0
-    return entry.periodic.type === 'deal-damage' ? sum + entry.periodic.components.reduce((part, component) => part + sourceBasicCoefficient(component.magnitude) * ticks, 0) : sum
-  }, 0)
-  const physicalComponentCount = periodicEffects.reduce((sum, entry) => entry.periodic.type === 'deal-damage' ? sum + entry.periodic.components.filter((component) => component.damageType === 'physical').length : sum, 0) + effects.reduce((sum, effect) => effect.type === 'deal-damage' ? sum + effect.components.filter((component) => component.damageType === 'physical').length : sum, 0)
-  const maxControlMs = effects.reduce((max, effect) => effect.type === 'apply-status' && STATUS_DEFINITIONS[effect.statusId]?.tags.includes('control') ? Math.max(max, effect.durationMs ?? STATUS_DEFINITIONS[effect.statusId]?.defaultDurationMs ?? 0) : max, 0)
+  const affixId = monster.bestiaryCategory === 'boss' ? undefined : COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]?.zoneAffixId
+  const authored = collectAuthoredEffects(monster, affixId)
+  const periodic = authored.flatMap(({ effect, onceOnly, sourceName }) => effect.type === 'apply-status' ?
+    (effect.periodicEffects ?? STATUS_DEFINITIONS[effect.statusId]?.periodic?.effects ?? []).map((periodicEffect) => ({
+      effect: periodicEffect,
+      onceOnly,
+      sourceName,
+      statusId: effect.statusId,
+      durationMs: effect.durationMs ?? STATUS_DEFINITIONS[effect.statusId]?.defaultDurationMs ?? 0,
+      fromDefault: effect.periodicEffects === undefined,
+    })) : [])
+  const ticksFor = (statusId: string, durationMs: number) => {
+    const interval = STATUS_DEFINITIONS[statusId as keyof typeof STATUS_DEFINITIONS]?.periodic?.intervalMs ?? 0
+    return interval > 0 ? Math.floor(durationMs / interval) : 0
+  }
+  let periodicDamageCoefficient = 0
+  let periodicHealPercent = 0
+  let repeatablePeriodicHealPercent = 0
+  let onceOnlyPeriodicHealPercent = 0
+  let defaultFlatPeriodicDamageCount = 0
+  let defaultFlatPeriodicHealCount = 0
+  let physicalComponentCount = 0
+  periodic.forEach((entry) => {
+    const ticks = ticksFor(entry.statusId, entry.durationMs)
+    if (entry.effect.type === 'deal-damage') {
+      physicalComponentCount += entry.effect.components.filter((component) => component.damageType === 'physical').length
+      periodicDamageCoefficient += entry.effect.components.reduce((sum, component) => sum + sourceBasicCoefficient(component.magnitude) * ticks, 0)
+      if (entry.fromDefault) defaultFlatPeriodicDamageCount += entry.effect.components.filter((component) => component.magnitude.type === 'flat').length
+    } else if (entry.effect.type === 'heal') {
+      const amount = sourceHealthCoefficient(entry.effect.magnitude, monster.maxHealth) * ticks
+      periodicHealPercent += amount
+      if (entry.onceOnly) onceOnlyPeriodicHealPercent += amount
+      else repeatablePeriodicHealPercent += amount
+      if (entry.fromDefault && entry.effect.magnitude.type === 'flat') defaultFlatPeriodicHealCount += 1
+    }
+  })
+  const repeatable = authored.filter((entry) => !entry.onceOnly)
+  const onceOnly = authored.filter((entry) => entry.onceOnly)
+  const maximumDirectCoefficient = (entries: typeof authored) => Math.max(0, ...entries.flatMap(({ effect }) => effect.type === 'deal-damage' ? [effect.components.reduce((sum, component) => sum + sourceBasicCoefficient(component.magnitude), 0)] : []))
+  const sumMagnitudePercent = (entries: typeof authored, type: 'heal' | 'gain-barrier') => entries.reduce((sum, { effect }) => effect.type === type ? sum + sourceHealthCoefficient(effect.magnitude, monster.maxHealth) : sum, 0)
+  const repeatableHealPercent = sumMagnitudePercent(repeatable, 'heal') + repeatablePeriodicHealPercent
+  const repeatableBarrierPercent = sumMagnitudePercent(repeatable, 'gain-barrier')
+  const onceOnlyHealPercent = sumMagnitudePercent(onceOnly, 'heal') + onceOnlyPeriodicHealPercent
+  const onceOnlyBarrierPercent = sumMagnitudePercent(onceOnly, 'gain-barrier')
+  const repeatableSustainPercent = repeatableHealPercent + repeatableBarrierPercent
+  const onceOnlySustainPercent = onceOnlyHealPercent + onceOnlyBarrierPercent
+  const maxControlMs = authored.reduce((max, { effect }) => effect.type === 'apply-status' && STATUS_DEFINITIONS[effect.statusId]?.tags.includes('control') ? Math.max(max, effect.durationMs ?? STATUS_DEFINITIONS[effect.statusId]?.defaultDurationMs ?? 0) : max, 0)
   const patternCycleMs = Object.values(monster.actionPatterns).reduce((max, pattern) => Math.max(max, pattern.steps.reduce((sum, step) => sum + (step.type === 'basic' ? monster.basicAttackTimeMs : monster.actions[step.actionId ?? '']?.actionTimeMs ?? 0), 0)), 0)
-  const repeatableEffects = [...Object.values(monster.actions).flatMap((action) => action.effects ?? []), ...collectTraitEffects(monster, false)]
-  const onceOnlyEffects = collectTraitEffects(monster, true)
-  const direct = maximumEffectCoefficient(repeatableEffects, 'damage')
-  const heal = maximumEffectCoefficient(repeatableEffects, 'heal')
-  const barrier = maximumEffectCoefficient(repeatableEffects, 'barrier')
-  const onceOnlyHeal = maximumEffectCoefficient(onceOnlyEffects, 'heal')
-  const onceOnlyBarrier = maximumEffectCoefficient(onceOnlyEffects, 'barrier')
   const warnings: string[] = []
-  if (direct > 3) warnings.push('Repeatable direct hit exceeds 3× Basic')
-  if (dotTotalCoefficient > 2) warnings.push('Repeatable DoT exceeds 2× Basic')
-  if (heal > 0.2) warnings.push('Repeatable healing exceeds 20% Max HP')
-  if (barrier > 0.25) warnings.push('Repeatable Barrier exceeds 25% Max HP')
-  if (onceOnlyHeal > 0.25) warnings.push('One-time healing exceeds 25% Max HP')
-  if (onceOnlyBarrier > 0.30) warnings.push('One-time Barrier exceeds 30% Max HP')
+  for (const action of Object.values(monster.actions)) if (isGenericActionDescription(monster, action)) warnings.push(`Generic or missing action description: ${action.name}`)
+  if (maximumDirectCoefficient(repeatable) > 3) warnings.push('Repeatable direct hit exceeds 3× Basic')
+  if (periodicDamageCoefficient > 2) warnings.push('Repeatable DoT exceeds 2× Basic')
+  if (repeatableHealPercent > 0.2) warnings.push('Repeatable healing exceeds 20% Max HP')
+  if (repeatableBarrierPercent > 0.25) warnings.push('Repeatable Barrier exceeds 25% Max HP')
+  if (onceOnlyHealPercent > 0.25) warnings.push('One-time healing exceeds 25% Max HP')
+  if (onceOnlyBarrierPercent > 0.3) warnings.push('One-time Barrier exceeds 30% Max HP')
+  if (monster.bestiaryCategory === 'boss' && repeatableSustainPercent > BOSS_REPEATABLE_SUSTAIN_BUDGET) warnings.push(`Repeatable sustain exceeds ${(BOSS_REPEATABLE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
+  if (monster.bestiaryCategory === 'boss' && onceOnlySustainPercent > BOSS_ONCE_SUSTAIN_BUDGET) warnings.push(`One-transition sustain exceeds ${(BOSS_ONCE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
   if (maxControlMs > 5000 && ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(LOCATION_BY_ID[id])) warnings.push('Act 0 control exceeds 5 seconds')
   if (physicalComponentCount) warnings.push(`${physicalComponentCount} Physical damage component(s)`)
   if (!monster.primaryAffinity) warnings.push('Missing explicit primary affinity')
   if (!monster.basicAttackElement) warnings.push('Missing explicit Basic Attack element')
-  const flatPeriodicCount = periodicEffects.reduce((count, entry) => count + (entry.fromDefault && entry.periodic.type === 'deal-damage' ? entry.periodic.components.filter((component) => component.magnitude.type === 'flat').length : 0), 0)
-  if (flatPeriodicCount) warnings.push(`${flatPeriodicCount} flat periodic damage payload(s)`)
-  return [{ id, name: monster.name, location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, maxRepeatableDirectCoefficient: direct, dotTotalCoefficient, repeatableHealPercent: heal, repeatableBarrierPercent: barrier, onceOnlyHealPercent: onceOnlyHeal, onceOnlyBarrierPercent: onceOnlyBarrier, physicalComponentCount, defaultFlatPeriodicCount: flatPeriodicCount, maxControlMs, patternCycleMs, warnings }]
+  if (defaultFlatPeriodicDamageCount) warnings.push(`${defaultFlatPeriodicDamageCount} default flat periodic damage payload(s)`)
+  if (defaultFlatPeriodicHealCount) warnings.push(`${defaultFlatPeriodicHealCount} default flat periodic healing payload(s)`)
+  const defaultFlatPeriodicCount = defaultFlatPeriodicDamageCount + defaultFlatPeriodicHealCount
+  return [{ id, name: monster.name, region: regionForLocation(LOCATION_BY_ID[id]), location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps,
+    maxRepeatableDirectCoefficient: maximumDirectCoefficient(repeatable), dotTotalCoefficient: periodicDamageCoefficient, periodicDamageCoefficient, periodicHealPercent,
+    repeatableHealPercent, repeatableBarrierPercent, onceOnlyHealPercent, onceOnlyBarrierPercent, repeatableSustainPercent, onceOnlySustainPercent,
+    physicalComponentCount, defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, maxControlMs, patternCycleMs, warnings }]
+})
+
+export const buildCombatV2MonsterWorldTierComparison = (monsterId: MonsterId) => Object.values(WORLD_TIERS).map(({ id: worldTier }) => {
+  const profile = resolveWorldTierEnemyProfile(monsterId, worldTier)
+  return { monsterId, worldTier, power: resolveEnemyPowerBreakdown(monsterId, worldTier).power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, defense: profile.defense }
 })

@@ -57,7 +57,7 @@ export const getChronicleConditionValue = (state: GameState, condition: Chronicl
     case 'crystal-equipped': return { current: state.crystals.equippedSlots.filter(Boolean).length, target: condition.count }
     case 'arcane-core-invested-nodes': return { current: Object.values(state.arcaneCore.nodes).filter((node) => node && safeCount(node.rank) > 0).length, target: condition.count }
     case 'spell-loadout-slots': return { current: activeSpellSlotCount(state), target: condition.count }
-    case 'world-tier-kill': return { current: state.progress.chronicle.eventFlags['first-wt2-kill'] || state.worldTier.highestUnlocked >= condition.tier ? 1 : 0, target: condition.count }
+    case 'world-tier-kill': return { current: state.progress.chronicle.eventFlags[`first-wt${condition.tier}-kill` as ChronicleEventId] ? 1 : 0, target: condition.count }
     case 'sigil-obtained': return { current: safeCount(state.sigils.lifetimeDrops), target: condition.count }
     case 'sigil-equipped': return { current: Object.values(state.sigils.equipped).filter(Boolean).length, target: condition.count }
     case 'sigil-rank-at-least': return { current: Math.max(0, ...Object.values(state.sigils.storage).map((sigil) => safeCount(sigil.rank))), target: condition.rank }
@@ -101,7 +101,7 @@ export const evaluateChronicleCondition = (state: GameState, condition: Chronicl
     case 'crystal-equipped': return state.crystals.equippedSlots.filter(Boolean).length >= condition.count
     case 'arcane-core-invested-nodes': return Object.values(state.arcaneCore.nodes).filter((node) => node && safeCount(node.rank) > 0).length >= condition.count
     case 'spell-loadout-slots': return activeSpellSlotCount(state) >= condition.count
-    case 'world-tier-kill': return state.progress.chronicle.eventFlags['first-wt2-kill'] === true || state.worldTier.highestUnlocked >= condition.tier
+    case 'world-tier-kill': return state.progress.chronicle.eventFlags[`first-wt${condition.tier}-kill` as ChronicleEventId] === true
     case 'sigil-obtained': return safeCount(state.sigils.lifetimeDrops) >= condition.count
     case 'sigil-equipped': return Object.values(state.sigils.equipped).filter(Boolean).length >= condition.count
     case 'sigil-rank-at-least': return Math.max(0, ...Object.values(state.sigils.storage).map((sigil) => safeCount(sigil.rank))) >= condition.rank

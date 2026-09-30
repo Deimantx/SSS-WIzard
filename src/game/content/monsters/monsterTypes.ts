@@ -94,12 +94,29 @@ export const getMonsterDamageProfile = (monster: MonsterDefinition): ElementId[]
     if (Array.isArray(value)) { value.forEach(scan); return }
     const record = value as Record<string, unknown>
     if (isElementId(record.damageType)) used.add(record.damageType)
-    if (record.type === 'apply-status' && typeof record.statusId === 'string') scan(STATUS_DEFINITIONS[record.statusId as StatusId]?.periodic?.effects)
+    if (record.type === 'apply-status' && typeof record.statusId === 'string' && record.periodicEffects === undefined) {
+      scan(STATUS_DEFINITIONS[record.statusId as StatusId]?.periodic?.effects)
+    }
     Object.values(record).forEach(scan)
   }
   scan(monster.actions)
   monster.traitIds.forEach((traitId) => scan(TRAIT_DEFINITIONS[traitId]?.rules))
   return ELEMENT_IDS.filter((element) => used.has(element))
+}
+
+export const deriveBasicDamageForTargetPower = ({ maxHealth, defense, basicAttackTimeMs, targetPower }: {
+  maxHealth: number
+  defense: number
+  basicAttackTimeMs: number
+  targetPower: number
+}): number => {
+  const defenseRating = Math.max(0, Number.isFinite(defense) ? defense : 0)
+  const health = Math.max(1, Number.isFinite(maxHealth) ? maxHealth : 1)
+  const attackSeconds = Math.max(0.1, (Number.isFinite(basicAttackTimeMs) ? basicAttackTimeMs : 100) / 1000)
+  const target = Math.max(0, Number.isFinite(targetPower) ? targetPower : 0)
+  const defenseReduction = Math.min(MAX_DEFENSE_REDUCTION, defenseRating / (defenseRating + DEFENSE_K))
+  const effectiveHealth = health / Math.max(0.01, 1 - defenseReduction)
+  return (target / 10) ** 2 * attackSeconds / effectiveHealth
 }
 
 /** Applies authored Act 0 Combat V2 identity and derives Basic damage from a target Power. */
@@ -120,11 +137,7 @@ export const applyCombatV2Profile = (monster: MonsterDefinition, primaryAffinity
   convert(authored)
   // Preserve authored durability and cadence; tune only the normal hit to land
   // in the requested Power band under the canonical effective-health formula.
-  const defenseRating = Math.max(0, authored.defense ?? 0)
-  const defenseReduction = Math.min(MAX_DEFENSE_REDUCTION, defenseRating / (defenseRating + DEFENSE_K))
-  const effectiveHealth = authored.maxHealth / Math.max(0.01, 1 - defenseReduction)
-  const attackSeconds = Math.max(0.1, authored.basicAttackTimeMs / 1000)
-  const basicAttackDamage = (targetPower / 10) ** 2 * attackSeconds / effectiveHealth
+  const basicAttackDamage = deriveBasicDamageForTargetPower({ maxHealth: authored.maxHealth, defense: authored.defense ?? 0, basicAttackTimeMs: authored.basicAttackTimeMs, targetPower })
   return { ...authored, primaryAffinity, basicAttackElement: primaryAffinity, basicAttackDamage }
 }
 

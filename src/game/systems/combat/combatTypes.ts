@@ -33,7 +33,7 @@ export type TraitId =
   | 'name-eater-silence' | 'bound-echo-repetition' | 'hollow-liturgist-curse' | 'whisper-archivist-erasure'
   | 'sigil-guardian-ward' | 'black-seal-parasite-corruption' | 'vault-devourer-regrowth' | 'inkbound-specter-curse'
   | 'gatebound-remnant-cleave' | 'black-rift-stalker-corruption' | 'portalbound-acolyte-mute' | 'sealbreaker-construct-ward'
-  | 'tutorial-living-stone' | 'tutorial-restorative-tide'
+  | 'tutorial-living-stone' | 'tutorial-restorative-tide' | 'meridian-splitter-severed-phase'
   | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate' | 'flamebound-rekindle' | 'rootscar-ancient-regrowth'
 
 export type CombatTag =
@@ -334,7 +334,7 @@ export type StatusId =
   | 'silenced'
   | 'corruption'
   | 'arcane-disruption'
-  | 'rapid-regrow'
+  | 'meridian-overload'
   | 'corrupted-fury'
   | 'unbound-power'
   | 'final-incantation-empowerment'

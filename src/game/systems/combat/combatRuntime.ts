@@ -379,7 +379,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     if (hasBossEncounter(dungeon) && afterThreat >= requirement) queueAutoHuntBoss(state, dungeon.id)
   }
   if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
-  if (encounterWorldTier === 2 && state.worldTier.highestUnlocked >= 2) state.progress.chronicle.eventFlags['first-wt2-kill'] = true
+  if (encounterWorldTier >= 2 && state.worldTier.highestUnlocked >= encounterWorldTier) state.progress.chronicle.eventFlags[`first-wt${encounterWorldTier}-kill` as import('../../types').ChronicleEventId] = true
   recordGuildEnemyKill(state, enemyId, state.combat.dungeonId ?? 'whispering-woods', bossDefeated)
   const hadHunterContract = Boolean(state.progress.huntersOrder.activeContract)
   recordHunterKill(state, enemyId, state.combat.dungeonId)

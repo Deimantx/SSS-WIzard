@@ -23,7 +23,7 @@ describe('combat Power audit reports', () => {
     const ratios = buildBossPowerRatioAudit(1)
     expect(ratios).toHaveLength(5)
     expect(ratios.every((row) => Number.isFinite(row.bossToLastNormalRatio) && row.bossToLastNormalRatio > 1)).toBe(true)
-    expect(buildDifficultyInversionAudit(1).some((row) => row.locationId === 'rootscar-hollow')).toBe(true)
+    expect(buildDifficultyInversionAudit(1).some((row) => row.locationId === 'rootscar-hollow')).toBe(false)
     expect(getPowerAuditWorldTiers()).toEqual([1, 2, 3, 4, 5])
   })
 })

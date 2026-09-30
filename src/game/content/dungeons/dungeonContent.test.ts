@@ -331,7 +331,6 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Basic",
       "Root Prison",
       "Basic",
-      "Rejuvenating Sap",
       "Basic",
     ]);
     expect(labels("forest-heart", "overgrown")).toEqual([
@@ -342,7 +341,6 @@ describe("Act 0 and Act 1 dungeon content", () => {
       "Heart Pulse",
       "Root Prison",
       "Basic",
-      "Rejuvenating Sap",
     ]);
     expect(labels("cavefang-wolf")).toEqual([
       "Basic",
@@ -604,7 +602,6 @@ describe("Act 0 and Act 1 dungeon content", () => {
       ["grove-sentinel", "rejuvenate", 0, 25.6],
       ["forest-heart", "heart-pulse", 0, 36],
       ["forest-heart", "root-prison", 0, 24],
-      ["forest-heart", "rejuvenating-sap", 0, 90],
       ["cavefang-wolf", "pounce", 0, 30],
       ["razorclaw-lynx", "rending-claws", 0, 26.25],
       ["corrupted-dire-wolf", "arcane-bite", 0, 16.9],
@@ -684,7 +681,7 @@ describe("Act 0 and Act 1 dungeon content", () => {
     ).toHaveLength(3);
     expect(
       TRAIT_DEFINITIONS["archmage-edrin-unbound-spirit"].rules?.[0].effects,
-    ).toHaveLength(3);
+    ).toHaveLength(2);
   });
 
   it("uses canonical resistances and crosses each boss phase once", () => {

@@ -37,8 +37,8 @@ describe('Bestiary selectors', () => {
   })
 
   it('searches discovered entries through referenced status definitions and action effects', () => {
-    expect(getBestiarySearchText(MONSTERS['forest-heart'])).toContain('rapid regrow')
-    expect(getBestiarySearchText(MONSTERS['forest-heart'])).toContain('haste')
+    expect(getBestiarySearchText(MONSTERS['forest-heart'])).toContain('overgrown')
+    expect(getBestiarySearchText(MONSTERS['forest-heart'])).toContain('living core')
     expect(getBestiarySearchText(MONSTERS['corrupted-greatbear'])).toContain('corruption')
     expect(getBestiarySearchText(MONSTERS['corrupted-greatbear'])).toContain('vulnerable')
     expect(getBestiarySearchText(MONSTERS['archmage-edrin-shade'])).toContain('arcane disruption')

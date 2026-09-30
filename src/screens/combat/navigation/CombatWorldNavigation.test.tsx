@@ -89,11 +89,11 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('button', { name: 'Fire' }).getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('shows a clean empty state without a hidden location inspector when no filter matches', () => {
+  it('shows Elemental Scar locations with Arcane-primary roster enemies', () => {
     renderNavigation()
     fireEvent.click(screen.getByRole('button', { name: 'Arcane' }))
-    expect(screen.getByText('NO MATCHING LOCATIONS')).toBeTruthy()
-    expect(screen.queryByRole('complementary', { name: 'Location details' })).toBeNull()
+    expect(screen.queryByText('NO MATCHING LOCATIONS')).toBeNull()
+    expect(screen.getByRole('button', { name: /Flooded Reliquary/ })).toBeTruthy()
   })
 
   it('renders targeted Whispering Woods cards without legacy inspector metrics', () => {

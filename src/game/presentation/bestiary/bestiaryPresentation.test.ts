@@ -4,17 +4,6 @@ import { buildBestiaryBossPhases, getBestiaryBossSummaryTags, getBestiaryResonan
 import { buildCombatStatusDetailPresentation } from '../combat'
 
 describe('Bestiary combat presentation', () => {
-  it('explains Rapid Regrow from the authored status definition', () => {
-    const presentation = buildCombatStatusDetailPresentation('rapid-regrow')
-    expect(presentation.modifiers).toEqual([])
-    expect(presentation.periodic?.effects).toContain('Restores 5% Max HP Health per tick')
-    expect(presentation.periodic?.intervalLabel).toBe('1 sec')
-    expect(presentation.periodic?.tickCount).toBe(8)
-    expect(presentation.periodic?.totalEffects).toContain('Restores 40% Max HP Health over the full duration')
-    expect(presentation.durationLabel).toBe('8 sec')
-    expect(presentation.dispellable).toBe(true)
-  })
-
   it('formats Haste and Corruption modifiers from status data', () => {
     expect(buildCombatStatusDetailPresentation('haste').modifiers).toEqual(['+15% Action Speed', '+15% Basic Attack Speed'])
     expect(buildCombatStatusDetailPresentation('corruption').modifiers).toEqual(['+3% Damage Taken per stack'])
@@ -24,9 +13,10 @@ describe('Bestiary combat presentation', () => {
   it('presents Forest Heart threshold mechanics and phase transition', () => {
     const traits = getBestiaryTraitPresentations(MONSTERS['forest-heart'])
     const livingCore = traits.find((trait) => trait.id === 'forest-heart-living-core')
-    expect(livingCore?.triggers[0]).toMatchObject({ label: 'Below 50% HP', oncePerEncounter: true })
-    expect(livingCore?.triggers[0].effects.map((effect) => effect.label)).toEqual(['Haste', 'Rapid Regrow', 'Pattern Change'])
-    expect(livingCore?.triggers[0].effects[2].detail).toBe('Switch to Overgrown')
+    expect(livingCore?.triggers[0]).toMatchObject({ label: 'Below 35% HP', oncePerEncounter: true })
+    expect(livingCore?.triggers[0].effects.map((effect) => effect.label)).toEqual(['Heal', 'Pattern Change'])
+    expect(livingCore?.triggers[0].effects[0].detail).toContain('15%')
+    expect(livingCore?.triggers[0].effects[1].detail).toBe('Switch to Overgrown')
     expect(buildBestiaryBossPhases(MONSTERS['forest-heart']).phases.map((phase) => phase.label)).toEqual(['Default', 'Overgrown'])
   })
 

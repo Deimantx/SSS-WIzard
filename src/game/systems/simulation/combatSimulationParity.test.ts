@@ -138,10 +138,10 @@ describe('canonical simulation quantum parity', () => {
       state.combat.active = true
       state.combat.dungeonId = 'whispering-woods'
       state.debug.freezePlayerActions = true
-      spawnEnemy(state, 'forest-heart')
+      spawnEnemy(state, 'briar-sprite')
       state.combat.enemyHp = 100
       clearCurrentEnemyAction(state)
-      expect(startEnemyAction(state, 'rejuvenating-sap', executeCombatEffects)).toBe(true)
+      expect(startEnemyAction(state, 'bloom', executeCombatEffects)).toBe(true)
       return state
     }
     const makeBarrierFixture = () => {
@@ -164,7 +164,7 @@ describe('canonical simulation quantum parity', () => {
     }
 
     const healed = advancePair(makeHealFixture, 4_000)
-    expect(healed.combat.enemyHp).toBe(190)
+    expect(healed.combat.enemyHp).toBe(182.5)
     const barriered = advancePair(makeBarrierFixture, 3_500)
     expect(barriered.combat.enemyBarrier).toBe(53)
   })

@@ -1,22 +1,22 @@
-import type { MonsterId } from '../../../types'
-import { action, basic, scaledBarrier, scaledDirectDamage, type MonsterDefinition } from '../monsterTypes'
+﻿import type { MonsterId } from '../../../types'
+import { action, applyCombatV2Profile, basic, scaledBarrier, scaledDirectDamage, type MonsterDefinition } from '../monsterTypes'
 
-export const FRACTURED_APPROACH_MONSTERS = {
+const fracturedApproachAuthored = {
   'warded-husk': {
     id: 'warded-husk', bestiaryCategory: 'monster', name: 'Warded Husk', subtitle: 'A dead sentinel still carrying a broken frontier ward',
-    maxHealth: 1250, basicAttackDamage: 58, basicAttackTimeMs: 2800, defense: 40, resistances: { physical: 0.10, arcane: 0.15 }, color: '#8c806f', ui: { portraitIcon: 'guardian' }, traitIds: ['broken-construct-ward'],
+    primaryAffinity: 'earth', basicAttackElement: 'earth', maxHealth: 1250, basicAttackDamage: 58, basicAttackTimeMs: 2800, defense: 40, resistances: { arcane: 0.15 }, color: '#8c806f', ui: { portraitIcon: 'guardian' }, traitIds: ['broken-construct-ward'],
     actions: {
       'fractured-ward': { id: 'fractured-ward', name: 'Fractured Ward', actionTimeMs: 2200, description: 'The Husk gathers broken ward-light into a protective Barrier.', effects: [scaledBarrier(0.12)], tags: ['special', 'barrier'] },
-      'ward-slam': { id: 'ward-slam', name: 'Ward Slam', actionTimeMs: 2400, description: 'The Husk crashes its fractured ward into the target.', effects: [scaledDirectDamage('physical', 1.55)], tags: ['special', 'physical', 'melee', 'direct'] },
+      'ward-slam': { id: 'ward-slam', name: 'Ward Slam', actionTimeMs: 2400, description: 'The Husk crashes its fractured ward into the target.', effects: [scaledDirectDamage('earth', 1.55)], tags: ['special', 'earth', 'melee', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('fractured-ward-step', 'fractured-ward'), basic('basic-2'), action('ward-slam-step', 'ward-slam'), basic('basic-3')] } }, defaultActionPatternId: 'default',
     loot: [],
   },
   'rift-wolf': {
     id: 'rift-wolf', bestiaryCategory: 'monster', name: 'Rift Wolf', subtitle: 'A predator twisted by unstable air and fractured space',
-    maxHealth: 975, basicAttackDamage: 63, basicAttackTimeMs: 2050, defense: 24, resistances: { air: 0.10, earth: -0.10 }, color: '#7da8bd', ui: { portraitIcon: 'wolf' }, traitIds: ['rift-archer-precision'],
+    primaryAffinity: 'air', basicAttackElement: 'air', maxHealth: 975, basicAttackDamage: 63, basicAttackTimeMs: 2050, defense: 24, resistances: { air: 0.10, earth: -0.10 }, color: '#7da8bd', ui: { portraitIcon: 'wolf' }, traitIds: ['rift-archer-precision'],
     actions: {
-      'rift-lunge': { id: 'rift-lunge', name: 'Rift Lunge', actionTimeMs: 1550, description: 'The Wolf tears through a short rift and lunges into the target.', effects: [scaledDirectDamage('physical', 1.45)], tags: ['special', 'physical', 'melee', 'direct'] },
+      'rift-lunge': { id: 'rift-lunge', name: 'Rift Lunge', actionTimeMs: 1550, description: 'The Wolf tears through a short rift and lunges into the target.', effects: [scaledDirectDamage('air', 1.45)], tags: ['special', 'air', 'melee', 'direct'] },
       'arc-flash': { id: 'arc-flash', name: 'Arc Flash', actionTimeMs: 1750, description: 'Unstable air flashes across the target in a cutting arc.', effects: [scaledDirectDamage('air', 1.15)], tags: ['special', 'air', 'magic', 'direct'] },
     },
     actionPatterns: { default: { id: 'default', steps: [basic('basic-1'), action('rift-lunge-step', 'rift-lunge'), basic('basic-2'), action('arc-flash-step', 'arc-flash'), basic('basic-3')] } }, defaultActionPatternId: 'default',
@@ -24,7 +24,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
   },
   'arcane-scavenger': {
     id: 'arcane-scavenger', bestiaryCategory: 'monster', name: 'Arcane Scavenger', subtitle: 'A looter feeding on the residue of ruined wards',
-    maxHealth: 1050, basicAttackDamage: 61, basicAttackTimeMs: 2350, defense: 26, resistances: { arcane: 0.15, physical: -0.05 }, color: '#a78bc4', ui: { portraitIcon: 'mage' }, traitIds: ['linebreaker-disruption'],
+    primaryAffinity: 'arcane', basicAttackElement: 'arcane', maxHealth: 1050, basicAttackDamage: 61, basicAttackTimeMs: 2350, defense: 26, resistances: { arcane: 0.15 }, color: '#a78bc4', ui: { portraitIcon: 'mage' }, traitIds: ['linebreaker-disruption'],
     actions: {
       'salvaged-bolt': { id: 'salvaged-bolt', name: 'Salvaged Bolt', actionTimeMs: 1700, description: 'A scavenged shard of ward-magic tears into the target.', effects: [scaledDirectDamage('arcane', 1.40)], tags: ['special', 'arcane', 'magic', 'ranged', 'direct'] },
       'unstable-charge': { id: 'unstable-charge', name: 'Unstable Charge', actionTimeMs: 2400, description: 'The Scavenger detonates a volatile bundle of stolen magic.', effects: [scaledDirectDamage('arcane', 1.80)], tags: ['special', 'arcane', 'magic', 'ranged', 'direct'] },
@@ -34,7 +34,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
   },
   'withered-watcher': {
     id: 'withered-watcher', bestiaryCategory: 'monster', name: 'Withered Watcher', subtitle: 'A failing construct that still obeys its last command',
-    maxHealth: 1150, basicAttackDamage: 60, basicAttackTimeMs: 2550, defense: 34, resistances: { fire: 0.05, water: 0.05, earth: 0.05, air: 0.05 }, color: '#9a8c79', ui: { portraitIcon: 'guardian' }, traitIds: ['meridian-warden-ward'],
+    primaryAffinity: 'arcane', basicAttackElement: 'arcane', maxHealth: 1150, basicAttackDamage: 60, basicAttackTimeMs: 2550, defense: 34, resistances: { fire: 0.05, water: 0.05, earth: 0.05, air: 0.05 }, color: '#9a8c79', ui: { portraitIcon: 'guardian' }, traitIds: ['meridian-warden-ward'],
     actions: {
       'elemental-pulse': { id: 'elemental-pulse', name: 'Elemental Pulse', actionTimeMs: 2000, description: 'A broken ward emits a pulse of arcane force.', effects: [scaledDirectDamage('arcane', 1.30)], tags: ['special', 'arcane', 'magic', 'direct'] },
       'broken-aegis': { id: 'broken-aegis', name: 'Broken Aegis', actionTimeMs: 2300, description: 'The Watcher raises a failing Aegis around itself.', effects: [scaledBarrier(0.09)], tags: ['special', 'barrier'] },
@@ -45,7 +45,7 @@ export const FRACTURED_APPROACH_MONSTERS = {
   },
   'corrupted-elemental-gatekeeper': {
     id: 'corrupted-elemental-gatekeeper', bestiaryCategory: 'boss', name: 'Corrupted Elemental Gatekeeper', subtitle: "The shattered frontier's last ward, poisoned by elemental instability",
-    maxHealth: 10500, basicAttackDamage: 85, basicAttackTimeMs: 2450, defense: 55, resistances: { physical: 0.10, fire: 0.10, water: 0.10, earth: 0.10, air: 0.10 }, color: '#d276a3', ui: { portraitIcon: 'boss' }, traitIds: [], resonanceYield: { fire: 50, water: 50, earth: 50, air: 50 },
+    primaryAffinity: 'arcane', basicAttackElement: 'arcane', maxHealth: 10500, basicAttackDamage: 85, basicAttackTimeMs: 2450, defense: 55, resistances: { fire: 0.10, water: 0.10, earth: 0.10, air: 0.10 }, color: '#d276a3', ui: { portraitIcon: 'boss' }, traitIds: [], resonanceYield: { fire: 50, water: 50, earth: 50, air: 50 },
     actions: {
       'flame-surge': { id: 'flame-surge', name: 'Flame Surge', actionTimeMs: 1900, description: 'Corrupted fire surges through the target.', effects: [scaledDirectDamage('fire', 1.25)], tags: ['special', 'fire', 'magic', 'direct'] },
       'tidal-break': { id: 'tidal-break', name: 'Tidal Break', actionTimeMs: 2100, description: 'A violent wave of corrupted water breaks across the target.', effects: [scaledDirectDamage('water', 1.20)], tags: ['special', 'water', 'magic', 'direct'] },
@@ -58,3 +58,6 @@ export const FRACTURED_APPROACH_MONSTERS = {
     loot: [],
   },
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>
+
+const FRACTURED_APPROACH_TARGET_POWER = { 'warded-husk': 2900, 'rift-wolf': 2350, 'arcane-scavenger': 2500, 'withered-watcher': 2700, 'corrupted-elemental-gatekeeper': 3700 } as const
+export const FRACTURED_APPROACH_MONSTERS = Object.fromEntries(Object.entries(fracturedApproachAuthored).map(([id, monster]) => [id, applyCombatV2Profile(monster, monster.primaryAffinity!, FRACTURED_APPROACH_TARGET_POWER[id as keyof typeof FRACTURED_APPROACH_TARGET_POWER])])) as Partial<Record<MonsterId, MonsterDefinition>>

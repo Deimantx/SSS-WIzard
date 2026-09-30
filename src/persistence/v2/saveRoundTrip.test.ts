@@ -154,6 +154,48 @@ describe('Save System V2', () => {
     expect(loadPersistedGameStateV1(serializeGameState(loaded)).progress.chronicle.completedObjectiveIds).toEqual(loaded.progress.chronicle.completedObjectiveIds)
   })
 
+  it('migrates v57 Elemental Scar history through the canonical V2 profile loader', () => {
+    const cases = [
+      { bosses: ['archmage-edrin-shade'], highestTier: 2, completed: [] },
+      { bosses: ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper'], highestTier: 2, completed: ['sf-m1-cross-fractured-approach', 'sf-m2-elemental-gatekeeper'] },
+      { bosses: ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'drowned-keeper'], highestTier: 2, completed: ['sf-m2-elemental-gatekeeper'] },
+      { bosses: ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'drowned-keeper', 'flamebound-revenant', 'rootscar-ancient'], highestTier: 2, completed: ['sf-m3a-stabilize-elemental-scar'] },
+      { bosses: ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'drowned-keeper', 'flamebound-revenant', 'rootscar-ancient', 'crossroads-keeper'], highestTier: 3, completed: ['sf-m3c-crossroads-keeper'] },
+    ] as const
+    for (const fixture of cases) {
+      const state = createInitialState()
+      state.progress.bossKillsByBoss = Object.fromEntries(fixture.bosses.map((bossId) => [bossId, 1])) as typeof state.progress.bossKillsByBoss
+      const document = serializeGameState(state, 500)
+      document.contentVersion = 57
+      const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+      expect(migrated.worldTier.highestUnlocked).toBe(fixture.highestTier)
+      for (const objectiveId of fixture.completed) expect(migrated.progress.chronicle.completedObjectiveIds).toContain(objectiveId)
+      expect(migrated.progress.bossKillsByBoss).toMatchObject(state.progress.bossKillsByBoss)
+      expect(loadProfileGameFromRaw(JSON.stringify(serializeGameState(migrated, 501))).progress.chronicle.completedObjectiveIds).toEqual(migrated.progress.chronicle.completedObjectiveIds)
+    }
+  })
+
+  it('keeps an active checkpoint and resets only a removed current enemy action', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.enemyId = 'forest-heart'
+    state.combat.enemyHp = 321
+    state.combat.enemyMaxHp = 900
+    state.combat.enemyCurrentActionId = 'rejuvenating-sap'
+    state.combat.enemyActionPatternId = 'removed-pattern'
+    const document = serializeGameState(state, 502)
+    document.contentVersion = 57
+    const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+    expect(migrated.combat.active).toBe(true)
+    expect(migrated.combat.dungeonId).toBe('whispering-woods')
+    expect(migrated.combat.enemyId).toBe('forest-heart')
+    expect(migrated.combat.enemyCurrentActionId).toBeNull()
+    expect(migrated.combat.enemyActionPatternId).toBe('default')
+    expect(migrated.combat.enemyHp).toBe(321)
+  })
+
   it('keeps empty contract boards empty and never consumes Hunter or Guild RNG while loading', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1

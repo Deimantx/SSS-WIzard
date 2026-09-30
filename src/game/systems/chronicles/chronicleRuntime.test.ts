@@ -102,7 +102,7 @@ describe('Chronicle runtime', () => {
     expect(getChronicleActiveChapter(state)).toBe('shattered-frontier')
     expect(getChronicleMainObjective(state)?.id).toBe('sf-m1-cross-fractured-approach')
     const progress = getChronicleChapterProgress(state, 'shattered-frontier')
-    expect(progress.requiredTotal).toBe(6)
+    expect(progress.requiredTotal).toBe(8)
     expect(progress.optionalTotal).toBeGreaterThan(0)
     expect(isChronicleChapterComplete(state, 'shattered-frontier')).toBe(false)
   })

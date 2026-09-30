@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { Button, Card, GameTooltip, Progress, Status } from '../../../components/ui'
+import { Button, Card, GameTooltip, Progress, SearchInput, SelectMenu, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { MONSTERS } from '../../../game/content/monsters'
 import { RESONANCE_TYPES } from '../../../game/content/resonance/resonance'
@@ -16,6 +16,7 @@ import {
 } from '../../../game/analysis/combat/combatFarmingBenchmark'
 import type { MonsterId, WorldTierId } from '../../../game/types'
 import { buildCombatV2ContentAudit } from '../../../game/systems/combat/combatContentAudit'
+import { WORLD_TIER_IDS } from '../../../game/content/world-tier/worldTiers'
 import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import type { DeveloperCopy } from '../DeveloperCombat'
 import { Summary } from '../DeveloperTabPrimitives'
@@ -89,6 +90,7 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
   const [progress, setProgress] = useState({ completed: 0, total: 0 })
   const [running, setRunning] = useState(false)
   const [buildSummary, setBuildSummary] = useState<CombatFarmingBenchmarkBuildSummary>(() => buildCombatFarmingBenchmarkBuildSummary(useGameStore.getState()))
+  const [auditWorldTier, setAuditWorldTier] = useState<WorldTierId>(1)
   const cancelRequested = useRef(false)
   const runId = useRef(0)
 
@@ -149,12 +151,13 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
 
   const cancelBenchmark = () => { cancelRequested.current = true }
   const exportPayload = buildExportPayload(buildSummary, durationMs, targetIds, worldTiers, results)
-  const contentAudit = useMemo(() => buildCombatV2ContentAudit(), [])
+  const contentAudit = useMemo(() => buildCombatV2ContentAudit(auditWorldTier), [auditWorldTier])
 
   return <div className="developer-balance-lab">
     <Card title="Combat V2 content power and safety audit" action={<Status tone={contentAudit.some((row) => row.warnings.length > 0) ? 'warning' : 'success'}>{contentAudit.filter((row) => row.warnings.length > 0).length} WARNINGS</Status>}>
-      <p className="muted">Authored Act 0 profiles at WT1. Values are calculated on demand from the static Combat V2 roster.</p>
-      <div className="developer-balance-table-wrap"><table className="developer-balance-table"><thead><tr>{['ID', 'LOCATION', 'AFFINITY', 'POWER', 'HP', 'BASIC', 'INTERVAL', 'BASIC DPS', 'DIRECT ×', 'DOT ×', 'HEAL %', 'BARRIER %', 'PHYSICAL', 'AUDIT'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{contentAudit.map((row) => <tr key={row.id}><th scope="row">{row.id}</th><td>{row.location}</td><td>{row.affinity.toUpperCase()}</td><td>{row.power}</td><td>{formatNumber(row.hp)}</td><td>{formatDecimal(row.basicDamage)}</td><td>{(row.basicIntervalMs / 1000).toFixed(1)}s</td><td>{formatDecimal(row.basicDps)}</td><td>{row.maxRepeatableDirectCoefficient.toFixed(2)}</td><td>{row.dotTotalCoefficient.toFixed(2)}</td><td>{(row.repeatableHealPercent * 100).toFixed(0)}%</td><td>{(row.repeatableBarrierPercent * 100).toFixed(0)}%</td><td>{row.physicalComponentCount}</td><td>{row.warnings.length ? <span className="developer-balance-warning">{row.warnings.join(' · ')}</span> : <span className="developer-balance-positive">OK</span>}</td></tr>)}</tbody></table></div>
+      <p className="muted">Combat V2 authored profiles across the tutorial, First Frontier, and Elemental Scar. Values use canonical World Tier resolution.</p>
+      <div className="button-row">{WORLD_TIER_IDS.map((tier) => <GameTooltip key={tier} content={<TooltipContent title={`Audit World Tier ${tier}`} description="Recalculate enemy Health, Basic damage, and Power using the canonical World Tier profile." />}><Button variant={auditWorldTier === tier ? 'primary' : 'secondary'} ariaPressed={auditWorldTier === tier} onClick={() => setAuditWorldTier(tier)}>WT{tier}</Button></GameTooltip>)}</div>
+      <div className="developer-balance-table-wrap"><table className="developer-balance-table"><thead><tr>{['LOCATION', 'MONSTER', 'AFFINITY', 'DAMAGE PROFILE', 'POWER', 'HP', 'BASIC DAMAGE', 'INTERVAL', 'BASIC DPS', 'REPEATABLE DIRECT ×', 'REPEATABLE DOT ×', 'REPEATABLE HEAL %', 'REPEATABLE BARRIER %', 'ONCE HEAL %', 'ONCE BARRIER %', 'MAX CONTROL', 'PHYSICAL', 'DEFAULT FLAT PERIODIC', 'WARNINGS'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{contentAudit.map((row) => <tr key={row.id}><td>{row.location}</td><th scope="row">{MONSTERS[row.id]?.name ?? row.id}</th><td>{row.affinity.toUpperCase()}</td><td>{row.damageProfile.map((element) => element.toUpperCase()).join(' · ')}</td><td>{row.power}</td><td>{formatNumber(row.hp)}</td><td>{formatDecimal(row.basicDamage)}</td><td>{(row.basicIntervalMs / 1000).toFixed(1)}s</td><td>{formatDecimal(row.basicDps)}</td><td>{row.maxRepeatableDirectCoefficient.toFixed(2)}</td><td>{row.dotTotalCoefficient.toFixed(2)}</td><td>{(row.repeatableHealPercent * 100).toFixed(0)}%</td><td>{(row.repeatableBarrierPercent * 100).toFixed(0)}%</td><td>{(row.onceOnlyHealPercent * 100).toFixed(0)}%</td><td>{(row.onceOnlyBarrierPercent * 100).toFixed(0)}%</td><td>{(row.maxControlMs / 1000).toFixed(1)}s</td><td>{row.physicalComponentCount}</td><td>{row.defaultFlatPeriodicCount}</td><td>{row.warnings.length ? <span className="developer-balance-warning">{row.warnings.join(' · ')}</span> : <span className="developer-balance-positive">OK</span>}</td></tr>)}</tbody></table></div>
     </Card>
     <Card title="Combat Balance Lab" action={<Status tone="active">ANALYSIS ONLY</Status>}>
       <div className="developer-balance-intro"><p className="muted">Canonical combat farming measurements for Whispering Woods. Results are transient and run against a cloned current build.</p><Button variant="secondary" onClick={refreshBuildSnapshot} tooltip="Refresh the build identity used as the benchmark source. This never equips or changes the live profile.">CURRENT BUILD</Button></div>
@@ -176,10 +179,10 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
 
     <Card title="Benchmark setup">
       <div className="developer-balance-controls">
-        <SummaryTooltip title="Benchmark duration" description="Simulated combat time per target and World Tier. Custom runs are capped at 60 minutes."><label className="developer-balance-field">DURATION<select aria-label="Benchmark duration" value={durationPreset} onChange={(event) => setDurationPreset(event.target.value as DurationPresetId)}>{COMBAT_BALANCE_BENCHMARK_DURATION_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}<option value="custom">CUSTOM</option></select></label></SummaryTooltip>
-        {durationPreset === 'custom' && <label className="developer-balance-field">CUSTOM MINUTES<input aria-label="Custom benchmark minutes" type="number" min={1} max={60} value={customMinutes} onChange={(event) => setCustomMinutes(Math.max(1, Math.min(60, Number(event.target.value) || 1)))} /></label>}
+        <SummaryTooltip title="Benchmark duration" description="Simulated combat time per target and World Tier. Custom runs are capped at 60 minutes."><div className="developer-balance-field"><span>DURATION</span><SelectMenu ariaLabel="Benchmark duration" value={durationPreset} onChange={setDurationPreset} options={[...COMBAT_BALANCE_BENCHMARK_DURATION_PRESETS.map((preset) => ({ value: preset.id, label: preset.label })), { value: 'custom' as const, label: 'CUSTOM' }]} /></div></SummaryTooltip>
+        {durationPreset === 'custom' && <label className="developer-balance-field">CUSTOM MINUTES<SearchInput ariaLabel="Custom benchmark minutes" type="number" step={1} value={String(customMinutes)} onChange={(value) => setCustomMinutes(Math.max(1, Math.min(60, Number(value) || 1)))} /></label>}
         <SummaryTooltip title="World Tier scope" description="WT2 is simulated in the clone even when the live profile has not unlocked it. The live profile is never changed."><div className="developer-balance-field"><span>WORLD TIER</span><div className="developer-balance-segmented">{(['both', 1, 2] as const).map((scope) => <Button key={String(scope)} variant={tierScope === scope ? 'primary' : 'secondary'} ariaPressed={tierScope === scope} onClick={() => setTierScope(scope)}>{scope === 'both' ? 'WT1 + WT2' : `WT${scope}`}</Button>)}</div></div></SummaryTooltip>
-        <SummaryTooltip title="Target scope" description="Targets use the authored Whispering Woods order. Forest Heart is excluded from this normal farming matrix."><label className="developer-balance-field">TARGETS<select aria-label="Benchmark target scope" value={targetScope} onChange={(event) => setTargetScope(event.target.value as TargetScope)}><option value="all">ALL WHISPERING WOODS TARGETS</option>{TARGETS.map((targetEnemyId) => <option key={targetEnemyId} value={targetEnemyId}>{MONSTERS[targetEnemyId]?.name ?? targetEnemyId} ONLY</option>)}</select></label></SummaryTooltip>
+        <SummaryTooltip title="Target scope" description="Targets use the authored Whispering Woods order. Forest Heart is excluded from this normal farming matrix."><div className="developer-balance-field"><span>TARGETS</span><SelectMenu<TargetScope> ariaLabel="Benchmark target scope" value={targetScope} onChange={setTargetScope} options={[{ value: 'all', label: 'ALL WHISPERING WOODS TARGETS' }, ...TARGETS.map((targetEnemyId) => ({ value: targetEnemyId, label: `${MONSTERS[targetEnemyId]?.name ?? targetEnemyId} ONLY` }))]} /></div></SummaryTooltip>
       </div>
       <div className="developer-balance-actions"><Button onClick={runBenchmark} disabled={!canRun || running} tooltip="Run the real combat simulation for each selected target and tier in a cloned GameState.">RUN BENCHMARK</Button><Button variant="danger" onClick={cancelBenchmark} disabled={!running} tooltip="Stop after the current simulation job and keep completed rows visible.">CANCEL</Button><span className="developer-balance-progress-label">{running ? `Running ${progress.completed} / ${progress.total}` : progress.total > 0 ? `${progress.completed} / ${progress.total} COMPLETE` : 'READY'}</span></div>
       {progress.total > 0 && <Progress value={progress.total > 0 ? (progress.completed / progress.total) * 100 : 0} label="Matrix progress" right={`${progress.completed} / ${progress.total}`} running={running} />}

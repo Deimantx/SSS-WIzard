@@ -22,6 +22,7 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'starting-school-selected': return 'Choose a Magic School'
     case 'lifetime-kills': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'}`
     case 'boss-kill': return `Defeat ${MONSTERS[condition.bossId]?.name ?? formatReadableId(condition.bossId)}`
+    case 'all-boss-kills': return `Defeat ${condition.bossIds.map((id) => MONSTERS[id]?.name ?? formatReadableId(id)).join(', ')}`
     case 'dungeon-entered': return `Enter ${DUNGEONS[condition.dungeonId]?.name ?? formatReadableId(condition.dungeonId)}`
     case 'auto-cast-enabled': return 'Enable Auto-Cast for one Spell'
     case 'channeling-acolytes': return `Assign ${condition.count} Acolyte${condition.count === 1 ? '' : 's'} to Channeling`

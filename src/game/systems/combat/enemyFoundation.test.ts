@@ -34,41 +34,41 @@ const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1]) => {
 };
 
 describe("Act 0 enemy combat foundation", () => {
-  it("gives Forest Heart one Rapid Regrow window at the first phase crossing", () => {
+  it("gives Forest Heart one threshold heal and phase transition", () => {
     const state = stateWithEnemy("forest-heart");
-    state.combat.enemyHp = 451;
+    state.combat.enemyHp = 316;
     damageEnemy(state, 3, "spell");
-    expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(true);
-    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(true);
+    expect(state.combat.enemyHp).toBeGreaterThan(313);
+    expect(state.combat.enemyHp).toBeLessThan(MONSTERS['forest-heart'].maxHealth * 0.5);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(false);
+    expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
     expect(state.combat.enemyActionPatternId).toBe("overgrown");
 
-    const beforeTicks = state.combat.enemyHp;
     for (let index = 0; index < 8; index += 1) tickStatuses(state, 1000, executeCombatEffects);
-    expect(state.combat.enemyHp - beforeTicks).toBeCloseTo(MONSTERS['forest-heart'].maxHealth * 0.05 * 8);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
 
-    state.combat.enemyHp = 400;
+    state.combat.enemyHp = 200;
     damageEnemy(state, 500, "spell");
     expect(state.combat.enemyActionPatternId).toBe("overgrown");
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
     expect(state.combat.triggeredRuleIds.filter((id) => id.includes("forest-heart-living-core-threshold"))).toHaveLength(1);
   });
 
-  it("keeps Overgrowth limited to its Barrier and immediate heal", () => {
+  it("keeps Overgrowth limited to its Barrier", () => {
     const state = stateWithEnemy("forest-heart");
     state.combat.enemyHp = 450;
     clearCurrentEnemyAction(state);
     expect(forceResolveEnemyAction(state, "overgrowth", executeCombatEffects)).toBe(true);
-    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(MONSTERS['forest-heart'].maxHealth * 0.12);
-    expect(state.combat.enemyHp).toBeCloseTo(450 + MONSTERS['forest-heart'].maxHealth * 0.1);
+    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(MONSTERS['forest-heart'].maxHealth * 0.14);
+    expect(state.combat.enemyHp).toBe(450);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "rapid-regrow")).toBe(false);
   });
 
-  it("gives Edrin Barrier and Unbound Power without Haste", () => {
+  it("gives Edrin Unbound Power without transition Barrier or Haste", () => {
     const state = stateWithEnemy("archmage-edrin-shade");
     state.combat.enemyHp = 3001;
     damageEnemy(state, 2, "spell");
-    expect(getActiveBarrier(state, "enemy")).toBeCloseTo(MONSTERS['archmage-edrin-shade'].maxHealth * 0.5);
+    expect(getActiveBarrier(state, "enemy")).toBe(0);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "unbound-power")).toBe(true);
     expect(state.combat.enemyStatuses.some((status) => status.statusId === "haste")).toBe(false);
     expect(state.combat.enemyActionPatternId).toBe("unbound-opening");

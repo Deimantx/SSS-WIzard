@@ -16,7 +16,6 @@ import { TRAIT_DEFINITIONS } from '../../content/traits'
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { SPELLS } from '../../content/spells/spells'
 import { getEnemySkillActionRate } from './actionRuntime'
-import { getTimedActionState } from './actionTiming'
 import { BALANCE } from '../../core/balance/balance'
 import { getDefenseReductionFromRating } from './combatStats'
 import { advancePlayerMana } from '../mana/playerMana'
@@ -228,9 +227,10 @@ describe('data-driven monster mechanics', () => {
     expect(sentinel.combat.enemyBarrier).toBeCloseTo(71 - 10 * (1 - getDefenseReductionFromRating(20)))
     expect(sentinel.combat.triggeredRuleIds).toEqual(['enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold'])
     const heart = stateWithEnemy('forest-heart')
-    damageEnemy(heart, 410, 'spell')
-    expect(heart.combat.enemyStatuses[0]).toMatchObject({ statusId: 'haste', remainingMs: null })
-    expect(getTimedActionState(2400, 2400, getEnemySkillActionRate(heart)).etaMs).toBeCloseTo(2400 / 1.15)
+    damageEnemy(heart, 590, 'spell')
+    expect(heart.combat.enemyActionPatternId).toBe('overgrown')
+    expect(heart.combat.triggeredRuleIds).toContain('enemy:trait:forest-heart-living-core:forest-heart-living-core-threshold')
+    expect(heart.combat.enemyStatuses).toHaveLength(0)
   })
 })
 
@@ -338,7 +338,7 @@ describe('post-implementation combat audit regressions', () => {
     expect(SPELLS['earthen-barrier'].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'replace-if-stronger', durationMs: 10000 })
     expect(STATUS_DEFINITIONS.haste.tags).toEqual(['buff'])
     expect(STATUS_DEFINITIONS.quickening.tags).toEqual(['buff', 'air'])
-    expect(MONSTERS['forest-heart'].actions['rejuvenating-sap'].tags).toEqual(['special', 'heal', 'direct'])
+    expect(MONSTERS['forest-heart'].actions['overgrowth'].tags).toEqual(['special', 'barrier'])
     expect(TRAIT_DEFINITIONS['stone-rooted-shell'].rules?.[0].effects[0]).toMatchObject({ type: 'gain-barrier', mode: 'add', durationMs: null })
   })
 

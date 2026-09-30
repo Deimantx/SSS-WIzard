@@ -34,7 +34,7 @@ export type TraitId =
   | 'sigil-guardian-ward' | 'black-seal-parasite-corruption' | 'vault-devourer-regrowth' | 'inkbound-specter-curse'
   | 'gatebound-remnant-cleave' | 'black-rift-stalker-corruption' | 'portalbound-acolyte-mute' | 'sealbreaker-construct-ward'
   | 'tutorial-living-stone' | 'tutorial-restorative-tide'
-  | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate'
+  | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate' | 'flamebound-rekindle' | 'rootscar-ancient-regrowth'
 
 export type CombatTag =
   | 'basic-attack'
@@ -338,6 +338,7 @@ export type StatusId =
   | 'corrupted-fury'
   | 'unbound-power'
   | 'final-incantation-empowerment'
+  | 'root-rot'
 
 export type CombatEffect =
   | { type: 'deal-damage'; target: EffectTarget; components: DamageComponent[]; tags?: CombatTag[]; school?: SchoolId; hitCount?: number; lifeStealPercent?: number }

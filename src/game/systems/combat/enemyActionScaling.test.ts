@@ -40,13 +40,13 @@ describe('scaled enemy action output', () => {
     const state = createCombatTestState()
     state.combat.active = true
     state.combat.dungeonId = 'whispering-woods'
-    spawnEnemy(state, 'forest-heart')
-    const source = enemySource(state, 'rejuvenating-sap')
-    const heal = MONSTERS['forest-heart'].actions['rejuvenating-sap'].effects[0]
-    if (!('magnitude' in heal)) throw new Error('Expected Rejuvenating Sap magnitude')
-    expect(resolveMagnitude(state, heal.magnitude, source, 'enemy')).toBe(90)
+    spawnEnemy(state, 'briar-sprite')
+    const source = enemySource(state, 'bloom')
+    const heal = MONSTERS['briar-sprite'].actions['bloom'].effects[0]
+    if (!('magnitude' in heal)) throw new Error('Expected Bloom magnitude')
+    expect(resolveMagnitude(state, heal.magnitude, source, 'enemy')).toBeCloseTo(82.5)
     state.combat.enemyMaxHp = 800
-    expect(resolveMagnitude(state, heal.magnitude, source, 'enemy')).toBe(80)
+    expect(resolveMagnitude(state, heal.magnitude, source, 'enemy')).toBe(48)
 
     const barrierState = createCombatTestState()
     barrierState.combat.active = true

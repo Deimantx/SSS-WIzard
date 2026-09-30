@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal } from './monsterTypes'
+import { applyCombatV2Profile, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal } from './monsterTypes'
+import { MONSTERS } from './index'
 
 describe('Monster action authoring helpers', () => {
   it('authors direct damage from Basic Attack Damage', () => {
@@ -22,5 +23,15 @@ describe('Monster action authoring helpers', () => {
       type: 'deal-damage',
       components: [{ damageType: 'physical', magnitude: { type: 'source-basic-damage-percent', value: 0.375 } }],
     })
+  })
+
+  it('applies Combat V2 profiles without mutating authored monster content', () => {
+    const original = structuredClone(MONSTERS['forest-wisp'])
+    const before = structuredClone(original)
+    const profiled = applyCombatV2Profile(original, 'air', 300)
+    expect(original).toEqual(before)
+    expect(profiled.primaryAffinity).toBe('air')
+    expect(profiled.basicAttackElement).toBe('air')
+    expect(profiled.actions['arc-spark'].effects[0]).toMatchObject({ components: [{ damageType: 'arcane' }] })
   })
 })

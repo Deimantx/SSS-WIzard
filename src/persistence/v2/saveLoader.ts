@@ -6,6 +6,8 @@ import { SAVE_VERSION } from '../../store/initialState'
 import { CHRONICLE_OBJECTIVES } from '../../game/content/chronicles/chronicles'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
 import type { ChronicleObjectiveId } from '../../game/types'
+import { reconcileWorldTierProgression } from '../../game/systems/world-tier/worldTierRuntime'
+import { MONSTERS } from '../../game/content/monsters'
 
 const FIRST_FRONTIER_OPENING_IDS = ['m1-choose-school', 'm1a-enter-elemental-counter-zone', 'm1b-exploit-elemental-weakness', 'm2-first-blood', 'm2a-elemental-frontier', 'm2b-equip-elemental-ward', 'm2c-test-elemental-ward', 'm2d-defeat-elemental-boss'] as const
 
@@ -17,6 +19,11 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   const forest = (progress.bossKillsByBoss['forest-heart'] ?? 0) > 0
   const bear = (progress.bossKillsByBoss['corrupted-greatbear'] ?? 0) > 0
   const edrin = (progress.bossKillsByBoss['archmage-edrin-shade'] ?? 0) > 0
+  const gatekeeper = (progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] ?? 0) > 0
+  const sideBosses = ['drowned-keeper', 'flamebound-revenant', 'rootscar-ancient'] as const
+  const allRegionalBosses = sideBosses.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
+  const crossroadsKeeper = (progress.bossKillsByBoss['crossroads-keeper'] ?? 0) > 0
+  const meridianSplitter = (progress.bossKillsByBoss['meridian-splitter'] ?? 0) > 0
   const clearlyProgressed = progress.lifetimeKills > 0 || hasAnyBoss || progress.tutorialStage === 'complete' || forest || bear || edrin
   if (clearlyProgressed) chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
   if (hasAnyBoss || forest || bear || edrin) chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
@@ -31,11 +38,38 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   if (forest) completedHistoricalBosses.push('m3-heart-of-the-woods')
   if (bear) completedHistoricalBosses.push('m4-break-the-den')
   if (edrin) completedHistoricalBosses.push('m5-fallen-archmage')
+  if (gatekeeper) completedHistoricalBosses.push('sf-m1-cross-fractured-approach', 'sf-m2-elemental-gatekeeper')
+  if (allRegionalBosses || crossroadsKeeper || meridianSplitter) completedHistoricalBosses.push('sf-m3a-stabilize-elemental-scar')
+  if (crossroadsKeeper || meridianSplitter) completedHistoricalBosses.push('sf-m3b-enter-crossroads', 'sf-m3c-crossroads-keeper')
+  if (meridianSplitter) completedHistoricalBosses.push('sf-m4-reach-meridian', 'sf-m5-meridian-splitter')
+  const completedIds = new Set(chronicle.completedObjectiveIds)
+  if (completedIds.has('sf-step-into-harder-world')) completedIds.add('sf-m6-world-tier-two')
+  chronicle.completedObjectiveIds = [...completedIds]
   chronicle.completedObjectiveIds = [...new Set([...chronicle.completedObjectiveIds, ...completedHistoricalBosses])]
   // Preserve reward idempotency when reconciliation unlocks objectives on legacy profiles.
   const completed = new Set(chronicle.completedObjectiveIds)
   chronicle.grantedUnlockRewardIds = [...new Set([...chronicle.grantedUnlockRewardIds, ...CHRONICLE_OBJECTIVES.filter((objective) => completed.has(objective.id) && objective.onUnlockReward?.length).map((objective) => objective.id)])]
   reconcileChronicleProgress(state, { notify: false })
+  reconcileWorldTierProgression(state)
+
+  // Keep compatible active encounters. A stale action/pattern reference restarts
+  // only the current enemy while retaining the saved location and sequence index.
+  const combat = state.combat
+  const monster = combat.active && combat.enemyId ? MONSTERS[combat.enemyId] : undefined
+  if (monster) {
+    const pattern = monster.actionPatterns[combat.enemyActionPatternId ?? monster.defaultActionPatternId]
+    const stepIsValid = !combat.enemyCurrentStepId || pattern?.steps.some((step) => step.id === combat.enemyCurrentStepId)
+    const actionIsValid = !combat.enemyCurrentActionId || Boolean(monster.actions[combat.enemyCurrentActionId])
+    if (!stepIsValid || !actionIsValid) {
+      combat.enemyCurrentActionId = null
+      combat.enemyCurrentStepId = null
+      combat.enemyActionPatternId = monster.defaultActionPatternId
+      combat.enemyNextActionIndex = 0
+      combat.enemyActionTimerMs = Math.max(0, monster.basicAttackTimeMs)
+      combat.enemyMaxHp = Math.max(1, combat.enemyMaxHp || monster.maxHealth)
+      combat.enemyHp = Math.min(combat.enemyMaxHp, combat.enemyHp)
+    }
+  }
   return state
 }
 

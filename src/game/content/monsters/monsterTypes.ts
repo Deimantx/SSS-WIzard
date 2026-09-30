@@ -16,6 +16,8 @@ import { periodicDamageStatus } from "../statuses/periodicDamageStatus";
 import type { ResonanceYield } from "../resonance/resonance";
 import { ELEMENT_IDS, isElementId, type ElementId } from "../elements/elements";
 import { DEFENSE_K, MAX_DEFENSE_REDUCTION } from "../../core/balance/combatStats";
+import { STATUS_DEFINITIONS } from "../statuses/statuses";
+import { TRAIT_DEFINITIONS } from "../traits/traits";
 
 export type MonsterPortraitIcon =
   | "wisp"
@@ -92,14 +94,17 @@ export const getMonsterDamageProfile = (monster: MonsterDefinition): ElementId[]
     if (Array.isArray(value)) { value.forEach(scan); return }
     const record = value as Record<string, unknown>
     if (isElementId(record.damageType)) used.add(record.damageType)
+    if (record.type === 'apply-status' && typeof record.statusId === 'string') scan(STATUS_DEFINITIONS[record.statusId as StatusId]?.periodic?.effects)
     Object.values(record).forEach(scan)
   }
   scan(monster.actions)
+  monster.traitIds.forEach((traitId) => scan(TRAIT_DEFINITIONS[traitId]?.rules))
   return ELEMENT_IDS.filter((element) => used.has(element))
 }
 
 /** Applies authored Act 0 Combat V2 identity and derives Basic damage from a target Power. */
 export const applyCombatV2Profile = (monster: MonsterDefinition, primaryAffinity: ElementId, targetPower: number, legacyPhysicalElement: ElementId = primaryAffinity): MonsterDefinition => {
+  const authored = structuredClone(monster)
   const convert = (value: unknown): void => {
     if (!value || typeof value !== 'object') return
     if (Array.isArray(value)) { value.forEach(convert); return }
@@ -112,15 +117,15 @@ export const applyCombatV2Profile = (monster: MonsterDefinition, primaryAffinity
     }
     Object.values(record).forEach(convert)
   }
-  convert(monster)
+  convert(authored)
   // Preserve authored durability and cadence; tune only the normal hit to land
   // in the requested Power band under the canonical effective-health formula.
-  const defenseRating = Math.max(0, monster.defense ?? 0)
+  const defenseRating = Math.max(0, authored.defense ?? 0)
   const defenseReduction = Math.min(MAX_DEFENSE_REDUCTION, defenseRating / (defenseRating + DEFENSE_K))
-  const effectiveHealth = monster.maxHealth / Math.max(0.01, 1 - defenseReduction)
-  const attackSeconds = Math.max(0.1, monster.basicAttackTimeMs / 1000)
+  const effectiveHealth = authored.maxHealth / Math.max(0.01, 1 - defenseReduction)
+  const attackSeconds = Math.max(0.1, authored.basicAttackTimeMs / 1000)
   const basicAttackDamage = (targetPower / 10) ** 2 * attackSeconds / effectiveHealth
-  return { ...monster, primaryAffinity, basicAttackElement: primaryAffinity, basicAttackDamage }
+  return { ...authored, primaryAffinity, basicAttackElement: primaryAffinity, basicAttackDamage }
 }
 
 export const basic = (id: string): ActionStep => ({ id, type: "basic" });

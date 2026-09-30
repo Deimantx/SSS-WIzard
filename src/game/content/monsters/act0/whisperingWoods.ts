@@ -420,23 +420,14 @@ export const WHISPERING_WOODS_MONSTERS = {
         effects: [scaledDirectDamage("physical", 0.8), delayCurrentAction(900)],
         tags: ["special", "physical", "control"],
       },
-      "rejuvenating-sap": {
-        id: "rejuvenating-sap",
-        name: "Rejuvenating Sap",
-        actionTimeMs: 3000,
-        description:
-          "The Heart draws restorative sap inward to recover Health.",
-        effects: [scaledHeal(0.1)],
-        tags: ["special", "heal", "direct"],
-      },
       overgrowth: {
         id: "overgrowth",
         name: "Overgrowth",
         actionTimeMs: 2800,
         description:
-          "The Heart thickens its living shell and draws new vitality from the grove.",
-        effects: [scaledBarrier(0.12), scaledHeal(0.1)],
-        tags: ["special", "barrier", "heal"],
+          "The Heart thickens its living shell behind a heavy living Barrier.",
+        effects: [scaledBarrier(0.14)],
+        tags: ["special", "barrier"],
       },
     },
     actionPatterns: {
@@ -449,7 +440,6 @@ export const WHISPERING_WOODS_MONSTERS = {
           basic("basic-3"),
           action("root-prison-step", "root-prison"),
           basic("basic-4"),
-          action("sap-step", "rejuvenating-sap"),
           basic("basic-5"),
         ],
       },
@@ -463,7 +453,6 @@ export const WHISPERING_WOODS_MONSTERS = {
           action("heart-pulse-step-2", "heart-pulse"),
           action("root-prison-step-2", "root-prison"),
           basic("basic-2"),
-          action("sap-step", "rejuvenating-sap"),
         ],
       },
     },

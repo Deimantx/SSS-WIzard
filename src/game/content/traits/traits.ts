@@ -95,15 +95,14 @@ const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
     id: "forest-heart-living-core",
     name: "Living Core",
     description:
-      "At 50% Health, gains Haste, activates Rapid Regrow once, and changes to the Overgrown Pattern.",
+      "At 35% Health, restores 15% of its Max Health once and changes to the Overgrown Pattern.",
     rules: [
       {
         id: "forest-heart-living-core-threshold",
         event: "on-hp-threshold",
-        condition: { type: "self-hp-below-percent", percent: 50 },
+        condition: { type: "self-hp-below-percent", percent: 35 },
         effects: [
-          applyStatus("haste"),
-          applyStatus("rapid-regrow"),
+          { type: "heal", target: "self", magnitude: { type: "source-max-health-percent", value: 0.15 }, tags: ["heal", "direct"] },
           {
             type: "set-action-pattern",
             target: "self",
@@ -201,21 +200,13 @@ const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
     id: "archmage-edrin-unbound-spirit",
     name: "Unbound Spirit",
     description:
-      "At 50% Health, gains a 50% Max Health Barrier, permanent Unbound Power, and shifts to the Unbound opening.",
+      "At 50% Health, gains permanent Unbound Power and shifts to the Unbound opening.",
     rules: [
       {
         id: "archmage-edrin-unbound-spirit-threshold",
         event: "on-hp-threshold",
         condition: { type: "self-hp-below-percent", percent: 50 },
         effects: [
-          {
-            type: "gain-barrier",
-            target: "self",
-            magnitude: { type: "source-max-health-percent", value: 0.5 },
-            mode: "add",
-            durationMs: null,
-            tags: ["barrier"],
-          },
           { type: "apply-status", target: "self", statusId: "unbound-power" },
           { type: "set-action-pattern", target: "self", patternId: "unbound-opening" },
         ],

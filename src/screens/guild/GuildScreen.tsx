@@ -7,12 +7,12 @@ import { getGuildPromotionProgress } from '../../game/systems/guild/guildSelecto
 import { useUiPreferences, setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import type { GuildScreenTab } from '../../ui/preferences/uiPreferencesTypes'
 import { GuildHeader, GuildTabs } from './GuildHeader'
-import { GuildRecommendedContracts, GuildAdvancementSummary } from './GuildOverviewTab'
+import { GuildOverviewAdvancementPanel, GuildOverviewCommissionPanel, GuildOverviewProjectsPanel, GuildOverviewRegistryPanel, GuildOverviewStandingPanel } from './GuildOverviewV4Panels'
 import { GuildContractsBoard } from './GuildContractsTab'
-import { GuildRankProgress } from './GuildRankProgress'
 import { ArcaneRegistryTab } from './ArcaneRegistryTab'
 import { GuildProjectsTab, GuildCommissionChainsTab } from './GuildProjectsTab'
-import { GuildSkillBranches, GuildSkillNote, GuildSkillSummary } from './GuildSkillTreeTab'
+import { GuildAdvancementTab } from './GuildAdvancementTab'
+import { GuildStandingTab } from './GuildStandingTab'
 
 export function GuildScreen() {
   const state = useGameStore()
@@ -33,18 +33,17 @@ export function GuildScreen() {
     { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },
     { id: 'guild-tabs', content: <GuildTabs activeTab={activeTab} onTabChange={setActiveTab} commissionCount={state.progress.arcaneGuild.availableCommissions.length} /> },
     ...(activeTab === 'overview' ? [
-      { id: 'guild-progression', content: <GuildRankProgress state={state} /> },
-      { id: 'guild-recommended-contracts', content: <GuildRecommendedContracts state={state} onNavigate={setActiveTab} /> },
-      { id: 'guild-advancement-summary', content: <GuildAdvancementSummary state={state} onNavigate={setActiveTab} /> },
-    ] : activeTab === 'contracts' ? [
-      { id: 'guild-contracts', content: <GuildContractsBoard state={state} /> },
+      { id: 'guild-overview-standing', content: <GuildOverviewStandingPanel state={state} onNavigate={setActiveTab} /> },
+      { id: 'guild-overview-commission', content: <GuildOverviewCommissionPanel state={state} onNavigate={setActiveTab} /> },
+      { id: 'guild-overview-registry', content: <GuildOverviewRegistryPanel state={state} onNavigate={setActiveTab} /> },
+      { id: 'guild-overview-advancement', content: <GuildOverviewAdvancementPanel state={state} onNavigate={setActiveTab} /> },
+      { id: 'guild-overview-projects', content: <GuildOverviewProjectsPanel state={state} onNavigate={setActiveTab} /> },
+    ] : activeTab === 'commissions' ? [
+      { id: 'guild-contracts', content: <GuildCommissionWorkspace state={state} studyTab={preferences.screenState.guild.commissionTab} onSelect={(tab) => setUiPreferences({ screenState: { guild: { commissionTab: tab } } })} /> },
+    ] : activeTab === 'standing' ? [
+      { id: 'guild-standing', content: <GuildStandingTab state={state} /> },
     ] : activeTab === 'projects' ? [{ id: 'guild-projects', content: <GuildProjectsTab /> }]
-    : activeTab === 'chains' ? [{ id: 'guild-chains', content: <GuildCommissionChainsTab /> }]
-    : activeTab === 'registry' ? [] : [
-      { id: 'guild-skills-summary', content: <GuildSkillSummary state={state} /> },
-      { id: 'guild-skills', content: <GuildSkillBranches state={state} /> },
-      { id: 'guild-skills-note', content: <GuildSkillNote /> },
-    ]),
+    : activeTab === 'registry' ? [] : [{ id: 'guild-advancement', content: <GuildAdvancementTab /> }]),
   ]
   const registryPanels = activeTab === 'registry' ? [
     { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },
@@ -55,6 +54,10 @@ export function GuildScreen() {
   return <div className="screen-content guild-v3-screen">
     <main className="guild-v3-main" aria-live="polite"><ScreenGrid screen="arcane-guild" panels={registryPanels} /></main>
   </div>
+}
+
+function GuildCommissionWorkspace({ state, studyTab, onSelect }: { state: GameStore; studyTab: 'board' | 'studies'; onSelect: (tab: 'board' | 'studies') => void }) {
+  return <section className="guild-commission-workspace"><div className="guild-commission-subtabs" role="tablist" aria-label="Guild Commissions"><Button role="tab" ariaPressed={studyTab === 'board'} variant={studyTab === 'board' ? 'primary' : 'ghost'} onClick={() => onSelect('board')}>Board</Button><Button role="tab" ariaPressed={studyTab === 'studies'} variant={studyTab === 'studies' ? 'primary' : 'ghost'} onClick={() => onSelect('studies')}>Studies</Button></div>{studyTab === 'board' ? <GuildContractsBoard state={state} /> : <GuildCommissionChainsTab />}</section>
 }
 
 function GuildLockedState({ state }: { state: GameStore }) {

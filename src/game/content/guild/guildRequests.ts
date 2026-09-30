@@ -1,4 +1,5 @@
 import type { DungeonId, GuildRequestKind, ItemId, MonsterId } from '../../types'
+import { GUILD_STANDINGS, type GuildStandingId } from './guildStandings'
 
 export interface GuildRequestDefinition {
   id: string
@@ -15,7 +16,7 @@ export interface GuildRequestDefinition {
 }
 
 export const GUILD_REQUESTS = {
-  'field-supplies': { id: 'field-supplies', name: 'Materials for the Archive', description: 'Deliver 25 Life Essence to replenish the Guild archive wards.', kind: 'donation', itemId: 'life-essence', target: 25, reputation: 50, guildPoints: 1 },
+  'field-supplies': { id: 'field-supplies', name: 'Materials for the Archive', description: 'Deliver 25 Life Essence to replenish the Guild archive wards.', kind: 'donation', itemId: 'life-essence', target: 25, reputation: 50, guildPoints: 0 },
 } satisfies Record<string, GuildRequestDefinition>
 
 export type GuildRequestId = keyof typeof GUILD_REQUESTS
@@ -39,6 +40,7 @@ export const LEGACY_GUILD_REQUESTS = {
 export interface GuildCommissionTemplate {
   id: string
   category: 'supply' | 'channeling' | 'production' | 'research' | 'transmutation' | 'mixed'
+  minimumStandingId: GuildStandingId
   objectives: readonly import('../../types').GuildCommissionObjectiveDefinition[]
   baseReputation: number
   baseAdvancementPoints: number
@@ -47,7 +49,7 @@ export interface GuildCommissionTemplate {
   complexity?: 'routine' | 'special' | 'prestigious'
 }
 
-export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
+const authoredGuildCommissionTemplates = [
   { id: 'supply-life-essence', category: 'supply', objectives: [{ kind: 'item-supply', itemId: 'life-essence', target: 10 }], baseReputation: 60, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
   { id: 'supply-earth-resonance', category: 'supply', objectives: [{ kind: 'resonance-supply', resonanceType: 'earth', target: 100 }], baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
   { id: 'supply-air-resonance', category: 'supply', objectives: [{ kind: 'resonance-supply', resonanceType: 'air', target: 100 }], baseReputation: 70, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
@@ -63,8 +65,30 @@ export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = [
   { id: 'special-ember-supply', category: 'mixed', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 160 }, { kind: 'production', itemId: 'fire-fragment', target: 6 }], baseReputation: 165, baseAdvancementPoints: 0, minimumProgressStage: 'guild', complexity: 'special' },
   { id: 'special-tidal-research', category: 'mixed', objectives: [{ kind: 'research', target: 2 }, { kind: 'production', itemId: 'water-fragment', target: 5 }], baseReputation: 175, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'special' },
   { id: 'special-earth-reserves', category: 'mixed', objectives: [{ kind: 'resonance-supply', resonanceType: 'earth', target: 80 }, { kind: 'transmutation', target: 2 }], baseReputation: 170, baseAdvancementPoints: 0, minimumProgressStage: 'guild', complexity: 'special' },
-  { id: 'special-water-conversion', category: 'mixed', objectives: [{ kind: 'transmutation', target: 3 }, { kind: 'production', itemId: 'water-fragment', target: 5 }], baseReputation: 180, baseAdvancementPoints: 0, minimumProgressStage: 'guild', complexity: 'special' },
   { id: 'prestige-ember-research', category: 'mixed', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 320 }, { kind: 'production', itemId: 'fire-fragment', target: 10 }, { kind: 'research', target: 3 }], baseReputation: 260, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'prestigious' },
   { id: 'prestige-field-study', category: 'mixed', objectives: [{ kind: 'research', target: 3 }, { kind: 'production', itemId: 'water-fragment', target: 8 }, { kind: 'resonance-supply', resonanceType: 'water', target: 120 }], baseReputation: 275, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'prestigious' },
   { id: 'prestige-leyline-practice', category: 'mixed', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 300 }, { kind: 'transmutation', target: 4 }, { kind: 'production', itemId: 'air-fragment', target: 8 }], baseReputation: 280, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'prestigious' },
-]
+  { id: 'supply-prismatic-stock', category: 'supply', objectives: [{ kind: 'item-supply', itemId: 'prismatic-fragment', target: 3 }], baseReputation: 110, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'special' },
+  { id: 'channel-leyline-current', category: 'channeling', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 420 }], baseReputation: 105, baseAdvancementPoints: 0, minimumProgressStage: 'channeling' },
+  { id: 'channel-echo-reserve', category: 'channeling', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 700 }], baseReputation: 155, baseAdvancementPoints: 0, minimumProgressStage: 'channeling', complexity: 'special' },
+  { id: 'channel-grand-conduit', category: 'channeling', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 1200 }], baseReputation: 280, baseAdvancementPoints: 0, minimumProgressStage: 'channeling', complexity: 'prestigious' },
+  { id: 'channel-resonant-watch', category: 'channeling', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 950 }], baseReputation: 230, baseAdvancementPoints: 0, minimumProgressStage: 'channeling', complexity: 'special' },
+  { id: 'channel-tower-ledger', category: 'channeling', objectives: [{ kind: 'channeling', metric: 'arcane-flux', target: 1600 }], baseReputation: 340, baseAdvancementPoints: 0, minimumProgressStage: 'channeling', complexity: 'prestigious' },
+  { id: 'transmute-elemental-ledger', category: 'transmutation', objectives: [{ kind: 'transmutation', recipeId: 'fire-fragment', target: 5 }], baseReputation: 120, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
+  { id: 'transmute-prismatic-cycles', category: 'transmutation', objectives: [{ kind: 'transmutation', recipeId: 'prismatic-fragment', target: 2 }], baseReputation: 240, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'special' },
+  { id: 'transmute-refined-series', category: 'transmutation', objectives: [{ kind: 'transmutation', recipeId: 'prismatic-fragment', target: 4 }], baseReputation: 265, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'special' },
+  { id: 'transmute-master-array', category: 'transmutation', objectives: [{ kind: 'transmutation', recipeId: 'prismatic-fragment', target: 5 }], baseReputation: 430, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'prestigious' },
+  { id: 'transmute-essence-cycle', category: 'transmutation', objectives: [{ kind: 'transmutation', recipeId: 'water-fragment', target: 6 }], baseReputation: 220, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation' },
+  { id: 'produce-refined-fragments', category: 'production', objectives: [{ kind: 'production', itemId: 'prismatic-fragment', target: 3 }], baseReputation: 230, baseAdvancementPoints: 0, minimumProgressStage: 'transmutation', complexity: 'special' },
+  { id: 'produce-field-catalysts', category: 'production', objectives: [{ kind: 'production', itemId: 'artifact-essence', target: 10 }], baseReputation: 140, baseAdvancementPoints: 0, minimumProgressStage: 'guild' },
+  { id: 'research-elemental-record', category: 'research', objectives: [{ kind: 'research', schoolId: 'fire', target: 3 }], baseReputation: 145, baseAdvancementPoints: 0, minimumProgressStage: 'research' },
+  { id: 'research-tidal-record', category: 'research', objectives: [{ kind: 'research', schoolId: 'water', target: 4 }], baseReputation: 165, baseAdvancementPoints: 0, minimumProgressStage: 'research' },
+  { id: 'research-earthen-record', category: 'research', objectives: [{ kind: 'research', schoolId: 'earth', target: 5 }], baseReputation: 190, baseAdvancementPoints: 0, minimumProgressStage: 'research' },
+  { id: 'research-aeric-record', category: 'research', objectives: [{ kind: 'research', schoolId: 'air', target: 6 }], baseReputation: 220, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'special' },
+  { id: 'research-grand-review', category: 'research', objectives: [{ kind: 'research', target: 12 }], baseReputation: 420, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'prestigious' },
+] as const
+
+export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = authoredGuildCommissionTemplates.map((template, index) => ({
+  ...template,
+  minimumStandingId: GUILD_STANDINGS[index < 12 ? 0 : Math.min(24, 1 + index - 12)].id,
+}))

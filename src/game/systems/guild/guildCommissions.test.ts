@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { contributeGuildCommissionSupply, generateGuildCommissionChoices, recordGuildCommissionProgressBatch } from './guildCommissions'
+import { contributeGuildCommissionSupply, debugCompleteActiveGuildCommission, generateGuildCommissionChoices, recordGuildCommissionProgressBatch } from './guildCommissions'
 import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
 import { advanceArcaneFlux } from '../channeling/channelingRuntime'
@@ -69,6 +69,24 @@ describe('Arcane Guild commissions', () => {
     advanceArcaneFlux(state, 1000)
     expect(state.progress.arcaneGuild.activeCommission).toBeNull()
     expect(state.progress.arcaneGuild.completedCommissions).toBe(1)
+  })
+
+  it('completes developer fixtures through normal objective paths without awarding Commission AP twice', () => {
+    const state = guildState()
+    state.inventory['life-essence'] = 4
+    state.progress.guildSkillNodeRanks['service-faculty-letters'] = 4
+    state.progress.arcaneGuild.completedProjectIds.push('restore-arcane-archive')
+    state.progress.arcaneGuild.activeCommission = {
+      id: 'debug-mixed', templateId: 'special-ember-supply', category: 'mixed', quality: 'routine',
+      objectives: [
+        { kind: 'item-supply', itemId: 'life-essence', target: 4, progress: 0 },
+        { kind: 'channeling', metric: 'arcane-flux', target: 20, progress: 0 },
+      ], reputationReward: 100, advancementPointReward: 1,
+    }
+    expect(debugCompleteActiveGuildCommission(state)).toBe(true)
+    expect(state.progress.arcaneGuild.activeCommission).toBeNull()
+    expect(state.progress.guildPointsEarned).toBe(0)
+    expect(state.progress.guildReputation).toBe(100)
   })
 
   it('consumes explicit Resonance contribution and persists every mixed objective exactly', () => {

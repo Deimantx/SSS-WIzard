@@ -44,7 +44,11 @@ export const getTransmutationArrayBonuses = (state: Pick<GameState, 'progress'>)
 export const getEffectiveTransmutationManaCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(0, (recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).fluxCostReductionPct))
 
 export const getEffectiveTransmutationFluxCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Math.max(1, Math.ceil((recipe.arcaneFluxCost ?? recipe.manaCost ?? 0) * (1 - getTransmutationArrayBonuses(state).fluxCostReductionPct)))
-export const getEffectiveTransmutationResonanceCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => Object.fromEntries(Object.entries(recipe.resonanceCost ?? {}).map(([type, amount]) => [type, Math.max(1, Math.ceil((amount ?? 0) * (1 - getTransmutationArrayBonuses(state).resonanceCostReductionPct)))])) as NonNullable<RecipeDefinition['resonanceCost']>
+export const getEffectiveTransmutationResonanceCost = (state: Pick<GameState, 'progress'>, recipe: RecipeDefinition) => {
+  const arrayMultiplier = 1 - getTransmutationArrayBonuses(state).resonanceCostReductionPct
+  const guildMultiplier = getGuildProgressionBonuses(state).transmutationResonanceCostMultiplier
+  return Object.fromEntries(Object.entries(recipe.resonanceCost ?? {}).map(([type, amount]) => [type, Math.max(1, Math.ceil((amount ?? 0) * arrayMultiplier * guildMultiplier))])) as NonNullable<RecipeDefinition['resonanceCost']>
+}
 export const getEffectiveTransmutationStaffedWorkMultiplier = (state: Pick<GameState, 'progress'>, staffed: boolean) => staffed ? getTransmutationArrayBonuses(state).craftSpeedMultiplier : 0
 
 export const getEffectiveTransmutationWorkMultiplier = (state: Pick<GameState, 'progress'>, echoesAssigned: number) => Math.max(0, Number.isFinite(echoesAssigned) ? Math.floor(echoesAssigned) : 0) * getTransmutationArrayBonuses(state).craftSpeedMultiplier

@@ -15,7 +15,7 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.inventory).toEqual({ sourceOpen: false, researchValueOpen: false })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
-    expect(preferences.screenState.guild).toEqual({ activeTab: 'overview' })
+    expect(preferences.screenState.guild).toEqual({ activeTab: 'overview', commissionTab: 'board' })
     expect(preferences.screenState.huntersOrder).toEqual({ activeTab: 'contracts' })
   })
 
@@ -146,8 +146,8 @@ describe('screen UI preferences', () => {
   })
 
   it('persists Guild tab choice as UI-only state', () => {
-    setUiPreferences({ screenState: { guild: { activeTab: 'skills' } } })
-    expect(loadUiPreferences().screenState.guild.activeTab).toBe('skills')
+    setUiPreferences({ screenState: { guild: { activeTab: 'advancement' } } })
+    expect(loadUiPreferences().screenState.guild.activeTab).toBe('advancement')
     expect(normalizeUiPreferences({ screenState: { guild: { activeTab: 'invalid' } } }).screenState.guild.activeTab).toBe('overview')
   })
 

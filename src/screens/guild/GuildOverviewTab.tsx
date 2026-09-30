@@ -32,7 +32,7 @@ export function GuildRecommendedContracts({ state, onNavigate }: { state: GameSt
         <b>+{commission.reputationReward.toLocaleString()} REP</b>
       </div>) : <p className="guild-overview-empty">The Guild board has no available offers.</p>}
     </div>}
-    <GameTooltip content="Open the Guild Commission board."><Button variant="secondary" onClick={() => onNavigate('contracts')}>Open Commissions</Button></GameTooltip>
+    <GameTooltip content="Open the Guild Commission board."><Button variant="secondary" onClick={() => onNavigate('commissions')}>Open Commissions</Button></GameTooltip>
   </Card>
 }
 
@@ -48,6 +48,6 @@ export function GuildAdvancementSummary({ state, onNavigate }: { state: GameStor
       <div><span>INVESTED</span><strong>{invested.toLocaleString()}</strong></div>
       <div><span>NEXT MAJOR</span><strong>{nextMajor?.toLocaleString() ?? '—'}</strong></div>
     </div>
-    <GameTooltip content="Open the Guild Advancement Board and choose a permanent service bonus."><Button variant="secondary" onClick={() => onNavigate('skills')}><Sparkles size={14} /> Open Advancement Board</Button></GameTooltip>
+    <GameTooltip content="Open the Guild Advancement Board and choose a permanent service bonus."><Button variant="secondary" onClick={() => onNavigate('advancement')}><Sparkles size={14} /> Open Advancement Board</Button></GameTooltip>
   </Card>
 }

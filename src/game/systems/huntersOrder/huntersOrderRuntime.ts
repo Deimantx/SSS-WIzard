@@ -1,5 +1,6 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
+import type { ResonanceType } from '../../content/resonance/resonance'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS, HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/huntersOrder'
 import { HUNTER_RANKS } from '../../content/huntersOrder/hunterRanks'
 import { HUNTER_STANDINGS } from '../../content/huntersOrder/hunterRanks'
@@ -107,14 +108,14 @@ export const getHunterSkipMarkCost = (state: Pick<GameState, 'progress'>) => Mat
 export const getHunterUpgradePurchaseStatus = (state: Pick<GameState, 'progress'>, upgradeId: HunterUpgradeId | string) => {
   const upgrade = HUNTER_UPGRADES.find((entry) => entry.id === upgradeId)
   if (!upgrade) return { upgrade: null, ownedRank: 0, cost: null, currentRank: getHunterRank(orderFor(state).reputation), requiredRank: null, canPurchase: false, reason: 'unknown-upgrade' as const }
-  const ownedRank = safeInt(orderFor(state).purchasedUpgrades[upgrade.id] ?? 0)
+  const ownedRank = Math.min(upgrade.maxRank, safeInt(orderFor(state).purchasedUpgrades[upgrade.id] ?? 0))
   const cost = upgrade.markCosts[ownedRank] ?? null
   const currentRank = getHunterRank(orderFor(state).reputation)
   const currentStanding = getHunterStanding(orderFor(state).reputation)
   const requiredStanding = HUNTER_STANDINGS.find((standing) => standing.id === upgrade.requiredStanding) ?? HUNTER_STANDINGS[0]
   const requiredRank = HUNTER_RANKS.find((rank) => rank.id === requiredStanding.rankId) ?? HUNTER_RANKS[0]
   const hasRequiredRank = currentStanding.reputation >= requiredStanding.reputation
-  const hiddenUntilMultipleGrounds = upgrade.id === 'ground-survey' && HUNTER_GROUNDS.filter((ground) => ground.enabled).length < 2
+  const hiddenUntilMultipleGrounds = (upgrade.id === 'ground-survey' || upgrade.id === 'priority-dispatch') && HUNTER_GROUNDS.filter((ground) => ground.enabled).length < 2
   const reason = ownedRank >= upgrade.maxRank ? 'max-rank' as const : !hasRequiredRank ? 'rank-required' as const : hiddenUntilMultipleGrounds ? 'ground-required' as const : cost === null || orderFor(state).hunterMarks < cost ? 'marks-required' as const : null
   return { upgrade, ownedRank, cost, currentRank, currentStanding, requiredRank, requiredStanding, canPurchase: reason === null, reason }
 }
@@ -410,18 +411,9 @@ export const recordHunterKill = (state: GameState, monsterId: MonsterId, dungeon
   order.totalContractsCompleted = safeInt(order.totalContractsCompleted) + 1
   stats.contractsCompleted += 1
   stats.marksEarned += marksAwarded
-  const resonanceCompletionRank = getOwnedUpgradeRank(state, 'resonant-completion')
-  if (resonanceCompletionRank > 0) {
-    const qualityScale = contract.tier === 'routine' ? 1 : contract.tier === 'special' ? 1.5 : 2
-    const yields = MONSTERS[monsterId]?.resonanceYield ?? {}
-    const dominant = Object.entries(yields).sort((a, b) => b[1] - a[1])[0]
-    if (dominant) grantResonance(state.resonance, dominant[0] as keyof typeof state.resonance, Math.round(dominant[1] * Math.max(1, contract.target / 100) * qualityScale * resonanceCompletionRank * 0.1))
-  }
-  const essenceCompletionRank = getOwnedUpgradeRank(state, 'essence-completion')
-  if (essenceCompletionRank > 0) {
-    const qualityScale = contract.tier === 'routine' ? 1 : contract.tier === 'special' ? 2 : 3
-    grantItem(state, 'life-essence', Math.max(1, Math.floor(contract.target / 25) * qualityScale * essenceCompletionRank))
-  }
+  const completionHarvest = getHunterCompletionHarvestPreview(state, contract, monsterId)
+  if (completionHarvest.resonance) grantResonance(state.resonance, completionHarvest.resonance.type, completionHarvest.resonance.amount)
+  if (completionHarvest.lifeEssence > 0) grantItem(state, 'life-essence', completionHarvest.lifeEssence)
   const nextRank = getHunterRank(order.reputation)
   const nextStanding = getHunterStanding(order.reputation)
   if (nextRank.id !== order.rankId) { order.rankId = nextRank.id; pushNotification(state, `Order Rank advanced to ${nextRank.name}.`, 'success') }
@@ -544,6 +536,19 @@ export const debugCompleteActiveHunterContract = (state: GameState) => {
   if (!monsterId) return false
   for (let count = contract.progress; count < contract.target; count += 1) recordHunterKill(state, monsterId, groundId)
   return true
+}
+
+export const getHunterCompletionHarvestPreview = (state: Pick<GameState, 'progress'>, contract: HunterContractState, monsterId: MonsterId) => {
+  const resonanceRank = getOwnedUpgradeRank(state, 'resonant-completion')
+  const resonanceScale = contract.tier === 'routine' ? 1 : contract.tier === 'special' ? 1.5 : 2
+  const dominant = Object.entries(MONSTERS[monsterId]?.resonanceYield ?? {}).sort((a, b) => b[1] - a[1])[0]
+  const resonance = resonanceRank > 0 && dominant
+    ? { type: dominant[0] as ResonanceType, amount: Math.round(dominant[1] * Math.max(1, contract.target / 100) * resonanceScale * resonanceRank * 0.1) }
+    : null
+  const essenceRank = getOwnedUpgradeRank(state, 'essence-completion')
+  const essenceScale = contract.tier === 'routine' ? 1 : contract.tier === 'special' ? 2 : 3
+  const lifeEssence = essenceRank > 0 ? Math.max(1, Math.floor(contract.target / 25) * essenceScale * essenceRank) : 0
+  return { resonance, lifeEssence }
 }
 
 const rankForTargetType: Partial<Record<HunterContractTarget['type'], HunterRankId>> = { family: 'scout', alignment: 'stalker', region: 'warden' }

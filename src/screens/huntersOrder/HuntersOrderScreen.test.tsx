@@ -116,10 +116,10 @@ describe('Hunter’s Order locked shell', () => {
     expect(screen.getByRole('heading', { name: 'Hunter Mark Catalog' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: /Trail Kit/ }))
     expect(screen.getByRole('heading', { name: 'Trail Kit' })).toBeTruthy()
-    expect(screen.getByText('6% lower all contract target')).toBeTruthy()
+    expect(screen.getAllByText(/Monster Contracts .6%/).length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: /Deep Pockets/ }))
     expect(screen.getByRole('heading', { name: 'Deep Pockets' })).toBeTruthy()
-    expect(screen.getByText('REQUIRES STALKER III')).toBeTruthy()
+    expect(screen.getByText('Current Standing: Stalker I.')).toBeTruthy()
   })
 
   it('includes Nightglass as a normal Gloamridge quarry in the shared Bestiary', () => {

@@ -12,6 +12,7 @@ describe('Guild long-term services', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
+    state.progress.guildReputation = 1000
     const project = GUILD_PROJECTS[0]
     const first = project.requirements[0]
     state.inventory[first.itemId] = first.quantity
@@ -23,7 +24,7 @@ describe('Guild long-term services', () => {
       contributeGuildProject(state, project.id, requirement.itemId, 'max')
     }
     expect(state.progress.arcaneGuild.completedProjectIds).toContain(project.id)
-    expect(state.progress.guildReputation).toBe(project.reputationReward)
+    expect(state.progress.guildReputation).toBe(1000 + project.reputationReward)
     expect(state.progress.guildPointsEarned).toBe(project.advancementPointsReward)
     expect(getGuildProgressionBonuses(state).guildReputationMultiplier).toBe(1.01)
     expect(contributeGuildProject(state, project.id, first.itemId, 1)).toBe(false)
@@ -33,7 +34,8 @@ describe('Guild long-term services', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
-    expect(getGuildProjectStatus(state, 'expand-research-wing')).toMatchObject({ available: false, reason: 'rank-required' })
+    expect(getGuildProjectStatus(state, 'expand-research-wing')).toMatchObject({ available: false, reason: 'standing-required' })
+    state.progress.guildReputation = 2200
     state.progress.guildRank = 'apprentice'
     expect(getGuildProjectStatus(state, 'expand-research-wing')).toMatchObject({ available: false, reason: 'prerequisite-required', missingProjects: ['restore-arcane-archive'] })
     state.inventory['artifact-essence'] = 20
@@ -55,6 +57,7 @@ describe('Guild long-term services', () => {
     state.progress.guildRank = 'apprentice'
     state.progress.arcaneGuild.completedProjectIds.push('restore-arcane-archive', 'expand-research-wing')
     expect(getGuildProgressionBonuses(state).researchSpeedMultiplier).toBe(1.03)
+    expect(getGuildProgressionBonuses(state).guildReputationMultiplier).toBe(1.01)
     expect(getGuildProgressionBonuses(state).transmutationSpeedMultiplier).toBe(1)
     state.progress.arcaneGuild.completedProjectIds.push('rebuild-transmutation-hall')
     expect(getGuildProgressionBonuses(state).transmutationSpeedMultiplier).toBe(1.03)
@@ -64,6 +67,7 @@ describe('Guild long-term services', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'adept'
+    state.progress.guildReputation = 500
     expect(startGuildCommissionChain(state, 'study-ember-resonance')).toBe(true)
     expect(recordGuildCommissionChainProgress(state, 'delivery', 8, 'fire-fragment')).toBe(true)
     expect(state.progress.arcaneGuild.activeCommissionChain?.stageIndex).toBe(1)
@@ -79,6 +83,7 @@ describe('Guild long-term services', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'adept'
+    state.progress.guildReputation = 2200
     const chain = 'stable-leyline-survey'
     const completeChain = () => {
       expect(startGuildCommissionChain(state, chain)).toBe(true)
@@ -89,16 +94,17 @@ describe('Guild long-term services', () => {
     }
     completeChain()
     expect(state.progress.guildPointsEarned).toBe(1)
-    expect(state.progress.guildReputation).toBe(420)
+    expect(state.progress.guildReputation).toBe(2620)
     completeChain()
     expect(state.progress.guildPointsEarned).toBe(1)
-    expect(state.progress.guildReputation).toBe(700)
+    expect(state.progress.guildReputation).toBe(2900)
   })
 
   it('validates the authored item for Production Chain stages', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'magister'
+    state.progress.guildReputation = 500
     expect(startGuildCommissionChain(state, 'prismatic-synthesis')).toBe(true)
     state.inventory['prismatic-fragment'] = 5
     expect(contributeGuildCommissionChainDelivery(state, 'max')).toBe(true)

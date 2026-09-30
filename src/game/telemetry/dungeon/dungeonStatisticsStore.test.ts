@@ -94,6 +94,18 @@ describe('Dungeon Statistics observer', () => {
     expect(useDungeonStatisticsStore.getState().session).toMatchObject({ totalLootQuantity: 0, lootByItemId: {}, resonanceByType: { air: 2 } })
   })
 
+  it('records measured encounter durations for Hunter quarry only', () => {
+    dungeonStatisticsObserver.beginSession('hunters-ground')
+    dungeonStatisticsObserver.beginEncounter('ashen-tracker', false)
+    dungeonStatisticsObserver.advance(4_000, createInitialState())
+    dungeonStatisticsObserver.completeEncounter('ashen-tracker', 4_000, false)
+    dungeonStatisticsObserver.beginEncounter('forest-wisp', false)
+    dungeonStatisticsObserver.advance(3_000, createInitialState())
+    dungeonStatisticsObserver.completeEncounter('forest-wisp', 3_000, false)
+
+    expect(useDungeonStatisticsStore.getState().session?.hunterEncounterSamplesByMonster).toEqual({ 'ashen-tracker': { kills: 1, combatMs: 4_000 } })
+  })
+
   it('does not restart an already valid session from repeated lifecycle signals', () => {
     const state = createInitialState()
     state.combat.active = true

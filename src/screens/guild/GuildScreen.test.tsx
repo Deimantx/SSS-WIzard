@@ -9,7 +9,7 @@ import { GuildScreen } from './GuildScreen'
 
 const renderGuild = () => render(<TooltipProvider><GuildScreen /></TooltipProvider>)
 
-describe('Guild V3 screen', () => {
+describe('Guild V4 screen', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useGameStore.setState(createInitialState())
@@ -36,15 +36,14 @@ describe('Guild V3 screen', () => {
     expect((screen.getByRole('button', { name: 'Guild Locked' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('switches between Guild-owned Registry, Commissions, and Advancement without changing gameplay state', async () => {
+  it('switches among Registry, Commissions, Standing, and Advancement without changing gameplay state', async () => {
     const user = userEvent.setup()
     useGameStore.setState((state) => { state.progress.guildUnlocked = true; state.progress.guildRank = 'initiate'; state.progress.guildPointsEarned = 1; state.progress.arcaneGuild.availableCommissions = [{ id: 'test-supply', templateId: 'supply-life-essence', category: 'supply', quality: 'routine', objectives: [{ kind: 'item-supply', itemId: 'life-essence', target: 10, progress: 0 }], reputationReward: 60, advancementPointReward: 0 }] })
     renderGuild()
 
-    expect(screen.getByRole('heading', { name: 'Guild Commissions' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Guild progression' })).toBeTruthy()
-    expect(screen.getByText('RANK PROGRESS')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: /^Contracts/ }))
+    expect(screen.getByRole('heading', { name: 'Initiate I' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Commission Board' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /^Commissions/ }))
     expect(screen.getByRole('heading', { name: 'Choose a Commission' })).toBeTruthy()
     expect(screen.getByText('Available Commissions')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Accept Commission' })).toBeTruthy()
@@ -53,7 +52,7 @@ describe('Guild V3 screen', () => {
     expect(screen.getByText('ARCANE REGISTRY')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Advancement' }))
     expect(screen.getByRole('heading', { name: 'Advancement Board' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Research' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Measured Inquiry' })).toBeTruthy()
     expect(useGameStore.getState().progress.guildPointsEarned).toBe(1)
   })
 
@@ -62,6 +61,9 @@ describe('Guild V3 screen', () => {
     renderGuild()
     const visibleCopy = document.body.textContent ?? ''
     expect(visibleCopy).toContain('ARCANE GUILD')
+    expect(visibleCopy).toContain('Guild Standing')
+    expect(visibleCopy).toContain('Next: Initiate II')
+    expect(visibleCopy).toContain('STANDING PROGRESS')
     expect(visibleCopy).not.toMatch(/Verdant Circle|specialization tier|next sigil/i)
   })
 })

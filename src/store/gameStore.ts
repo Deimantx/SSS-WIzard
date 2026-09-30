@@ -145,11 +145,14 @@ import {
   resetGuildRequestsAction,
   setGuildRankAction,
   grantGuildPointAction,
+  debugSetGuildSkillNodeRankAction,
+  debugSetAllGuildSkillRanksAction,
+  debugSetGuildReputationAction,
   registerArcaneRegistryEntryAction,
-  acceptGuildCommissionAction, contributeGuildCommissionSupplyAction, deliverGuildCommissionItemsAction, refreshGuildCommissionChoicesAction, contributeGuildProjectAction, startGuildCommissionChainAction, contributeGuildCommissionChainDeliveryAction, debugCompleteGuildProjectAction, debugCompleteGuildProjectPrerequisitesAction, debugCompleteGuildCommissionChainAction, debugGrantGuildReputationAction, debugSetArcaneGuildUnlockedAction, debugCompleteRegistryEntryAction, debugCompleteRegistrySetAction,
+  acceptGuildCommissionAction, contributeGuildCommissionSupplyAction, deliverGuildCommissionItemsAction, refreshGuildCommissionChoicesAction, contributeGuildProjectAction, startGuildCommissionChainAction, contributeGuildCommissionChainDeliveryAction, debugCompleteGuildProjectAction, debugCompleteGuildProjectPrerequisitesAction, debugCompleteGuildCommissionChainAction, debugGrantGuildProjectRequirementsAction, debugGrantGuildReputationAction, debugSetArcaneGuildUnlockedAction, debugCompleteRegistryEntryAction, debugCompleteRegistrySetAction, debugResetRegistrySetAction, debugCompleteGuildStudyStageAction, debugResetGuildStudyAction, debugSetGuildStudyFirstClearAction, debugCompleteActiveGuildCommissionAction,
 } from "./actions/guildActions";
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChronicleOptionalObjectives, debugCompleteChroniclePrerequisites, debugCompleteChronicleRequiredObjectives, debugCompleteChronicleTrack, debugResetAllChronicles, debugResetChronicleChapter, debugResetChronicleTrack, debugUnlockChronicleChapter, getChronicleMainObjective, reconcileChronicleProgress } from "../game/systems/chronicles/chronicleRuntime";
-import type { GuildSkillNodeId, GuildRankId } from "../game/types";
+import type { GuildSkillNodeId, GuildRankId, GuildCommissionCategory } from "../game/types";
 import { acceptHunterContractAction, issueFirstHunterContractAction, requestHunterAssignmentAction, requestHunterContractBoardAction, rerollHunterContractsAction, setHunterTargetBlockedAction, clearHunterTargetBlocksAction, skipHunterContractAction, purchaseHunterUpgradeAction, debugSetHuntersOrderUnlockedAction, debugGrantHunterReputationAction, debugGrantHunterMarksAction, debugCompleteActiveHunterContractAction, debugSetHunterRngSeedAction, debugRegenerateHunterContractBoardAction, debugSetHunterRankAction, debugGrantHunterUpgradeAction, debugClearHunterTargetBlocksAction, debugGrantNightglassContractAction, toggleHunterContractPinAction, setHunterPreferredContractTypeAction, setHunterPreferredHuntingGroundAction, debugSetHunterStandingAction, debugSetHunterUpgradeRankAction, debugSetAllHunterUpgradesAction, rememberHunterQuarryAction } from './actions/huntersOrderActions'
 import { debugSetGuildCommissionRngSeedAction, debugRegenerateGuildCommissionBoardAction } from './actions/guildActions'
 import {
@@ -825,14 +828,23 @@ export interface GameActions {
   startGuildCommissionChain: (chainId: string) => boolean;
   contributeGuildCommissionChainDelivery: (amount: number | 'max') => boolean;
   debugCompleteGuildProject: (id: string) => boolean;
+  debugGrantGuildProjectRequirements: (id: string) => boolean;
   debugCompleteGuildProjectPrerequisites: (id: string) => boolean;
   debugCompleteGuildCommissionChain: (id: string) => boolean;
   debugSetGuildCommissionRngSeed: (seed: number) => void;
-  debugRegenerateGuildCommissionBoard: (options?: { quality?: 'routine' | 'special' | 'prestigious'; templateId?: string }) => void;
+  debugRegenerateGuildCommissionBoard: (options?: { quality?: 'routine' | 'special' | 'prestigious'; templateId?: string; category?: GuildCommissionCategory }) => void;
+  debugCompleteActiveGuildCommission: () => boolean;
+  debugCompleteGuildStudyStage: () => boolean;
+  debugResetGuildStudy: (id: string) => boolean;
+  debugSetGuildStudyFirstClear: (id: string, complete: boolean) => boolean;
+  debugSetGuildSkillNodeRank: (id: GuildSkillNodeId, rank: number) => boolean;
+  debugSetAllGuildSkillRanks: (mode: 'max' | 'reset') => boolean;
+  debugSetGuildReputation: (amount: number) => void;
   debugGrantGuildReputation: (amount: number) => void;
   debugSetArcaneGuildUnlocked: (unlocked: boolean) => void;
   debugCompleteRegistryEntry: (itemId: ItemId) => boolean;
   debugCompleteRegistrySet: (id: string) => boolean;
+  debugResetRegistrySet: (id: string) => boolean;
   debugSetHuntersOrderUnlocked: (unlocked: boolean) => void;
   debugGrantHunterReputation: (amount: number) => void;
   debugGrantHunterMarks: (amount: number) => void;
@@ -3122,14 +3134,20 @@ export const useGameStore = create<GameStore>()(
     startGuildCommissionChain: (chainId) => { let ok = false; set((state) => { ok = startGuildCommissionChainAction(state, chainId); return state; }); return ok; },
     contributeGuildCommissionChainDelivery: (amount) => { let ok = false; set((state) => { ok = contributeGuildCommissionChainDeliveryAction(state, amount); return state; }); return ok; },
     debugCompleteGuildProject: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildProjectAction(state, id); return state; }); return ok; },
+    debugGrantGuildProjectRequirements: (id) => { let ok = false; set((state) => { ok = debugGrantGuildProjectRequirementsAction(state, id); return state; }); return ok; },
     debugCompleteGuildProjectPrerequisites: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildProjectPrerequisitesAction(state, id); return state; }); return ok; },
     debugCompleteGuildCommissionChain: (id) => { let ok = false; set((state) => { ok = debugCompleteGuildCommissionChainAction(state, id); return state; }); return ok; },
+    debugCompleteGuildStudyStage: () => { let ok = false; set((state) => { ok = debugCompleteGuildStudyStageAction(state); return state; }); return ok; },
+    debugResetGuildStudy: (id) => { let ok = false; set((state) => { ok = debugResetGuildStudyAction(state, id); return state; }); return ok; },
+    debugSetGuildStudyFirstClear: (id, complete) => { let ok = false; set((state) => { ok = debugSetGuildStudyFirstClearAction(state, id, complete); return state; }); return ok; },
     debugSetGuildCommissionRngSeed: (seed) => set((state) => { debugSetGuildCommissionRngSeedAction(state, seed); return state; }),
     debugRegenerateGuildCommissionBoard: (options = {}) => set((state) => { debugRegenerateGuildCommissionBoardAction(state, options); return state; }),
+    debugCompleteActiveGuildCommission: () => { let ok = false; set((state) => { ok = debugCompleteActiveGuildCommissionAction(state); return state; }); return ok; },
     debugGrantGuildReputation: (amount) => set((state) => { debugGrantGuildReputationAction(state, amount); return state; }),
     debugSetArcaneGuildUnlocked: (unlocked) => set((state) => { debugSetArcaneGuildUnlockedAction(state, unlocked); return state; }),
     debugCompleteRegistryEntry: (itemId) => { let ok = false; set((state) => { ok = debugCompleteRegistryEntryAction(state, itemId); reconcileChronicleProgress(state); return state; }); return ok; },
     debugCompleteRegistrySet: (id) => { let ok = false; set((state) => { ok = debugCompleteRegistrySetAction(state, id); reconcileChronicleProgress(state); return state; }); return ok; },
+    debugResetRegistrySet: (id) => { let ok = false; set((state) => { ok = debugResetRegistrySetAction(state, id); return state; }); return ok; },
     debugSetHuntersOrderUnlocked: (unlocked) => set((state) => { debugSetHuntersOrderUnlockedAction(state, unlocked); return state; }),
     debugGrantHunterReputation: (amount) => set((state) => { debugGrantHunterReputationAction(state, amount); return state; }),
     debugGrantHunterMarks: (amount) => set((state) => { debugGrantHunterMarksAction(state, amount); return state; }),
@@ -3188,6 +3206,9 @@ export const useGameStore = create<GameStore>()(
     resetGuildRequests: () => set((state) => { resetGuildRequestsAction(state); return state; }),
     debugSetGuildRank: (rank) => set((state) => { setGuildRankAction(state, rank); return state; }),
     debugGrantGuildPoint: (amount) => set((state) => { grantGuildPointAction(state, amount); return state; }),
+    debugSetGuildSkillNodeRank: (id, rank) => { let ok = false; set((state) => { ok = debugSetGuildSkillNodeRankAction(state, id, rank); return state; }); return ok; },
+    debugSetAllGuildSkillRanks: (mode) => { let ok = false; set((state) => { ok = debugSetAllGuildSkillRanksAction(state, mode); return state; }); return ok; },
+    debugSetGuildReputation: (amount) => set((state) => { debugSetGuildReputationAction(state, amount); return state; }),
     debugReconcileChronicles: () => set((state) => { reconcileChronicleProgress(state); return state; }),
     debugSetChronicleEvent: (eventId, enabled) => set((state) => { state.progress.chronicle.eventFlags[eventId] = enabled; reconcileChronicleProgress(state); return state; }),
     debugCompleteChronicleObjective: (objectiveId) => set((state) => { debugCompleteChronicleObjective(state, objectiveId); reconcileChronicleProgress(state); return state; }),

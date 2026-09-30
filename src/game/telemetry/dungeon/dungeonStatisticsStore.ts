@@ -32,6 +32,7 @@ const newSession = (dungeonId: DungeonId): DungeonStatisticsSession => ({
   bestRunMs: null,
   normalEncounterCount: 0,
   normalEncounterDurationTotalMs: 0,
+  hunterEncounterSamplesByMonster: {},
   fastestEncounterMs: null,
   bossEncounterCount: 0,
   bossDurationTotalMs: 0,
@@ -66,6 +67,12 @@ const completeEncounterState = (state: DungeonStatisticsSnapshot, monsterId: Mon
   if (!encounter || encounter.monsterId !== monsterId) return state
   const duration = validDuration(durationMs)
   const session = { ...state.session }
+  if (duration > 0 && MONSTERS[monsterId]?.hunter?.exclusive) {
+    const samples = { ...(session.hunterEncounterSamplesByMonster ?? {}) }
+    const sample = samples[monsterId] ?? { kills: 0, combatMs: 0 }
+    samples[monsterId] = { kills: sample.kills + 1, combatMs: sample.combatMs + duration }
+    session.hunterEncounterSamplesByMonster = samples
+  }
   if (boss) {
     session.bossEncounterCount += 1
     session.bossDurationTotalMs += duration
@@ -87,7 +94,7 @@ const completeRunState = (state: DungeonStatisticsSnapshot, durationMs: number):
 
 const cloneStatisticsState = (state: DungeonStatisticsSnapshot): DungeonStatisticsSnapshot => ({
   active: state.active,
-  session: state.session ? { ...state.session, lootByItemId: { ...state.session.lootByItemId }, resonanceByType: { ...(state.session.resonanceByType ?? {}) } } : null,
+  session: state.session ? { ...state.session, lootByItemId: { ...state.session.lootByItemId }, resonanceByType: { ...(state.session.resonanceByType ?? {}) }, hunterEncounterSamplesByMonster: { ...(state.session.hunterEncounterSamplesByMonster ?? {}) } } : null,
   currentEncounter: state.currentEncounter ? { ...state.currentEncounter } : null,
 })
 

@@ -5,7 +5,7 @@ import { isHuntersOrderUnlocked } from '../../game/systems/huntersOrder/huntersO
 import { useGameStore } from '../../store/gameStore'
 import { HunterBestiaryTab } from './HunterBestiaryTab'
 import { HunterHeader } from './HunterHeader'
-import { HunterOverviewTab } from './HunterOverviewTab'
+import { HunterOverviewActiveHuntPanel, HunterOverviewGroundsPanel, HunterOverviewServicesPanel, HunterOverviewStandingPanel } from './HunterOverviewTab'
 import { HunterContractsTab } from './HunterContractsTab'
 import { HunterRankTab } from './HunterRankTab'
 import { HunterUpgradesTab } from './HunterUpgradesTab'
@@ -33,7 +33,12 @@ export function HuntersOrderScreen() {
   const attention = useProfileAttention(getActiveProfileId())
   const tabIcons = { overview: Compass, contracts: ScrollText, rank: Medal, upgrades: Wrench, bestiary: BookOpen }
   const tabBadge = (id: HuntersOrderScreenTab) => id === 'contracts' ? state.progress.huntersOrder.activeContract ? '1' : state.progress.huntersOrder.availableContracts.length || null : id === 'upgrades' ? header.availableUpgradeCount || null : id === 'bestiary' ? attention.unseenMonsters.length ? 'NEW' : null : null
-  const panels = visibleTab === 'overview' ? [{ id: 'hunter-overview', content: <HunterOverviewTab state={state} onNavigate={setTab} /> }]
+  const panels = visibleTab === 'overview' ? [
+    { id: 'hunter-overview-active', content: <HunterOverviewActiveHuntPanel state={state} onNavigate={setTab} /> },
+    { id: 'hunter-overview-services', content: <HunterOverviewServicesPanel state={state} onNavigate={setTab} /> },
+    { id: 'hunter-overview-standing', content: <HunterOverviewStandingPanel state={state} onNavigate={setTab} /> },
+    { id: 'hunter-overview-grounds', content: <HunterOverviewGroundsPanel state={state} /> },
+  ]
     : visibleTab === 'contracts' ? [{ id: 'hunter-contracts', content: <HunterContractsTab state={state} /> }]
     : visibleTab === 'rank' ? [{ id: 'hunter-rank', content: <HunterRankTab state={state} /> }]
     : visibleTab === 'upgrades' ? [{ id: 'hunter-upgrades', content: <HunterUpgradesTab state={state} /> }]

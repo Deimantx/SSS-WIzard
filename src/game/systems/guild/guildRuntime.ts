@@ -1,11 +1,14 @@
 import { GUILD_REQUESTS, LEGACY_GUILD_REQUESTS, type GuildRequestId } from '../../content/guild/guildRequests'
 import { GUILD_SKILL_NODES } from '../../content/guild/guildSkills'
+import { GUILD_RANKS } from '../../content/guild/guildRanks'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
 import { pushNotification } from '../../engine'
-import { canPurchaseGuildSkillNode, getGuildPromotionProgress } from './guildSelectors'
+import { canPurchaseGuildSkillNode, getGuildPromotionProgress, getGuildProgressionBonuses } from './guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from './guildCommissions'
 import type { DungeonId, GameState, GuildRankId, GuildSkillNodeId, MonsterId } from '../../types'
+import { GUILD_MACRO_RANK_THRESHOLDS } from '../../content/guild/guildStandings'
+import { grantGuildReputation, setGuildReputation } from './guildReputation'
 
 const safeAmount = (value: number) => Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
 type LegacyGuildRequestId = keyof typeof LEGACY_GUILD_REQUESTS
@@ -31,9 +34,8 @@ export const claimGuildRequest = (state: GameState, requestId: string) => {
   const request = getRequest(requestId)
   if (!request || !state.progress.guildUnlocked || state.progress.requestClaims[requestId] || (state.progress.requestProgress[requestId] ?? 0) < request.target) return false
   state.progress.requestClaims[requestId] = true
-  state.progress.guildReputation = safeAmount(state.progress.guildReputation) + request.reputation
-  state.progress.guildPointsEarned = safeAmount(state.progress.guildPointsEarned) + request.guildPoints
-  pushNotification(state, `${request.name} claimed · +${request.reputation} Reputation · +${request.guildPoints} Guild Point`, 'success')
+  grantGuildReputation(state, request.reputation)
+  pushNotification(state, `${request.name} claimed · +${request.reputation} Reputation`, 'success')
   reconcileChronicleProgress(state)
   return true
 }
@@ -65,7 +67,8 @@ export const purchaseGuildSkillNode = (state: GameState, nodeId: GuildSkillNodeI
 
 export const resetGuildSkillTree = (state: GameState) => {
   if (state.combat.active) return { ok: false as const, reason: 'Guild Skill Tree can only be reset outside Combat.' }
-  const expanded = Boolean(state.progress.guildSkillNodeRanks['tower-expanded-quarters'])
+  const boardAcolyteBonus = safeAmount(state.progress.guildSkillNodeRanks['major-expanded-quarters'] ?? 0) + safeAmount(state.progress.guildSkillNodeRanks['tower-expanded-quarters'] ?? 0)
+  const expanded = boardAcolyteBonus > 0
   if (expanded) {
     const assigned = (state.activities.channeling.acolytesAssigned ?? 0) + Object.values(state.activities.research.slots).filter((job) => Boolean(job?.acolyteAssigned)).length + Object.values(state.activities.transmutation.jobs).filter((job) => Boolean(job?.acolyteAssigned)).length
     if (assigned > getGuildSkillTreeCapacityAfterReset(state)) return { ok: false as const, reason: 'Unassign an Acolyte before removing Expanded Quarters.' }
@@ -74,10 +77,36 @@ export const resetGuildSkillTree = (state: GameState) => {
   return { ok: true as const }
 }
 
-const getGuildSkillTreeCapacityAfterReset = (state: GameState) => Math.max(0, Math.floor(state.tower.acolytes.base + Object.values(state.tower.acolytes.permanentBonuses).reduce((sum, value) => sum + Math.max(0, Math.floor(value)), 0)))
+const getGuildSkillTreeCapacityAfterReset = (state: GameState) => {
+  const permanentCapacity = Object.values(state.tower.acolytes.permanentBonuses).reduce((sum, value) => sum + Math.max(0, Math.floor(value)), 0)
+  const guildBonuses = getGuildProgressionBonuses(state)
+  const boardAcolytes = safeAmount(state.progress.guildSkillNodeRanks['major-expanded-quarters'] ?? 0) + safeAmount(state.progress.guildSkillNodeRanks['tower-expanded-quarters'] ?? 0)
+  return Math.max(0, Math.floor(state.tower.acolytes.base + permanentCapacity + Math.max(0, guildBonuses.bonusAcolytes - boardAcolytes)))
+}
 
 export const resetGuildRequests = (state: GameState) => { state.progress.requestProgress = {}; state.progress.requestClaims = {} }
-export const setGuildRank = (state: GameState, rank: GuildRankId) => { state.progress.guildRank = rank }
+export const setGuildRank = (state: GameState, rank: GuildRankId) => { state.progress.guildRank = rank; state.progress.guildReputation = Math.max(state.progress.guildReputation, GUILD_MACRO_RANK_THRESHOLDS[rank]) }
 export const grantGuildPoint = (state: GameState, amount: number) => { state.progress.guildPointsEarned = safeAmount(state.progress.guildPointsEarned) + safeAmount(amount) }
+export const debugSetGuildReputation = (state: GameState, amount: number) => {
+  const reputation = setGuildReputation(state, amount)
+  const macroRank = [...GUILD_RANKS].reverse().find((rank) => GUILD_MACRO_RANK_THRESHOLDS[rank.id] <= reputation)
+  if (macroRank && macroRank.id !== 'outsider') state.progress.guildRank = macroRank.id
+}
+export const debugSetGuildSkillNodeRank = (state: GameState, nodeId: GuildSkillNodeId, rank: number) => {
+  const node = GUILD_SKILL_NODES[nodeId]
+  if (!node || node.legacy) return false
+  const next = Math.max(0, Math.min(node.maxRank, safeAmount(rank)))
+  if (next) state.progress.guildSkillNodeRanks[nodeId] = next
+  else delete state.progress.guildSkillNodeRanks[nodeId]
+  const invested = Object.entries(state.progress.guildSkillNodeRanks).reduce((sum, [id, value]) => sum + (GUILD_SKILL_NODES[id as GuildSkillNodeId]?.legacy ? 0 : safeAmount(value)), 0)
+  state.progress.guildPointsEarned = Math.max(state.progress.guildPointsEarned, invested)
+  return true
+}
+export const debugSetAllGuildSkillRanks = (state: GameState, mode: 'max' | 'reset') => {
+  if (mode === 'reset') { state.progress.guildSkillNodeRanks = {}; return true }
+  state.progress.guildSkillNodeRanks = Object.fromEntries(Object.values(GUILD_SKILL_NODES).filter((node) => !node.legacy).map((node) => [node.id, node.maxRank])) as GameState['progress']['guildSkillNodeRanks']
+  state.progress.guildPointsEarned = Math.max(state.progress.guildPointsEarned, Object.values(GUILD_SKILL_NODES).filter((node) => !node.legacy).reduce((sum, node) => sum + node.maxRank, 0))
+  return true
+}
 
 export const debugSetArcaneGuildUnlocked = (state: GameState, unlocked: boolean) => { state.progress.guildUnlocked = unlocked; if (unlocked && state.progress.guildRank === 'outsider') state.progress.guildRank = 'initiate'; ensureGuildCommissionChoices(state); reconcileChronicleProgress(state) }

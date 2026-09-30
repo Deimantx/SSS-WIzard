@@ -22,7 +22,7 @@ export const HUNTER_UPGRADES = [
   define('extended-trails', 'Extended Trails', 'control', 'stalker-1', 3, 'block-slots', 1),
   define('pinned-orders', 'Pinned Orders', 'control', 'scout-4', 2, 'pin-slots', 1),
   define('dispatch-directives', 'Dispatch Directives', 'control', 'stalker-5', 3, 'dispatch-directives', 1),
-  define('contract-recall', 'Contract Recall', 'control', 'veteran-4', 3, 'contract-recall', 1),
+  define('contract-recall', 'Contract Recall', 'control', 'veteran-4', 2, 'contract-recall', 1),
   define('trail-kit', 'Trail Kit', 'efficiency', 'tracker-1', 5, 'target-reduction-percent', 0.02),
   define('exact-quarry-briefing', 'Exact Quarry Briefing', 'efficiency', 'tracker-3', 3, 'monster-target-reduction-percent', 0.02),
   define('family-cull-orders', 'Family Cull Orders', 'efficiency', 'scout-5', 3, 'family-target-reduction-percent', 0.02),

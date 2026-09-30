@@ -30,6 +30,11 @@ export type GuildSkillNodeId =
   | 'tower-leyline-assistance' | 'tower-efficient-arrays' | 'tower-expanded-quarters'
   | 'guild-peer-review' | 'guild-resonance-etching' | 'guild-calibrated-rota'
   | 'major-favored-contractor' | 'major-efficient-procurement' | 'major-arcane-efficiency' | 'major-guild-connections' | 'major-coordination' | 'major-grand-standing'
+  | 'scholarship-measured-inquiry' | 'scholarship-peer-review' | 'scholarship-structured-methodology' | 'scholarship-archive-cross-reference' | 'scholarship-faculty-mentorship' | 'scholarship-scholarly-discipline'
+  | 'transmutation-efficient-arrays' | 'transmutation-resonance-handling' | 'transmutation-stable-catalysis' | 'transmutation-production-discipline' | 'transmutation-conversion-discipline' | 'transmutation-precision-arrays'
+  | 'tower-leyline-assistance-v4' | 'tower-flux-reservoir-methods' | 'tower-channeling-rota' | 'tower-acolyte-coordination' | 'tower-scheduling' | 'tower-channeling-faculty'
+  | 'service-faculty-letters' | 'service-efficient-delivery' | 'service-registry-stewardship' | 'service-project-logistics' | 'service-study-coordination' | 'service-commission-office-practice'
+  | 'major-expanded-quarters' | 'major-project-stewardship'
 
 export interface ChronicleProgressState {
   completedObjectiveIds: ChronicleObjectiveId[]

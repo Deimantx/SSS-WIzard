@@ -16,6 +16,7 @@ export interface DungeonStatisticsSession {
   bestRunMs: number | null
   normalEncounterCount: number
   normalEncounterDurationTotalMs: number
+  hunterEncounterSamplesByMonster?: Partial<Record<MonsterId, { kills: number; combatMs: number }>>
   fastestEncounterMs: number | null
   bossEncounterCount: number
   bossDurationTotalMs: number

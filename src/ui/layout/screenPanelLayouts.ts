@@ -298,32 +298,32 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // ============================================================
   // Canonical route used by navigation.
   'arcane-guild': screen({
-    'guild-header': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 190, label: 'Guild status and rank' }),
+    'guild-header': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 176, label: 'Guild status and rank' }),
     'guild-tabs': panel({ order: 2, columnStart: 1, columnSpan: 12, rowStart: 2, minHeight: 0, preferredHeight: 100, label: 'Guild navigation' }),
-    'guild-progression': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 710, label: 'Rank progression dossier' }),
-    'guild-recommended-contracts': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 610, alignSelf: 'start', label: 'Commission overview' }),
-    'guild-advancement-summary': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 250, label: 'Advancement overview' }),
+    'guild-overview-standing': panel({ order: 3, columnStart: 1, columnSpan: 5, rowStart: 3, minHeight: 0, preferredHeight: 300, alignSelf: 'start', label: 'Current Guild Standing' }),
+    'guild-overview-commission': panel({ order: 4, columnStart: 6, columnSpan: 7, rowStart: 3, minHeight: 0, preferredHeight: 300, alignSelf: 'start', label: 'Active Commission and Study' }),
+    'guild-overview-registry': panel({ order: 5, columnStart: 1, columnSpan: 4, rowStart: 4, minHeight: 0, preferredHeight: 240, alignSelf: 'start', label: 'Registry progress' }),
+    'guild-overview-advancement': panel({ order: 6, columnStart: 5, columnSpan: 4, rowStart: 4, minHeight: 0, preferredHeight: 240, alignSelf: 'start', label: 'Advancement progress' }),
+    'guild-overview-projects': panel({ order: 7, columnStart: 9, columnSpan: 4, rowStart: 4, minHeight: 0, preferredHeight: 240, alignSelf: 'start', label: 'Facility projects' }),
+    'guild-standing': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 900, label: 'Guild Standing register' }),
+    'guild-advancement': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 1150, label: 'Advancement Board catalog and inspector' }),
     'guild-contracts': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 1020, label: 'Commission board' }),
-    'guild-skills-summary': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 200, label: 'Advancement points and controls' }),
-    'guild-skills': panel({ order: 4, columnStart: 1, columnSpan: 12, rowStart: 4, minHeight: 0, preferredHeight: 860, label: 'Advancement branches' }),
-    'guild-skills-note': panel({ order: 5, columnStart: 1, columnSpan: 12, rowStart: 5, minHeight: 0, preferredHeight: 72, label: 'Advancement point sources' }),
     'guild-registry': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 900, label: 'Arcane Registry' }),
     'guild-projects': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 900, label: 'Guild Projects' }),
-    'guild-chains': panel({ order: 3, columnStart: 1, columnSpan: 12, rowStart: 3, minHeight: 0, preferredHeight: 900, label: 'Commission Chains' }),
     'guild-locked': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 0, preferredHeight: 520, label: 'Guild invitation gate' }),
   }, [
     'guild-header',
     'guild-tabs',
-    'guild-progression',
-    'guild-recommended-contracts',
-    'guild-advancement-summary',
+    'guild-overview-standing',
+    'guild-overview-commission',
+    'guild-overview-registry',
+    'guild-overview-advancement',
+    'guild-overview-projects',
+    'guild-standing',
+    'guild-advancement',
     'guild-contracts',
-    'guild-skills-summary',
-    'guild-skills',
-    'guild-skills-note',
     'guild-registry',
     'guild-projects',
-    'guild-chains',
     'guild-locked',
   ]),
 
@@ -331,12 +331,15 @@ export const SCREEN_PANEL_LAYOUTS: Record<ScreenId, ScreenLayoutDefinition> = {
   // HUNTERS ORDER
   // ============================================================
   'hunters-order': screen({
-    'hunter-overview': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 360, preferredHeight: 640, overflow: 'auto', label: 'Hunter Order overview' }),
+    'hunter-overview-active': panel({ order: 1, columnStart: 1, columnSpan: 8, rowStart: 1, minHeight: 180, preferredHeight: 'auto', label: 'Active Hunt' }),
+    'hunter-overview-services': panel({ order: 2, columnStart: 9, columnSpan: 4, rowStart: 1, minHeight: 180, preferredHeight: 'auto', label: 'Order Services' }),
+    'hunter-overview-standing': panel({ order: 3, columnStart: 1, columnSpan: 4, rowStart: 2, minHeight: 180, preferredHeight: 'auto', label: 'Standing' }),
+    'hunter-overview-grounds': panel({ order: 4, columnStart: 5, columnSpan: 8, rowStart: 2, minHeight: 180, preferredHeight: 'auto', label: 'Hunting Grounds' }),
     'hunter-contracts': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 380, preferredHeight: 840, overflow: 'auto', label: 'Hunter contract board' }),
     'hunter-rank': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 240, preferredHeight: 480, label: 'Hunter rank progress' }),
     'hunter-upgrades': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 240, preferredHeight: 420, label: 'Hunter upgrades' }),
     'hunter-bestiary': panel({ order: 1, columnStart: 1, columnSpan: 12, rowStart: 1, minHeight: 540, preferredHeight: 880, overflow: 'hidden', label: 'Hunter Bestiary' }),
-  }, ['hunter-overview', 'hunter-contracts', 'hunter-rank', 'hunter-upgrades', 'hunter-bestiary']),
+  }, ['hunter-overview-active', 'hunter-overview-services', 'hunter-overview-standing', 'hunter-overview-grounds', 'hunter-contracts', 'hunter-rank', 'hunter-upgrades', 'hunter-bestiary']),
 
   // ============================================================
   // SETTINGS / INFO

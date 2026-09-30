@@ -10,6 +10,8 @@ import { GUILD_SKILL_NODES, GUILD_SKILL_NODE_IDS } from '../game/content/guild/g
 import { getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
 import { ensureGuildCommissionChoices, getGuildCommissionChoiceCount } from '../game/systems/guild/guildCommissions'
 import { GUILD_PROJECTS } from '../game/content/guild/guildProjects'
+import { GUILD_RANKS } from '../game/content/guild/guildRanks'
+import { GUILD_MACRO_RANK_THRESHOLDS } from '../game/content/guild/guildStandings'
 import { ARCANE_REGISTRY_SETS } from '../game/content/guild/registry/registrySets'
 import { GUILD_COMMISSION_CHAINS } from '../game/content/guild/guildCommissionChains'
 import { HUNTER_UPGRADES } from '../game/content/huntersOrder/hunterUpgrades'
@@ -28,7 +30,7 @@ import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { ArtifactId, CanonicalSpellId, ChronicleEventId, DungeonId, EquipmentPosition, GameState, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { ArtifactId, CanonicalSpellId, ChronicleEventId, DungeonId, EquipmentPosition, GameState, GuildSkillNodeId, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -282,12 +284,40 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   migrated.progress.requestProgress = normalizeDynamicRecord(fresh.progress.requestProgress, rawProgress.requestProgress, requestIds, nonNegativeInteger)
   migrated.progress.requestClaims = normalizeDynamicRecord(fresh.progress.requestClaims, rawProgress.requestClaims, requestIds, booleanValue)
   migrated.progress.permanentManaBonuses = normalizeDynamicRecord(fresh.progress.permanentManaBonuses, rawProgress.permanentManaBonuses ?? rawProgress.permanentFocusBonuses, permanentManaIds, nonNegativeNumber)
-  migrated.progress.guildPointsEarned = nonNegativeInteger(rawProgress.guildPointsEarned) ?? fresh.progress.guildPointsEarned
+  const legacyGuildRank = GUILD_RANKS.some((rank) => rank.id === rawProgress.guildRank) ? rawProgress.guildRank as GameState['progress']['guildRank'] : fresh.progress.guildRank
+  migrated.progress.guildRank = legacyGuildRank
+  migrated.progress.guildReputation = Math.max(nonNegativeInteger(rawProgress.guildReputation) ?? 0, GUILD_MACRO_RANK_THRESHOLDS[legacyGuildRank])
+  migrated.progress.guildPointsEarned = Math.min(104, nonNegativeInteger(rawProgress.guildPointsEarned) ?? fresh.progress.guildPointsEarned)
   const rawSkillRanks = isRecord(rawProgress.guildSkillNodeRanks) ? rawProgress.guildSkillNodeRanks : {}
-  migrated.progress.guildSkillNodeRanks = Object.fromEntries(GUILD_SKILL_NODE_IDS.flatMap((nodeId) => {
-    const rank = nonNegativeInteger(rawSkillRanks[nodeId])
-    return rank && rank > 0 ? [[nodeId, Math.min(GUILD_SKILL_NODES[nodeId].maxRank, rank)]] : []
-  })) as GameState['progress']['guildSkillNodeRanks']
+  const skillRanks: Partial<GameState['progress']['guildSkillNodeRanks']> = {}
+  const assignMigratedRank = (nodeId: GuildSkillNodeId, value: unknown) => {
+    const rank = nonNegativeInteger(value)
+    if (!rank) return
+    const node = GUILD_SKILL_NODES[nodeId]
+    if (!node || node.legacy) return
+    skillRanks[nodeId] = Math.max(skillRanks[nodeId] ?? 0, Math.min(node.maxRank, rank))
+  }
+  GUILD_SKILL_NODE_IDS.filter((nodeId) => !GUILD_SKILL_NODES[nodeId].legacy).forEach((nodeId) => assignMigratedRank(nodeId, rawSkillRanks[nodeId]))
+  const migrateAlias = (legacyId: string, targetId: GuildSkillNodeId) => assignMigratedRank(targetId, rawSkillRanks[legacyId])
+  migrateAlias('hunter-arcane-quarry', 'scholarship-measured-inquiry')
+  migrateAlias('hunter-resonant-pursuit', 'scholarship-peer-review')
+  migrateAlias('guild-peer-review', 'scholarship-peer-review')
+  migrateAlias('hunter-trophy-hunter', 'service-faculty-letters')
+  migrateAlias('quartermaster-careful-harvest', 'transmutation-resonance-handling')
+  migrateAlias('quartermaster-relic-appraisal', 'transmutation-efficient-arrays')
+  migrateAlias('quartermaster-cache-appraisal', 'transmutation-efficient-arrays')
+  migrateAlias('guild-resonance-etching', 'transmutation-efficient-arrays')
+  migrateAlias('tower-leyline-assistance', 'tower-leyline-assistance-v4')
+  migrateAlias('guild-calibrated-rota', 'tower-leyline-assistance-v4')
+  migrateAlias('tower-efficient-arrays', 'scholarship-structured-methodology')
+  migrateAlias('tower-expanded-quarters', 'major-expanded-quarters')
+  let spent = Object.values(skillRanks).reduce((sum, rank) => sum + (rank ?? 0), 0)
+  for (const nodeId of [...GUILD_SKILL_NODE_IDS].reverse()) {
+    if (spent <= migrated.progress.guildPointsEarned) break
+    const excess = Math.min(skillRanks[nodeId] ?? 0, spent - migrated.progress.guildPointsEarned)
+    if (excess) { skillRanks[nodeId] = (skillRanks[nodeId] ?? 0) - excess; spent -= excess }
+  }
+  migrated.progress.guildSkillNodeRanks = Object.fromEntries(Object.entries(skillRanks).filter(([, rank]) => Boolean(rank))) as GameState['progress']['guildSkillNodeRanks']
   const hunterIds = HUNTER_EXCLUSIVE_MONSTER_IDS
   const normalizeHunterTarget = (value: Record<string, any>) => {
     const rawTarget = isRecord(value.targetSpec) ? value.targetSpec : null

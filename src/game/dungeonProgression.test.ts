@@ -189,12 +189,17 @@ describe('dungeon-specific Guild request progression', () => {
     expect(state.progress.requestProgress['sentinel-breaker']).toBe(2)
   })
 
-  it('keeps Apprentice promotion reachable when all three requests are complete', () => {
+  it('requires five non-combat Commissions for Apprentice promotion even when legacy requests are complete', () => {
     const state = createInitialState()
     state.progress.guildRank = 'initiate'
-    state.progress.guildReputation = 175
+    state.progress.guildReputation = 1500
+    state.progress.arcaneGuild.completedCommissions = 4
     state.progress.requestProgress = { 'arcane-supply': 20, 'clear-the-woods': 30, 'sentinel-breaker': 2 }
 
+    promoteGuildAction(state)
+    expect(state.progress.guildRank).toBe('initiate')
+
+    state.progress.arcaneGuild.completedCommissions = 5
     promoteGuildAction(state)
 
     expect(state.progress.guildRank).toBe('apprentice')

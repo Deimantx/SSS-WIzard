@@ -7,7 +7,7 @@ import type { GameState, ItemId, ResearchActivity, ResearchJobState, ResearchSlo
 import { allocateTowerFlux, requestedFluxForProgress, TOWER_FLUX_EPSILON, type TowerFluxAllocation, type TowerFluxFundingResult, type TowerFluxWorkRequest } from '../simulation/towerFluxScheduler'
 import { RESEARCH_SLOT_ORDER } from './researchReservations'
 import { recordGuildCommissionProgress } from '../guild/guildCommissions'
-import { getGuildProgressionBonuses } from '../guild/guildSelectors'
+import { getGuildProgressionBonuses, getGuildResearchSpeedMultiplier } from '../guild/guildSelectors'
 
 export interface ResearchAdvanceContext {
   mode: 'live' | 'banked'
@@ -79,7 +79,6 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
   const delta = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : 0
   const requests: TowerFluxWorkRequest[] = []
 
-  const cycleDurationMs = BALANCE.research.durationPerItemMs / getGuildProgressionBonuses(state).researchSpeedMultiplier
   for (const slotId of RESEARCH_SLOT_ORDER) {
     const job = research.slots[slotId]
     if (!job) continue
@@ -95,7 +94,7 @@ export const buildResearchWorkRequests = (state: GameState, deltaMs: number, con
     if (!job.acolyteAssigned) { job.status = 'prepared'; continue }
     const availableItems = Math.min(job.remainingQuantity, getRawAvailable(state, job.itemId))
     if (availableItems < 1) { stopBlocked(job, 'missing-item', context); continue }
-    const researchSpeed = getGuildProgressionBonuses(state).researchSpeedMultiplier
+    const researchSpeed = getGuildResearchSpeedMultiplier(state, job.itemId)
     const cycleDurationMs = BALANCE.research.durationPerItemMs / researchSpeed
     const workCapacity = Math.max(0, availableItems * cycleDurationMs - progress)
     const requestedProgressMs = Math.min(delta * researchSpeed, workCapacity)
@@ -137,7 +136,7 @@ export const applyResearchAllocations = (state: GameState, requests: readonly To
     const request = requested.get(requestKey(slotId))
     const allocation = allocations[requestKey(slotId)]
     const fundedProgressMs = allocation?.fundedProgressMs ?? 0
-    const cycleDurationMs = BALANCE.research.durationPerItemMs / getGuildProgressionBonuses(state).researchSpeedMultiplier
+    const cycleDurationMs = BALANCE.research.durationPerItemMs / getGuildResearchSpeedMultiplier(state, job.itemId)
     const progress = normalizeJobProgress(job)
     if (fundedProgressMs > TOWER_FLUX_EPSILON) job.progressMs = progress + fundedProgressMs
 

@@ -13,7 +13,7 @@ export type ChronicleStatusFilter = 'current' | 'available' | 'locked' | 'comple
 export type ChronicleSortMode = 'recommended' | 'progress' | 'track' | 'reward' | 'authored'
 export type ChronicleGroupMode = 'none' | 'track' | 'status'
 export type ChronicleViewMode = 'compact' | 'detailed'
-export type GuildScreenTab = 'overview' | 'contracts' | 'skills' | 'registry' | 'projects' | 'chains'
+export type GuildScreenTab = 'overview' | 'commissions' | 'standing' | 'advancement' | 'registry' | 'projects'
 export type HuntersOrderScreenTab = 'overview' | 'contracts' | 'rank' | 'upgrades' | 'bestiary'
 
 export interface CustomThemeColors {
@@ -85,6 +85,7 @@ export interface ChroniclesScreenPreferences {
 
 export interface GuildScreenPreferences {
   activeTab: GuildScreenTab
+  commissionTab: 'board' | 'studies'
 }
 export interface HuntersOrderScreenPreferences {
   activeTab: HuntersOrderScreenTab

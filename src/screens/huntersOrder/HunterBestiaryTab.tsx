@@ -87,7 +87,7 @@ export function HunterBestiaryTab() {
   const selectedMonster = selected ? MONSTERS[selected] : null
   const discoveredSelected = Boolean(selected && progress.discoveredMonsters.includes(selected))
   const clearAttentionFor = (monsterId: MonsterId) => clearAttention(getActiveProfileId(), 'monster', monsterId)
-  const openDossier = (monsterId: MonsterId) => { clearAttentionFor(monsterId); const hunter = MONSTERS[monsterId]?.hunter; if (hunter?.exclusive && hunter.huntingGroundId) useGameStore.getState().rememberHunterQuarry(monsterId, hunter.huntingGroundId as DungeonId); setSelected(monsterId); setMobileDossier(true) }
+  const openDossier = (monsterId: MonsterId) => { clearAttentionFor(monsterId); setSelected(monsterId); setMobileDossier(true) }
   const anyFilter = primary !== 'all' || family !== null || alignment !== null || tier !== null || region !== null || search.trim().length > 0
   const quarryGroups = useMemo(() => {
     if (primary !== 'hunter' && primary !== 'contract') return [{ groundId: 'catalog', entries: filteredEntries }]
@@ -161,6 +161,11 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
   const masterDossierAvailable = Boolean(!discovered && monster?.hunter?.exclusive && getHunterUpgradeRank(state, 'master-dossier') > 0 && isHunterMonsterRankEligible(state, monster.id))
   const groundId = (monster?.hunter?.huntingGroundId ?? 'hunters-ground') as DungeonId
   const groundName = DUNGEONS[groundId]?.name ?? 'Hunting Ground'
+  const huntInGround = () => {
+    if (!monster || !selectedId || !monster.hunter?.exclusive || !authorized) return
+    methods.rememberHunterQuarry(selectedId, groundId)
+    openHunterContractInCombat(state, methods.setScreen, selectedId)
+  }
   const relation = selectedId && isHunter ? getMonsterHunterContractRelation(state, selectedId, groundId) : 'not-eligible'
   const authorization = selectedId && isHunter ? getHunterAuthorization(state, selectedId, groundId) : { authorized: false as const, reason: 'target-not-authorized' as const }
   const contract = progress.huntersOrder.activeContract
@@ -189,7 +194,7 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
       {stats && <div className="hunter-dossier-metrics">{[
         ['POWER', formatNumber(resolveEnemyPowerRating(monster.id, worldTier))], ['HP', formatNumber(stats.maxHealth)], ['DEFENSE', formatNumber(stats.defense)], ['ATTACK', formatBasicAttackTime(stats.basicAttackIntervalMs)],
       ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>}
-      {isHunter && <section className={`hunter-authorization-panel${authorized ? ' is-authorized' : ' is-locked'}`}><div><span>{authLabel}</span><strong>{authDescription}</strong>{relation === 'exact-target' && contract && <small>{contract.progress.toLocaleString()} / {contract.target.toLocaleString()} · {Math.max(0, contract.target - contract.progress).toLocaleString()} remaining</small>}</div>{authorized ? <GameTooltip content={`Open ${groundName} with this quarry selected. Combat will not start automatically.`}><Button variant="primary" onClick={() => openHunterContractInCombat(state, methods.setScreen, monster.id)}><Crosshair size={15} /> HUNT IN {groundName.toUpperCase()}</Button></GameTooltip> : <GameTooltip content={authDescription}><Button variant="secondary" disabled>{!authorization.authorized && authorization.reason === 'contract-tier-locked' && monster.hunter?.minimumRank ? 'MASTER HUNTER REQUIRED' : 'CONTRACT REQUIRED'}</Button></GameTooltip>}</section>}
+      {isHunter && <section className={`hunter-authorization-panel${authorized ? ' is-authorized' : ' is-locked'}`}><div><span>{authLabel}</span><strong>{authDescription}</strong>{relation === 'exact-target' && contract && <small>{contract.progress.toLocaleString()} / {contract.target.toLocaleString()} · {Math.max(0, contract.target - contract.progress).toLocaleString()} remaining</small>}</div>{authorized ? <GameTooltip content={`Open ${groundName} with this quarry selected. Combat will not start automatically.`}><Button variant="primary" onClick={huntInGround}><Crosshair size={15} /> HUNT IN {groundName.toUpperCase()}</Button></GameTooltip> : <GameTooltip content={authDescription}><Button variant="secondary" disabled>{!authorization.authorized && authorization.reason === 'contract-tier-locked' && monster.hunter?.minimumRank ? 'MASTER HUNTER REQUIRED' : 'CONTRACT REQUIRED'}</Button></GameTooltip>}</section>}
       <div className="hunter-dossier-tabs-sticky"><FilterBar options={dossierTabs} value={tab} onChange={onTab} ariaLabel="Quarry dossier sections" /></div>
       <div ref={contentRef} className="hunter-dossier-content smart-scroll-region">
         {tab === 'overview' && <OverviewSection monster={monster} state={state} relation={relation} authorization={authorization} locationName={locationName} />}
@@ -197,7 +202,7 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
         {tab === 'rewards' && <RewardsSection monster={monster} state={state} worldTier={worldTier} />}
         {tab === 'record' && <HunterRecordSection monster={monster} state={state} relation={relation} record={record} blocked={blocked} activeTarget={activeTarget} blockSlots={blockSlots} canBlock={canBlock} onToggleBlock={() => selectedId && methods.setHunterTargetBlocked(selectedId, !blocked)} />}
       </div>
-      {authorized && <footer className="hunter-dossier-sticky-hunt"><div><Status tone="active">AUTHORIZED</Status><span>{Math.max(0, (contract?.target ?? 0) - (contract?.progress ?? 0)).toLocaleString()} kills remaining</span></div><GameTooltip content={`Open ${groundName} with this eligible quarry selected.`}><Button variant="primary" onClick={() => openHunterContractInCombat(state, methods.setScreen, monster.id)}>HUNT IN {groundName.toUpperCase()}</Button></GameTooltip></footer>}
+      {authorized && <footer className="hunter-dossier-sticky-hunt"><div><Status tone="active">AUTHORIZED</Status><span>{Math.max(0, (contract?.target ?? 0) - (contract?.progress ?? 0)).toLocaleString()} kills remaining</span></div><GameTooltip content={`Open ${groundName} with this eligible quarry selected.`}><Button variant="primary" onClick={huntInGround}>HUNT IN {groundName.toUpperCase()}</Button></GameTooltip></footer>}
     </>}
   </Card>
 }

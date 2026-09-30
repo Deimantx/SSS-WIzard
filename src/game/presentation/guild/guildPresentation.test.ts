@@ -24,17 +24,17 @@ describe('Guild presentation read model', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
-    state.progress.guildReputation = 175
-    state.progress.requestClaims = { 'field-supplies': true }
+    state.progress.guildReputation = 1500
+    state.progress.arcaneGuild.completedCommissions = 5
 
     expect(getGuildRankProgressPresentation(state)).toMatchObject({ status: 'ready', requirementsComplete: 2, requirementCount: 2 })
   })
 
   it('exposes authored skill branch progress for the overview summary', () => {
     const state = createInitialState()
-    state.progress.guildSkillNodeRanks['hunter-arcane-quarry'] = 1
+    state.progress.guildSkillNodeRanks['scholarship-measured-inquiry'] = 1
 
-    expect(getGuildSkillBranchProgress(state, 'hunter')).toEqual({ purchased: 1, total: 4 })
-    expect(getGuildSkillBranchProgress(state, 'tower')).toEqual({ purchased: 0, total: 4 })
+    expect(getGuildSkillBranchProgress(state, 'scholarship')).toEqual({ purchased: 1, total: 6 })
+    expect(getGuildSkillBranchProgress(state, 'tower-operations')).toEqual({ purchased: 0, total: 6 })
   })
 })

@@ -32,7 +32,7 @@ describe('Arcane Guild presentations', () => {
     expect(screen.getByText(/SUPPLY.*0.*10/)).toBeTruthy()
     expect(screen.getByText('AVAILABLE')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Open Advancement Board' }))
-    expect(navigate).toHaveBeenCalledWith('skills')
+    expect(navigate).toHaveBeenCalledWith('advancement')
   })
 
   it('shows compact Commission offers and updates to the active-work state after acceptance', () => {

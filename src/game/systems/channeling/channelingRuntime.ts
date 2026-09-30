@@ -35,7 +35,9 @@ export const getArcaneFluxCapacityBreakdown = (state: Pick<GameState, 'progress'
   const developerCapacityBonus = Math.max(0, Math.floor(state.debug?.arcaneFluxCapacityOverride ?? 0))
   const preAmplification = base + arcaneReservoirBonus + deepReservoirBonus + developerCapacityBonus
   const astralExpansionMultiplier = 1 + level(state, 'astral-expansion') * 0.02
-  return { base, arcaneReservoirBonus, deepReservoirBonus, developerCapacityBonus, preAmplification, astralExpansionMultiplier, total: Math.floor(preAmplification * astralExpansionMultiplier) }
+  const guildCapacityMultiplier = getGuildProgressionBonuses(state).arcaneFluxCapacityMultiplier
+  const totalMultiplier = astralExpansionMultiplier * guildCapacityMultiplier
+  return { base, arcaneReservoirBonus, deepReservoirBonus, developerCapacityBonus, preAmplification, astralExpansionMultiplier: totalMultiplier, total: Math.floor(preAmplification * totalMultiplier) }
 }
 
 export const getArcaneFluxProductionBreakdown = (state: Pick<GameState, 'activities' | 'progress'>): ArcaneFluxProductionBreakdown => {
@@ -46,7 +48,8 @@ export const getArcaneFluxProductionBreakdown = (state: Pick<GameState, 'activit
   const fluxResonanceMultiplier = 1 + level(state, 'mana-resonance') * 0.03
   const discoveryMultiplier = (state.progress.channeling.discoveries['stable-leyline'] ? 1.05 : 1) * (state.progress.channeling.discoveries['echo-resonance'] ? 1.1 : 1)
   const guildFluxMultiplier = getGuildProgressionBonuses(state).arcaneFluxMultiplier
-  const total = assignedAcolytes * (basePerAcolyte + leylineConduit) * acolyteAttunementMultiplier * fluxResonanceMultiplier * discoveryMultiplier * guildFluxMultiplier
+  const guildOutputMultiplier = getGuildProgressionBonuses(state).channelingOutputMultiplier
+  const total = assignedAcolytes * (basePerAcolyte + leylineConduit) * acolyteAttunementMultiplier * fluxResonanceMultiplier * discoveryMultiplier * guildFluxMultiplier * guildOutputMultiplier
   return { assignedAcolytes, basePerAcolyte, leylineConduit, acolyteAttunementMultiplier, fluxResonanceMultiplier, discoveryMultiplier: discoveryMultiplier * guildFluxMultiplier, total }
 }
 

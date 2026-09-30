@@ -527,9 +527,8 @@
 .hunter-offer-v3-target strong { color:var(--ui-text); font:600 var(--text-md) var(--font-mono); }
 .hunter-offer-v3-target span { color:var(--ui-text-muted); font-size:var(--text-xs); }
 .hunter-offer-card-v3 > .button { width:100%; }
-.hunter-overview-v4 { display:grid; grid-template-columns:minmax(0,1fr) minmax(270px,.62fr); align-items:start; gap:12px; }
-.hunter-overview-v4 > .card { display:grid; align-content:start; gap:12px; }
-.hunter-overview-v4 .hunter-overview-grounds { grid-column:1; display:grid; gap:9px; min-width:0; }
+.hunter-overview-active, .hunter-overview-services, .hunter-overview-rank { display:grid; align-content:start; gap:12px; min-width:0; }
+.hunter-overview-grounds { display:grid; align-content:start; gap:9px; min-width:0; }
 .hunter-overview-grounds > header { display:flex; justify-content:space-between; align-items:center; }
 .hunter-overview-grounds > header > span { color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); }
 .hunter-ground-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,320px)); justify-content:start; gap:10px; }
@@ -539,7 +538,6 @@
 .hunter-ground-card > div:first-child span { color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); }
 .hunter-ground-card p { margin:0; color:var(--ui-text-soft); font-size:var(--text-sm); }
 .hunter-ground-active { color:var(--gold); font-size:var(--text-xs); }
-.hunter-overview-services { grid-column:2; grid-row:1 / span 2; }
 .hunter-rank-v3 { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(250px,.6fr); align-items:start; gap:13px; }
 .hunter-rank-v3 > .card, .hunter-rank-v3 .hunter-rank-side { display:grid; align-content:start; gap:12px; min-width:0; }
 .hunter-rank-category-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; }
@@ -569,7 +567,7 @@
 .hunter-upgrade-tile > svg { color:var(--gold); }
 .hunter-upgrade-tile > span { display:grid; gap:3px; min-width:0; }
 .hunter-upgrade-tile strong { overflow:hidden; width:100%; color:var(--ui-text); font-size:var(--text-xs); text-overflow:ellipsis; white-space:nowrap; }
-.hunter-upgrade-tile small, .hunter-upgrade-tile i { color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); font-style:normal; }
+.hunter-upgrade-tile small, .hunter-upgrade-tile i { overflow:hidden; color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); font-style:normal; text-overflow:ellipsis; white-space:nowrap; }
 .hunter-upgrade-tile.is-selected { border-color:var(--gold); background:color-mix(in srgb,var(--gold) 7%,var(--ui-panel-strong)); }
 .hunter-upgrade-tile.is-maxed { border-left:2px solid var(--ui-success); }
 .hunter-upgrade-tile.is-available { border-left:2px solid var(--gold); }
@@ -580,6 +578,18 @@
 .hunter-upgrade-inspector-title small { color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); }
 .hunter-upgrade-inspector-title h2 { margin:2px 0; color:var(--ui-text); font-size:var(--text-md); }
 .hunter-upgrade-inspector > p { margin:0; color:var(--ui-text-soft); font-size:var(--text-sm); line-height:1.45; }
+.hunter-upgrade-inspector-section { display:grid; gap:7px; min-width:0; padding:9px; border:1px solid var(--ui-border); border-radius:var(--radius-sm); background:var(--ui-panel-strong); }
+.hunter-upgrade-inspector-section h3 { margin:0; color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); letter-spacing:.06em; }
+.hunter-upgrade-inspector-section p, .hunter-upgrade-inspector-section ul { margin:0; color:var(--ui-text-soft); font-size:var(--text-xs); line-height:1.45; }
+.hunter-upgrade-inspector-section ol, .hunter-upgrade-inspector-section ul { display:grid; gap:6px; padding-left:18px; }
+.hunter-upgrade-inspector-section ol li { display:grid; gap:3px; color:var(--ui-text-muted); font-size:var(--text-xs); }
+.hunter-upgrade-inspector-section ol li.is-active { color:var(--ui-success); }
+.hunter-upgrade-inspector-section ol li span { font:var(--text-micro) var(--font-mono); }
+.hunter-upgrade-inspector-section ol li strong { color:var(--ui-text-soft); font-weight:500; }
+.hunter-upgrade-requirement .status { justify-self:start; }
+.hunter-upgrade-tooltip { display:grid; gap:5px; max-width:260px; color:var(--ui-text); }
+.hunter-upgrade-tooltip span { color:var(--ui-text-soft); font-size:var(--text-xs); }
+.hunter-upgrade-tooltip small { color:var(--ui-text-muted); font:var(--text-micro) var(--font-mono); }
 .hunter-upgrade-rank-display { display:grid; gap:8px; padding:10px; border:1px solid var(--ui-border); background:var(--ui-panel-strong); }
 .hunter-upgrade-rank-display > div:first-child { display:flex; justify-content:space-between; gap:8px; color:var(--ui-text-muted); font:var(--text-xs) var(--font-mono); }
 .hunter-upgrade-rank-display strong { color:var(--ui-text); }
@@ -601,5 +611,5 @@
 .hunter-quarry-tile-grid .hunter-quarry-tile > .status { max-width:100%; font-size:8px; }
 @media (min-width:1500px) { .hunter-upgrade-catalog-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 @media (max-width:1050px) { .hunter-header-v3-main { grid-template-columns:minmax(200px,.8fr) minmax(260px,1fr); } .hunter-command-header-v3 .hunter-command-metrics { grid-column:1 / -1; grid-template-columns:repeat(4,minmax(0,1fr)); padding-top:8px; border-top:1px solid var(--ui-border); } .hunter-header-standing { border-right:0; } .hunter-upgrade-v3, .hunter-rank-v3 { grid-template-columns:1fr; } .hunter-upgrade-inspector { position:static; } }
-@media (max-width:760px) { .hunter-header-v3-main { grid-template-columns:1fr; } .hunter-header-standing { border:0; padding:8px 0; border-top:1px solid var(--ui-border); border-bottom:1px solid var(--ui-border); } .hunter-active-micro-v3 { grid-template-columns:1fr auto; } .hunter-active-v3-actions { grid-column:1 / -1; justify-content:flex-start; } .hunter-active-contract-v3 { grid-template-columns:56px minmax(0,1fr); } .hunter-active-v3-rewards { grid-column:2; grid-row:2; grid-template-columns:auto auto auto; align-items:center; border-left:0; padding:0; } .hunter-active-v3-actions { grid-column:1 / -1; } .hunter-overview-v4 { grid-template-columns:1fr; } .hunter-overview-v4 .hunter-overview-grounds, .hunter-overview-services { grid-column:1; grid-row:auto; } .hunter-rank-category-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .hunter-standing-grade-list { grid-template-columns:repeat(2,minmax(0,1fr)); } .hunter-upgrade-catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .hunter-offer-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:760px) { .hunter-header-v3-main { grid-template-columns:1fr; } .hunter-header-standing { border:0; padding:8px 0; border-top:1px solid var(--ui-border); border-bottom:1px solid var(--ui-border); } .hunter-active-micro-v3 { grid-template-columns:1fr auto; } .hunter-active-v3-actions { grid-column:1 / -1; justify-content:flex-start; } .hunter-active-contract-v3 { grid-template-columns:56px minmax(0,1fr); } .hunter-active-v3-rewards { grid-column:2; grid-row:2; grid-template-columns:auto auto auto; align-items:center; border-left:0; padding:0; } .hunter-active-v3-actions { grid-column:1 / -1; } .hunter-rank-category-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .hunter-standing-grade-list { grid-template-columns:repeat(2,minmax(0,1fr)); } .hunter-upgrade-catalog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .hunter-offer-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:540px) { .hunter-command-header-v3 .hunter-command-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .hunter-active-micro-v3 { grid-template-columns:1fr; } .hunter-active-contract-v3 { grid-template-columns:1fr; } .hunter-active-contract-v3 .hunter-active-contract-art { display:none; } .hunter-active-v3-rewards { grid-column:1; grid-row:auto; } .hunter-active-v3-actions { grid-column:1; } .hunter-board-v3-heading { align-items:flex-start; } .hunter-board-services { align-items:stretch; } .hunter-service-stat { flex:1 1 38%; } .hunter-offer-grid, .hunter-upgrade-catalog-grid { grid-template-columns:1fr; } .hunter-offer-grid-1 { grid-template-columns:minmax(0,1fr); } .hunter-offer-card-v3 > p { min-height:0; } }

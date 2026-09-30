@@ -46,6 +46,17 @@ describe('Hunter Bestiary field workspace', () => {
     expect(screen.getByRole('heading', { name: 'Ashen Tracker' })).toBeTruthy()
   })
 
+  it('writes Quarry Memory only after the explicit Hunt in Ground action', async () => {
+    act(() => useGameStore.getState().debugGrantHunterUpgrade('quarry-memory'))
+    const user = userEvent.setup()
+    renderBestiary()
+    await user.click(screen.getByRole('tab', { name: 'HUNTER QUARRY' }))
+    await user.click(screen.getByRole('button', { name: /Veilwing Harrier/ }))
+    expect(useGameStore.getState().progress.huntersOrder.lastSelectedQuarryByGround?.['hunters-ground']).toBeUndefined()
+    await user.click(screen.getAllByRole('button', { name: 'HUNT IN GLOAMRIDGE' })[0])
+    expect(useGameStore.getState().progress.huntersOrder.lastSelectedQuarryByGround?.['hunters-ground']).toBe('veilwing-harrier')
+  })
+
   it('shows the four structured dossier sections and reveals combat content only in Combat', async () => {
     const user = userEvent.setup()
     renderBestiary()

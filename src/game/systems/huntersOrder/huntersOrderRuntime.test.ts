@@ -312,7 +312,7 @@ describe('Hunter Order hardened runtime', () => {
   it('keeps maximum Hunter Marks costs proportionate to the rank path', () => {
     const totalMarks = HUNTER_UPGRADES.reduce((sum, upgrade) => sum + upgrade.markCosts.reduce((rankSum, cost) => rankSum + cost, 0), 0)
     expect(HUNTER_UPGRADES).toHaveLength(30)
-    expect(totalMarks).toBe(1261)
+    expect(totalMarks).toBe(1235)
   })
 
   it('derives all 30 Standing thresholds from Reputation and preserves macro ranks', () => {

@@ -31,9 +31,13 @@ export const GUILD_REQUEST_KIND_LABELS = {
 } as const
 
 export const GUILD_BRANCH_PRESENTATION: Record<GuildSkillBranch, { label: string; subtitle: string; accent: string }> = {
-  hunter: { label: 'Research', subtitle: 'Study, insight, and Guild standing', accent: 'violet' },
-  quartermaster: { label: 'Transmutation', subtitle: 'Resonance and magical production', accent: 'gold' },
-  tower: { label: 'Guild Operations', subtitle: 'Flux, services, and Acolyte support', accent: 'green' },
+  scholarship: { label: 'Scholarship', subtitle: 'Research, records, and academic standing', accent: 'violet' },
+  transmutation: { label: 'Transmutation', subtitle: 'Resonance and magical production', accent: 'gold' },
+  'tower-operations': { label: 'Tower Operations', subtitle: 'Flux, channeling, and Acolyte support', accent: 'green' },
+  'guild-service': { label: 'Guild Service', subtitle: 'Commissions, projects, and Registry work', accent: 'gold' },
+  hunter: { label: 'Legacy Scholarship', subtitle: 'Migrated research investments', accent: 'violet' },
+  quartermaster: { label: 'Legacy Transmutation', subtitle: 'Migrated production investments', accent: 'gold' },
+  tower: { label: 'Legacy Tower', subtitle: 'Migrated Guild investments', accent: 'green' },
   milestones: { label: 'Major Standing', subtitle: 'Unlock larger Guild privileges as investment grows', accent: 'gold' },
 }
 

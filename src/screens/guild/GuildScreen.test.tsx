@@ -51,7 +51,7 @@ describe('Guild V4 screen', () => {
     expect(screen.getByRole('heading', { name: 'Registry Catalog' })).toBeTruthy()
     expect(screen.getByText('ARCANE REGISTRY')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Advancement' }))
-    expect(screen.getByRole('heading', { name: 'Advancement Board' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Advancement Catalog' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Measured Inquiry' })).toBeTruthy()
     expect(useGameStore.getState().progress.guildPointsEarned).toBe(1)
   })
@@ -62,7 +62,7 @@ describe('Guild V4 screen', () => {
     const visibleCopy = document.body.textContent ?? ''
     expect(visibleCopy).toContain('ARCANE GUILD')
     expect(visibleCopy).toContain('Guild Standing')
-    expect(visibleCopy).toContain('Next: Initiate II')
+    expect(visibleCopy).toContain('Next Initiate II')
     expect(visibleCopy).toContain('STANDING PROGRESS')
     expect(visibleCopy).not.toMatch(/Verdant Circle|specialization tier|next sigil/i)
   })

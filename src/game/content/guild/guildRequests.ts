@@ -1,5 +1,5 @@
 import type { DungeonId, GuildRequestKind, ItemId, MonsterId } from '../../types'
-import { GUILD_STANDINGS, type GuildStandingId } from './guildStandings'
+import type { GuildStandingId } from './guildStandings'
 
 export interface GuildRequestDefinition {
   id: string
@@ -88,7 +88,19 @@ const authoredGuildCommissionTemplates = [
   { id: 'research-grand-review', category: 'research', objectives: [{ kind: 'research', target: 12 }], baseReputation: 420, baseAdvancementPoints: 0, minimumProgressStage: 'research', complexity: 'prestigious' },
 ] as const
 
-export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = authoredGuildCommissionTemplates.map((template, index) => ({
+const commissionMinimumStandingById: Record<(typeof authoredGuildCommissionTemplates)[number]['id'], GuildStandingId> = {
+  'supply-life-essence': 'initiate-1', 'supply-earth-resonance': 'initiate-1', 'supply-air-resonance': 'initiate-1', 'supply-fire-resonance': 'initiate-1',
+  'supply-water-resonance': 'initiate-1', 'channel-arcane-flux': 'initiate-1', 'transmute-cycle': 'initiate-1', 'produce-fire-fragments': 'initiate-1',
+  'produce-water-fragments': 'initiate-1',
+  'produce-earth-fragments': 'initiate-1', 'produce-air-fragments': 'initiate-1', 'study-research-cycles': 'initiate-1', 'special-ember-supply': 'initiate-2',
+  'special-tidal-research': 'initiate-3', 'special-earth-reserves': 'initiate-4', 'prestige-ember-research': 'initiate-5', 'prestige-field-study': 'apprentice-1',
+  'prestige-leyline-practice': 'apprentice-2', 'supply-prismatic-stock': 'apprentice-3', 'channel-leyline-current': 'apprentice-4', 'channel-echo-reserve': 'apprentice-5',
+  'channel-grand-conduit': 'adept-1', 'channel-resonant-watch': 'adept-2', 'channel-tower-ledger': 'adept-3', 'transmute-elemental-ledger': 'adept-4',
+  'transmute-prismatic-cycles': 'adept-5', 'transmute-refined-series': 'magister-1', 'transmute-master-array': 'magister-2', 'transmute-essence-cycle': 'magister-3',
+  'produce-refined-fragments': 'magister-4', 'produce-field-catalysts': 'magister-5', 'research-elemental-record': 'circle-master-1', 'research-tidal-record': 'circle-master-2',
+  'research-earthen-record': 'circle-master-3', 'research-aeric-record': 'circle-master-4', 'research-grand-review': 'circle-master-5',
+}
+export const GUILD_COMMISSION_TEMPLATES: readonly GuildCommissionTemplate[] = authoredGuildCommissionTemplates.map((template) => ({
   ...template,
-  minimumStandingId: GUILD_STANDINGS[index < 12 ? 0 : Math.min(24, 1 + index - 12)].id,
+  minimumStandingId: commissionMinimumStandingById[template.id],
 }))

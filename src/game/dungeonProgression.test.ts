@@ -192,7 +192,7 @@ describe('dungeon-specific Guild request progression', () => {
   it('requires five non-combat Commissions for Apprentice promotion even when legacy requests are complete', () => {
     const state = createInitialState()
     state.progress.guildRank = 'initiate'
-    state.progress.guildReputation = 1500
+    state.progress.guildReputation = 6000
     state.progress.arcaneGuild.completedCommissions = 4
     state.progress.requestProgress = { 'arcane-supply': 20, 'clear-the-woods': 30, 'sentinel-breaker': 2 }
 

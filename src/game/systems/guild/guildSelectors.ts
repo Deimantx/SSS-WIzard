@@ -7,6 +7,7 @@ import { GUILD_COMMISSION_CHAINS } from '../../content/guild/guildCommissionChai
 import { GUILD_STANDINGS, GUILD_MACRO_RANK_THRESHOLDS, getGuildStanding } from '../../content/guild/guildStandings'
 import { isGuildStandingAtLeast } from '../../content/guild/guildStandings'
 import type { GameState, GuildRankId, GuildSkillNodeId } from '../../types'
+import { BALANCE } from '../../core/balance/balance'
 
 const rankOrder: GuildRankId[] = ['outsider', 'initiate', 'apprentice', 'adept', 'magister', 'circle-master']
 const rankAtLeast = (current: GuildRankId, required: GuildRankId) => rankOrder.indexOf(current) >= rankOrder.indexOf(required)
@@ -24,45 +25,52 @@ export interface GuildProgressionBonuses {
 }
 
 export const getGuildProgressionBonuses = (state: Pick<GameState, 'progress'>): GuildProgressionBonuses => {
-  const ranks = state.progress.guildSkillNodeRanks
-  const majorEfficiency = hasMajor(state, 'major-arcane-efficiency') ? 0.02 : 0
-  const coordination = hasMajor(state, 'major-coordination') ? 0.02 : 0
-  const grandStanding = hasMajor(state, 'major-grand-standing') ? 0.03 : 0
+  const regularEffect = (stat: import('../../content/guild/guildSkills').GuildAdvancementEffectStat) => GUILD_REGULAR_PROGRAM_IDS.reduce((sum, id) => sum + (GUILD_SKILL_NODES[id].effectValues ?? []).reduce((value, entry) => value + (entry.stat === stat ? entry.amount * rankValue(state, id) : 0), 0), 0)
+  const majorEffect = (stat: import('../../content/guild/guildSkills').GuildAdvancementEffectStat) => GUILD_MAJOR_PROGRAM_IDS.reduce((sum, id) => sum + (GUILD_SKILL_NODES[id].effectValues ?? []).reduce((value, entry) => value + (entry.stat === stat ? entry.amount * rankValue(state, id) : 0), 0), 0)
   const projectBonus = (type: NonNullable<(typeof GUILD_PROJECTS)[number]['effect']>['type']) => GUILD_PROJECTS.reduce((sum, project) => state.progress.arcaneGuild.completedProjectIds.includes(project.id) && project.effect?.type === type ? sum + project.effect.amount : sum, 0)
-  const researchSpeed = rankValue(state, 'scholarship-measured-inquiry') * .0075 + rankValue(state, 'scholarship-structured-methodology') * .005 + rankValue(state, 'scholarship-scholarly-discipline') * .005 + rankValue(state, 'tower-acolyte-coordination') * .005 + rankValue(state, 'tower-scheduling') * .005
-  const transmutationSpeed = rankValue(state, 'transmutation-efficient-arrays') * .01 + rankValue(state, 'transmutation-precision-arrays') * .005 + rankValue(state, 'tower-acolyte-coordination') * .005 + rankValue(state, 'tower-scheduling') * .005
-  const flux = rankValue(state, 'tower-leyline-assistance-v4') * .01 + rankValue(state, 'tower-scheduling') * .005
-  const reputation = rankValue(state, 'service-faculty-letters') * .01 + grandStanding + projectBonus('guild-reputation')
+  const researchSpeed = regularEffect('research-speed') + majorEffect('research-speed')
+  const researchXp = regularEffect('research-xp')
+  const transmutationSpeed = regularEffect('transmutation-speed') + majorEffect('transmutation-speed')
+  const flux = regularEffect('arcane-flux') + majorEffect('arcane-flux')
+  const reputation = regularEffect('guild-reputation') + majorEffect('guild-reputation') + projectBonus('guild-reputation')
   const oldResearch = rankValue(state, 'hunter-arcane-quarry') * .005 + rankValue(state, 'tower-efficient-arrays') * .005
   const oldXp = rankValue(state, 'hunter-resonant-pursuit') * .01 + rankValue(state, 'guild-peer-review') * .01
   const oldTransmutationSpeed = rankValue(state, 'quartermaster-relic-appraisal') * .01 + rankValue(state, 'quartermaster-cache-appraisal') * .01 + rankValue(state, 'guild-resonance-etching') * .01
   const oldFlux = rankValue(state, 'tower-leyline-assistance') * .01 + rankValue(state, 'guild-calibrated-rota') * .01
   return {
     combatArcanePointMultiplier: 1, combatResonanceMultiplier: 1, lifeEssenceMultiplier: 1, artifactEssenceMultiplier: 1, bossEssenceMultiplier: 1, crystalCacheChanceMultiplier: 1,
-    researchSpeedMultiplier: 1 + researchSpeed + oldResearch + majorEfficiency + coordination + projectBonus('research-speed'),
-    researchXpMultiplier: 1 + rankValue(state, 'scholarship-peer-review') * .015 + rankValue(state, 'scholarship-structured-methodology') * .005 + rankValue(state, 'scholarship-scholarly-discipline') * .01 + oldXp + projectBonus('research-xp'),
+    researchSpeedMultiplier: 1 + researchSpeed + oldResearch + projectBonus('research-speed'),
+    researchXpMultiplier: 1 + researchXp + oldXp + projectBonus('research-xp'),
     guildReputationMultiplier: 1 + reputation + rankValue(state, 'hunter-trophy-hunter') * .01,
-    transmutationOutputChance: Math.min(.25, rankValue(state, 'transmutation-resonance-handling') * .01 + rankValue(state, 'transmutation-precision-arrays') * .005 + rankValue(state, 'quartermaster-careful-harvest') * .01 + projectBonus('transmutation-output')),
-    arcaneFluxMultiplier: 1 + flux + oldFlux + grandStanding + (hasMajor(state, 'major-coordination') ? .02 : 0),
-    transmutationSpeedMultiplier: 1 + transmutationSpeed + oldTransmutationSpeed + majorEfficiency + coordination + projectBonus('transmutation-speed'),
-    bonusAcolytes: rankValue(state, 'major-expanded-quarters') + rankValue(state, 'tower-expanded-quarters') + projectBonus('acolyte-capacity'),
-    commissionChoiceBonus: Math.min(3, (hasMajor(state, 'major-favored-contractor') ? 1 : 0) + projectBonus('commission-choice')),
-    deliveryQuantityMultiplier: Math.max(.8, 1 - rankValue(state, 'service-efficient-delivery') * .01 - (hasMajor(state, 'major-efficient-procurement') ? .05 : 0)),
+    transmutationOutputChance: Math.min(.25, regularEffect('transmutation-output') + projectBonus('transmutation-output') + rankValue(state, 'quartermaster-careful-harvest') * .01),
+    arcaneFluxMultiplier: 1 + flux + oldFlux,
+    transmutationSpeedMultiplier: 1 + transmutationSpeed + oldTransmutationSpeed + projectBonus('transmutation-speed'),
+    bonusAcolytes: majorEffect('bonus-acolyte') + rankValue(state, 'tower-expanded-quarters') + projectBonus('acolyte-capacity'),
+    commissionChoiceBonus: Math.min(3, majorEffect('commission-choice') + projectBonus('commission-choice')),
+    deliveryQuantityMultiplier: Math.max(.8, 1 - regularEffect('delivery-reduction') - majorEffect('delivery-reduction')),
     specialCommissionAccess: hasMajor(state, 'major-guild-connections'),
-    transmutationResonanceCostMultiplier: Math.max(.5, 1 - rankValue(state, 'transmutation-stable-catalysis') * .01 - projectBonus('transmutation-cost')),
-    arcaneFluxCapacityMultiplier: 1 + rankValue(state, 'tower-flux-reservoir-methods') * .02 + projectBonus('arcane-flux-capacity'),
-    channelingOutputMultiplier: 1 + rankValue(state, 'tower-channeling-rota') * .01,
-    registryQuantityMultiplier: Math.max(.2, 1 - rankValue(state, 'service-registry-stewardship') * .05 - projectBonus('registry-cost')),
-    projectMaterialMultiplier: Math.max(.8, 1 - rankValue(state, 'service-project-logistics') * .02 - (hasMajor(state, 'major-project-stewardship') ? .05 : 0)),
-    repeatStudyReputationMultiplier: 1 + rankValue(state, 'service-study-coordination') * .02,
+    transmutationResonanceCostMultiplier: Math.max(.5, 1 - regularEffect('transmutation-cost-reduction') - projectBonus('transmutation-cost')),
+    arcaneFluxCapacityMultiplier: 1 + regularEffect('arcane-flux-capacity') + projectBonus('arcane-flux-capacity'),
+    channelingOutputMultiplier: 1 + regularEffect('channeling-output'),
+    registryQuantityMultiplier: Math.max(.2, 1 - regularEffect('registry-reduction') - projectBonus('registry-cost')),
+    projectMaterialMultiplier: Math.max(.8, 1 - regularEffect('project-reduction') - majorEffect('project-reduction')),
+    repeatStudyReputationMultiplier: 1 + regularEffect('repeat-study-reputation'),
     commissionReputationByCategory: {
-      research: 1 + rankValue(state, 'scholarship-faculty-mentorship') * .01,
-      production: 1 + rankValue(state, 'transmutation-production-discipline') * .01,
-      transmutation: 1 + rankValue(state, 'transmutation-conversion-discipline') * .01,
-      channeling: 1 + rankValue(state, 'tower-channeling-faculty') * .01,
-      mixed: 1 + rankValue(state, 'service-commission-office-practice') * .01,
+      research: 1 + regularEffect('research-commission-reputation'),
+      production: 1 + regularEffect('production-commission-reputation'),
+      transmutation: 1 + regularEffect('transmutation-commission-reputation'),
+      channeling: 1 + regularEffect('channeling-commission-reputation'),
+      mixed: 1 + regularEffect('mixed-commission-reputation'),
     },
   }
+}
+
+export const getGuildCommissionChoiceCount = (state: Pick<GameState, 'progress'>) => {
+  const reputation = state.progress.guildReputation
+  const apprenticeThreshold = GUILD_STANDINGS.find((standing) => standing.id === 'apprentice-3')!.reputation
+  const arcanistThreshold = GUILD_STANDINGS.find((standing) => standing.id === 'magister-3')!.reputation
+  const standingChoices = reputation >= arcanistThreshold ? 5 : reputation >= apprenticeThreshold ? 4 : BALANCE.arcaneGuild.baseCommissionChoices
+  return Math.min(6, standingChoices + getGuildProgressionBonuses(state).commissionChoiceBonus)
 }
 
 export const getGuildPointsSpent = (state: Pick<GameState, 'progress'>) => GUILD_SKILL_NODE_IDS.filter((id) => !GUILD_SKILL_NODES[id].legacy).reduce((sum, id) => sum + rankValue(state, id), 0)

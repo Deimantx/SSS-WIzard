@@ -1,22 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { canPromoteGuild, promoteGuild, purchaseGuildSkillNode, resetGuildSkillTree } from './guildRuntime'
-import { getGuildAdvancementPointEconomy, getGuildPointsAvailable, getGuildProgressionBonuses, getGuildPromotionProgress } from './guildSelectors'
+import { getGuildAdvancementPointEconomy, getGuildCommissionChoiceCount, getGuildPointsAvailable, getGuildProgressionBonuses, getGuildPromotionProgress } from './guildSelectors'
 import { GUILD_COMMISSION_TEMPLATES } from '../../content/guild/guildRequests'
 import { ARCANE_REGISTRY_SETS } from '../../content/guild/registry/registrySets'
 import { GUILD_PROJECTS } from '../../content/guild/guildProjects'
 import { GUILD_COMMISSION_CHAINS } from '../../content/guild/guildCommissionChains'
 import { GUILD_SKILL_NODES, GUILD_MAJOR_PROGRAM_IDS, GUILD_REGULAR_PROGRAM_IDS } from '../../content/guild/guildSkills'
 import { GUILD_STANDINGS, getGuildStanding } from '../../content/guild/guildStandings'
+import { GUILD_RANKS } from '../../content/guild/guildRanks'
 import { GUILD_FACILITIES } from '../../content/guild/guildFacilities'
 import { ITEMS } from '../../content/items/items'
+import { reconcileArcaneRegistrySets } from './arcaneRegistry'
 
 describe('Guild progression runtime', () => {
   it('promotes on authored macro-standing requirements and awards eight advancement points', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
-    state.progress.guildReputation = 1500
+    state.progress.guildReputation = 6000
     state.progress.arcaneGuild.completedCommissions = 5
     state.progress.guildPointsEarned = 11
     expect(canPromoteGuild(state)).toBe(true)
@@ -40,7 +42,7 @@ describe('Guild progression runtime', () => {
     expect(GUILD_COMMISSION_TEMPLATES).toHaveLength(36)
     expect(GUILD_COMMISSION_TEMPLATES.every((template) => Boolean(template.minimumStandingId))).toBe(true)
     expect(Object.fromEntries(['supply', 'channeling', 'production', 'research', 'transmutation', 'mixed'].map((category) => [category, GUILD_COMMISSION_TEMPLATES.filter((template) => template.category === category).length]))).toEqual({ supply: 6, channeling: 6, production: 6, research: 6, transmutation: 6, mixed: 6 })
-    expect(GUILD_STANDINGS.map((standing) => standing.reputation)).toEqual([0, 250, 500, 750, 1000, 1500, 2200, 2900, 3600, 4300, 5200, 6500, 7800, 9100, 10400, 12000, 14500, 17000, 19500, 22000, 25000, 31000, 37000, 44000, 52000])
+    expect(GUILD_STANDINGS.map((standing) => standing.reputation)).toEqual([0, 1000, 2000, 3000, 4000, 6000, 8800, 11600, 14400, 17200, 20800, 26000, 31200, 36400, 41600, 48000, 58000, 68000, 78000, 88000, 100000, 124000, 148000, 176000, 208000])
     expect(GUILD_COMMISSION_CHAINS).toHaveLength(15)
     expect(GUILD_PROJECTS).toHaveLength(17)
     expect(Object.fromEntries(GUILD_FACILITIES.map((facility) => [facility.id, GUILD_PROJECTS.filter((project) => project.facilityId === facility.id).length]))).toEqual({ archive: 3, 'research-wing': 3, 'transmutation-hall': 3, 'leyline-annex': 3, 'acolyte-quarters': 2, 'commission-office': 3 })
@@ -58,14 +60,42 @@ describe('Guild progression runtime', () => {
       expect(getGuildStanding(standing.reputation)).toBe(standing)
       if (index > 0) expect(getGuildStanding(standing.reputation - 1)).toBe(GUILD_STANDINGS[index - 1])
     }
-    expect(getGuildStanding(52_000)).toBe(GUILD_STANDINGS[24])
-    expect(getGuildStanding(99_999)).toBe(GUILD_STANDINGS[24])
+    expect(getGuildStanding(52_000)).toBe(GUILD_STANDINGS[15])
+    expect(getGuildStanding(99_999)).toBe(GUILD_STANDINGS[19])
+    expect(getGuildStanding(208_000)).toBe(GUILD_STANDINGS[24])
+    expect(GUILD_STANDINGS.map((standing) => standing.reputation)).toEqual([0, 1000, 2000, 3000, 4000, 6000, 8800, 11600, 14400, 17200, 20800, 26000, 31200, 36400, 41600, 48000, 58000, 68000, 78000, 88000, 100000, 124000, 148000, 176000, 208000])
+    expect(GUILD_RANKS.filter((rank) => rank.promotion).map((rank) => rank.promotion!.reputation)).toEqual([0, 6000, 20800, 48000, 100000])
+  })
+
+  it('keeps fully registered Sets locked until their authored Standing gate', () => {
+    const state = createInitialState()
+    const set = ARCANE_REGISTRY_SETS.find((entry) => entry.minimumStandingId === 'circle-master-5')!
+    state.progress.arcaneRegistry.registeredEntries = Object.fromEntries(set.entryIds.map((itemId) => [itemId, 1]))
+    expect(reconcileArcaneRegistrySets(state)).toBe(0)
+    expect(state.progress.arcaneRegistry.completedSetIds).not.toContain(set.id)
+    state.progress.guildReputation = GUILD_STANDINGS.find((entry) => entry.id === set.minimumStandingId)!.reputation
+    expect(reconcileArcaneRegistrySets(state)).toBeGreaterThan(0)
+    expect(state.progress.arcaneRegistry.completedSetIds).toContain(set.id)
+  })
+
+  it('scales Commission Board choice breakpoints with canonical Standing', () => {
+    const state = createInitialState()
+    state.progress.guildReputation = 11599
+    expect(getGuildCommissionChoiceCount(state)).toBe(3)
+    state.progress.guildReputation = 11600
+    expect(getGuildCommissionChoiceCount(state)).toBe(4)
+    state.progress.guildReputation = 67999
+    expect(getGuildCommissionChoiceCount(state)).toBe(4)
+    state.progress.guildReputation = 68000
+    expect(getGuildCommissionChoiceCount(state)).toBe(5)
+    state.progress.guildSkillNodeRanks['major-favored-contractor'] = 1
+    expect(getGuildCommissionChoiceCount(state)).toBe(6)
   })
 
   it('applies independent Scholarship ranks through the canonical bonus vector', () => {
     const state = createInitialState()
     state.progress.guildPointsEarned = 2
-    state.progress.guildReputation = 500
+    state.progress.guildReputation = 2000
     expect(purchaseGuildSkillNode(state, 'scholarship-peer-review')).toBe(true)
     expect(purchaseGuildSkillNode(state, 'scholarship-measured-inquiry')).toBe(true)
     expect(getGuildPointsAvailable(state)).toBe(0)
@@ -80,7 +110,7 @@ describe('Guild progression runtime', () => {
     state.progress.guildPointsEarned = 2
     expect(GUILD_REGULAR_PROGRAM_IDS.map((id) => GUILD_SKILL_NODES[id].minimumStandingId)).toEqual(GUILD_STANDINGS.slice(1).map((standing) => standing.id))
     expect(purchaseGuildSkillNode(state, 'scholarship-measured-inquiry')).toBe(false)
-    state.progress.guildReputation = 250
+    state.progress.guildReputation = 1000
     expect(purchaseGuildSkillNode(state, 'scholarship-measured-inquiry')).toBe(true)
     expect(purchaseGuildSkillNode(state, 'scholarship-peer-review')).toBe(false)
   })
@@ -103,7 +133,7 @@ describe('Guild progression runtime', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'apprentice'
-    state.progress.guildReputation = 5200
+    state.progress.guildReputation = 20800
     state.progress.arcaneRegistry.completedSetIds = ['ember-fundamentals']
     state.progress.arcaneGuild.completedChainIds = ['study-ember-resonance']
     const promotion = getGuildPromotionProgress(state)

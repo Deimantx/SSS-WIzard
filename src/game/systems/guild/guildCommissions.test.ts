@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { contributeGuildCommissionSupply, debugCompleteActiveGuildCommission, generateGuildCommissionChoices, recordGuildCommissionProgressBatch } from './guildCommissions'
+import { contributeGuildCommissionSupply, debugCompleteActiveGuildCommission, debugRegenerateGuildCommissionBoard, generateGuildCommissionChoices, recordGuildCommissionProgressBatch } from './guildCommissions'
 import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
 import { advanceArcaneFlux } from '../channeling/channelingRuntime'
@@ -18,6 +18,27 @@ const guildState = () => {
 }
 
 describe('Arcane Guild commissions', () => {
+  it('keeps Special and Prestigious quality gates aligned to the fourfold Standing curve', () => {
+    const state = guildState()
+    const special = debugRegenerateGuildCommissionBoard(state, { quality: 'special', category: 'supply' })
+    expect(special.length).toBeGreaterThan(0)
+    expect(special.every((offer) => offer.quality === 'special')).toBe(true)
+    expect(state.progress.guildReputation).toBeGreaterThanOrEqual(6000)
+
+    const earlyAccess = guildState()
+    earlyAccess.progress.guildSkillNodeRanks['major-guild-connections'] = 1
+    const earlySpecial = debugRegenerateGuildCommissionBoard(earlyAccess, { quality: 'special', category: 'mixed' })
+    expect(earlySpecial.length).toBeGreaterThan(0)
+    expect(earlySpecial.every((offer) => offer.quality === 'special')).toBe(true)
+    expect(earlyAccess.progress.guildReputation).toBe(4000)
+
+    const prestigious = guildState()
+    const offers = debugRegenerateGuildCommissionBoard(prestigious, { quality: 'prestigious', category: 'research' })
+    expect(offers.length).toBeGreaterThan(0)
+    expect(offers.every((offer) => offer.quality === 'prestigious')).toBe(true)
+    expect(prestigious.progress.guildReputation).toBeGreaterThanOrEqual(48000)
+  })
+
   it('generates three semantically distinct early offers across work categories', () => {
     const state = guildState()
     const offers = generateGuildCommissionChoices(state)

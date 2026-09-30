@@ -30,7 +30,7 @@ export function GuildScreen() {
   }
 
   const panels = [
-    { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },
+    { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} onOpenCommissions={() => setActiveTab('commissions')} /> },
     { id: 'guild-tabs', content: <GuildTabs activeTab={activeTab} onTabChange={setActiveTab} commissionCount={state.progress.arcaneGuild.availableCommissions.length} /> },
     ...(activeTab === 'overview' ? [
       { id: 'guild-overview-standing', content: <GuildOverviewStandingPanel state={state} onNavigate={setActiveTab} /> },
@@ -46,7 +46,7 @@ export function GuildScreen() {
     : activeTab === 'registry' ? [] : [{ id: 'guild-advancement', content: <GuildAdvancementTab /> }]),
   ]
   const registryPanels = activeTab === 'registry' ? [
-    { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} /> },
+    { id: 'guild-header', content: <GuildHeader state={state} promotion={promotion} onOpenCommissions={() => setActiveTab('commissions')} /> },
     { id: 'guild-tabs', content: <GuildTabs activeTab={activeTab} onTabChange={setActiveTab} commissionCount={state.progress.arcaneGuild.availableCommissions.length} /> },
     { id: 'guild-registry', content: <ArcaneRegistryTab /> },
   ] : panels

@@ -11,11 +11,11 @@ export interface GuildStandingDefinition {
 export type GuildStandingId = GuildStandingDefinition['id']
 
 const grades = [
-  { rankId: 'initiate', name: 'Initiate', thresholds: [0, 250, 500, 750, 1000], unlocks: ['Guild entry and Routine commissions', 'Measured Inquiry program', 'Peer Review program', 'Structured Methodology program', 'Archive Cross-Reference program'] },
-  { rankId: 'apprentice', name: 'Apprentice', thresholds: [1500, 2200, 2900, 3600, 4300], unlocks: ['Faculty Mentorship program', 'Scholarly Discipline program', 'Efficient Arrays program', 'Resonance Handling program', 'Stable Catalysis program'] },
-  { rankId: 'adept', name: 'Adept', thresholds: [5200, 6500, 7800, 9100, 10400], unlocks: ['Production Discipline program', 'Conversion Discipline program', 'Precision Arrays program', 'Leyline Assistance program', 'Flux Reservoir Methods program'] },
-  { rankId: 'magister', name: 'Arcanist', thresholds: [12000, 14500, 17000, 19500, 22000], unlocks: ['Channeling Rota program', 'Acolyte Coordination program', 'Tower Scheduling program', 'Channeling Faculty program', 'Faculty Letters program'] },
-  { rankId: 'circle-master', name: 'Grand Magister', thresholds: [25000, 31000, 37000, 44000, 52000], unlocks: ['Efficient Delivery program', 'Registry Stewardship program', 'Project Logistics program', 'Study Coordination program', 'Commission Office Practice program'] },
+  { rankId: 'initiate', name: 'Initiate', thresholds: [0, 1000, 2000, 3000, 4000], unlocks: ['Guild entry and Routine commissions', 'Measured Inquiry program', 'Peer Review program', 'Structured Methodology program', 'Archive Cross-Reference program'] },
+  { rankId: 'apprentice', name: 'Apprentice', thresholds: [6000, 8800, 11600, 14400, 17200], unlocks: ['Faculty Mentorship program', 'Scholarly Discipline program', 'Efficient Arrays program', 'Resonance Handling program', 'Stable Catalysis program'] },
+  { rankId: 'adept', name: 'Adept', thresholds: [20800, 26000, 31200, 36400, 41600], unlocks: ['Production Discipline program', 'Conversion Discipline program', 'Precision Arrays program', 'Leyline Assistance program', 'Flux Reservoir Methods program'] },
+  { rankId: 'magister', name: 'Arcanist', thresholds: [48000, 58000, 68000, 78000, 88000], unlocks: ['Channeling Rota program', 'Acolyte Coordination program', 'Tower Scheduling program', 'Channeling Faculty program', 'Faculty Letters program'] },
+  { rankId: 'circle-master', name: 'Grand Magister', thresholds: [100000, 124000, 148000, 176000, 208000], unlocks: ['Efficient Delivery program', 'Registry Stewardship program', 'Project Logistics program', 'Study Coordination program', 'Commission Office Practice program'] },
 ] as const
 
 export const GUILD_STANDINGS: readonly GuildStandingDefinition[] = grades.flatMap(({ rankId, name, thresholds, unlocks }) =>
@@ -36,5 +36,5 @@ export const isGuildStandingAtLeast = (reputation: number, requiredStandingId: G
 }
 
 export const GUILD_MACRO_RANK_THRESHOLDS: Record<GuildRankId, number> = {
-  outsider: 0, initiate: 0, apprentice: 1500, adept: 5200, magister: 12000, 'circle-master': 25000,
+  outsider: 0, initiate: 0, apprentice: 6000, adept: 20800, magister: 48000, 'circle-master': 100000,
 }

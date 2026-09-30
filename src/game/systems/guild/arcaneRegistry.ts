@@ -6,6 +6,7 @@ import { pushNotification } from '../../engine'
 import type { GameState, ItemId } from '../../types'
 import { getGuildProgressionBonuses } from './guildSelectors'
 import { grantGuildReputation } from './guildReputation'
+import { GUILD_STANDINGS, isGuildStandingAtLeast } from '../../content/guild/guildStandings'
 
 const safeInt = (value: number) => Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
 export const getArcaneRegistryEntries = () => Object.values(ITEMS).map((item) => ({ item, category: item.registryCategory ?? 'Other', mode: item.registryMode ?? 'consume', quantity: Math.max(1, item.registryQuantity ?? 1) }))
@@ -33,6 +34,24 @@ const canRegisterEntry = (state: GameState, itemId: ItemId) => {
 }
 export const isArcaneRegistryEntryAvailable = (state: GameState, itemId: ItemId) => canRegisterEntry(state, itemId)
 
+export const reconcileArcaneRegistrySets = (state: GameState) => {
+  let completed = 0
+  let progress = true
+  while (progress) {
+    progress = false
+    for (const set of ARCANE_REGISTRY_SETS) {
+      if (state.progress.arcaneRegistry.completedSetIds.includes(set.id) || !isGuildStandingAtLeast(state.progress.guildReputation, set.minimumStandingId) || !set.entryIds.every((id) => Boolean(state.progress.arcaneRegistry.registeredEntries[id]))) continue
+      state.progress.arcaneRegistry.completedSetIds.push(set.id)
+      grantGuildReputation(state, set.reputationReward)
+      state.progress.guildPointsEarned = safeInt(state.progress.guildPointsEarned) + set.advancementPointsReward
+      pushNotification(state, `${set.name} completed · +${set.reputationReward} Reputation · +${set.advancementPointsReward} Advancement Point.`, 'success')
+      completed += 1
+      progress = true
+    }
+  }
+  return completed
+}
+
 export const registerArcaneRegistryEntry = (state: GameState, itemId: ItemId) => {
   if (!state.progress.guildUnlocked || !canRegisterEntry(state, itemId)) return false
   const item = ITEMS[itemId]
@@ -43,18 +62,12 @@ export const registerArcaneRegistryEntry = (state: GameState, itemId: ItemId) =>
   }
   state.progress.arcaneRegistry.registeredEntries[itemId] = quantity
   pushNotification(state, `${item.name} registered with the Arcane Guild.`, 'success')
-  for (const set of ARCANE_REGISTRY_SETS) {
-    if (state.progress.arcaneRegistry.completedSetIds.includes(set.id) || !set.entryIds.every((id) => Boolean(state.progress.arcaneRegistry.registeredEntries[id]))) continue
-    state.progress.arcaneRegistry.completedSetIds.push(set.id)
-    grantGuildReputation(state, set.reputationReward)
-    state.progress.guildPointsEarned = safeInt(state.progress.guildPointsEarned) + set.advancementPointsReward
-    pushNotification(state, `${set.name} completed · +${set.reputationReward} Reputation · +${set.advancementPointsReward} Advancement Point.`, 'success')
-  }
+  reconcileArcaneRegistrySets(state)
   return true
 }
 
 export const debugCompleteRegistryEntry = (state: GameState, itemId: ItemId) => { const item = ITEMS[itemId]; if (!item || state.progress.arcaneRegistry.registeredEntries[itemId]) return false; const mode = item.registryMode ?? 'consume'; if (mode === 'discover') state.progress.discoveredItems = [...new Set([...state.progress.discoveredItems, itemId])]; else if (mode === 'own') grantItem(state, itemId, 1); else grantItem(state, itemId, Math.max(1, item.registryQuantity ?? 1)); return registerArcaneRegistryEntry(state, itemId) }
-export const debugCompleteRegistrySet = (state: GameState, setId: string) => { const set = ARCANE_REGISTRY_SETS.find((entry) => entry.id === setId); if (!set) return false; for (const itemId of set.entryIds) if (!state.progress.arcaneRegistry.registeredEntries[itemId]) debugCompleteRegistryEntry(state, itemId); return state.progress.arcaneRegistry.completedSetIds.includes(setId) }
+export const debugCompleteRegistrySet = (state: GameState, setId: string) => { const set = ARCANE_REGISTRY_SETS.find((entry) => entry.id === setId); if (!set) return false; const required = GUILD_STANDINGS.find((standing) => standing.id === set.minimumStandingId); if (required && state.progress.guildReputation < required.reputation) grantGuildReputation(state, required.reputation - state.progress.guildReputation); for (const itemId of set.entryIds) if (!state.progress.arcaneRegistry.registeredEntries[itemId]) debugCompleteRegistryEntry(state, itemId); return state.progress.arcaneRegistry.completedSetIds.includes(setId) }
 export const debugResetRegistrySet = (state: GameState, setId: string) => {
   const set = ARCANE_REGISTRY_SETS.find((entry) => entry.id === setId)
   const itemId = set?.entryIds[set.entryIds.length - 1]

@@ -24,7 +24,7 @@ describe('Guild presentation read model', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
-    state.progress.guildReputation = 1500
+    state.progress.guildReputation = 6000
     state.progress.arcaneGuild.completedCommissions = 5
 
     expect(getGuildRankProgressPresentation(state)).toMatchObject({ status: 'ready', requirementsComplete: 2, requirementCount: 2 })

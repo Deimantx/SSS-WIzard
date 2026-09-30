@@ -12,9 +12,10 @@ import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption
 import { spendResonanceBundle } from '../resonance/resonanceRuntime'
 import { pushNotification } from '../../engine'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
-import { getGuildProgressionBonuses } from './guildSelectors'
+import { getGuildCommissionChoiceCount, getGuildProgressionBonuses } from './guildSelectors'
 import { getGuildStanding, GUILD_STANDINGS, isGuildStandingAtLeast } from '../../content/guild/guildStandings'
 import { grantGuildReputation } from './guildReputation'
+import { reconcileArcaneRegistrySets } from './arcaneRegistry'
 import { recordGuildCommissionChainProgress } from './guildCommissionChains'
 import type { GameState, GuildCommissionCategory, GuildCommissionObjective, GuildCommissionQuality, GuildCommissionState, ItemId, ResonanceType, SchoolId, TransmutationRecipeId } from '../../types'
 
@@ -63,7 +64,12 @@ const qualityOrder: GuildCommissionQuality[] = ['routine', 'special', 'prestigio
 const chooseQuality = (state: GameState, available: ReadonlySet<GuildCommissionQuality>, forcedQuality?: GuildCommissionQuality): GuildCommissionQuality | null => {
   const standing = getGuildStanding(state.progress.guildReputation)
   const qualityOffset = getGuildProgressionBonuses(state).specialCommissionAccess ? 1 : 0
-  const thresholds: Record<GuildCommissionQuality, number> = { routine: 0, special: Math.max(0, 1500 - qualityOffset * 500), prestigious: Math.max(0, 12000 - qualityOffset * 1600) }
+  const threshold = (id: string) => GUILD_STANDINGS.find((entry) => entry.id === id)!.reputation
+  const thresholds: Record<GuildCommissionQuality, number> = {
+    routine: 0,
+    special: threshold(qualityOffset ? 'initiate-5' : 'apprentice-1'),
+    prestigious: threshold(qualityOffset ? 'adept-5' : 'magister-1'),
+  }
   const eligible = qualityOrder.filter((quality) => available.has(quality) && BALANCE.arcaneGuild.qualityWeights[quality] > 0 && standing.reputation >= thresholds[quality])
   if (forcedQuality) return eligible.includes(forcedQuality) ? forcedQuality : null
   const total = eligible.reduce((sum, quality) => sum + BALANCE.arcaneGuild.qualityWeights[quality], 0)
@@ -77,12 +83,6 @@ const qualityOf = (template: GuildCommissionTemplate): GuildCommissionQuality =>
 const categoryFor = (template: GuildCommissionTemplate) => template.category === 'mixed' ? [...new Set(template.objectives.map((objective) => objective.kind))].sort().join('+') : template.category
 
 export interface GuildCommissionGenerationOptions { quality?: GuildCommissionQuality; templateId?: string; category?: GuildCommissionCategory }
-export const getGuildCommissionChoiceCount = (state: Pick<GameState, 'progress'>) => {
-  const reputation = state.progress.guildReputation
-  const standingChoices = reputation >= 17000 ? 5 : reputation >= 2900 ? 4 : BALANCE.arcaneGuild.baseCommissionChoices
-  return Math.min(6, standingChoices + getGuildProgressionBonuses(state).commissionChoiceBonus)
-}
-
 const makeOffer = (state: GameState, template: GuildCommissionTemplate, quality: GuildCommissionQuality, index: number): GuildCommissionState => {
   const multiplier = BALANCE.arcaneGuild.qualityTargetMultipliers[quality]
   const bonuses = getGuildProgressionBonuses(state)
@@ -153,6 +153,7 @@ const finishCommission = (state: GameState, commission: GuildCommissionState) =>
   const guild = state.progress.arcaneGuild
   const reputationAwarded = commission.reputationReward
     grantGuildReputation(state, reputationAwarded)
+  reconcileArcaneRegistrySets(state)
   guild.completedCommissions = safeInt(guild.completedCommissions) + 1
   guild.freeRefreshes = Math.min(BALANCE.arcaneGuild.maxFreeRefreshes, safeInt(guild.freeRefreshes) + 1)
   guild.activeCommission = null
@@ -285,9 +286,16 @@ export const debugRegenerateGuildCommissionBoard = (state: GameState, options: G
   state.progress.guildUnlocked = true
   if (state.progress.guildRank === 'outsider') state.progress.guildRank = 'initiate'
   if (options.templateId || options.quality) state.progress.tutorialStage = 'complete'
-  const requestedTemplate = options.templateId ? GUILD_COMMISSION_TEMPLATES.find((template) => template.id === options.templateId) : undefined
+  const qualityTemplate = options.quality
+    ? GUILD_COMMISSION_TEMPLATES
+      .filter((template) => qualityOf(template) === options.quality && (!options.category || template.category === options.category))
+      .sort((a, b) => (GUILD_STANDINGS.find((standing) => standing.id === a.minimumStandingId)?.reputation ?? 0) - (GUILD_STANDINGS.find((standing) => standing.id === b.minimumStandingId)?.reputation ?? 0))[0]
+    : undefined
+  const requestedTemplate = options.templateId ? GUILD_COMMISSION_TEMPLATES.find((template) => template.id === options.templateId) : qualityTemplate
   const requestedQuality = options.quality ?? (requestedTemplate ? qualityOf(requestedTemplate) : 'routine')
-  const qualityStandingThreshold = requestedQuality === 'prestigious' ? 12000 : requestedQuality === 'special' ? 1500 : 0
+  const qualityOffset = getGuildProgressionBonuses(state).specialCommissionAccess ? 1 : 0
+  const qualityStandingId = requestedQuality === 'prestigious' ? qualityOffset ? 'adept-5' : 'magister-1' : requestedQuality === 'special' ? qualityOffset ? 'initiate-5' : 'apprentice-1' : 'initiate-1'
+  const qualityStandingThreshold = GUILD_STANDINGS.find((standing) => standing.id === qualityStandingId)!.reputation
   const templateStanding = requestedTemplate && GUILD_STANDINGS.find((standing) => standing.id === requestedTemplate.minimumStandingId)?.reputation || 0
   grantGuildReputation(state, Math.max(0, Math.max(qualityStandingThreshold, templateStanding) - state.progress.guildReputation))
   const minimumRankId = BALANCE.arcaneGuild.rankMinimumQuality[requestedQuality]
@@ -300,6 +308,6 @@ export const debugRegenerateGuildCommissionBoard = (state: GameState, options: G
     }
   }
   state.progress.arcaneGuild.generationCount += 1
-  state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state, options)
+  state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state, requestedTemplate && options.quality ? { ...options, templateId: requestedTemplate.id } : options)
   return state.progress.arcaneGuild.availableCommissions
 }

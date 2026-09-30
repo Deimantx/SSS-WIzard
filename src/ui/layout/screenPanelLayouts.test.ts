@@ -23,9 +23,11 @@ describe('Guild screen panel layout', () => {
     expect(Object.keys(SCREEN_PANEL_LAYOUTS['arcane-guild'].responsive?.mobile?.panels ?? {}).sort()).toEqual([...currentGuildPanelIds].sort())
   })
 
-  it('uses explicit heights and keeps a compact header plus separate overview panels', () => {
+  it('uses natural progression heights and keeps a compact header plus separate overview panels', () => {
     const { panels } = SCREEN_PANEL_LAYOUTS['arcane-guild']
-    expect(Object.values(panels).every(({ preferredHeight }) => typeof preferredHeight === 'number')).toBe(true)
+    expect(panels['guild-standing'].preferredHeight).toBe('auto')
+    expect(panels['guild-advancement'].preferredHeight).toBe('auto')
+    expect(Object.entries(panels).filter(([id]) => !['guild-standing', 'guild-advancement'].includes(id)).every(([, panel]) => typeof panel.preferredHeight === 'number')).toBe(true)
     expect(Object.values(panels).every(({ overflow }) => overflow === 'visible')).toBe(true)
     expect(panels['guild-header'].preferredHeight).toBeLessThanOrEqual(180)
     expect(panels['guild-overview-standing']).toMatchObject({ columnStart: 1, columnSpan: 5, rowStart: 3 })

@@ -1,14 +1,13 @@
 import { BookOpen, Flame, GitBranch, PackageCheck, RefreshCw, RotateCw, Waves, Zap, type LucideIcon } from 'lucide-react'
 import { Button, Card, GameTooltip, Progress, Status } from '../../components/ui'
-import { GUILD_COMMISSION_TEMPLATES } from '../../game/content/guild/guildRequests'
 import { ITEMS } from '../../game/content/items/items'
 import { RESONANCE_METADATA } from '../../game/content/resonance/resonance'
 import { getConsumableQuantity } from '../../game/core/inventory/inventoryConsumption'
 import { formatGuildCommissionObjective, getGuildCommissionProgress } from '../../game/presentation/guild/guildPresentation'
 import type { GameStore } from '../../store/gameStore'
 import type { GuildCommissionCategory, GuildCommissionObjective, GuildCommissionQuality } from '../../game/types'
+import { getGuildCommissionChoiceCount } from '../../game/systems/guild/guildSelectors'
 
-const templateFor = (id: string) => GUILD_COMMISSION_TEMPLATES.find((template) => template.id === id)
 const qualityLabel: Record<GuildCommissionQuality, string> = { routine: 'ROUTINE', special: 'SPECIAL', prestigious: 'PRESTIGIOUS' }
 const categoryLabel: Record<GuildCommissionCategory, string> = { supply: 'SUPPLY', channeling: 'CHANNELING', production: 'PRODUCTION', research: 'RESEARCH', transmutation: 'TRANSMUTATION', mixed: 'MIXED' }
 const categoryIcon: Record<GuildCommissionCategory, LucideIcon> = { supply: PackageCheck, channeling: Zap, production: Flame, research: BookOpen, transmutation: RotateCw, mixed: GitBranch }
@@ -28,7 +27,7 @@ export function GuildContractsBoard({ state }: { state: GameStore }) {
   return <section className="guild-v3-tab-content guild-v3-contracts-view arcane-commission-board">
     <header className="guild-commission-board-header">
       <div><span className="guild-v3-kicker">ARCANE GUILD / COMMISSIONS</span><h2>Choose a Commission</h2><p>One professional magical assignment can be active at a time.</p></div>
-      <div className="guild-commission-board-counters"><div><span>COMPLETED</span><strong>{guild.completedCommissions.toLocaleString()}</strong></div><div><span>FREE REFRESH</span><strong>{guild.freeRefreshes.toLocaleString()}</strong></div></div>
+      <div className="guild-commission-board-counters"><div><span>COMPLETED</span><strong>{guild.completedCommissions.toLocaleString()}</strong></div><div><span>BOARD</span><strong>{guild.availableCommissions.length} / {getGuildCommissionChoiceCount(state)}</strong></div><div><span>FREE REFRESH</span><strong>{guild.freeRefreshes.toLocaleString()}</strong></div></div>
     </header>
 
     {active && <Card className="guild-commission-active">
@@ -37,7 +36,6 @@ export function GuildContractsBoard({ state }: { state: GameStore }) {
         {(() => { const Icon = categoryIcon[active.category]; return <span className={`guild-commission-category-mark ${active.category}`}><Icon size={18} aria-hidden="true" /></span> })()}
         <div><span className="guild-commission-category-label">{categoryLabel[active.category]}</span><h3>{formatGuildCommissionObjective(active)}</h3></div>
       </div>
-      <p className="guild-commission-description">{categoryDescription[active.category]}</p>
       <div className="guild-commission-progress-block"><div><span>COMMISSION PROGRESS</span><strong>{activeProgress?.current.toLocaleString()} / {activeProgress?.target.toLocaleString()}</strong></div><Progress value={Math.min(100, (activeProgress?.current ?? 0) / Math.max(1, activeProgress?.target ?? 1) * 100)} tone="gold" /></div>
       <div className="guild-commission-active-reward"><span>REWARD</span><strong>+{active.reputationReward.toLocaleString()} Reputation</strong>{active.advancementPointReward > 0 && <b>+{active.advancementPointReward} Advancement Point</b>}</div>
       <div className="guild-commission-components">{active.objectives.map((objective, index) => <ObjectiveProgress key={`${objective.kind}:${index}`} objective={objective} index={index} state={state} />)}</div>
@@ -45,12 +43,10 @@ export function GuildContractsBoard({ state }: { state: GameStore }) {
 
     <div className="guild-commission-offer-heading"><div><span className="guild-v3-kicker">WORK ORDERS</span><h3>{active ? 'Other available offers' : 'Available Commissions'}</h3></div><GameTooltip content={guild.freeRefreshes ? 'Use an earned free refresh to replace the available Commission board.' : 'Complete a Commission to earn one free board refresh.'}><Button variant="secondary" disabled={guild.freeRefreshes < 1} onClick={() => state.refreshGuildCommissionChoices()}><RefreshCw size={14} /> Refresh · {guild.freeRefreshes}</Button></GameTooltip></div>
     {guild.availableCommissions.length ? <div className="guild-commission-grid">{guild.availableCommissions.map((commission) => {
-      const template = templateFor(commission.templateId)
       const Icon = categoryIcon[commission.category]
-      const detail = template?.minimumProgressStage === 'guild' ? categoryDescription[commission.category] : `${categoryDescription[commission.category]} This work becomes available as your magical disciplines open.`
       return <Card className={`guild-commission-offer ${commission.quality}`} key={commission.id}>
-        <div className="guild-commission-offer-heading"><div className={`guild-commission-category-mark ${commission.category}`}><Icon size={16} aria-hidden="true" /><span>{categoryLabel[commission.category]}</span></div><span className={`guild-commission-quality ${commission.quality}`}>{qualityLabel[commission.quality]}</span></div>
-        <h3>{formatGuildCommissionObjective(commission)}</h3><p>{detail}</p>
+        <div className="guild-commission-offer-heading"><GameTooltip content={categoryDescription[commission.category]}><div className={`guild-commission-category-mark ${commission.category}`}><Icon size={16} aria-hidden="true" /><span>{categoryLabel[commission.category]}</span></div></GameTooltip><span className={`guild-commission-quality ${commission.quality}`}>{qualityLabel[commission.quality]}</span></div>
+        <h3>{formatGuildCommissionObjective(commission)}</h3>
         <div className="guild-commission-reward"><span>+{commission.reputationReward.toLocaleString()} Reputation</span>{commission.advancementPointReward > 0 && <strong>+{commission.advancementPointReward} Advancement Point</strong>}</div>
         <GameTooltip content="Accept this professional Commission. Only one Guild assignment can be active at a time."><Button variant="primary" disabled={Boolean(active)} onClick={() => state.acceptGuildCommission(commission.id)}>{active ? 'Commission Active' : 'Accept Commission'}</Button></GameTooltip>
       </Card>

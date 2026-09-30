@@ -9,6 +9,7 @@ import { ensureGuildCommissionChoices } from './guildCommissions'
 import type { DungeonId, GameState, GuildRankId, GuildSkillNodeId, MonsterId } from '../../types'
 import { GUILD_MACRO_RANK_THRESHOLDS } from '../../content/guild/guildStandings'
 import { grantGuildReputation, setGuildReputation } from './guildReputation'
+import { reconcileArcaneRegistrySets } from './arcaneRegistry'
 
 const safeAmount = (value: number) => Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
 type LegacyGuildRequestId = keyof typeof LEGACY_GUILD_REQUESTS
@@ -35,6 +36,7 @@ export const claimGuildRequest = (state: GameState, requestId: string) => {
   if (!request || !state.progress.guildUnlocked || state.progress.requestClaims[requestId] || (state.progress.requestProgress[requestId] ?? 0) < request.target) return false
   state.progress.requestClaims[requestId] = true
   grantGuildReputation(state, request.reputation)
+  reconcileArcaneRegistrySets(state)
   pushNotification(state, `${request.name} claimed · +${request.reputation} Reputation`, 'success')
   reconcileChronicleProgress(state)
   return true

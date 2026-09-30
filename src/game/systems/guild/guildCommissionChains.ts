@@ -8,6 +8,7 @@ type GuildCommissionChainCategory = 'delivery' | 'production' | 'research' | 'tr
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { getGuildProgressionBonuses } from './guildSelectors'
 import { grantGuildReputation } from './guildReputation'
+import { reconcileArcaneRegistrySets } from './arcaneRegistry'
 import { GUILD_STANDINGS, isGuildStandingAtLeast } from '../../content/guild/guildStandings'
 
 const safe = (n: number) => Math.max(0, Math.floor(Number.isFinite(n) ? n : 0))
@@ -55,6 +56,7 @@ export const recordGuildCommissionChainProgress = (state: GameState, category: G
     const reputationAwarded = Math.round((firstCompletion ? chain.reputationReward : chain.repeatReputationReward) * (firstCompletion ? 1 : getGuildProgressionBonuses(state).repeatStudyReputationMultiplier))
     const pointsAwarded = firstCompletion ? chain.advancementPointsReward : 0
     grantGuildReputation(state, reputationAwarded)
+    reconcileArcaneRegistrySets(state)
     if (firstCompletion) guild.completedChainIds.push(chain.id)
     state.progress.guildPointsEarned = safe(state.progress.guildPointsEarned) + pointsAwarded
     guild.activeCommissionChain = null

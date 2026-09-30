@@ -6,14 +6,17 @@ import { getGuildProgressionBonuses } from './guildSelectors'
 import { contributeGuildCommissionChainDelivery, recordGuildCommissionChainProgress, startGuildCommissionChain } from './guildCommissionChains'
 import { completeTransmutationCycle } from '../transmutation/transmutationEngine'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
+import { GUILD_STANDINGS } from '../../content/guild/guildStandings'
+import { GUILD_COMMISSION_CHAINS } from '../../content/guild/guildCommissionChains'
 
 describe('Guild long-term services', () => {
   it('accepts partial project contributions, then pays its one-time rewards', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
-    state.progress.guildReputation = 1000
     const project = GUILD_PROJECTS[0]
+    const initialReputation = GUILD_STANDINGS.find((standing) => standing.id === project.minimumStandingId)!.reputation
+    state.progress.guildReputation = initialReputation
     const first = project.requirements[0]
     state.inventory[first.itemId] = first.quantity
     expect(contributeGuildProject(state, project.id, first.itemId, Math.floor(first.quantity / 2))).toBe(true)
@@ -24,7 +27,7 @@ describe('Guild long-term services', () => {
       contributeGuildProject(state, project.id, requirement.itemId, 'max')
     }
     expect(state.progress.arcaneGuild.completedProjectIds).toContain(project.id)
-    expect(state.progress.guildReputation).toBe(1000 + project.reputationReward)
+    expect(state.progress.guildReputation).toBe(initialReputation + project.reputationReward)
     expect(state.progress.guildPointsEarned).toBe(project.advancementPointsReward)
     expect(getGuildProgressionBonuses(state).guildReputationMultiplier).toBe(1.01)
     expect(contributeGuildProject(state, project.id, first.itemId, 1)).toBe(false)
@@ -35,7 +38,7 @@ describe('Guild long-term services', () => {
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'initiate'
     expect(getGuildProjectStatus(state, 'expand-research-wing')).toMatchObject({ available: false, reason: 'standing-required' })
-    state.progress.guildReputation = 2200
+    state.progress.guildReputation = GUILD_STANDINGS.find((standing) => standing.id === GUILD_PROJECTS.find((entry) => entry.id === 'expand-research-wing')!.minimumStandingId)!.reputation
     state.progress.guildRank = 'apprentice'
     expect(getGuildProjectStatus(state, 'expand-research-wing')).toMatchObject({ available: false, reason: 'prerequisite-required', missingProjects: ['restore-arcane-archive'] })
     state.inventory['artifact-essence'] = 20
@@ -67,7 +70,7 @@ describe('Guild long-term services', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'adept'
-    state.progress.guildReputation = 500
+    state.progress.guildReputation = GUILD_STANDINGS.find((standing) => standing.id === GUILD_COMMISSION_CHAINS.find((entry) => entry.id === 'study-ember-resonance')!.minimumStandingId)!.reputation
     expect(startGuildCommissionChain(state, 'study-ember-resonance')).toBe(true)
     expect(recordGuildCommissionChainProgress(state, 'delivery', 8, 'fire-fragment')).toBe(true)
     expect(state.progress.arcaneGuild.activeCommissionChain?.stageIndex).toBe(1)
@@ -83,8 +86,10 @@ describe('Guild long-term services', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'adept'
-    state.progress.guildReputation = 2200
     const chain = 'stable-leyline-survey'
+    const chainDefinition = GUILD_COMMISSION_CHAINS.find((entry) => entry.id === chain)!
+    const initialReputation = GUILD_STANDINGS.find((standing) => standing.id === chainDefinition.minimumStandingId)!.reputation
+    state.progress.guildReputation = initialReputation
     const completeChain = () => {
       expect(startGuildCommissionChain(state, chain)).toBe(true)
       expect(recordGuildCommissionChainProgress(state, 'research', 3)).toBe(true)
@@ -94,17 +99,17 @@ describe('Guild long-term services', () => {
     }
     completeChain()
     expect(state.progress.guildPointsEarned).toBe(1)
-    expect(state.progress.guildReputation).toBe(2620)
+    expect(state.progress.guildReputation).toBe(initialReputation + chainDefinition.reputationReward)
     completeChain()
     expect(state.progress.guildPointsEarned).toBe(1)
-    expect(state.progress.guildReputation).toBe(2900)
+    expect(state.progress.guildReputation).toBe(initialReputation + chainDefinition.reputationReward + chainDefinition.repeatReputationReward)
   })
 
   it('validates the authored item for Production Chain stages', () => {
     const state = createInitialState()
     state.progress.guildUnlocked = true
     state.progress.guildRank = 'magister'
-    state.progress.guildReputation = 500
+    state.progress.guildReputation = GUILD_STANDINGS.find((standing) => standing.id === GUILD_COMMISSION_CHAINS.find((entry) => entry.id === 'prismatic-synthesis')!.minimumStandingId)!.reputation
     expect(startGuildCommissionChain(state, 'prismatic-synthesis')).toBe(true)
     state.inventory['prismatic-fragment'] = 5
     expect(contributeGuildCommissionChainDelivery(state, 'max')).toBe(true)

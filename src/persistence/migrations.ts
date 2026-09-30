@@ -8,7 +8,8 @@ import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicle
 import { CHRONICLE_OBJECTIVES } from '../game/content/chronicles/chronicles'
 import { GUILD_SKILL_NODES, GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
 import { getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
-import { ensureGuildCommissionChoices, getGuildCommissionChoiceCount } from '../game/systems/guild/guildCommissions'
+import { ensureGuildCommissionChoices } from '../game/systems/guild/guildCommissions'
+import { getGuildCommissionChoiceCount } from '../game/systems/guild/guildSelectors'
 import { GUILD_PROJECTS } from '../game/content/guild/guildProjects'
 import { GUILD_RANKS } from '../game/content/guild/guildRanks'
 import { GUILD_MACRO_RANK_THRESHOLDS } from '../game/content/guild/guildStandings'
@@ -136,6 +137,8 @@ const ARCANE_CORE_RANKED_NODE_SAVE_VERSION = 34
 /** V53 is the first canonical save schema that persists Hunter Contract boards. */
 /** V53 is the first canonical save schema that persists Guild Commission boards. */
 const GUILD_COMMISSION_BOARD_SAVE_VERSION = 53
+const GUILD_V4_REPUTATION_SAVE_VERSION = 53
+const GUILD_REPUTATION_CAP_V5 = 208_000
 /** V38 is the first save topology that contains the Phase 1 Resonance runtime. */
 const PRE_RESONANCE_SAVE_VERSION = 38
 const ARCANE_CORE_V37_REPRICE_SAVE_VERSION = 37
@@ -1106,6 +1109,12 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSigils(migrated, raw)
   normalizeDarkPortalProgress(migrated)
   normalizeLegacyProgressEvidence(migrated.progress)
+  if (sourceVersion === GUILD_V4_REPUTATION_SAVE_VERSION) {
+    const rawProgress = isRecord(raw.progress) ? raw.progress : {}
+    const savedReputation = rawProgress.guildReputation
+    const oldReputation = typeof savedReputation === 'number' && Number.isFinite(savedReputation) ? Math.max(0, savedReputation) : Math.max(0, migrated.progress.guildReputation)
+    migrated.progress.guildReputation = Math.min(GUILD_REPUTATION_CAP_V5, Math.floor(oldReputation * 4))
+  }
   backfillHistoricalContractBoards(migrated, raw, sourceVersion)
   reconcileWorldTierProgression(migrated)
   normalizeSchoolCap(migrated, raw)

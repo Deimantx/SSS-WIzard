@@ -7,6 +7,7 @@ import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { GUILD_RANKS } from '../../content/guild/guildRanks'
 import { getGuildProgressionBonuses } from './guildSelectors'
 import { grantGuildReputation } from './guildReputation'
+import { reconcileArcaneRegistrySets } from './arcaneRegistry'
 import { BALANCE } from '../../core/balance/balance'
 import { GUILD_STANDINGS, isGuildStandingAtLeast } from '../../content/guild/guildStandings'
 
@@ -43,6 +44,7 @@ export const contributeGuildProject = (state: GameState, projectId: string, item
   if (getGuildProjectEffectiveRequirements(state, projectId).every((entry) => (guild.projects[projectId]?.[entry.itemId] ?? 0) >= entry.quantity)) {
     guild.completedProjectIds.push(projectId)
     grantGuildReputation(state, project.reputationReward)
+    reconcileArcaneRegistrySets(state)
     state.progress.guildPointsEarned = safe(state.progress.guildPointsEarned) + project.advancementPointsReward
     if (project.effect?.type === 'commission-refresh') guild.freeRefreshes = Math.min(BALANCE.arcaneGuild.maxFreeRefreshes, guild.freeRefreshes + Math.max(0, safe(project.effect.amount)))
     pushNotification(state, `${project.name} completed · +${project.reputationReward} Guild Reputation · +${project.advancementPointsReward} Advancement Point.`, 'success')

@@ -9,6 +9,22 @@ import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
 import { getCriticalSaveSnapshot, validateSerializedSave } from './saveIntegrity'
 
+describe('V54 Arcane Guild Reputation curve migration', () => {
+  it.each([[0, 0], [250, 1000], [7250, 29000], [52000, 208000]])('scales V53 Guild Reputation %i to %i exactly once', (oldReputation, newReputation) => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 53, progress: { ...initial.progress, guildReputation: oldReputation } })
+    expect(migrated.progress.guildReputation).toBe(newReputation)
+    expect(migrateSave(migrated).progress.guildReputation).toBe(newReputation)
+  })
+
+  it('scales the saved Reputation directly for an already promoted V53 profile', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: 53, progress: { ...initial.progress, guildRank: 'apprentice', guildReputation: 250 } })
+    expect(migrated.progress.guildRank).toBe('apprentice')
+    expect(migrated.progress.guildReputation).toBe(1000)
+  })
+})
+
 describe('V27 story progression migration', () => {
   it('keeps the Dark Portal hidden when an old save has no Edrin kill', () => {
     const initial = createInitialState()

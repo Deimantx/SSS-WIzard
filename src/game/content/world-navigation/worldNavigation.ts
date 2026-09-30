@@ -1,5 +1,8 @@
 import { DUNGEONS } from '../dungeons/dungeons'
 import type { DungeonId } from '../../types'
+import { MONSTERS } from '../monsters'
+import { getMonsterPrimaryAffinity } from '../monsters/monsterTypes'
+import { ELEMENT_IDS } from '../elements/elements'
 import type { CombatContinentDefinition, CombatContinentId, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
 
 const firstFrontierLocationIds: readonly CombatLocationId[] = ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs']
@@ -247,6 +250,20 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
     firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }],
   },
 }
+
+// Transitional zone metadata is derived from the canonical roster. It keeps the browser data-driven
+// while legacy mixed rosters remain in place ahead of their later content migration.
+Object.values(COMBAT_LOCATIONS).forEach((location) => {
+  const dungeon = location.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+  if (!dungeon) {
+    location.elementsPresent = []
+    return
+  }
+  const roster = [...(dungeon.encounterSequence ?? dungeon.monsterPool), ...(dungeon.boss ? [dungeon.boss] : [])]
+  const elementsPresent = ELEMENT_IDS.filter((element) => roster.some((monsterId) => MONSTERS[monsterId] && getMonsterPrimaryAffinity(MONSTERS[monsterId]) === element))
+  location.elementsPresent = elementsPresent
+  if (elementsPresent.length === 1) location.primaryElement = elementsPresent[0]
+})
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined) => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null
 

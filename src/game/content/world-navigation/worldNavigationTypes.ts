@@ -1,5 +1,6 @@
 import type { DungeonId, MonsterId } from '../../types'
 import type { EliteZoneAffixId } from '../elite-affixes'
+import type { ElementId } from '../elements/elements'
 
 export type CombatContinentId = string
 export type CombatRegionId = string
@@ -12,6 +13,8 @@ export type CombatLocationType =
   | 'special-zone'
   | 'dungeon'
   | 'tower'
+
+export type CombatZoneType = Extract<CombatLocationType, 'combat-zone' | 'elite-zone' | 'hunting-ground' | 'dungeon'>
 
 export type CombatEncounterMode = 'random-pool' | 'targeted' | 'sequence'
 export type CombatTargetDifficulty = 'easy' | 'standard' | 'hard' | 'apex'
@@ -52,6 +55,10 @@ export interface CombatLocationDefinition {
   name: string
   description?: string
   type: CombatLocationType
+  /** Authored when a location is consistently aligned to one element. */
+  primaryElement?: ElementId
+  /** Data-derived affinities represented by this location's canonical roster. */
+  elementsPresent?: ElementId[]
   order: number
   dungeonId?: DungeonId
   encounterMode?: CombatEncounterMode

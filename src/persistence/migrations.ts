@@ -56,6 +56,7 @@ import { isWorldTierId, reconcileWorldTierProgression, sanitizeWorldTierState } 
 import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
 import { isCrystalSystemUnlocked, normalizeCrystalState } from '../game/systems/crystals/crystalRuntime'
 import { normalizeSigilState } from '../game/systems/sigils/sigilStateNormalization'
+import { isElementId } from '../game/content/elements/elements'
 
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
@@ -633,6 +634,12 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.enemyBarrierRemainingMs = migrated.combat.enemyBarrier > 0 ? nonNegativeNumber(rawCombat.enemyBarrierRemainingMs) ?? null : null
   migrated.combat.playerStatuses = normalizeStatuses(rawPlayerStatuses, 'player')
   migrated.combat.enemyStatuses = normalizeStatuses(rawCombat.enemyStatuses, 'enemy')
+  const rawWards = sourceVersion >= 55 && Array.isArray(rawCombat.elementalDamageReductions) ? rawCombat.elementalDamageReductions : []
+  migrated.combat.elementalDamageReductions = rawWards.slice(-32).flatMap((entry): GameState['combat']['elementalDamageReductions'][number][] => {
+    if (!isRecord(entry) || !isElementId(entry.element) || typeof entry.sourceId !== 'string' || !entry.sourceId.trim() || typeof entry.reduction !== 'number' || !Number.isFinite(entry.reduction) || entry.reduction <= 0 || entry.reduction >= 1) return []
+    const expiresAt = typeof entry.expiresAt === 'number' && Number.isFinite(entry.expiresAt) && entry.expiresAt >= 0 ? entry.expiresAt : undefined
+    return [{ element: entry.element, sourceId: entry.sourceId, reduction: entry.reduction, ...(expiresAt === undefined ? {} : { expiresAt }) }]
+  })
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null
   const rawActiveLoadout = isRecord(rawCombat.activeSpellLoadout) ? rawCombat.activeSpellLoadout : null

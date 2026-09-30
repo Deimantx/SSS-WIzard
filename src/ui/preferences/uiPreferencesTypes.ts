@@ -86,6 +86,10 @@ export interface ChroniclesScreenPreferences {
 export interface GuildScreenPreferences {
   activeTab: GuildScreenTab
   commissionTab: 'board' | 'studies'
+  studyChapterId: 'initiate' | 'apprentice' | 'adept' | 'magister' | 'circle-master'
+  selectedStudyId: string | null
+  advancementDepartment: 'scholarship' | 'transmutation' | 'tower-operations' | 'guild-service'
+  selectedAdvancementId: string | null
 }
 export interface HuntersOrderScreenPreferences {
   activeTab: HuntersOrderScreenTab

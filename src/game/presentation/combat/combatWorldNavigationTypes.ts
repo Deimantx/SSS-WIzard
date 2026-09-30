@@ -1,4 +1,5 @@
-import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
+import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
+import type { ElementId } from '../../content/elements/elements'
 import type { EliteZoneAffixId } from '../../content/elite-affixes'
 import type { DungeonId, MonsterId, WorldTierId } from '../../types'
 import type { CombatBossHuntPresentation } from './combatBossHuntPresentation'
@@ -45,6 +46,8 @@ export interface CombatLocationViewModel {
   id: CombatLocationId
   name: string
   type: CombatLocationType
+  primaryElement: ElementId | null
+  elementsPresent: ElementId[]
   typeLabel: string
   state: CombatLocationState
   statusLabel: string
@@ -88,6 +91,9 @@ export interface CombatWorldNavigationViewModel {
   regions: CombatRegionSummaryViewModel[]
   selectedContinent: CombatContinentSummaryViewModel
   selectedRegion: CombatRegionViewModel
+  /** Flat canonical browse list; region metadata remains available for progression systems. */
+  allLocations: CombatLocationViewModel[]
+  selectedType: CombatZoneType
   selectedLocation: CombatLocationViewModel | null
   activeLocationId: CombatLocationId | null
   activeLocation: CombatLocationViewModel | null

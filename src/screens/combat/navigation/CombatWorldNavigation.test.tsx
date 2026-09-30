@@ -11,18 +11,21 @@ const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => 
 describe('CombatWorldNavigation', () => {
   beforeEach(() => { useGameStore.setState(createInitialState()); setNavigationIntent({ combatDungeonId: null, combatMonsterId: null }) })
 
-  it('shows the hierarchy inline with one unified First Frontier location grid', () => {
+  it('shows the type-based location filters with Combat Zones selected by default', () => {
     renderNavigation()
 
     expect(screen.getByText('WORLD NAVIGATION')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Continent I' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'First Frontier' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Combat Zones' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: 'Elite Zones' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Hunting Grounds' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Dungeons' })).toBeTruthy()
+    expect(screen.queryByRole('tab', { name: /All/ })).toBeNull()
     expect(screen.getByRole('button', { name: /Whispering Woods, COMBAT ZONE/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ })).toBeTruthy()
-    expect(screen.queryByText('COMBAT ZONES')).toBeNull()
-    expect(screen.queryByText('DUNGEONS')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Howling Den, ELITE ZONE/ })).toBeNull()
     expect(screen.getByText('WORLD TIER')).toBeTruthy()
-    expect(screen.getByText('Choose a Location.')).toBeTruthy()
+    expect(screen.getByText('Browse locations by encounter type.')).toBeTruthy()
+    expect(screen.queryByText('CONTINENT')).toBeNull()
+    expect(screen.queryByText('REGION')).toBeNull()
     expect(screen.queryByText('CONTINENT I / FIRST FRONTIER / WHISPERING WOODS')).toBeNull()
     expect(screen.queryByText(/LOCATIONS IN REGION/)).toBeNull()
     const tierControl = screen.getByText('WORLD TIER').closest('.combat-world-tier-control')
@@ -32,11 +35,10 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('CAMPAIGN')).toBeNull()
   })
 
-  it('keeps locked Regions disabled and exposes the existing unlock milestone', () => {
+  it('keeps locked locations unavailable in their type category', () => {
     renderNavigation()
 
-    const region = screen.getByRole('button', { name: 'Elemental Scar' })
-    expect(region.hasAttribute('disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     expect(screen.getByRole('button', { name: /Howling Den, ELITE ZONE, LOCKED/ })).toBeTruthy()
   })
 
@@ -207,6 +209,7 @@ describe('CombatWorldNavigation', () => {
     const onSelectLocation = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
 
     expect(onSelectLocation).toHaveBeenCalledWith('howling-den')
@@ -222,6 +225,7 @@ describe('CombatWorldNavigation', () => {
     const onEnterLocation = vi.fn()
     const onHuntTarget = vi.fn(() => true)
     renderNavigation(onEnterLocation, onHuntTarget)
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
     fireEvent.click(screen.getByRole('button', { name: /Bonehide BoarHARD/ }))
     fireEvent.click(screen.getByRole('button', { name: 'HUNT TARGET' }))
@@ -236,6 +240,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['forest-heart'] = 1
     useGameStore.setState(state)
     renderNavigation()
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
 
     expect(screen.getByText('ZONE AFFIX')).toBeTruthy()
@@ -254,7 +259,7 @@ describe('CombatWorldNavigation', () => {
     const onBestiary = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={onBestiary} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Black Sigil Reach' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     fireEvent.click(screen.getByRole('button', { name: /Hall of Unbound Names, ELITE ZONE/ }))
     fireEvent.click(screen.getByRole('button', { name: /Nameless CantorHARD/ }))
     fireEvent.click(screen.getByRole('button', { name: 'BESTIARY' }))
@@ -270,7 +275,7 @@ describe('CombatWorldNavigation', () => {
     useGameStore.setState(state)
     renderNavigation()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Black Sigil Reach' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Dungeons' }))
     fireEvent.click(screen.getByRole('button', { name: /The Black Gate, DUNGEON/ }))
 
     expect(screen.getByText('DUNGEON RUN')).toBeTruthy()
@@ -289,6 +294,7 @@ describe('CombatWorldNavigation', () => {
     state.combat.dungeonId = 'howling-den'
     useGameStore.setState(state)
     renderNavigation()
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
 
     expect(screen.getByText('ELITE BOSS')).toBeTruthy()
@@ -308,6 +314,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['forest-heart'] = 1
     useGameStore.setState(state)
     renderNavigation()
+    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
     fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
     fireEvent.click(screen.getByRole('button', { name: /Bonehide BoarHARD/ }))
     fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
@@ -360,6 +367,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     useGameStore.setState(state)
     renderNavigation()
+    fireEvent.click(screen.getByRole('tab', { name: 'Dungeons' }))
     fireEvent.click(screen.getByRole('button', { name: /Abandoned Catacombs, DUNGEON/ }))
     fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
 

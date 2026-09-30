@@ -14,6 +14,7 @@ import type {
 } from "../../types";
 import { periodicDamageStatus } from "../statuses/periodicDamageStatus";
 import type { ResonanceYield } from "../resonance/resonance";
+import { isElementId, type ElementId } from "../elements/elements";
 
 export type MonsterPortraitIcon =
   | "wisp"
@@ -33,6 +34,10 @@ export interface MonsterDefinition {
   bestiaryCategory: BestiaryCategory;
   name: string;
   subtitle: string;
+  /** Primary defensive affinity. Legacy entries resolve from authored Resonance yield until content migration. */
+  primaryAffinity?: ElementId;
+  /** Explicit element used by the normal Basic Attack; legacy entries default to primaryAffinity. */
+  basicAttackElement?: ElementId;
   maxHealth: number;
   basicAttackDamage: number;
   /** Base amount of time required for one Basic Attack Pattern step. */
@@ -66,6 +71,18 @@ export interface MonsterDefinition {
   actionPatterns: Record<string, ActionPattern>;
   defaultActionPatternId: string;
 }
+
+/** Stable compatibility mapping for legacy authored monsters without an affinity field. */
+export const getMonsterPrimaryAffinity = (monster: Pick<MonsterDefinition, 'primaryAffinity' | 'resonanceYield'>): ElementId => {
+  if (monster.primaryAffinity) return monster.primaryAffinity
+  const yielded = (Object.entries(monster.resonanceYield ?? {}) as Array<[string, number]>)
+    .filter((entry): entry is [ElementId, number] => isElementId(entry[0]) && Number.isFinite(entry[1]) && entry[1] > 0)
+  yielded.sort(([leftId, left], [rightId, right]) => right - left || leftId.localeCompare(rightId))
+  return yielded[0]?.[0] ?? 'arcane'
+}
+
+export const getMonsterBasicAttackElement = (monster: Pick<MonsterDefinition, 'primaryAffinity' | 'basicAttackElement' | 'resonanceYield'>): ElementId =>
+  monster.basicAttackElement ?? getMonsterPrimaryAffinity(monster)
 
 export const basic = (id: string): ActionStep => ({ id, type: "basic" });
 export const action = (id: string, actionId: string): ActionStep => ({

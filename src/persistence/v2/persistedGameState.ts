@@ -99,7 +99,7 @@ export type PersistedCombatStateV1 = Pick<GameState['combat'],
   | 'ruleCooldowns' | 'sigilRuntime' | 'pendingBossId' | 'pendingPlayerSpellCast' | 'queuedPlayerSpellId'
   | 'activeSpellLoadout' | 'encounterTimerMs' | 'dungeonSequenceIndex' | 'spellCooldowns'
   | 'arcaneCoreRuntime' | 'playerStatuses' | 'enemyStatuses' | 'threatCleared' | 'inBossFight'
-  | 'lastDamageDealt' | 'lastDamageTaken' | 'combatRngState' | 'guardian'
+  | 'lastDamageDealt' | 'lastDamageTaken' | 'combatRngState' | 'guardian' | 'elementalDamageReductions'
 >
 
 export const PERSISTED_COMBAT_FIELDS_V1 = [
@@ -109,7 +109,7 @@ export const PERSISTED_COMBAT_FIELDS_V1 = [
   'enemyActionTimerMs', 'enemyActionDurationMs', 'triggeredRuleIds', 'ruleCooldowns', 'sigilRuntime', 'pendingBossId',
   'pendingPlayerSpellCast', 'queuedPlayerSpellId', 'activeSpellLoadout', 'encounterTimerMs', 'dungeonSequenceIndex',
   'spellCooldowns', 'arcaneCoreRuntime', 'playerStatuses', 'enemyStatuses', 'threatCleared', 'inBossFight',
-  'lastDamageDealt', 'lastDamageTaken', 'combatRngState', 'guardian',
+  'lastDamageDealt', 'lastDamageTaken', 'combatRngState', 'guardian', 'elementalDamageReductions',
 ] as const satisfies readonly (keyof PersistedCombatStateV1)[]
 
 /** Purpose-built V2 document. Runtime UI, debug state, and notifications have no fields here. */

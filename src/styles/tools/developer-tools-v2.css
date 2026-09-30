@@ -104,3 +104,4 @@
   .developer-sigil-browser-panel, .developer-sigil-inspector-scroll { max-height: min(54vh, 420px); }
   .developer-sigil-result-grid { grid-template-columns: minmax(0, 1fr); }
 }
+.developer-event-list > div > small { flex: 0 0 100%; min-width: 0; overflow-wrap: anywhere; color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); }

@@ -1,8 +1,10 @@
 import type { DungeonId, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
 import type { ResonanceRewardEventPayload } from '../resonance/resonanceRuntime'
 import type { WorldTierId } from '../../types'
+import type { ElementId } from '../../content/elements/elements'
 
-export type DamageType = 'physical' | 'arcane' | 'fire' | 'water' | 'earth' | 'air'
+/** `physical` remains only for staged legacy-content compatibility. */
+export type DamageType = ElementId | 'physical'
 
 export type TraitId =
   | 'forest-wisp-flicker'
@@ -64,11 +66,32 @@ export interface DamageComponent {
 
 export interface CombatDamageComponentEvent {
   damageType: DamageType
+  attackingElement?: import('../../content/elements/elements').ElementId | null
+  targetAffinity?: import('../../content/elements/elements').ElementId | null
+  affinityMultiplier?: number
+  damageAfterAffinity?: number
+  wardMultiplier?: number
+  mitigationMultiplier?: number
+  finalDamage?: number
+  matchup?: import('../../content/elements/elements').ElementMatchup
   raw: number
   amount: number
   healthDamage: number
   barrierAbsorbed: number
   immune: boolean
+}
+
+/** Stable, UI-safe elemental result metadata; presentation must not redo damage math. */
+export interface DamageResolution {
+  baseDamage: number
+  attackingElement: import('../../content/elements/elements').ElementId | null
+  targetAffinity: import('../../content/elements/elements').ElementId | null
+  affinityMultiplier: number
+  damageAfterAffinity: number
+  mitigationMultiplier: number
+  wardMultiplier: number
+  finalDamage: number
+  matchup: import('../../content/elements/elements').ElementMatchup
 }
 
 /** Transient resolution state. Never serialize this into GameState/save data. */

@@ -3,6 +3,7 @@ import { appendLog } from '../../engine'
 import type { GameState } from '../../types'
 import { isCombatActorAlive, type CombatActor } from './magnitude'
 import { getCombatModifiers } from './modifiers'
+import { getMonsterBasicAttackElement } from '../../content/monsters/monsterTypes'
 import { actorCannotAct } from './statusRuntime'
 import { runCombatTriggers, type CombatEventContext } from './triggerRuntime'
 import { createCombatResolutionContext, type ActionPattern, type ActionStep, type CombatActionDefinition, type CombatEffect, type CombatEventSink, type CombatResolutionContext, type CombatSource, type CombatTag, type CombatTrigger } from './combatTypes'
@@ -186,7 +187,7 @@ export const startNextEnemyAction = (state: GameState, executeEffects: ActionEff
 const resolveBasicAttack = (state: GameState, monsterId: NonNullable<GameState['combat']['enemyId']>, monster: typeof MONSTERS[NonNullable<GameState['combat']['enemyId']>], executeEffects: ActionEffectExecutor, depth: number, uiEvents?: CombatEventSink) => {
   const source: CombatSource = { actor: 'enemy', kind: 'basic-attack', sourceId: `${monsterId}-basic-attack`, sourceMonsterId: monsterId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, tags: ['basic-attack', 'direct'] }
   const before = state.player.health
-  executeEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: monster.basicAttackDamage } }], tags: ['basic-attack', 'direct'] }], source, depth, uiEvents)
+  executeEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: getMonsterBasicAttackElement(monster), magnitude: { type: 'flat', value: monster.basicAttackDamage } }], tags: ['basic-attack', 'direct'] }], source, depth, uiEvents)
   appendLog(state, `${monster.name} Basic hits for ${Math.max(0, before - state.player.health)}.`)
 }
 

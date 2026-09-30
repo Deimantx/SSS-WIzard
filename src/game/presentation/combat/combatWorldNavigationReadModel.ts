@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
 import { getEliteZoneAffix } from '../../content/elite-affixes'
 import { buildCombatBossHuntPresentation } from './combatBossHuntPresentation'
-import type { CombatNavigationUnlockCondition, CombatContinentId, CombatLocationId, CombatRegionId, CombatTargetDifficulty } from '../../content/world-navigation'
+import type { CombatNavigationUnlockCondition, CombatContinentId, CombatLocationDefinition, CombatLocationId, CombatRegionId, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
 import { isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
@@ -85,6 +85,8 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
       id: locationId,
       name: definition?.name ?? 'Unknown Location',
       type: definition?.type ?? 'special-zone',
+      primaryElement: definition?.primaryElement ?? null,
+      elementsPresent: definition?.elementsPresent ?? [],
       typeLabel: COMBAT_LOCATION_TYPE_METADATA[definition?.type ?? 'special-zone'].label,
       state,
       statusLabel: getStateLabel(state),
@@ -117,6 +119,8 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     id: locationId,
     name: definition.name,
     type: definition.type,
+    primaryElement: definition.primaryElement ?? null,
+    elementsPresent: definition.elementsPresent ?? [],
     typeLabel: COMBAT_LOCATION_TYPE_METADATA[definition.type].label,
     state,
     statusLabel: getStateLabel(state),
@@ -168,7 +172,7 @@ export function getInitialCombatLocationId({ combat, lastEnteredDungeonId, progr
   return region ? firstLocationInRegion(region.id, progress) ?? 'whispering-woods' : 'whispering-woods'
 }
 
-export function buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedContinentId, selectedRegionId, selectedLocationId }: { progress: GameState['progress']; combat: CombatState; worldTier?: WorldTierState; selectedContinentId?: CombatContinentId | null; selectedRegionId?: CombatRegionId | null; selectedLocationId?: CombatLocationId | null }): CombatWorldNavigationViewModel {
+export function buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedContinentId, selectedRegionId, selectedLocationId, selectedType }: { progress: GameState['progress']; combat: CombatState; worldTier?: WorldTierState; selectedContinentId?: CombatContinentId | null; selectedRegionId?: CombatRegionId | null; selectedLocationId?: CombatLocationId | null; selectedType?: CombatZoneType }): CombatWorldNavigationViewModel {
   const continents = sorted(Object.values(COMBAT_CONTINENTS)).map((continent) => buildContinentSummary(continent.id, progress))
   const firstContinent = continents.find((continent) => continent.state === 'available') ?? continents[0]
   const continentId = selectedContinentId && continents.some((continent) => continent.id === selectedContinentId && continent.state === 'available') ? selectedContinentId : firstContinent?.id ?? 'continent-1'
@@ -179,11 +183,18 @@ export function buildCombatWorldNavigationViewModel({ progress, combat, worldTie
   const regions = regionCandidates.map((region) => buildRegionSummary(region.id, progress))
   const selectedRegionSummary = regions.find((region) => region.id === selectedRegionDefinition?.id) ?? buildRegionSummary('first-frontier', progress)
   const regionLocationIds = selectedRegionDefinition?.locationIds ?? []
-  const selectedLocationDefinition = selectedLocationId && regionLocationIds.includes(selectedLocationId) ? COMBAT_LOCATIONS[selectedLocationId] : undefined
-  const resolvedLocationId = selectedLocationDefinition?.id ?? firstLocationInRegion(selectedRegionSummary.id, progress)
-  const selectedLocation = resolvedLocationId ? buildLocation(resolvedLocationId, progress, combat, worldTier) : null
   const locations = sorted(regionLocationIds.map((locationId) => COMBAT_LOCATIONS[locationId]).filter((location): location is NonNullable<typeof location> => Boolean(location))).map((location) => buildLocation(location.id, progress, combat, worldTier))
+  const locationOrder = (left: CombatLocationDefinition, right: CombatLocationDefinition) => (COMBAT_REGIONS[left.regionId]?.order ?? 0) - (COMBAT_REGIONS[right.regionId]?.order ?? 0) || left.order - right.order
+  const allLocations = Object.values(COMBAT_LOCATIONS).sort(locationOrder).map((location) => buildLocation(location.id, progress, combat, worldTier))
+  const selectedLocationCandidate = selectedLocationId ? allLocations.find((location) => location.id === selectedLocationId) : undefined
+  const validTypes: CombatZoneType[] = ['combat-zone', 'elite-zone', 'hunting-ground', 'dungeon']
+  const resolvedType = selectedType ?? (selectedLocationCandidate && validTypes.includes(selectedLocationCandidate.type as CombatZoneType) ? selectedLocationCandidate.type as CombatZoneType : 'combat-zone')
+  const typeLocations = allLocations.filter((location) => location.type === resolvedType)
+  const resolvedLocationId = selectedLocationCandidate?.type === resolvedType
+    ? selectedLocationCandidate.id
+    : typeLocations.find((location) => location.state !== 'locked' && location.state !== 'prototype')?.id ?? typeLocations[0]?.id
+  const selectedLocation = resolvedLocationId ? allLocations.find((location) => location.id === resolvedLocationId) ?? null : null
   const activeLocationId = getCombatLocationByDungeonId(combat.active ? combat.dungeonId : null)?.id ?? null
   const activeLocation = activeLocationId ? buildLocation(activeLocationId, progress, combat, worldTier) : null
-  return { continents, regions, selectedContinent, selectedRegion: { ...selectedRegionSummary, locations }, selectedLocation, activeLocationId, activeLocation }
+  return { continents, regions, selectedContinent, selectedRegion: { ...selectedRegionSummary, locations }, allLocations, selectedType: resolvedType, selectedLocation, activeLocationId, activeLocation }
 }

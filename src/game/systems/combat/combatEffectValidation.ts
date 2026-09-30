@@ -1,6 +1,7 @@
 import type { CombatCondition, CombatEffect, CombatModifier, CombatSource, CombatTag, CombatTriggerRule, DamageType, ModifierKey, StatusDefinition, StatusId } from './combatTypes'
+import { ELEMENT_IDS } from '../../content/elements/elements'
 
-export const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
+export const DAMAGE_TYPES: readonly DamageType[] = ['physical', ...ELEMENT_IDS]
 export const COMBAT_TAGS: readonly CombatTag[] = ['basic-attack', 'spell', 'weapon', 'equipment', 'guardian', 'summon', 'melee', 'ranged', 'magic', 'direct', 'heal', 'dot', 'hot', 'status', 'special', 'trait', 'buff', 'debuff', 'control', 'barrier', ...DAMAGE_TYPES]
 export const COMBAT_SOURCE_KINDS: readonly CombatSource['kind'][] = ['basic-attack', 'spell', 'weapon', 'status', 'trait', 'action', 'arcane-core', 'equipment', 'guardian', 'system']
 export const COMBAT_TRIGGERS: readonly CombatTriggerRule['event'][] = ['on-combat-start', 'on-spell-cast', 'on-basic-attack-hit', 'on-spell-hit', 'on-damage-dealt', 'on-damage-taken', 'on-barrier-broken', 'on-status-applied', 'on-hp-threshold', 'on-action-start', 'on-action-resolve', 'on-heal', 'on-heal-received', 'on-barrier-gained', 'on-status-removed', 'on-status-expired', 'on-kill']

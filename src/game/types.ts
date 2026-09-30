@@ -1,5 +1,6 @@
 import type { PortalShardId } from './content/darkPortal/portalShards'
 import type { ResonanceState } from './content/resonance/resonance'
+import type { ElementId as CombatElementId } from './content/elements/elements'
 export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
 import type { WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
 import type { DamageType, ModifierKey } from './systems/combat/combatTypes'
@@ -677,6 +678,7 @@ export interface CombatState {
   }
   playerStatuses: ActiveStatus[]
   enemyStatuses: ActiveStatus[]
+  elementalDamageReductions: ElementalDamageReduction[]
   threatCleared: number
   inBossFight: boolean
   log: string[]
@@ -767,6 +769,12 @@ export interface GuildCommissionState {
   objectives: GuildCommissionObjective[]
   reputationReward: number
   advancementPointReward: number
+}
+export interface ElementalDamageReduction {
+  element: CombatElementId
+  reduction: number
+  sourceId: string
+  expiresAt?: number
 }
 export interface GuildCommissionChainState { id: string; stageIndex: number; stageProgress: number }
 export interface ArcaneGuildProgress {

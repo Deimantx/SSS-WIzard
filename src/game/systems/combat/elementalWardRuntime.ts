@@ -1,0 +1,41 @@
+import { isElementId, type ElementId } from '../../content/elements/elements'
+import type { ElementalDamageReduction, GameState } from '../../types'
+
+export interface ApplyElementalWardOptions {
+  element: ElementId
+  reduction: number
+  sourceId: string
+  durationMs?: number | null
+}
+
+/** Applies or refreshes one named Ward. Reapplying a source replaces its value and duration. */
+export const applyElementalWard = (state: GameState, options: ApplyElementalWardOptions): ElementalDamageReduction | null => {
+  const { element, sourceId } = options
+  if (!isElementId(element) || !sourceId.trim() || !Number.isFinite(options.reduction) || options.reduction <= 0 || options.reduction >= 1) return null
+  const now = Number.isFinite(state.combat.arcaneCoreRuntime.elapsedMs) ? Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs) : 0
+  if (options.durationMs !== null && options.durationMs !== undefined && (!Number.isFinite(options.durationMs) || options.durationMs < 0)) return null
+  const duration = options.durationMs === null || options.durationMs === undefined ? undefined : Math.max(0, options.durationMs)
+  const ward: ElementalDamageReduction = {
+    element,
+    reduction: options.reduction,
+    sourceId,
+    ...(duration === undefined ? {} : { expiresAt: now + duration }),
+  }
+  const activeWards = (state.combat.elementalDamageReductions ?? [])
+    .filter((active) => active.expiresAt === undefined || active.expiresAt > now)
+    .filter((active) => active.element !== element || active.sourceId !== sourceId)
+  state.combat.elementalDamageReductions = [...activeWards, ward].slice(-32)
+  return ward
+}
+
+export const getElementalWardMultiplier = (state: GameState, element: ElementId | null, now = state.combat.arcaneCoreRuntime.elapsedMs): number => {
+  if (!element) return 1
+  return (state.combat.elementalDamageReductions ?? [])
+    .filter((ward) => ward.element === element && (ward.expiresAt === undefined || ward.expiresAt > now))
+    .reduce((multiplier, ward) => multiplier * (1 - ward.reduction), 1)
+}
+
+export const clearExpiredElementalWards = (state: GameState) => {
+  const now = state.combat.arcaneCoreRuntime.elapsedMs
+  state.combat.elementalDamageReductions = (state.combat.elementalDamageReductions ?? []).filter((ward) => ward.expiresAt === undefined || ward.expiresAt > now)
+}

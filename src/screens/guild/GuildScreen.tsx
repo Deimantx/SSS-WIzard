@@ -10,7 +10,9 @@ import { GuildHeader, GuildTabs } from './GuildHeader'
 import { GuildOverviewAdvancementPanel, GuildOverviewCommissionPanel, GuildOverviewProjectsPanel, GuildOverviewRegistryPanel, GuildOverviewStandingPanel } from './GuildOverviewV4Panels'
 import { GuildContractsBoard } from './GuildContractsTab'
 import { ArcaneRegistryTab } from './ArcaneRegistryTab'
-import { GuildProjectsTab, GuildCommissionChainsTab } from './GuildProjectsTab'
+import { GuildProjectsTab } from './GuildProjectsTab'
+import { GuildStudiesTab } from './GuildStudiesTab'
+import { GUILD_COMMISSION_CHAINS } from '../../game/content/guild/guildCommissionChains'
 import { GuildAdvancementTab } from './GuildAdvancementTab'
 import { GuildStandingTab } from './GuildStandingTab'
 
@@ -57,7 +59,9 @@ export function GuildScreen() {
 }
 
 function GuildCommissionWorkspace({ state, studyTab, onSelect }: { state: GameStore; studyTab: 'board' | 'studies'; onSelect: (tab: 'board' | 'studies') => void }) {
-  return <section className="guild-commission-workspace"><div className="guild-commission-subtabs" role="tablist" aria-label="Guild Commissions"><Button role="tab" ariaPressed={studyTab === 'board'} variant={studyTab === 'board' ? 'primary' : 'ghost'} onClick={() => onSelect('board')}>Board</Button><Button role="tab" ariaPressed={studyTab === 'studies'} variant={studyTab === 'studies' ? 'primary' : 'ghost'} onClick={() => onSelect('studies')}>Studies</Button></div>{studyTab === 'board' ? <GuildContractsBoard state={state} /> : <GuildCommissionChainsTab />}</section>
+  const clearCount = GUILD_COMMISSION_CHAINS.filter(({ id }) => state.progress.arcaneGuild.completedChainIds.includes(id)).length
+  const activeStudy = state.progress.arcaneGuild.activeCommissionChain
+  return <section className="guild-commission-workspace"><div className="guild-commission-subtabs" role="tablist" aria-label="Guild Commissions"><Button role="tab" ariaPressed={studyTab === 'board'} variant={studyTab === 'board' ? 'primary' : 'ghost'} onClick={() => onSelect('board')}><span>Board</span><small>{state.progress.arcaneGuild.availableCommissions.length} offers</small></Button><Button role="tab" ariaPressed={studyTab === 'studies'} variant={studyTab === 'studies' ? 'primary' : 'ghost'} className={activeStudy ? 'has-active-study' : ''} onClick={() => onSelect('studies')}><span>Studies{activeStudy ? ' · Active' : ''}</span><small>{clearCount} / {GUILD_COMMISSION_CHAINS.length} cleared</small></Button></div>{studyTab === 'board' ? <GuildContractsBoard state={state} /> : <GuildStudiesTab />}</section>
 }
 
 function GuildLockedState({ state }: { state: GameStore }) {

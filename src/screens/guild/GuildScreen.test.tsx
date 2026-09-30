@@ -51,7 +51,7 @@ describe('Guild V4 screen', () => {
     expect(screen.getByRole('heading', { name: 'Registry Catalog' })).toBeTruthy()
     expect(screen.getByText('ARCANE REGISTRY')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Advancement' }))
-    expect(screen.getByRole('heading', { name: 'Advancement Catalog' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Advancement Command Board' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Measured Inquiry' })).toBeTruthy()
     expect(useGameStore.getState().progress.guildPointsEarned).toBe(1)
   })

@@ -12,6 +12,14 @@ const validContent = (): CombatWorldNavigationContent => ({
 })
 
 describe('combat world navigation content', () => {
+  it('exposes roster-derived elements on canonical locations', () => {
+    expect(Object.values(COMBAT_LOCATIONS).every((location) => Array.isArray(location.elementsPresent))).toBe(true)
+    expect(COMBAT_LOCATIONS['ashen-watch'].elementsPresent).toContain('fire')
+    Object.values(COMBAT_LOCATIONS).forEach((location) => {
+      if (location.primaryElement) expect(location.elementsPresent).toEqual([location.primaryElement])
+    })
+  })
+
   it('defines Hunting Ground as an explicit location type', () => {
     expect(COMBAT_LOCATION_TYPE_METADATA['hunting-ground']).toEqual({ label: 'HUNTING GROUND', actionLabel: 'ENTER HUNTING GROUND' })
     expect(COMBAT_LOCATIONS['hunters-ground']).toMatchObject({ id: 'hunters-ground', name: 'Gloamridge', type: 'hunting-ground', encounterMode: 'targeted' })

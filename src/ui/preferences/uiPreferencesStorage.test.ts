@@ -15,7 +15,7 @@ describe('screen UI preferences', () => {
     expect(preferences.screenState.inventory).toEqual({ sourceOpen: false, researchValueOpen: false })
     expect(preferences.screenState.transmutation).toEqual({ selectedRecipeId: 'fire-fragment', pinnedRecipeId: null, categoryFilter: 'all', tierFilter: 'all', craftableOnly: false, activeOnly: false, collapsedCategories: { elemental: false, material: false } })
     expect(preferences.screenState.combat).toEqual({ combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' })
-    expect(preferences.screenState.guild).toEqual({ activeTab: 'overview', commissionTab: 'board' })
+    expect(preferences.screenState.guild).toEqual({ activeTab: 'overview', commissionTab: 'board', studyChapterId: 'initiate', selectedStudyId: null, advancementDepartment: 'scholarship', selectedAdvancementId: null })
     expect(preferences.screenState.huntersOrder).toEqual({ activeTab: 'contracts' })
   })
 
@@ -36,6 +36,13 @@ describe('screen UI preferences', () => {
     setUiPreferences({ screenState: { huntersOrder: { activeTab: 'bestiary' } } })
     expect(loadUiPreferences().screenState.huntersOrder.activeTab).toBe('bestiary')
     expect(normalizeUiPreferences({ screenState: { huntersOrder: { activeTab: 'invalid' } } }).screenState.huntersOrder.activeTab).toBe('contracts')
+  })
+
+  it('persists valid Guild Study and Advancement browsing choices without game save state', () => {
+    setUiPreferences({ screenState: { guild: { studyChapterId: 'adept', selectedStudyId: 'study-aeric-currents', advancementDepartment: 'transmutation', selectedAdvancementId: 'transmutation-efficient-arrays' } } })
+    expect(loadUiPreferences().screenState.guild).toMatchObject({ studyChapterId: 'adept', selectedStudyId: 'study-aeric-currents', advancementDepartment: 'transmutation', selectedAdvancementId: 'transmutation-efficient-arrays' })
+    expect(normalizeUiPreferences({ screenState: { guild: { studyChapterId: 'fake', selectedStudyId: 'fake', advancementDepartment: 'fake', selectedAdvancementId: 'fake' } } }).screenState.guild).toMatchObject({ studyChapterId: 'initiate', selectedStudyId: null, advancementDepartment: 'scholarship', selectedAdvancementId: null })
+    expect(normalizeUiPreferences({ screenState: { guild: { selectedAdvancementId: 'major-favored-contractor' } } }).screenState.guild.selectedAdvancementId).toBe('major-favored-contractor')
   })
 
   it('persists the Hunter Overview tab across preference reloads', () => {

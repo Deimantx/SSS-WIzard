@@ -1,5 +1,8 @@
 import { ITEMS } from "../../content/items/items";
 import { MONSTERS } from "../../content/monsters";
+import { getMonsterPrimaryAffinity } from "../../content/monsters/monsterTypes";
+import { getElementMatchup, getElementMultiplier, isElementId, type ElementId } from "../../content/elements/elements";
+import { getElementalWardMultiplier } from './elementalWardRuntime';
 import { STATUS_DEFINITIONS } from "../../content/statuses";
 import { appendLog } from "../../engine";
 import type { GameState, SpellId, StatusId, TraitId } from "../../types";
@@ -53,6 +56,7 @@ import {
   type CombatSource,
   type CombatTag,
   type DamageComponent,
+  type DamageResolution,
   type DamageType,
   type EffectTarget,
 } from "./combatTypes";
@@ -62,6 +66,7 @@ import { recordArcaneCoreCriticalResult } from "../arcaneCore/arcaneCoreMechanic
 import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 const MAX_EFFECT_DEPTH = 20;
+const finiteDamage = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 
 const targetActor = (
   source: CombatSource,
@@ -140,7 +145,7 @@ const eventFields = (
   };
 };
 
-export interface DamageBreakdown {
+export interface DamageBreakdown extends DamageResolution {
   raw: number;
   sourceModified: number;
   critical: boolean;
@@ -151,6 +156,7 @@ export interface DamageBreakdown {
   defense: number;
   defenseReduction: number;
   afterDefense: number;
+  afterWard: number;
   resistance: number;
   afterResistance: number;
   blocked: boolean;
@@ -180,17 +186,28 @@ const emptyDamageBreakdown = (
   blockChance: number,
   immune: boolean,
   rolls: DamageRolls = {},
+  attackingElement: ElementId | null = null,
+  targetAffinity: ElementId | null = null,
 ): DamageBreakdown => ({
   raw,
+  baseDamage: raw,
   sourceModified: 0,
   critical: direct && rolls.critical === true,
   critChance: direct ? critChance : 0,
   critMultiplier: direct ? critMultiplier : 1,
   afterCrit: 0,
+  attackingElement,
+  targetAffinity,
+  affinityMultiplier: attackingElement && targetAffinity ? getElementMultiplier(attackingElement, targetAffinity) : 1,
+  damageAfterAffinity: 0,
+  matchup: attackingElement && targetAffinity ? getElementMatchup(attackingElement, targetAffinity) : 'neutral',
   targetModified: 0,
   defense: 0,
   defenseReduction: 0,
   afterDefense: 0,
+  wardMultiplier: 1,
+  afterWard: 0,
+  mitigationMultiplier: 0,
   resistance,
   afterResistance: 0,
   blocked: direct && rolls.blocked === true,
@@ -198,6 +215,7 @@ const emptyDamageBreakdown = (
   blockReduction: direct && rolls.blocked === true ? BLOCK_DAMAGE_REDUCTION : 0,
   blockedAmount: 0,
   resolvedBeforeBarrier: 0,
+  finalDamage: 0,
   barrierAbsorbed: 0,
   healthDamage: 0,
   immune,
@@ -217,6 +235,17 @@ const calculateCombatDamageWithRolls = (
   const scaledRaw = raw * enemyDamageMultiplier
   const amount = Number.isFinite(scaledRaw) ? Math.max(0, scaledRaw) : 0;
   const direct = isDirectHit(tags);
+  const root = getRootCombatSourceProvenance(source);
+  const sourceMonsterId = source.sourceMonsterId ?? root.originMonsterId ?? root.sourceMonsterId;
+  const attackingElement = isElementId(damageType)
+    ? damageType
+    : damageType === 'physical' && source.actor === 'enemy' && sourceMonsterId && MONSTERS[sourceMonsterId]
+      ? getMonsterPrimaryAffinity(MONSTERS[sourceMonsterId])
+      : null;
+  const targetAffinity = target === 'enemy' && state.combat.enemyId
+    ? getMonsterPrimaryAffinity(MONSTERS[state.combat.enemyId])
+    : null;
+  const affinityMultiplier = attackingElement && targetAffinity ? getElementMultiplier(attackingElement, targetAffinity) : 1;
   const critChance = direct ? getCritChance(state, source.actor, source) : 0;
   const critMultiplier = direct
     ? getCritDamageMultiplier(state, source.actor, source)
@@ -236,6 +265,8 @@ const calculateCombatDamageWithRolls = (
       blockChance,
       amount > 0 && isImmuneToDamage(state, target, damageType),
       rolls,
+      attackingElement,
+      targetAffinity,
     );
   const modifierContext = { source, sourceTags: tags, damageType };
   let sourceModified =
@@ -256,7 +287,6 @@ const calculateCombatDamageWithRolls = (
         "basic-attack-damage-percent",
         modifierContext,
       );
-  const root = getRootCombatSourceProvenance(source);
   const spellOrigin = source.kind === "spell" || root.sourceKind === "spell";
   if (spellOrigin)
     sourceModified *=
@@ -294,34 +324,40 @@ const calculateCombatDamageWithRolls = (
         "damage-over-time-percent",
         modifierContext,
       );
+  sourceModified = finiteDamage(sourceModified);
   const critical = direct && rolls.critical === true;
-  const afterCrit = sourceModified * (critical ? critMultiplier : 1);
+  const afterCrit = finiteDamage(sourceModified * (critical ? critMultiplier : 1));
+  const damageAfterAffinity = finiteDamage(afterCrit * affinityMultiplier);
   const arcaneCoreUndyingProtection = target === "player"
     && (state.combat.arcaneCoreRuntime.undyingUntilMs ?? 0) > state.combat.arcaneCoreRuntime.elapsedMs
     ? 0.6
     : 1;
-  const targetModified =
-    afterCrit *
+  const targetModified = finiteDamage(
+    damageAfterAffinity *
     (1 +
       getCombatModifiers(
         state,
         target,
         "damage-taken-percent",
         modifierContext,
-      )) * arcaneCoreUndyingProtection;
+      )) * arcaneCoreUndyingProtection,
+  );
   const defenseReduction = direct ? getDefenseReduction(state, target) : 0;
   const defense = direct ? getDefense(state, target) : 0;
-  const afterDefense = targetModified * (1 - defenseReduction);
-  const afterResistance = Math.max(0, afterDefense * (1 - resistance));
+  const afterDefense = finiteDamage(targetModified * (1 - defenseReduction));
+  const wardMultiplier = target === 'player' ? getElementalWardMultiplier(state, attackingElement) : 1;
+  const afterWard = finiteDamage(afterDefense * wardMultiplier);
+  const afterResistance = finiteDamage(afterWard * (1 - resistance));
   const blocked = direct && rolls.blocked === true;
   const blockReduction = blocked ? BLOCK_DAMAGE_REDUCTION : 0;
-  const blockedAmount = blocked ? afterResistance * blockReduction : 0;
-  const resolvedBeforeBarrier = Math.max(0, afterResistance - blockedAmount);
+  const blockedAmount = blocked ? finiteDamage(afterResistance * blockReduction) : 0;
+  const resolvedBeforeBarrier = finiteDamage(afterResistance - blockedAmount);
   // Keep fractional base damage intact. Player-facing log formatting may
   // round it, but rounding every periodic tick would turn 100/6 into 17*6.
   const barrierAbsorbed = includeBarrier
-    ? Math.min(getActiveBarrier(state, target), resolvedBeforeBarrier)
+    ? finiteDamage(Math.min(getActiveBarrier(state, target), resolvedBeforeBarrier))
     : 0;
+  const mitigationMultiplier = damageAfterAffinity > 0 ? afterDefense / damageAfterAffinity : 1;
   return {
     raw: amount,
     sourceModified,
@@ -329,10 +365,19 @@ const calculateCombatDamageWithRolls = (
     critChance,
     critMultiplier,
     afterCrit,
+    baseDamage: amount,
+    attackingElement,
+    targetAffinity,
+    affinityMultiplier,
+    damageAfterAffinity,
+    matchup: attackingElement && targetAffinity ? getElementMatchup(attackingElement, targetAffinity) : 'neutral',
     targetModified,
     defense,
     defenseReduction,
     afterDefense,
+    wardMultiplier,
+    afterWard,
+    mitigationMultiplier: Number.isFinite(mitigationMultiplier) ? mitigationMultiplier : 0,
     resistance,
     afterResistance,
     blocked,
@@ -340,8 +385,9 @@ const calculateCombatDamageWithRolls = (
     blockReduction,
     blockedAmount,
     resolvedBeforeBarrier,
+    finalDamage: resolvedBeforeBarrier,
     barrierAbsorbed,
-    healthDamage: Math.max(0, resolvedBeforeBarrier - barrierAbsorbed),
+    healthDamage: finiteDamage(resolvedBeforeBarrier - barrierAbsorbed),
     immune: false,
   };
 };
@@ -415,6 +461,14 @@ const applyDamage = (
       remainingBarrier = Math.max(0, remainingBarrier - barrierAbsorbed);
       return {
         damageType: components[index]?.damageType ?? "physical",
+        attackingElement: breakdown.attackingElement,
+        targetAffinity: breakdown.targetAffinity,
+        affinityMultiplier: breakdown.affinityMultiplier,
+        damageAfterAffinity: breakdown.damageAfterAffinity,
+        wardMultiplier: breakdown.wardMultiplier,
+        mitigationMultiplier: breakdown.mitigationMultiplier,
+        finalDamage: breakdown.finalDamage,
+        matchup: breakdown.matchup,
         raw: breakdown.raw,
         amount: breakdown.resolvedBeforeBarrier,
         healthDamage: Math.max(

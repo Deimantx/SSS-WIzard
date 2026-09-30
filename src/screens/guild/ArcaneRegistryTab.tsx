@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, Search } from 'lucide-react'
+import { Archive, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { ArchiveItemTile, Button, Card, FilterBar, GameTooltip, SearchInput, SelectMenu, Status } from '../../components/ui'
 import { ItemIcon } from '../../components/ui/item'
 import { ARCANE_REGISTRY_SETS } from '../../game/content/guild/registry/registrySets'
 import { GUILD_STANDINGS, isGuildStandingAtLeast } from '../../game/content/guild/guildStandings'
-import { getArcaneRegistryCategories, getArcaneRegistryEntries, getArcaneRegistrySummary, isArcaneRegistryEntryAvailable } from '../../game/systems/guild/arcaneRegistry'
+import { getArcaneRegistryCategories, getArcaneRegistryEntries, getArcaneRegistrySummary, getEffectiveArcaneRegistryQuantity, isArcaneRegistryEntryAvailable } from '../../game/systems/guild/arcaneRegistry'
 import { useGameStore } from '../../store/gameStore'
 import { useSmartScrollState } from '../../ui/game-feel/useSmartScrollState'
 import type { ItemId } from '../../game/types'
@@ -30,6 +30,7 @@ export function ArcaneRegistryTab() {
   const [setFilter, setSetFilter] = useState('All')
   const [sourceFilter, setSourceFilter] = useState('All')
   const [selected, setSelected] = useState<ItemId | null>(null)
+  const [expandedSetId, setExpandedSetId] = useState<string | null>(null)
   const registryScrollRef = useRef<HTMLDivElement>(null)
   const inspectorScrollRef = useRef<HTMLDivElement>(null)
   const entryIsKnown = (itemId: ItemId) => state.progress.discoveredItems.includes(itemId)
@@ -67,8 +68,15 @@ export function ArcaneRegistryTab() {
   const registered = item ? registeredFor(item.id) : false
   const available = item ? isArcaneRegistryEntryAvailable(state, item.id) : false
   const owned = item ? state.inventory[item.id] ?? 0 : 0
-  const modeLabel = selectedEntry?.mode === 'own' ? 'Register from ownership · item retained' : selectedEntry?.mode === 'discover' ? 'Register from discovery · item retained' : `Consumes ${selectedEntry?.quantity ?? 1} item${selectedEntry?.quantity === 1 ? '' : 's'}`
-  const sets = ARCANE_REGISTRY_SETS.filter((set) => !item || set.entryIds.includes(item.id))
+  const equippedCount = item ? Object.values(state.equipment).filter((equippedId) => equippedId === item.id).length : 0
+  const effectiveRequired = item ? getEffectiveArcaneRegistryQuantity(state, item.id) : 0
+  const consumableOwned = item && !state.protectedItems[item.id] ? owned : 0
+  const missingQuantity = Math.max(0, effectiveRequired - consumableOwned)
+  const modeLabel = selectedEntry?.mode === 'own' ? 'Register from ownership · item retained' : selectedEntry?.mode === 'discover' ? 'Register from discovery · item retained' : `Consumes ${effectiveRequired} item${effectiveRequired === 1 ? '' : 's'}`
+  const sets = ARCANE_REGISTRY_SETS.filter((set) => Boolean(item && set.entryIds.includes(item.id)))
+  const registerLabel = !item ? 'Select an entry' : registered ? 'Registered' : !guildUnlocked ? 'Guild Locked' : selectedEntry?.mode === 'discover' && !isKnown ? 'Discover Item First' : selectedEntry?.mode === 'own' && owned + equippedCount < 1 ? 'Own Item First' : available ? 'Register Item' : `Need ${missingQuantity} More`
+  const setExpanded = (setId: string, index: number) => expandedSetId === null ? sets.length === 1 && index === 0 : expandedSetId === setId
+  useEffect(() => { setExpandedSetId(sets.length === 1 ? sets[0].id : null) }, [item?.id])
   const summary = getArcaneRegistrySummary(state)
 
   return <section className="arcane-registry-view">
@@ -77,7 +85,7 @@ export function ArcaneRegistryTab() {
       <div className="registry-summary-primary"><Archive size={17} aria-hidden="true" /><div><span>ARCANE REGISTRY</span><strong>{summary.percent}% recorded</strong></div></div>
       <div><span>REGISTERED</span><strong>{summary.registered} / {summary.total}</strong></div>
       <div><span>COMPLETED SETS</span><strong>{summary.completeSets} / {summary.totalSets}</strong></div>
-      <div><span>READY TO RECORD</span><strong>{entries.filter(({ item }) => isArcaneRegistryEntryAvailable(state, item.id)).length}</strong></div>
+      <Button variant="ghost" className={`registry-summary-ready${status === 'Ready' ? ' selected' : ''}`} ariaPressed={status === 'Ready'} onClick={() => setStatus(status === 'Ready' ? 'All' : 'Ready')}><span>READY TO RECORD</span><strong>{entries.filter(({ item }) => isArcaneRegistryEntryAvailable(state, item.id)).length}</strong></Button>
     </header>
     <div className="registry-layout">
       <Card className="registry-library">
@@ -114,14 +122,12 @@ export function ArcaneRegistryTab() {
         {item && selectedEntry ? <div ref={inspectorScrollRef} className="registry-inspector-scroll smart-scroll-region">
           <span className="registry-kicker">REGISTRY RECORD</span>
           {isKnown ? <>
-            <div className="registry-item-hero"><ItemIcon itemId={item.id} size="large" /><div><h2>{item.name}</h2><span>{selectedEntry.category}</span></div></div>
+            <div className="registry-item-hero"><ItemIcon itemId={item.id} size="large" /><div><h2>{item.name}</h2><span>{selectedEntry.category} · {item.source}</span></div><Status tone={registered ? 'success' : !guildUnlocked ? 'locked' : available ? 'active' : 'neutral'}>{registered ? 'Registered' : !guildUnlocked ? 'Guild Locked' : available ? 'Ready to Record' : 'Not Ready'}</Status></div>
+            <section className={`registry-registration-desk${available ? ' ready' : ''}`} aria-label="Registration Desk"><div className="registry-desk-heading"><span className="registry-kicker">REGISTRATION DESK</span><Status tone={registered ? 'success' : !guildUnlocked ? 'locked' : available ? 'active' : 'neutral'}>{registered ? 'Recorded' : !guildUnlocked ? 'Guild Locked' : available ? 'Ready to Record' : 'Requirements Missing'}</Status></div><strong className="registry-desk-requirement">{modeLabel}</strong>{selectedEntry.mode === 'consume' ? <div className="registry-desk-counts"><span>Owned <b>{owned.toLocaleString()}</b></span><span>Required <b>{effectiveRequired.toLocaleString()}</b></span>{missingQuantity > 0 && <span className="missing">Missing <b>{missingQuantity.toLocaleString()}</b></span>}</div> : <div className="registry-retained-note">ITEM RETAINED · Registration does not consume this item.</div>}<GameTooltip content={!guildUnlocked ? 'Defeat the Forest Heart to unlock Registry registration.' : registered ? 'This entry is permanently recorded.' : available ? `${modeLabel}. Completing a set grants Guild Reputation and Advancement Points.` : selectedEntry.mode === 'own' ? 'Acquire or equip this unique item to record it without consuming it.' : selectedEntry.mode === 'discover' ? 'Discover this item first. Registration preserves the item.' : `Acquire ${missingQuantity} more item${missingQuantity === 1 ? '' : 's'} to register it.`}><Button className="registry-register-action" variant="primary" disabled={!guildUnlocked || registered || !available} onClick={() => state.registerArcaneRegistryEntry(item.id)}>{registerLabel}</Button></GameTooltip></section>
+            <div className="registry-facts"><div><span>SOURCE</span><strong>{item.source}</strong></div><div><span>CATEGORY</span><strong>{selectedEntry.category}</strong></div><div><span>OWNED</span><strong>{(owned + equippedCount).toLocaleString()}</strong></div><div><span>MODE</span><strong>{selectedEntry.mode === 'consume' ? `Consumes ${effectiveRequired}` : selectedEntry.mode === 'own' ? 'Ownership · retained' : 'Discovery · retained'}</strong></div></div>
             <p className="registry-description">{item.description}</p>
-            <div className="registry-facts"><div><span>Registration</span><strong>{registered ? <Status tone="success">Registered</Status> : available ? <Status tone="warning">Ready · {modeLabel}</Status> : 'Not ready'}</strong></div><div><span>Owned</span><strong>{owned.toLocaleString()}</strong></div><div><span>Source</span><strong>{item.source}</strong></div></div>
-          <div className="registry-set-section"><span className="registry-kicker">RELATED SETS · {ARCANE_REGISTRY_SETS.length} CATALOGED</span>{sets.length ? sets.map((set) => { const complete = state.progress.arcaneRegistry.completedSetIds.includes(set.id); const count = set.entryIds.filter((id) => Boolean(state.progress.arcaneRegistry.registeredEntries[id])).length; const required = GUILD_STANDINGS.find((entry) => entry.id === set.minimumStandingId); const unlocked = isGuildStandingAtLeast(state.progress.guildReputation, set.minimumStandingId); return <div className={`registry-set-row ${complete ? 'complete' : ''}${!unlocked ? ' locked' : ''}`} key={set.id}><div><strong>{set.name}</strong><small>{set.description}</small><small>{!unlocked ? `LOCKED · REQUIRES ${required?.name.toUpperCase() ?? set.minimumStandingId}` : complete ? 'Complete' : 'In progress'} · Reward +{set.reputationReward} REP and +{set.advancementPointsReward} AP</small></div><b>{count} / {set.entryIds.length}</b></div> }) : <p className="registry-description">This entry is not part of a current Registry Set.</p>}</div>
-            <GameTooltip content={!guildUnlocked ? 'Defeat the Forest Heart to unlock Registry registration.' : registered ? 'This entry is permanently recorded.' : available ? `${modeLabel}. Completing a set grants Guild Reputation and Advancement Points.` : selectedEntry.mode === 'own' ? 'Acquire or equip this unique item to record it without consuming it.' : selectedEntry.mode === 'discover' ? 'Discover this item first. Registration preserves the item.' : `Acquire ${selectedEntry.quantity} item${selectedEntry.quantity === 1 ? '' : 's'} to register it.`}>
-              <Button variant="primary" disabled={!guildUnlocked || registered || !available} onClick={() => state.registerArcaneRegistryEntry(item.id)}>{registered ? 'Registered' : !guildUnlocked ? 'Guild Locked' : available ? 'Register Item' : 'Registration unavailable'}</Button>
-            </GameTooltip>
-          </> : <div className="registry-inspector-undiscovered"><span>?</span><strong>Undiscovered Registry Entry</strong><p>Acquire or discover this item to reveal its record.</p></div>}
+            <div className="registry-set-section"><span className="registry-kicker">RELATED SETS · {sets.length}</span>{sets.length ? sets.map((set, index) => { const complete = state.progress.arcaneRegistry.completedSetIds.includes(set.id); const count = set.entryIds.filter((id) => Boolean(state.progress.arcaneRegistry.registeredEntries[id])).length; const required = GUILD_STANDINGS.find((entry) => entry.id === set.minimumStandingId); const unlocked = isGuildStandingAtLeast(state.progress.guildReputation, set.minimumStandingId); const expanded = setExpanded(set.id, index); return <div className={`registry-set-row ${complete ? 'complete' : ''}${!unlocked ? ' locked' : ''}`} key={set.id}><Button variant="ghost" aria-expanded={expanded} className="registry-set-toggle" onClick={() => setExpandedSetId(expanded ? null : set.id)}><span>{expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}<strong>{set.name}</strong></span><b>{count} / {set.entryIds.length}</b></Button>{expanded && <div className="registry-set-details"><small>{!unlocked ? `LOCKED · REQUIRES ${required?.name.toUpperCase() ?? set.minimumStandingId}` : complete ? 'Complete' : 'In progress'}</small><small>+{set.reputationReward} REP · +{set.advancementPointsReward} AP</small></div>}</div> }) : <p className="registry-description">This entry is not part of a current Registry Set.</p>}</div>
+          </> : <div className="registry-inspector-undiscovered"><span>?</span><strong>Undiscovered Registry Entry</strong><p>Acquire or discover this item to reveal its record.</p><section className="registry-registration-desk" aria-label="Registration Desk"><div className="registry-desk-heading"><span className="registry-kicker">REGISTRATION DESK</span><Status tone="locked">Not Ready</Status></div><strong className="registry-desk-requirement">{modeLabel}</strong>{selectedEntry.mode !== 'consume' && <div className="registry-retained-note">ITEM RETAINED · Registration does not consume this item.</div>}<GameTooltip content={selectedEntry.mode === 'discover' ? 'Discover this item first. Registration preserves the item.' : 'Acquire or equip this unique item to record it without consuming it.'}><Button className="registry-register-action" variant="primary" disabled>{registerLabel}</Button></GameTooltip></section></div>}
         </div> : <div className="registry-empty"><strong>{visible.length ? 'Select a Registry entry' : 'No entry selected'}</strong><span>{visible.length ? 'Choose a tile to inspect its registration requirements.' : 'Change a filter to browse other records.'}</span></div>}
       </Card>
     </div>

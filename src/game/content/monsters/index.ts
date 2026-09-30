@@ -4,6 +4,8 @@ import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MO
 import { ACT1_MONSTERS } from './act1'
 import { HUNTERS_ORDER_MONSTERS } from './huntersOrder'
 import type { MonsterDefinition } from './monsterTypes'
+import { getMonsterPrimaryAffinity } from './monsterTypes'
+import { isElementId } from '../elements/elements'
 import { COMBAT_TAGS, DAMAGE_TYPES, createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
@@ -24,6 +26,13 @@ const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) 
 
 export const MONSTERS = Object.assign({}, ...MONSTER_REGISTRIES) as Record<MonsterId, MonsterDefinition>
 
+// Transitional legacy-content migration: material resonance already expresses authored creature identity.
+// Resolve it once at registry construction so every active Monster has explicit runtime affinity fields.
+Object.values(MONSTERS).forEach((monster) => {
+  monster.primaryAffinity ??= getMonsterPrimaryAffinity(monster)
+  monster.basicAttackElement ??= monster.primaryAffinity
+})
+
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
 
@@ -36,6 +45,8 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
   const errors: string[] = duplicateMonsterIds.map((id) => `${id}: duplicate monster registry entry`)
   Object.entries(monsters).forEach(([key, monster]) => {
     if (key !== monster.id) errors.push(`${monster.id}: key/id mismatch`)
+    if (!isElementId(monster.primaryAffinity)) errors.push(`${monster.id}: invalid primary affinity`)
+    if (!isElementId(monster.basicAttackElement)) errors.push(`${monster.id}: invalid basic attack element`)
     if (!Number.isFinite(monster.maxHealth) || monster.maxHealth <= 0 || !Number.isFinite(monster.basicAttackDamage) || monster.basicAttackDamage < 0 || !Number.isFinite(monster.basicAttackTimeMs) || monster.basicAttackTimeMs < MIN_ACTION_TIME_MS || monster.basicAttackTimeMs > MAX_ACTION_WORK_MS) errors.push(`${monster.id}: invalid combat numbers`)
     if (monster.defense !== undefined && (!Number.isFinite(monster.defense) || monster.defense < 0)) errors.push(`${monster.id}: invalid defense`)
     if (monster.critChance !== undefined && (!Number.isFinite(monster.critChance) || monster.critChance < 0 || monster.critChance > MAX_CRIT_CHANCE)) errors.push(`${monster.id}: invalid crit chance`)

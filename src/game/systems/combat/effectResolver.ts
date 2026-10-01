@@ -483,7 +483,7 @@ const applyDamage = (
       );
       remainingBarrier = Math.max(0, remainingBarrier - barrierAbsorbed);
       return {
-        damageType: effectiveComponents[index]?.damageType ?? "physical",
+        damageType: effectiveComponents[index]?.damageType ?? "arcane",
         attackingElement: breakdown.attackingElement,
         targetAffinity: breakdown.targetAffinity,
         affinityMultiplier: breakdown.affinityMultiplier,
@@ -1368,7 +1368,7 @@ export const damageEnemy = (
   const sourceMeta = legacyDamageSource(source, "player");
   return applyDamage(
     state,
-    [{ raw, damageType: "physical" }],
+    [{ raw, damageType: "arcane" }],
     sourceMeta,
     "enemy",
     sourceMeta.tags ?? [],
@@ -1384,7 +1384,7 @@ export const damagePlayer = (
 ) =>
   applyDamage(
     state,
-    [{ raw, damageType: "physical" }],
+    [{ raw, damageType: "arcane" }],
     source,
     "player",
     source.tags ?? [],

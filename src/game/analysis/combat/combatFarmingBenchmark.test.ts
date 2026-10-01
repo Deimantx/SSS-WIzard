@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { buildCombatFarmingBenchmarkBuildSummary, runCombatFarmingBenchmark, getCombatFarmingBenchmarkTargets, runCombatFarmingBenchmarkMatrix } from './combatFarmingBenchmark'
+import { buildCombatFarmingBenchmarkBuildSummary, runCombatFarmingBenchmark, getCombatFarmingBenchmarkTargets, runCombatFarmingBenchmarkMatrix, getCombatBenchmarkMode, getCombatBenchmarkWorldTiers, runCombatDungeonRunBenchmark, runCombatBossCycleBenchmark } from './combatFarmingBenchmark'
 import type { GameState } from '../../types'
+import { DUNGEONS } from '../../content/dungeons/dungeons'
 
 const makeFixture = () => {
   const state = createInitialState()
@@ -76,13 +77,68 @@ describe('combat farming benchmark', () => {
     expect(wrongBoss.invalidReason).toContain('Boss')
   })
 
-  it('benchmarks fixed-Dungeon targets in authored sequence order', () => {
+  it('exposes ALL WT and each individual World Tier', () => {
+    expect(getCombatBenchmarkWorldTiers('all')).toEqual([1, 2, 3, 4, 5])
+    expect(getCombatBenchmarkWorldTiers(3)).toEqual([3])
+    expect(getCombatBenchmarkWorldTiers(4)).toEqual([4])
+    expect(getCombatBenchmarkWorldTiers(5)).toEqual([5])
+  })
+
+  it('selects target farm, full sequence, and isolated boss TTK semantics by content', () => {
+    expect(getCombatBenchmarkMode('whispering-woods', 'forest-wisp')).toBe('target-farm')
+    expect(getCombatBenchmarkMode('abandoned-catacombs')).toBe('dungeon-run')
+    expect(getCombatBenchmarkMode('whispering-woods', 'forest-heart')).toBe('isolated-boss-ttk')
+    expect(getCombatFarmingBenchmarkTargets('abandoned-catacombs', true)).toEqual([])
+    expect(runCombatFarmingBenchmark({ sourceState: makeFixture(), locationId: 'abandoned-catacombs', targetEnemyId: 'restless-skeleton', worldTier: 1, durationMs: 5_000 }).invalidReason).toContain('full Dungeon Run')
+  })
+
+  it.each(['abandoned-catacombs', 'broken-meridian', 'black-gate'] as const)('simulates the full %s sequence through its boss and aggregates run rewards', (locationId) => {
     const state = makeFixture()
-    const targets = getCombatFarmingBenchmarkTargets('abandoned-catacombs', true)
-    expect(targets.slice(0, 3)).toEqual(['restless-skeleton', 'grave-wraith', 'fallen-acolyte'])
-    expect(targets[targets.length - 1]).toBe('archmage-edrin-shade')
-    const result = runCombatFarmingBenchmark({ sourceState: state, locationId: 'abandoned-catacombs', targetEnemyId: 'restless-skeleton', worldTier: 1, durationMs: 5_000 })
-    expect(result.valid, result.invalidReason).toBe(true)
+    state.schools.fire.level = 100
+    state.progress.spellRanks['fire-bolt'] = 1
+    state.debug.playerStats.spellPowerFlat = 1_000_000
+    state.debug.playerStats.maxHealthFlat = 100_000
+    state.debug.playerStats.maxManaFlat = 100_000
+    state.debug.playerStats.manaRegenFlat = 10_000
+    state.debug.playerStats.modifiers['damage-taken-percent'] = -0.95
+    state.player.maxMana = state.player.baseMaxMana = 100_000
+    state.player.mana = 100_000
+    state.player.maxHealth = state.player.baseMaxHealth = 100_000
+    state.player.health = 100_000
+    expect(getCombatBenchmarkMode(locationId)).toBe('dungeon-run')
+    const result = runCombatDungeonRunBenchmark({ sourceState: state, locationId, worldTier: 1, maxDurationMs: 60 * 1_000 })
+    expect(DUNGEONS[locationId].encounterSequence?.length).toBeGreaterThan(0)
+    expect(result).not.toBeNull()
+    expect(result?.sequence[result.sequence.length - 1]).toBeDefined()
+    expect(result?.completed).toBe(true)
+    expect(result?.kills).toBe(result?.sequence.length)
+    expect(result?.simulatedDurationMs).toBeGreaterThan(0)
+    expect((result?.resonanceTotal.fire ?? 0) + (result?.resonanceTotal.water ?? 0) + (result?.resonanceTotal.earth ?? 0) + (result?.resonanceTotal.air ?? 0)).toBeGreaterThan(0)
+    expect(result?.lifeEssence).toBeGreaterThanOrEqual(0)
+  })
+
+  it.each([
+    ['whispering-woods', 'forest-wisp'],
+    ['howling-den', 'cavefang-wolf'],
+    ['hall-of-unbound-names', 'name-eater'],
+  ] as const)('runs a targeted normal-to-boss cycle for %s', (locationId, targetEnemyId) => {
+    const state = makeFixture()
+    state.debug.playerStats.spellPowerFlat = 1_000_000
+    state.debug.playerStats.maxHealthFlat = 100_000
+    state.debug.playerStats.maxManaFlat = 100_000
+    state.debug.playerStats.manaRegenFlat = 10_000
+    state.debug.playerStats.modifiers['damage-taken-percent'] = -0.95
+    state.player.maxMana = state.player.baseMaxMana = 100_000
+    state.player.mana = 100_000
+    state.player.maxHealth = state.player.baseMaxHealth = 100_000
+    state.player.health = 100_000
+    const result = runCombatBossCycleBenchmark({ sourceState: state, locationId, targetEnemyId, worldTier: 1, cycles: 1 })
+    expect(result).not.toBeNull()
+    expect(result?.mode).toBe('boss-cycle')
+    expect(result?.cyclesRequested).toBe(1)
+    expect(result?.cyclesCompleted, JSON.stringify(result)).toBe(1)
+    expect(result?.bossTtkMs).toBeGreaterThan(0)
+    expect(result?.bossesPerHour).toBeGreaterThan(0)
   })
 
   it('uses the canonical WT2 reward multiplier per completed kill', () => {
@@ -107,6 +163,15 @@ describe('combat farming benchmark', () => {
     expect(wt2.arcanePointsPerHour).toBeGreaterThan(wt1.arcanePointsPerHour)
     expect(wt2.lifeEssencePerHour).toBeGreaterThan(wt1.lifeEssencePerHour)
     expect(wt2.artifactEssencePerHour).toBeGreaterThan(wt1.artifactEssencePerHour)
+  })
+
+  it('classifies each outgoing hit exactly once across Guardian, spell, DoT, and other sources', () => {
+    const state = makeFixture()
+    state.debug.playerStats.spellPowerFlat = 500
+    const result = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'forest-wisp', worldTier: 1, durationMs: 20_000 })
+    expect(result.damageDealt).toBeGreaterThan(0)
+    expect(result.spellDamage + result.guardianDamage + result.dotDamage + result.otherPlayerDamage).toBe(result.damageDealt)
+    expect(result.guardianDamageShare).toBeCloseTo(result.guardianDamage / result.damageDealt)
   })
 
   it('stops early when the cloned player dies', () => {

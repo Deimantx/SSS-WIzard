@@ -6,7 +6,7 @@ import { isScreenUnlocked, isStoryEventTriggered } from '../game/systems/story/s
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { isCrystalSystemUnlocked } from '../game/systems/crystals/crystalRuntime'
 import { isArtificingUnlocked } from '../game/systems/artificing/artificingSelectors'
-import { isHuntersOrderUnlocked } from '../game/systems/huntersOrder/huntersOrderRuntime'
+import { isHuntersOrderUnlocked } from '../game/systems/hunters-order/huntersOrderRuntime'
 
 export interface NavigationItem { id: ScreenId; label: string; icon: LucideIcon; hint: string; visibility?: { type: 'story-event-triggered'; eventId: StoryEventId } | { type: 'summoning-unlocked' } | { type: 'crystal-unlocked' } | { type: 'artificing-unlocked' } | { type: 'hunter-unlocked' } | { type: 'tutorial-stage'; stages: GameState['progress']['tutorialStage'][] } }
 export interface NavigationGroup { id: NavigationGroupId | 'overview'; label: string; breadcrumb: string; items: NavigationItem[] }

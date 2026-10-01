@@ -4,7 +4,7 @@ import { ITEMS, validateItemDefinitions } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { RECIPES, validateRecipeDefinitions } from '../../content/recipes/recipes'
 import { resolveMonsterLoot } from '../loot/lootResolution'
-import { getEquipmentStats } from '../../core/equipment/equipmentStats'
+import { getPlayerBuildStaticStats } from '../../core/equipment/equipmentStats'
 import { getCooldownRecoveryMultiplier } from './combatStats'
 
 describe('current Equipment content', () => {
@@ -22,7 +22,7 @@ describe('current Equipment content', () => {
 state.arcaneCore.nodes['power-r1-arcane-force'] = { rank: 1 }
 state.arcaneCore.nodes['control-r1-cooldown-control'] = { rank: 1 }
 
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 15 })
+    expect(getPlayerBuildStaticStats(state)).toMatchObject({ spellPower: 15 })
     expect(getCooldownRecoveryMultiplier(state, 'player')).toBeCloseTo(1.002)
   })
 

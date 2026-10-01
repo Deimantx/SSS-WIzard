@@ -14,7 +14,7 @@ export const getMonsterTraits = (monster: MonsterDefinition): TraitDefinition[] 
   return getTraitDefinitions(monster.traitIds)
 }
 
-export const getActorTraits = (state: { combat: Pick<GameState['combat'], 'enemyId'> & Partial<Pick<GameState['combat'], 'dungeonId'>> }, actor: CombatActor): TraitDefinition[] => {
+export const getActorTraits = (state: { combat: Pick<GameState['combat'], 'enemyId'> & Partial<Pick<GameState['combat'], 'locationId'>> }, actor: CombatActor): TraitDefinition[] => {
   const traits = getTraitDefinitions(getActorTraitIds(state, actor))
   if (actor !== 'enemy') return traits
   const affix = getActiveEliteZoneAffix(state)

@@ -25,18 +25,18 @@ import {
 } from "../../components/ui";
 import { ArcaneCorePresetPanel } from "../../components/arcane-core/ArcaneCorePresetPanel";
 import { ScreenGrid } from "../../components/layout/ScreenGrid";
-import { ARCANE_CORE_BRANCHES } from "../../game/content/arcaneCore/arcaneCoreBranches";
+import { ARCANE_CORE_BRANCHES } from "../../game/content/arcane-core/arcaneCoreBranches";
 import {
   ARCANE_CORE_TOTAL_COST_PER_CORE,
   ARCANE_CORE_TOTAL_TREE_COST,
   ARCANE_CORE_BRANCH_CURSOR_COLORS,
-} from "../../game/content/arcaneCore/arcaneCoreBalance";
+} from "../../game/content/arcane-core/arcaneCoreBalance";
 import {
   ARCANE_CORE_MAJOR_GATES,
   ARCANE_CORE_RING_GATES,
   ARCANE_CORE_RING_INDICES,
   getArcaneCoreRingName,
-} from "../../game/content/arcaneCore/arcaneCoreRings";
+} from "../../game/content/arcane-core/arcaneCoreRings";
 import {
   ARCANE_CORE_CANVAS_SIZE,
   getArcaneCoreNodeEffectTexts,
@@ -53,7 +53,7 @@ import {
   getArcaneCoreWalletInfo,
   isArcaneCoreMajorUnlocked,
   isArcaneCoreNodeReachable,
-} from "../../game/systems/arcaneCore";
+} from "../../game/systems/arcane-core";
 import type {
   ArcaneCoreBranchDefinition,
   ArcaneCoreBranchId,

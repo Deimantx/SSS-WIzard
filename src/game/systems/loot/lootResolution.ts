@@ -48,7 +48,7 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   const naturalChance = Math.min(1, (isBoss ? SIGIL_DROP_CHANCE.boss : SIGIL_DROP_CHANCE.normal) * Math.max(1, hunterBonuses.sigilDropMultiplier ?? 1))
   const naturalDrop = rng() < naturalChance
   if (pityGuarantee || naturalDrop) {
-    const sigil = generateSigil({ state, dungeonId: state.combat.dungeonId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
+    const sigil = generateSigil({ state, locationId: state.combat.locationId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss, rng })
     drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)
     const autoSalvage = state.sigils.autoSalvage[sigil.quality]
     const atSoftCap = Object.keys(state.sigils.storage).length > SIGIL_STORAGE_SOFT_CAP && (sigil.quality === 'common' || sigil.quality === 'refined')

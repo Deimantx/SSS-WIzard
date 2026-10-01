@@ -1,13 +1,13 @@
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, GameTooltip } from '../../components/ui'
 import { BookOpen, Map, ScrollText, Shield, Trophy } from 'lucide-react'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { HUNTER_GROUNDS } from '../../game/content/huntersOrder/hunterGrounds'
-import { HUNTER_STANDINGS } from '../../game/content/huntersOrder/hunterRanks'
+import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { HUNTER_GROUNDS } from '../../game/content/hunters-order/hunterGrounds'
+import { HUNTER_STANDINGS } from '../../game/content/hunters-order/hunterRanks'
 import { MONSTERS } from '../../game/content/monsters'
 import { getHunterHeaderPresentation, getHunterContractPresentation } from '../../game/presentation/huntersOrder/hunterPresentation'
-import { getHunterBlockSlotCount, getHunterContractBoardSlotCount, getHunterRerollMarkCost, getHunterSkipMarkCost } from '../../game/systems/huntersOrder/huntersOrderRuntime'
-import type { DungeonId, GameState, MonsterId } from '../../game/types'
+import { getHunterBlockSlotCount, getHunterContractBoardSlotCount, getHunterRerollMarkCost, getHunterSkipMarkCost } from '../../game/systems/hunters-order/huntersOrderRuntime'
+import type { CombatLocationId, GameState, MonsterId } from '../../game/types'
 import { openHunterContractInCombat } from '../../ui/navigation/hunterContractNavigation'
 import type { HuntersOrderScreenTab } from '../../ui/preferences/uiPreferencesTypes'
 import { openHunterBestiaryEntry } from '../../ui/navigation/hunterOrderNavigation'
@@ -60,8 +60,8 @@ export function HunterOverviewGroundsPanel({ state }: { state: GameState }) {
   const active = state.progress.huntersOrder.activeContract
   const activeView = active ? getHunterContractPresentation(state, active) : null
   const setScreen = useGameStore.getState().setScreen
-  const openGround = (groundId: DungeonId, targetId?: MonsterId | null) => {
-    setNavigationIntent({ combatDungeonId: groundId, combatMonsterId: targetId ?? null })
+  const openGround = (groundId: CombatLocationId, targetId?: MonsterId | null) => {
+    setNavigationIntent({ combatLocationId: groundId, combatMonsterId: targetId ?? null })
     setScreen('combat')
   }
   const enabledGrounds = HUNTER_GROUNDS.filter((ground) => ground.enabled)

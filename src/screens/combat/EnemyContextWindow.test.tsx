@@ -15,7 +15,7 @@ function ContextHarness() {
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   return <>
     <section ref={anchorRef}>Underlying combat UI <button ref={triggerRef} type="button" onClick={() => setMode((current) => current === 'intel' ? null : 'intel')}>Open Intel</button></section>
-    {mode && <EnemyContextWindow mode={mode} anchorRef={anchorRef} triggerRef={triggerRef} selectedDungeonId="whispering-woods" onModeChange={setMode} onClose={() => setMode(null)} />}
+    {mode && <EnemyContextWindow mode={mode} anchorRef={anchorRef} triggerRef={triggerRef} selectedCombatLocationId="whispering-woods" onModeChange={setMode} onClose={() => setMode(null)} />}
   </>
 }
 
@@ -25,7 +25,7 @@ describe('EnemyContextWindow', () => {
     const state = createCombatTestState()
     state.combat.active = true
     state.combat.enemyId = 'forest-wisp'
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     useGameStore.setState(state)
   })
 

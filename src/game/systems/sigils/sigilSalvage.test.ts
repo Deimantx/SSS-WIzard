@@ -4,7 +4,7 @@ import { generateSigil } from './sigilGeneration'
 import { bulkSalvageSigils, shouldAutoSalvageSigil } from './sigilSalvage'
 import { getSigilSalvageValue } from './sigilRuntime'
 
-const makeSigil = (state: ReturnType<typeof createInitialState>, quality: 'common' | 'refined' | 'perfect' | 'legendary', slot: 1 | 2 | 3 | 4 | 5 | 6) => generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: quality, source: 'debug', rng: () => .5 })
+const makeSigil = (state: ReturnType<typeof createInitialState>, quality: 'common' | 'refined' | 'perfect' | 'legendary', slot: 1 | 2 | 3 | 4 | 5 | 6) => generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: quality, source: 'debug', rng: () => .5 })
 
 describe('Sigil salvage', () => {
   it('bulk salvages eligible instances once and reports locked, equipped, and missing selections', () => {

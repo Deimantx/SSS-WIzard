@@ -12,14 +12,14 @@ const renderBestiary = () => render(<TooltipProvider><GameContextMenuProvider><B
 describe('Bestiary combat navigation intent', () => {
   beforeEach(() => {
     useGameStore.setState(createInitialState())
-    setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
+    setNavigationIntent({ combatLocationId: null, combatMonsterId: null })
   })
 
   it('selects the exact discovered target supplied by Combat', () => {
     const state = createInitialState()
     state.progress.discoveredMonsters = ['tempest-stag']
     useGameStore.setState(state)
-    setNavigationIntent({ combatDungeonId: 'whispering-woods', combatMonsterId: 'tempest-stag' })
+    setNavigationIntent({ combatLocationId: 'whispering-woods', combatMonsterId: 'tempest-stag' })
     renderBestiary()
 
     expect(screen.getByRole('heading', { name: 'Tempest Stag' })).toBeTruthy()
@@ -27,7 +27,7 @@ describe('Bestiary combat navigation intent', () => {
   })
 
   it('keeps an exact undiscovered target selected as an undiscovered dossier', () => {
-    setNavigationIntent({ combatDungeonId: 'whispering-woods', combatMonsterId: 'tempest-stag' })
+    setNavigationIntent({ combatLocationId: 'whispering-woods', combatMonsterId: 'tempest-stag' })
     renderBestiary()
 
     expect(screen.getByText('UNDISCOVERED CREATURE')).toBeTruthy()

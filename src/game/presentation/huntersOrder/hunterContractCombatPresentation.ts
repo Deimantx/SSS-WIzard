@@ -1,17 +1,17 @@
 import { MONSTERS } from '../../content/monsters'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
-import { doesMonsterMatchHunterContract, getEligibleHunterContractMembers, getHunterContractTargetLabel } from '../../systems/huntersOrder/huntersOrderRuntime'
-import type { DungeonId, GameState, HunterContractState, MonsterId } from '../../types'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { doesMonsterMatchHunterContract, getEligibleHunterContractMembers, getHunterContractTargetLabel } from '../../systems/hunters-order/huntersOrderRuntime'
+import type { CombatLocationId, GameState, HunterContractState, MonsterId } from '../../types'
 
 export type HunterContractMonsterRelation = 'exact-target' | 'eligible' | 'matching-but-locked' | 'not-eligible' | 'no-contract'
 
-export function getMonsterHunterContractRelation(state: Pick<GameState, 'progress'>, monsterId: MonsterId, dungeonId: DungeonId): HunterContractMonsterRelation {
+export function getMonsterHunterContractRelation(state: Pick<GameState, 'progress'>, monsterId: MonsterId, locationId: CombatLocationId): HunterContractMonsterRelation {
   const metadata = MONSTERS[monsterId]?.hunter
-  if (!metadata?.exclusive || metadata.huntingGroundId !== dungeonId) return 'not-eligible'
+  if (!metadata?.exclusive || metadata.huntingGroundId !== locationId) return 'not-eligible'
   const contract = state.progress.huntersOrder.activeContract
   if (!contract) return 'no-contract'
-  if (!doesMonsterMatchHunterContract(contract, monsterId, dungeonId)) return 'not-eligible'
-  if (!getEligibleHunterContractMembers(state, contract, dungeonId).includes(monsterId)) return 'matching-but-locked'
+  if (!doesMonsterMatchHunterContract(contract, monsterId, locationId)) return 'not-eligible'
+  if (!getEligibleHunterContractMembers(state, contract, locationId).includes(monsterId)) return 'matching-but-locked'
   return contract.targetSpec.type === 'monster' ? 'exact-target' : 'eligible'
 }
 
@@ -23,7 +23,7 @@ export function resolvePreferredHunterContractMonster(state: Pick<GameState, 'pr
   const remembered = state.progress.huntersOrder.lastSelectedQuarryByGround?.[groundId]
   if (remembered && matches.includes(remembered)) return remembered
   const currentTarget = state.combat.targetEnemyId
-  const wasAtGround = state.combat.dungeonId === groundId || state.ui.lastEnteredCombatDungeonId === groundId
+  const wasAtGround = state.combat.locationId === groundId || state.ui.lastEnteredCombatLocationId === groundId
   return wasAtGround && currentTarget && matches.includes(currentTarget) ? currentTarget : matches[0]
 }
 
@@ -36,7 +36,7 @@ export function getHunterContractCombatPresentation(state: Pick<GameState, 'prog
     contract,
     huntingGroundId: contract?.huntingGroundId ?? null,
     huntingGroundName: contract ? DUNGEONS[groundId]?.name ?? 'Hunting Ground' : null,
-    groundAuthorized: !contract || state.combat.dungeonId === groundId,
+    groundAuthorized: !contract || state.combat.locationId === groundId,
     label: contract ? getHunterContractTargetLabel(contract) : 'None',
     archetypeLabel: contract ? contract.targetSpec.type === 'monster' ? 'HUNT' : contract.targetSpec.type === 'family' ? 'CULL' : contract.targetSpec.type === 'alignment' ? 'PURSUE' : 'PATROL' : null,
     progress: contract?.progress ?? 0,
@@ -46,7 +46,7 @@ export function getHunterContractCombatPresentation(state: Pick<GameState, 'prog
     rewardMarks: contract?.marksReward ?? 0,
     matchingMonsterIds,
     preferredMonsterId: contract ? resolvePreferredHunterContractMonster(state, contract) : null,
-    relationFor: (monsterId: MonsterId, dungeonId: DungeonId) => getMonsterHunterContractRelation(state, monsterId, dungeonId),
+    relationFor: (monsterId: MonsterId, locationId: CombatLocationId) => getMonsterHunterContractRelation(state, monsterId, locationId),
   }
 }
 

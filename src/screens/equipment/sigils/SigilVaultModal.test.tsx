@@ -12,8 +12,8 @@ import { SigilVaultModal } from './SigilVaultModal'
 describe('SigilVaultModal', () => {
   it('opens an exact stored Sigil, compares and replaces without losing the old instance, and toggles protection', () => {
     const state = createInitialState()
-    const current = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', rng: () => .3 })
-    const candidate = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'echo', forcedSlot: 1, forcedQuality: 'refined', rng: () => .8 })
+    const current = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', rng: () => .3 })
+    const candidate = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'echo', forcedSlot: 1, forcedQuality: 'refined', rng: () => .8 })
     state.sigils.equipped[1] = current.instanceId
     useGameStore.setState(state)
 
@@ -33,7 +33,7 @@ describe('SigilVaultModal', () => {
 
   it('offers safe shared context actions and routes Set collection without exposing salvage', () => {
     const state = createInitialState()
-    generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', rng: () => .3 })
+    generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', rng: () => .3 })
     useGameStore.setState(state)
     render(<GameContextMenuProvider><TooltipProvider><SigilVaultModal open onClose={() => undefined} onOpenArtificing={() => undefined} onBulkSalvage={() => undefined} /></TooltipProvider></GameContextMenuProvider>)
 
@@ -52,7 +52,7 @@ describe('SigilVaultModal', () => {
 
   it('keeps card selection independent from Slot targeting', () => {
     const state = createInitialState()
-    ;([1, 2, 3] as const).forEach((slot) => generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: 'refined', rng: () => .3 }))
+    ;([1, 2, 3] as const).forEach((slot) => generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: 'refined', rng: () => .3 }))
     useGameStore.setState(state)
     render(<TooltipProvider><SigilVaultModal open onClose={() => undefined} onOpenArtificing={() => undefined} onBulkSalvage={() => undefined} /></TooltipProvider>)
 
@@ -65,7 +65,7 @@ describe('SigilVaultModal', () => {
 
   it('keeps socket targeting deterministic and leaves an empty socket unselected', () => {
     const state = createInitialState()
-    ;([1, 2, 3, 4] as const).forEach((slot) => generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: 'refined', rng: () => .3 }))
+    ;([1, 2, 3, 4] as const).forEach((slot) => generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: 'refined', rng: () => .3 }))
     useGameStore.setState(state)
     render(<TooltipProvider><SigilVaultModal open onClose={() => undefined} onOpenArtificing={() => undefined} onBulkSalvage={() => undefined} /></TooltipProvider>)
 
@@ -82,7 +82,7 @@ describe('SigilVaultModal', () => {
 
   it('restores a manual Slot filter after explicit socket targeting ends', () => {
     const state = createInitialState()
-    ;([1, 2, 3, 4] as const).forEach((slot) => generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: 'refined', rng: () => .3 }))
+    ;([1, 2, 3, 4] as const).forEach((slot) => generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: slot, forcedQuality: 'refined', rng: () => .3 }))
     useGameStore.setState(state)
     render(<TooltipProvider><SigilVaultModal open onClose={() => undefined} onOpenArtificing={() => undefined} onBulkSalvage={() => undefined} /></TooltipProvider>)
 

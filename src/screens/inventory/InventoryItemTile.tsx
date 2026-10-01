@@ -67,7 +67,7 @@ export function InventoryItemTile({ itemId, inventory, protectedItems, equipment
       onOpenTransmutation: transmutationOutput ? () => { setNavigationIntent({ transmutationRecipeId: transmutationOutput.id as never }); onNavigate('tower-transmutation') } : undefined,
       onOpenUses: recipeUses.length > 0 && onOpenUses ? () => onOpenUses(itemId) : undefined,
       onOpenCrystalCache: itemId === 'tier-1-crystal-cache' ? onOpenCrystalCache : undefined,
-      onWhereToGet: () => { if (firstDrop) setNavigationIntent({ combatDungeonId: firstDrop.dungeonId, combatMonsterId: firstDrop.monsterId }); else setNavigationIntent({ inventoryItemId: itemId }); onNavigate(firstDrop ? 'combat' : item.sourceNavigation ?? 'inventory') },
+      onWhereToGet: () => { if (firstDrop) setNavigationIntent({ combatLocationId: firstDrop.locationId, combatMonsterId: firstDrop.monsterId }); else setNavigationIntent({ inventoryItemId: itemId }); onNavigate(firstDrop ? 'combat' : item.sourceNavigation ?? 'inventory') },
       onTrack: () => onTrack(itemId),
       onToggleProtection: () => onToggleProtection(itemId),
       onOpenCollection: () => { setNavigationIntent({ inventoryItemId: itemId }); onNavigate('collection') },

@@ -1,4 +1,4 @@
-import { getPortalShardDefinitions, PORTAL_SHARD_SLOT_COUNT, type PortalShardDefinition, type PortalShardId } from '../../content/darkPortal/portalShards'
+import { getPortalShardDefinitions, PORTAL_SHARD_SLOT_COUNT, type PortalShardDefinition, type PortalShardId } from '../../content/dark-portal/portalShards'
 import type { GameState } from '../../types'
 
 export interface PortalShardViewModel extends PortalShardDefinition {

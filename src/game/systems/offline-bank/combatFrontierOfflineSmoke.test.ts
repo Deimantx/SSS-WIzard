@@ -5,19 +5,19 @@ import { createCombatTestState } from '../combat/testCombatState'
 import { advanceWithOfflineBank } from './offlineBankSimulation'
 
 const frontierCases = [
-  { dungeonId: 'stonewake-hollow', enemyId: 'heartstone-colossus', label: 'elemental tutorial' },
-  { dungeonId: 'whispering-woods', enemyId: 'forest-wisp', label: 'Whispering Woods' },
-  { dungeonId: 'howling-den', enemyId: 'cavefang-wolf', label: 'Howling Den' },
-  { dungeonId: 'hunters-ground', enemyId: 'ashen-tracker', label: 'Gloamridge contract' },
-  { dungeonId: 'abandoned-catacombs', enemyId: 'restless-skeleton', label: 'Catacombs' },
+  { locationId: 'stonewake-hollow', enemyId: 'heartstone-colossus', label: 'elemental tutorial' },
+  { locationId: 'whispering-woods', enemyId: 'forest-wisp', label: 'Whispering Woods' },
+  { locationId: 'howling-den', enemyId: 'cavefang-wolf', label: 'Howling Den' },
+  { locationId: 'hunters-ground', enemyId: 'ashen-tracker', label: 'Gloamridge contract' },
+  { locationId: 'abandoned-catacombs', enemyId: 'restless-skeleton', label: 'Catacombs' },
 ] as const
 
 describe('frontier Offline Bank smoke coverage', () => {
-  it.each(frontierCases)('advances $label combat and retains its progression context', async ({ dungeonId, enemyId, label }) => {
+  it.each(frontierCases)('advances $label combat and retains its progression context', async ({ locationId, enemyId, label }) => {
     const state = createCombatTestState()
     state.offlineBankMs = 5_000
     state.combat.active = true
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     state.combat.targetEnemyId = enemyId
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     if (label === 'Gloamridge contract') {
@@ -25,7 +25,7 @@ describe('frontier Offline Bank smoke coverage', () => {
       state.progress.huntersOrder.reputation = 0
       state.progress.huntersOrder.rankId = 'tracker'
       state.progress.huntersOrder.activeContract = {
-        id: 'offline-gloamridge-smoke', targetSpec: { type: 'region', dungeonId: 'hunters-ground' },
+        id: 'offline-gloamridge-smoke', targetSpec: { type: 'region', locationId: 'hunters-ground' },
         target: 1, progress: 0, tier: 'routine', reputationReward: 1, marksReward: 1,
       }
     }
@@ -35,7 +35,7 @@ describe('frontier Offline Bank smoke coverage', () => {
 
     expect(result.ok, result.error).toBe(true)
     expect(state.offlineBankMs).toBe(4_000)
-    expect(state.combat.dungeonId).toBe(dungeonId)
+    expect(state.combat.locationId).toBe(locationId)
     expect(state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated']).toBe(true)
     if (label === 'Gloamridge contract') expect(state.progress.huntersOrder.activeContract?.id).toBe('offline-gloamridge-smoke')
   })

@@ -1,7 +1,7 @@
 import { Map, PawPrint, Sparkles, Users } from 'lucide-react'
 import type { HunterContractState, GameState, MonsterId } from '../../game/types'
 import { MONSTERS } from '../../game/content/monsters'
-import { getEligibleHunterContractMembers } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { getEligibleHunterContractMembers } from '../../game/systems/hunters-order/huntersOrderRuntime'
 import { MonsterPortrait } from '../combat/MonsterPortrait'
 
 export function HunterContractArt({ contract, state, className = '' }: { contract: HunterContractState; state: Pick<GameState, 'progress'>; className?: string }) {

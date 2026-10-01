@@ -48,7 +48,7 @@ describe('equipment actions', () => {
   })
 
   it('previews the derived Defense damage reduction change', () => {
-    ITEMS[testDefenseId] = { id: testDefenseId, name: 'Test Defense Robe', description: 'Test armor', icon: 'â–¤', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'armor', stats: { defense: 100 } } satisfies ItemDefinition
+    ITEMS[testDefenseId] = { id: testDefenseId, name: 'Test Defense Robe', description: 'Test armor', icon: '▤', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'armor', stats: { defense: 100 } } satisfies ItemDefinition
     const state = createInitialState()
     state.inventory[testDefenseId] = 1
     const preview = getEquipmentPreview(state, testDefenseId)
@@ -60,7 +60,7 @@ describe('equipment actions', () => {
   })
 
   it('keeps the single Weapon slot and its reservation safe', () => {
-    ITEMS[testWeaponId] = { id: testWeaponId, name: 'Test Arcane Weapon', description: 'Test weapon', icon: 'â—Œ', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'weapon', stats: {} } satisfies ItemDefinition
+    ITEMS[testWeaponId] = { id: testWeaponId, name: 'Test Arcane Weapon', description: 'Test weapon', icon: '◌', color: '#fff', kind: 'equipment', category: 'equipment', inventoryCategory: 'equipment', source: 'Test', sellValue: 1, canDestroy: true, equipmentSlot: 'weapon', stats: {} } satisfies ItemDefinition
     const state = createInitialState()
     state.inventory[testWeaponId] = 1
     state.inventory['tideglass-wand'] = 1

@@ -1,7 +1,7 @@
 import { LockKeyhole, Flame, Droplets, Wind, Mountain, Sparkles } from 'lucide-react'
 import { GameTooltip, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
-import { COMBAT_LOCATION_TYPE_METADATA } from '../../../game/content/world-navigation'
+import { COMBAT_LOCATION_TYPE_METADATA } from '../../../game/content/combat-locations'
 import type { CombatLocationViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import { CombatLocationIcon } from './CombatLocationIcon'
 import type { ElementId } from '../../../game/content/elements/elements'

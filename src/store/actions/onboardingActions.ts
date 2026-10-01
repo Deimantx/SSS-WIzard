@@ -7,7 +7,7 @@ import { getDefaultSpellAutomationConfig, getNextSpellPresetId } from '../../gam
 import { getSpellsForSchool, syncSpellUnlocksForSchool } from '../../game/systems/spells/spellProgression'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
 import { getTutorialCounterAffinity } from '../../game/content/elements/elements'
-import { COMBAT_LOCATIONS } from '../../game/content/world-navigation'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations'
 import type { GameState, SchoolId, TutorialStage } from '../../game/types'
 
 /** Commits the authored fresh-profile opening in one state mutation. */
@@ -38,7 +38,7 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   state.ui.screen = 'combat'
   const counterAffinity = getTutorialCounterAffinity(schoolId)
   const counterLocation = counterAffinity ? Object.values(COMBAT_LOCATIONS).find((location) => location.regionId === 'first-frontier' && location.primaryElement === counterAffinity && location.type === 'combat-zone') : undefined
-  state.ui.lastEnteredCombatDungeonId = counterLocation?.dungeonId ?? 'whispering-woods'
+  state.ui.lastEnteredCombatLocationId = counterLocation?.id ?? 'whispering-woods'
   reconcileChronicleProgress(state)
   return true
 }

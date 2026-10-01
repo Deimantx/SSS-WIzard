@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   ARCANE_CORE_BRANCHES,
   ARCANE_CORE_NODES,
-} from "../../content/arcaneCore/arcaneCoreBranches";
+} from "../../content/arcane-core/arcaneCoreBranches";
 import {
   ARCANE_CORE_NODE_ANGLE_STEP,
   ARCANE_CORE_RING_INDICES,
   ARCANE_CORE_RING_OFFSETS,
   normalizeAngle,
-} from "../../content/arcaneCore/arcaneCoreRings";
+} from "../../content/arcane-core/arcaneCoreRings";
 import {
   ARCANE_CORE_CANVAS_SIZE,
   formatArcaneCoreModifierValue,

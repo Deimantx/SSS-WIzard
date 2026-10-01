@@ -19,7 +19,7 @@ describe('scaled enemy action output', () => {
   it('resolves direct damage from the Monster Basic Attack Damage baseline', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-heart')
     const source = enemySource(state, 'heart-pulse')
     const effect = MONSTERS['forest-heart'].actions['heart-pulse'].effects[0]
@@ -39,7 +39,7 @@ describe('scaled enemy action output', () => {
   it('resolves healing and Barrier from the current Monster Max Health', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'briar-sprite')
     const source = enemySource(state, 'bloom')
     const heal = MONSTERS['briar-sprite'].actions['bloom'].effects[0]
@@ -50,7 +50,7 @@ describe('scaled enemy action output', () => {
 
     const barrierState = createCombatTestState()
     barrierState.combat.active = true
-    barrierState.combat.dungeonId = 'whispering-woods'
+    barrierState.combat.locationId = 'whispering-woods'
     spawnEnemy(barrierState, 'grove-sentinel')
     const barrier = MONSTERS['grove-sentinel'].actions['verdant-guard'].effects[0]
     if (!('magnitude' in barrier)) throw new Error('Expected Verdant Guard magnitude')
@@ -60,7 +60,7 @@ describe('scaled enemy action output', () => {
   it('snapshots a scaled DoT so later Monster stat changes do not rewrite it', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     spawnEnemy(state, 'razorclaw-lynx')
     state.combat.enemyCurrentStepId = null
     expect(forceResolveEnemyAction(state, 'rending-claws', executeCombatEffects)).toBe(true)

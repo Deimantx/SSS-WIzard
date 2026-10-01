@@ -9,7 +9,7 @@ import { resetAllUiPreferences, setUiPreferences } from '../../ui/preferences/ui
 import { DungeonStatisticsPanel } from './DungeonStatisticsPanel'
 
 const makeSession = (): DungeonStatisticsSession => ({
-  dungeonId: 'whispering-woods', startedAtMs: 0, elapsedMs: 3_600_000, engagedMs: 3_000_000,
+  locationId: 'whispering-woods', startedAtMs: 0, elapsedMs: 3_600_000, engagedMs: 3_000_000,
   completedRuns: 2, currentRunElapsedMs: 60_000, completedRunDurationTotalMs: 600_000, bestRunMs: 280_000,
   normalEncounterCount: 4, normalEncounterDurationTotalMs: 40_000, fastestEncounterMs: 8_000,
   bossEncounterCount: 2, bossDurationTotalMs: 60_000, fastestBossMs: 28_000,

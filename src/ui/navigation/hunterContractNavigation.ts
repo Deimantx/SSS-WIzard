@@ -1,5 +1,5 @@
 import { resolvePreferredHunterContractMonster } from '../../game/presentation/huntersOrder/hunterContractCombatPresentation'
-import { getEligibleHunterContractMembers } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { getEligibleHunterContractMembers } from '../../game/systems/hunters-order/huntersOrderRuntime'
 import type { GameState } from '../../game/types'
 import type { MonsterId } from '../../game/types'
 import { setNavigationIntent } from './navigationIntent'
@@ -10,7 +10,7 @@ export function openHunterContractInCombat(state: GameState, setScreen: (screen:
   const groundId = contract.huntingGroundId ?? 'hunters-ground'
   const eligibleMembers = getEligibleHunterContractMembers(state, contract, groundId)
   const requestedTargetMatches = requestedMonsterId && eligibleMembers.includes(requestedMonsterId)
-  setNavigationIntent({ combatDungeonId: groundId, combatMonsterId: requestedTargetMatches ? requestedMonsterId : resolvePreferredHunterContractMonster(state, contract) })
+  setNavigationIntent({ combatLocationId: groundId, combatMonsterId: requestedTargetMatches ? requestedMonsterId : resolvePreferredHunterContractMonster(state, contract) })
   setScreen('combat')
   return true
 }

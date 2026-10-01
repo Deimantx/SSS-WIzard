@@ -1,7 +1,7 @@
 import { Button, GameTooltip, ModalPortal, Status } from '../../components/ui'
 import { MONSTERS } from '../../game/content/monsters'
-import { DEFAULT_HUNTER_GROUND_ID } from '../../game/content/huntersOrder/hunterGrounds'
-import { getEligibleHunterContractMembers, getHunterBlockSlotCount, getHunterBlockableTargets } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { DEFAULT_HUNTER_GROUND_ID } from '../../game/content/hunters-order/hunterGrounds'
+import { getEligibleHunterContractMembers, getHunterBlockSlotCount, getHunterBlockableTargets } from '../../game/systems/hunters-order/huntersOrderRuntime'
 import { useGameStore } from '../../store/gameStore'
 import type { GameState } from '../../game/types'
 

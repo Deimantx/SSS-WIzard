@@ -1,5 +1,5 @@
-﻿import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
-import { getHunterCompletionHarvestPreview, getHunterContractTargetReduction, getHunterBlockSlotCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, getEligibleHunterContractMembers } from '../../systems/huntersOrder/huntersOrderRuntime'
+import { HUNTER_UPGRADES } from '../../content/hunters-order/hunterUpgrades'
+import { getHunterCompletionHarvestPreview, getHunterContractTargetReduction, getHunterBlockSlotCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, getEligibleHunterContractMembers } from '../../systems/hunters-order/huntersOrderRuntime'
 import type { GameState, HunterContractState, HunterContractTarget, HunterUpgradeId } from '../../types'
 import type { DungeonStatisticsSession } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 
@@ -157,7 +157,7 @@ export function getHunterUpgradeEffectBreakdown(state: Pick<GameState, 'progress
 }
 
 export function getHunterForecastPresentation(state: Pick<GameState, 'progress'>, session: DungeonStatisticsSession | null | undefined, contract: HunterContractState | null) {
-  if (!contract || !session || session.dungeonId !== (contract.huntingGroundId ?? 'hunters-ground')) return null
+  if (!contract || !session || session.locationId !== (contract.huntingGroundId ?? 'hunters-ground')) return null
   const eligible = getEligibleHunterContractMembers(state, contract, contract.huntingGroundId ?? 'hunters-ground')
   const samples = session.hunterEncounterSamplesByMonster ?? {}
   const sample = eligible.reduce((total, monsterId) => {

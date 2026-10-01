@@ -23,7 +23,7 @@ describe('starting-school onboarding', () => {
     expect(state.spellPresets.selectedPresetId).not.toBeNull()
     expect(state.spellPresets.presets[0]?.slots.every((slot) => slot.autoCast && slot.automation)).toBe(true)
     expect(state.ui.screen).toBe('combat')
-    expect(state.ui.lastEnteredCombatDungeonId).toBe('stonewake-hollow')
+    expect(state.ui.lastEnteredCombatLocationId).toBe('stonewake-hollow')
     expect(state.spellPresets.presets[0]?.slots.map((slot) => slot.spellId)).toEqual(['fire-bolt', 'searing-touch', 'flame-burst'])
     expect(chooseStartingSchoolAction(state, 'water')).toBe(false)
   })
@@ -47,10 +47,10 @@ describe('starting-school onboarding', () => {
 
   it('routes each starting School to the zone it counters', () => {
     const routes = { fire: 'stonewake-hollow', earth: 'galecrest-heights', air: 'tideglass-caverns', water: 'emberfall-basin' } as const
-    for (const [school, dungeonId] of Object.entries(routes) as Array<[keyof typeof routes, typeof routes[keyof typeof routes]]>) {
+    for (const [school, locationId] of Object.entries(routes) as Array<[keyof typeof routes, typeof routes[keyof typeof routes]]>) {
       const state = createInitialState()
       expect(chooseStartingSchoolAction(state, school)).toBe(true)
-      expect(state.ui.lastEnteredCombatDungeonId).toBe(dungeonId)
+      expect(state.ui.lastEnteredCombatLocationId).toBe(locationId)
       expect(state.spellPresets.presets[0]?.slots).toHaveLength(3)
       expect(state.spellPresets.presets[0]?.slots.some((slot) => slot.spellId?.endsWith('-ward'))).toBe(false)
     }

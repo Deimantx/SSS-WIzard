@@ -1,4 +1,4 @@
-import { formatStatLabel, formatStatValue } from '../../content/presentation/balanceFormatters'
+import { formatStatLabel, formatStatValue } from '../content/balanceFormatters'
 import type { ArtifactResolvedEffects, ArtifactMinorNodeDefinition, ArtifactMajorMilestoneDefinition, ArtifactSpecialEffect } from '../../content/artifacts/artifacts'
 import type { CombatEffect, CombatModifier, CombatTriggerRule, DamageType } from '../../systems/combat/combatTypes'
 import { getEquipmentCombatPresentation } from '../equipment/equipmentCombatPresentation'

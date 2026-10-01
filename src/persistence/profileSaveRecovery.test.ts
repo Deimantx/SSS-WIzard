@@ -20,7 +20,7 @@ describe('V2 profile save loading', () => {
     const loaded = loadProfileGame('slot-1')
     expect(loaded).toMatchObject({ source: 'primary', recovered: false, needsCanonicalRewrite: false })
     expect(loaded.state?.currencies.gold).toBe(73)
-    expect(JSON.parse(raw!).schemaVersion).toBe(2)
+    expect(JSON.parse(raw!).schemaVersion).toBe(3)
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe(raw)
   })
 

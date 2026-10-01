@@ -6,16 +6,17 @@ import { isArtifactId, validateArtifactDefinitions } from '../artifacts/artifact
 import { createCombatValidationContext, validateCombatProvider } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { EQUIPMENT_BUILD_TAG_LABELS, EQUIPMENT_BUDGET_PROFILES, validateEquipmentBudgetProfiles } from './equipmentBalance'
-import { ACT0_ITEMS } from './act0'
-import { ACT1_ITEMS } from './act1'
-import { mergeItemRegistries, SHARED_ITEMS } from './shared'
+import { MATERIAL_ITEMS } from './materials'
+import { SPECIAL_ITEMS } from './specialItems'
+import { ARTIFACT_ITEMS } from './artifactItems'
+import { mergeItemRegistries } from './itemAuthoring'
 
 /**
  * One canonical runtime registry assembled from readable ownership files.
  * Duplicate authored IDs fail during module initialization instead of being
  * silently overwritten by object spread order.
  */
-const authoredItems = mergeItemRegistries(SHARED_ITEMS, ACT0_ITEMS, ACT1_ITEMS)
+const authoredItems = mergeItemRegistries(MATERIAL_ITEMS, SPECIAL_ITEMS, ARTIFACT_ITEMS)
 
 export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
   Object.entries(authoredItems).map(([id, item]) => {

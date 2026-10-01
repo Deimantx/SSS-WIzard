@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, FilterBar, Status, type FilterOption } from '../../components/ui'
-import { formatDuration, formatReadableId } from '../../game/content/presentation/balanceFormatters'
+import { formatDuration, formatReadableId } from '../../game/presentation/content/balanceFormatters'
 import { STATUS_DEFINITIONS, STATUS_ORDER } from '../../game/content/statuses/statuses'
 import type { ActiveStatus } from '../../game/systems/combat/combatTypes'
 import type { StatusId } from '../../game/types'

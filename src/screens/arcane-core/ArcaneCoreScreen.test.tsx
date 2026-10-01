@@ -8,7 +8,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { TooltipProvider } from "../../components/ui/tooltip/Tooltip";
-import { ARCANE_CORE_BRANCHES } from "../../game/content/arcaneCore/arcaneCoreBranches";
+import { ARCANE_CORE_BRANCHES } from "../../game/content/arcane-core/arcaneCoreBranches";
 import { getArcaneCoreEffectSummary } from "../../game/presentation/arcaneCore/arcaneCorePresentation";
 import { useArcaneCorePresetStore } from "../../store/arcaneCorePresetStore";
 import { useGameStore } from "../../store/gameStore";

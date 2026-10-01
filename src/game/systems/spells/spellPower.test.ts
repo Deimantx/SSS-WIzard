@@ -68,7 +68,7 @@ describe('Spell Power foundation', () => {
 
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     state.equipment.weapon = 'ember-staff'
     spawnEnemy(state, 'forest-wisp')
     state.combat.enemyHp = 1_000

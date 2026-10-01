@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { getEffectiveEquipmentItemStats, getEquipmentStats } from './equipmentStats'
+import { getEffectiveEquipmentItemStats, getEquippedItemStats, getPlayerBuildStaticStats } from './equipmentStats'
 
 describe('effective Equipment stats', () => {
   it('resolves Ember Staff core stats from its Artifact level', () => {
@@ -11,13 +11,13 @@ describe('effective Equipment stats', () => {
 
     state.artifactProgress['ember-staff'] = { minorRanks: {} }
     expect(getEffectiveEquipmentItemStats(state, 'ember-staff')).toEqual({ spellPower: 15 })
-    expect(getEquipmentStats(state)).toMatchObject({ spellPower: 15 })
+    expect(getEquippedItemStats(state)).toMatchObject({ spellPower: 15 })
   })
 
   it('includes Mana Core modifiers in the shared equipment stat model', () => {
     const state = createInitialState()
     state.arcaneCore.nodes['mana-r1-mana-reservoir'] = { rank: 1 }
 
-    expect(getEquipmentStats(state)).toMatchObject({ maxManaPct: 0.005 })
+    expect(getPlayerBuildStaticStats(state)).toMatchObject({ maxManaPct: 0.005 })
   })
 })

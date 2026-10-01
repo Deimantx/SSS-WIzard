@@ -28,9 +28,9 @@ import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelem
 import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
-import { advanceArcaneCoreRuntimeTime } from '../arcaneCore/arcaneCoreRuntime'
+import { advanceArcaneCoreRuntimeTime } from '../arcane-core/arcaneCoreRuntime'
 import { clearExpiredElementalWards } from '../combat/elementalWardRuntime'
-import { recordArcaneCoreCooldownCompletion } from '../arcaneCore/arcaneCoreMechanicRuntime'
+import { recordArcaneCoreCooldownCompletion } from '../arcane-core/arcaneCoreMechanicRuntime'
 import { recordChronicleEvent } from '../chronicles/chronicleRuntime'
 
 export interface AdvanceContext {
@@ -40,7 +40,7 @@ export interface AdvanceContext {
   onArtificingComplete?: (completion: ArtificingCompletion) => void
   onCombatLoot?: CombatLootObserver
   onPlayerDefeated?: (event: import('../combat/combatTypes').CombatEvent, state: GameState) => void
-  onCombatCompleted?: (state: GameState, dungeonId: import('../../types').DungeonId) => void
+  onCombatCompleted?: (state: GameState, locationId: import('../../types').CombatLocationId) => void
   uiEvents?: CombatEventSink
   telemetry?: CombatTelemetryObserver
   alerts?: CombatAlertObserver

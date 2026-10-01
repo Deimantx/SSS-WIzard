@@ -11,6 +11,6 @@ export function openHuntersOrderTab(tab: HuntersOrderScreenTab) {
 }
 
 export function openHunterBestiaryEntry(monsterId: MonsterId) {
-  setNavigationIntent({ combatDungeonId: null, combatMonsterId: monsterId })
+  setNavigationIntent({ combatLocationId: null, combatMonsterId: monsterId })
   openHuntersOrderTab('bestiary')
 }

@@ -2,8 +2,8 @@ import { Castle, Gem, PawPrint, Swords, Flame, Droplets, Wind, Mountain, Sparkle
 import { useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { Card } from '../../../components/ui'
-import { COMBAT_LOCATIONS, getCombatLocationByDungeonId, type CombatLocationId, type CombatZoneType } from '../../../game/content/world-navigation'
-import { DUNGEONS } from '../../../game/content/dungeons/dungeons'
+import { COMBAT_LOCATIONS, getCombatLocationById, type CombatLocationId, type CombatZoneType } from '../../../game/content/combat-locations'
+import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
 import { buildCombatWorldNavigationViewModel, getInitialCombatLocationId } from '../../../game/presentation/combat/combatWorldNavigationReadModel'
 import type { CombatLocationViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import type { MonsterId } from '../../../game/types'
@@ -26,10 +26,10 @@ const zoneFilters: Array<{ id: CombatZoneType; label: string; Icon: typeof Sword
 const elementIcons = { fire: Flame, water: Droplets, air: Wind, earth: Mountain, arcane: Sparkles }
 
 export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHuntTarget, onBestiary, onReturnToCombat }: { onSelectLocation: (locationId: CombatLocationId) => void; onEnterLocation: (locationId: CombatLocationId, targetEnemyId?: MonsterId) => void; onHuntTarget: (locationId: CombatLocationId, targetEnemyId: MonsterId) => boolean; onBestiary: (location: CombatLocationViewModel, monsterId?: MonsterId | null) => void; onReturnToCombat: () => void }) {
-  const { progress, combat, worldTier, lastEnteredDungeonId } = useGameStore(useShallow((state) => ({ progress: state.progress, combat: state.combat, worldTier: state.worldTier, lastEnteredDungeonId: state.ui.lastEnteredCombatDungeonId })))
+  const { progress, combat, worldTier, lastEnteredCombatLocationId } = useGameStore(useShallow((state) => ({ progress: state.progress, combat: state.combat, worldTier: state.worldTier, lastEnteredCombatLocationId: state.ui.lastEnteredCombatLocationId })))
   const navigationIntent = useNavigationIntent()
   const [selectedLocationId, setSelectedLocationId] = useState<CombatLocationId | null>(() => {
-    const initialLocationId = getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress })
+    const initialLocationId = getInitialCombatLocationId({ combat, lastEnteredCombatLocationId, progress })
     return initialLocationId
   })
   const initialType = COMBAT_LOCATIONS[selectedLocationId ?? 'whispering-woods']?.type
@@ -43,10 +43,10 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
   const preserveSelectedTargetForLocationRef = useRef<CombatLocationId | null>(null)
 
   useEffect(() => {
-    const dungeonId = navigationIntent.combatDungeonId
-    if (!dungeonId) return
-    const location = getCombatLocationByDungeonId(dungeonId)
-    const dungeon = DUNGEONS[dungeonId]
+    const locationId = navigationIntent.combatLocationId
+    if (!locationId) return
+    const location = getCombatLocationById(locationId)
+    const dungeon = DUNGEONS[locationId]
     if (location && dungeon) {
       setSelectedElement(null)
       setSelectedType(location.type as CombatZoneType)
@@ -57,8 +57,8 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
       preserveSelectedTargetForLocationRef.current = validTarget ? location.id : null
       onSelectLocation(location.id)
     }
-    setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
-  }, [navigationIntent.combatDungeonId, navigationIntent.combatMonsterId, onSelectLocation])
+    setNavigationIntent({ combatLocationId: null, combatMonsterId: null })
+  }, [navigationIntent.combatLocationId, navigationIntent.combatMonsterId, onSelectLocation])
 
   useEffect(() => {
     const targeting = viewModel.selectedLocation?.targeting
@@ -102,7 +102,7 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
   }
   const enterSelectedLocation = () => {
     const location = viewModel.selectedLocation
-    if (!location || !location.dungeonId || location.state === 'locked' || location.state === 'prototype') return
+    if (!location || !location.locationId || location.state === 'locked' || location.state === 'prototype') return
     if (location.targeting) {
       const targetEnemyId = selectedTargetEnemyId
       if (!targetEnemyId) return
@@ -121,7 +121,7 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
     <nav className="combat-element-filters" aria-label="Element filter" role="group">
       {ELEMENT_IDS.map((element) => { const Icon = elementIcons[element]; const active = selectedElement === element; return <GameTooltip key={element} content={<TooltipContent title={`${ELEMENT_DEFINITIONS[element].name} locations`} description={active ? 'Click again to clear the element filter.' : `Show locations with ${ELEMENT_DEFINITIONS[element].name} enemies.`} />}><button type="button" className={`combat-element-filter${active ? ' is-selected' : ''}`} aria-pressed={active} onClick={() => selectElement(element)}><Icon size={14} aria-hidden="true" /><span>{ELEMENT_DEFINITIONS[element].name}</span></button></GameTooltip> })}
     </nav>
-    <div className="combat-world-navigation-body"><CombatLocationBrowser locations={visibleLocations} selectedLocationId={visibleLocations.some((location) => location.id === selectedLocationId) ? selectedLocationId : null} onSelect={selectLocation} />{visibleLocations.length > 0 && viewModel.selectedLocation && visibleLocations.some((location) => location.id === viewModel.selectedLocation?.id) && <CombatLocationInspector location={viewModel.selectedLocation} activeLocationId={viewModel.activeLocationId} combatActive={combat.active} selectedTargetEnemyId={selectedTargetEnemyId} onSelectTarget={(enemyId) => { setSelectedTargetEnemyId(enemyId); const location = viewModel.selectedLocation; if (location?.type === 'hunting-ground' && location.dungeonId) useGameStore.getState().rememberHunterQuarry(enemyId, location.dungeonId) }} onLoot={() => { const location = viewModel.selectedLocation; if (!location || (location.targeting && !selectedTargetEnemyId)) return; setLootRequest({ location, targetMonsterId: location.targeting ? selectedTargetEnemyId : null }) }} onBestiary={() => viewModel.selectedLocation && onBestiary(viewModel.selectedLocation, viewModel.selectedLocation.targeting ? selectedTargetEnemyId : null)} onEnter={enterSelectedLocation} />}</div>
+    <div className="combat-world-navigation-body"><CombatLocationBrowser locations={visibleLocations} selectedLocationId={visibleLocations.some((location) => location.id === selectedLocationId) ? selectedLocationId : null} onSelect={selectLocation} />{visibleLocations.length > 0 && viewModel.selectedLocation && visibleLocations.some((location) => location.id === viewModel.selectedLocation?.id) && <CombatLocationInspector location={viewModel.selectedLocation} activeLocationId={viewModel.activeLocationId} combatActive={combat.active} selectedTargetEnemyId={selectedTargetEnemyId} onSelectTarget={(enemyId) => { setSelectedTargetEnemyId(enemyId); const location = viewModel.selectedLocation; if (location?.type === 'hunting-ground' && location.locationId) useGameStore.getState().rememberHunterQuarry(enemyId, location.locationId) }} onLoot={() => { const location = viewModel.selectedLocation; if (!location || (location.targeting && !selectedTargetEnemyId)) return; setLootRequest({ location, targetMonsterId: location.targeting ? selectedTargetEnemyId : null }) }} onBestiary={() => viewModel.selectedLocation && onBestiary(viewModel.selectedLocation, viewModel.selectedLocation.targeting ? selectedTargetEnemyId : null)} onEnter={enterSelectedLocation} />}</div>
     {lootRequest && <CombatLocationLootModal location={lootRequest.location} targetMonsterId={lootRequest.targetMonsterId} onClose={() => setLootRequest(null)} />}
   </Card>
 }

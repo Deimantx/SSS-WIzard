@@ -9,12 +9,12 @@ describe('CombatRunBar world terminology', () => {
   beforeEach(() => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     useGameStore.setState(state)
   })
 
   it('uses the active Location label without duplicating the Zone Boss inspector', () => {
-    render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatRunBar selectedCombatLocationId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
 
     expect(screen.getByText('CURRENT LOCATION')).toBeTruthy()
     expect(screen.getByText('COMBAT ZONE')).toBeTruthy()
@@ -31,7 +31,7 @@ describe('CombatRunBar world terminology', () => {
 
   it('uses an explicit idle state when no combat is active', () => {
     useGameStore.setState(createInitialState())
-    render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatRunBar selectedCombatLocationId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
     expect(screen.getByText('NO ACTIVE COMBAT')).toBeTruthy()
     expect(screen.getByText('Select a Location and target to begin.')).toBeTruthy()
     expect(screen.queryByText('AT THE TOWER')).toBeNull()
@@ -41,11 +41,11 @@ describe('CombatRunBar world terminology', () => {
   it('shows a target only for an active targeted Location', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'cinder-moth'
     state.combat.enemyId = 'cinder-moth'
     useGameStore.setState(state)
-    render(<TooltipProvider><CombatRunBar selectedDungeonId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatRunBar selectedCombatLocationId="whispering-woods" onRequestLeave={vi.fn()} /></TooltipProvider>)
     expect(screen.getByText('HUNTING')).toBeTruthy()
     expect(screen.getByText('Cinder Moth')).toBeTruthy()
     expect(screen.getByText('CURRENT TARGET')).toBeTruthy()
@@ -56,11 +56,11 @@ describe('CombatRunBar world terminology', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     state.combat.enemyId = 'bonehide-boar'
     state.combat.targetEnemyId = 'bonehide-boar'
     useGameStore.setState(state)
-    const { container } = render(<TooltipProvider><CombatRunBar selectedDungeonId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    const { container } = render(<TooltipProvider><CombatRunBar selectedCombatLocationId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
 
     expect(screen.queryByText('ELITE BOSS')).toBeNull()
     expect(screen.queryByText('Corrupted Greatbear')).toBeNull()
@@ -75,11 +75,11 @@ describe('CombatRunBar world terminology', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     state.combat.enemyId = 'bonehide-boar'
     state.combat.targetEnemyId = 'bonehide-boar'
     useGameStore.setState(state)
-    render(<TooltipProvider><CombatRunBar selectedDungeonId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatRunBar selectedCombatLocationId="howling-den" onRequestLeave={vi.fn()} /></TooltipProvider>)
 
     expect(screen.getByText('HUNTING')).toBeTruthy()
     expect(screen.getByText('Bonehide Boar')).toBeTruthy()
@@ -91,11 +91,11 @@ describe('CombatRunBar world terminology', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'abandoned-catacombs'
+    state.combat.locationId = 'abandoned-catacombs'
     state.combat.enemyId = 'restless-skeleton'
-    state.combat.dungeonSequenceIndex = 0
+    state.combat.sequenceIndex = 0
     useGameStore.setState(state)
-    render(<TooltipProvider><CombatRunBar selectedDungeonId="abandoned-catacombs" onRequestLeave={vi.fn()} /></TooltipProvider>)
+    render(<TooltipProvider><CombatRunBar selectedCombatLocationId="abandoned-catacombs" onRequestLeave={vi.fn()} /></TooltipProvider>)
 
     expect(screen.getByText('FINAL BOSS')).toBeTruthy()
     expect(screen.queryByText('THREAT')).toBeNull()

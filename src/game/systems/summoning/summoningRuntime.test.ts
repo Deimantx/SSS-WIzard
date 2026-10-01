@@ -11,7 +11,7 @@ const unlockedState = () => {
   state.progress.bossKillsByBoss[SUMMONING_UNLOCK_BOSS_ID] = 1
   state.guardians.selectedGuardianId = 'fire-guardian'
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.player.mana = 100
   return state
 }

@@ -1,6 +1,6 @@
-import { hasBossEncounter, type BossDungeonDefinition } from '../../content/dungeons/dungeons'
+import { hasBossEncounter, type BossDungeonDefinition } from '../../content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
-import type { CombatLocationType } from '../../content/world-navigation'
+import type { CombatLocationType } from '../../content/combat-locations'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isAutoHuntUnlocked, isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 import type { GameState, MonsterId, WorldTierId } from '../../types'
@@ -23,16 +23,16 @@ export interface CombatBossHuntPresentation {
 }
 
 export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, locationType, worldTier }: {
-  combat: Pick<GameState['combat'], 'active' | 'dungeonId' | 'enemyId' | 'inBossFight' | 'pendingBossId' | 'threatCleared'>
-  progress: Pick<GameState['progress'], 'autoHuntBossUnlocked' | 'bossKillsByBoss' | 'firstBossKill' | 'autoHuntBossByDungeon'>
+  combat: Pick<GameState['combat'], 'active' | 'locationId' | 'enemyId' | 'inBossFight' | 'pendingBossId' | 'threatCleared'>
+  progress: Pick<GameState['progress'], 'autoHuntBossUnlocked' | 'bossKillsByBoss' | 'firstBossKill' | 'autoHuntBossByLocation'>
   dungeon: BossDungeonDefinition
   locationType: CombatLocationType
   worldTier?: WorldTierId
 }): CombatBossHuntPresentation => {
-  const active = combat.active && combat.dungeonId === dungeon.id
+  const active = combat.active && combat.locationId === dungeon.id
   const threatCurrent = active ? Math.max(0, combat.threatCleared) : 0
   const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier ?? 1)
-  const bossState = active ? { ...combat, threatCleared: threatCurrent } : { ...combat, active: false, dungeonId: dungeon.id, enemyId: null, inBossFight: false, pendingBossId: null, threatCleared: 0 }
+  const bossState = active ? { ...combat, threatCleared: threatCurrent } : { ...combat, active: false, locationId: dungeon.id, enemyId: null, inBossFight: false, pendingBossId: null, threatCleared: 0 }
   const fighting = isBossCurrentlyActive({ combat: bossState })
   const queued = active && combat.pendingBossId === dungeon.boss && !fighting
   const ready = active && threatCurrent >= threatRequired && !fighting && !queued

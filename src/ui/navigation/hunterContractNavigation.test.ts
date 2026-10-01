@@ -4,7 +4,7 @@ import { getNavigationIntent, setNavigationIntent } from './navigationIntent'
 import { openHunterContractInCombat } from './hunterContractNavigation'
 
 describe('Hunter Contract Combat navigation', () => {
-  beforeEach(() => setNavigationIntent({ combatDungeonId: null, combatMonsterId: null }))
+  beforeEach(() => setNavigationIntent({ combatLocationId: null, combatMonsterId: null }))
 
   it('opens Gloamridge with an exact active Contract target selected without starting combat', () => {
     const state = createInitialState()
@@ -14,7 +14,7 @@ describe('Hunter Contract Combat navigation', () => {
     const setScreen = vi.fn()
 
     expect(openHunterContractInCombat(state, setScreen)).toBe(true)
-    expect(getNavigationIntent()).toMatchObject({ combatDungeonId: 'hunters-ground', combatMonsterId: 'nightglass-alpha' })
+    expect(getNavigationIntent()).toMatchObject({ combatLocationId: 'hunters-ground', combatMonsterId: 'nightglass-alpha' })
     expect(setScreen).toHaveBeenCalledWith('combat')
     expect(state.combat.enemyId).toBeNull()
   })
@@ -34,11 +34,11 @@ describe('Hunter Contract Combat navigation', () => {
 
   it('does not navigate when no Contract is active', () => {
     const state = createInitialState()
-    setNavigationIntent({ combatDungeonId: 'whispering-woods', combatMonsterId: 'forest-wisp' })
+    setNavigationIntent({ combatLocationId: 'whispering-woods', combatMonsterId: 'forest-wisp' })
     const setScreen = vi.fn()
 
     expect(openHunterContractInCombat(state, setScreen)).toBe(false)
     expect(setScreen).not.toHaveBeenCalled()
-    expect(getNavigationIntent()).toMatchObject({ combatDungeonId: 'whispering-woods', combatMonsterId: 'forest-wisp' })
+    expect(getNavigationIntent()).toMatchObject({ combatLocationId: 'whispering-woods', combatMonsterId: 'forest-wisp' })
   })
 })

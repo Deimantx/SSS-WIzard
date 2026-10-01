@@ -1,6 +1,6 @@
 import { ITEMS } from '../items/items'
 import { isArtifactId } from '../artifacts/artifacts'
-import { DUNGEONS } from '../dungeons/dungeons'
+import { DUNGEONS } from '../combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../monsters'
 import type { RecipeId, TransmutationRecipeId } from '../../types'
 import { TRANSMUTATION_RECIPES, TRANSMUTATION_RECIPE_ORDER, type TransmutationRecipeDefinition } from './transmutationRecipes'
@@ -27,7 +27,7 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
     if ('baseDurationMs' in recipe && (!Number.isFinite(recipe.baseDurationMs) || recipe.baseDurationMs <= 0)) errors.push(`${recipe.id}: invalid duration`)
     if ('manaCost' in recipe && (!Number.isFinite(recipe.manaCost ?? 0) || (recipe.manaCost ?? 0) < 0)) errors.push(`${recipe.id}: invalid Mana cost` )
     if (isArtificingRecipe(recipe)) {
-      if (recipe.sourceDungeonId && !Object.prototype.hasOwnProperty.call(DUNGEONS, recipe.sourceDungeonId)) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
+      if (recipe.sourceCombatLocationId && !Object.prototype.hasOwnProperty.call(DUNGEONS, recipe.sourceCombatLocationId)) errors.push(`${recipe.id}: unknown Artificing source dungeon`)
       if (ITEMS[recipe.output.itemId]?.kind !== 'equipment') errors.push(`${recipe.id}: Artificing output must be Equipment`)
       const artifact = isArtifactId(recipe.output.itemId) ? ARTIFACTS[recipe.output.itemId] : undefined
       if (artifact && (artifact.forge.ingredients.length !== recipe.ingredients.length || artifact.forge.ingredients.some((ingredient, index) => ingredient.itemId !== recipe.ingredients[index]?.itemId || ingredient.quantity !== recipe.ingredients[index]?.quantity))) {
@@ -38,8 +38,8 @@ export const validateRecipeDefinitions = (recipes: Record<string, CraftingRecipe
     if (ITEMS[recipe.output.itemId]?.kind === 'equipment' && recipe.output.quantity !== 1) errors.push(`${recipe.id}: Equipment recipe output quantity must be 1`)
     if (recipe.unlock.type === 'boss-kill' && !MONSTERS[recipe.unlock.bossId]) errors.push(`${recipe.id}: unlock boss must be a known monster`)
     if (recipe.unlock.type === 'monster-kill' && !MONSTERS[recipe.unlock.monsterId]) errors.push(`${recipe.id}: unlock monster must be known`)
-    if (recipe.unlock.type === 'dungeon-monster-kills' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
-    if (recipe.unlock.type === 'dungeon-unlocked' && !DUNGEONS[recipe.unlock.dungeonId]) errors.push(`${recipe.id}: unlock dungeon must be known`)
+    if (recipe.unlock.type === 'location-monster-kills' && !DUNGEONS[recipe.unlock.locationId]) errors.push(`${recipe.id}: unlock location must be known`)
+    if (recipe.unlock.type === 'location-unlocked' && !DUNGEONS[recipe.unlock.locationId]) errors.push(`${recipe.id}: unlock location must be known`)
   })
   if (new Set(order).size !== order.length) errors.push('RECIPE_ORDER contains duplicates')
   if (order.length !== Object.keys(recipes).length || order.some((id) => !recipes[id as RecipeId])) errors.push('RECIPE_ORDER must contain every recipe exactly once')

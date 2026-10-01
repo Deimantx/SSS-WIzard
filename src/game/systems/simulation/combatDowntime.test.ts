@@ -20,7 +20,7 @@ const stateInDowntime = (encounterTimerMs = 5_000) => {
   state.progress.spellRanks['fire-bolt'] = 1
   state.progress.spellRanks['mending-waters'] = 1
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.combat.encounterTimerMs = encounterTimerMs
   state.player.mana = state.player.maxMana
   state.spellPresets.presets = [{ id: 'test-loadout', name: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: true }, { spellId: 'mending-waters', autoCast: true }] }]
@@ -159,7 +159,7 @@ describe('active dungeon downtime timeline', () => {
   it('attempts a ready spell immediately when an encounter is already active', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.player.mana = state.player.maxMana
     unlock(state, 'fire-bolt')
     state.activities.autoCast['fire-bolt'] = true
@@ -179,7 +179,7 @@ describe('active dungeon downtime timeline', () => {
   it('reacts to a conditional Auto-Cast at the enemy action timestamp', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.player.maxHealth = 100
     state.player.health = 75
     state.player.mana = state.player.maxMana
@@ -205,7 +205,7 @@ describe('active dungeon downtime timeline', () => {
   it('advances time without looping or spamming mana failures for a starved Auto-Cast', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     unlock(state, 'fire-bolt')
     state.activities.autoCast['fire-bolt'] = true
     state.activities.autoCastPriority = ['fire-bolt']
@@ -228,7 +228,7 @@ describe('active dungeon downtime timeline', () => {
   it('splits telemetry and Dungeon Statistics at exact death and spawn boundaries', () => {
     const deathState = stateInDowntime(0)
     deathState.combat.active = true
-    deathState.combat.dungeonId = 'whispering-woods'
+    deathState.combat.locationId = 'whispering-woods'
     const deathEvents: CombatEvent[] = []
     const deathSink = observerSink(deathEvents)
     combatTelemetryObserver.beginRun('whispering-woods')

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { ACT0_ITEMS } from './act0'
-import { ACT1_ITEMS } from './act1'
+import { MATERIAL_ITEMS } from './materials'
+import { ARTIFACT_ITEMS } from './artifactItems'
 import { ITEMS, validateItemDefinitions } from './items'
-import { mergeItemRegistries } from './shared/itemAuthoring'
-import { SHARED_ITEMS } from './shared/universalItems'
+import { mergeItemRegistries } from './itemAuthoring'
+import { SPECIAL_ITEMS } from './specialItems'
 
 describe('items content architecture', () => {
   it('keeps only materials and permanent Artifact Equipment in the runtime registry', () => {
@@ -18,15 +18,14 @@ describe('items content architecture', () => {
   })
 
   it('rejects duplicate authored IDs during registry merge', () => {
-    expect(() => mergeItemRegistries(SHARED_ITEMS, SHARED_ITEMS)).toThrow('Duplicate authored ItemId')
+    expect(() => mergeItemRegistries(SPECIAL_ITEMS, SPECIAL_ITEMS)).toThrow('Duplicate authored ItemId')
   })
 
-  it('keeps shared, Act 0, and Act 1 ownership IDs unique', () => {
-    const authoredIds = [...Object.keys(SHARED_ITEMS), ...Object.keys(ACT0_ITEMS), ...Object.keys(ACT1_ITEMS)]
+  it('keeps material, special, and Artifact ownership IDs unique', () => {
+    const authoredIds = [...Object.keys(SPECIAL_ITEMS), ...Object.keys(MATERIAL_ITEMS), ...Object.keys(ARTIFACT_ITEMS)]
     expect(new Set(authoredIds).size).toBe(authoredIds.length)
-    expect(ACT0_ITEMS['ember-staff']).toBeDefined()
-    expect(ACT1_ITEMS['galeshard-staff']).toBeDefined()
-    expect(ACT0_ITEMS['galeshard-staff']).toBeUndefined()
+    expect(ARTIFACT_ITEMS['ember-staff']).toBeDefined()
+    expect(ARTIFACT_ITEMS['galeshard-staff']).toBeDefined()
   })
 
   it('validates all canonical item definitions', () => {

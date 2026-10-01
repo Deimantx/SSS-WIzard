@@ -1,7 +1,7 @@
 import { ShieldAlert } from 'lucide-react'
 import { ModalPortal, Button } from '../../components/ui'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
-import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
+import { getCombatEncounterMode, getCombatLocationById } from '../../game/content/combat-locations'
 import { MONSTERS, isBossMonster } from '../../game/content/monsters'
 import { formatCompactDuration, formatNumber } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
@@ -12,7 +12,7 @@ export function DefeatSummaryModal() {
   const snapshot = useCombatDefeatStore((state) => state.snapshot)
   const leaveDungeon = useGameStore((state) => state.leaveDungeon)
   if (!snapshot) return null
-  const dungeon = snapshot.dungeonId ? DUNGEONS[snapshot.dungeonId] : undefined
+  const dungeon = snapshot.locationId ? DUNGEONS[snapshot.locationId] : undefined
   const enemy = snapshot.enemyId ? MONSTERS[snapshot.enemyId] : undefined
   const returnToTower = () => { leaveDungeon(); clearCombatDefeat() }
   const newestTimestampMs = snapshot.events.reduce((latest, entry) => Math.max(latest, entry.timestampMs), snapshot.defeatedAtMs)
@@ -21,7 +21,7 @@ export function DefeatSummaryModal() {
     <div className="combat-defeat-title-block"><strong>{enemy?.name?.toUpperCase() ?? 'YOUR WIZARD'} DEFEATED</strong><p>Your Wizard fell in {dungeon?.name ?? 'the Location'}{enemy ? ` while fighting ${enemy.name}.` : '.'}</p>{enemy && isBossMonster(enemy) && <span className="combat-defeat-boss">BOSS ENCOUNTER</span>}</div>
     <div className="combat-defeat-metrics"><Metric label="ENCOUNTER" value={formatCompactDuration(snapshot.encounterDurationMs ?? 0)} /><Metric label="DAMAGE DONE" value={formatNumber(snapshot.damageDone ?? 0)} /><Metric label="DAMAGE TAKEN" value={formatNumber(snapshot.damageTaken ?? 0)} /><Metric label="HEALING" value={formatNumber(snapshot.healing ?? 0)} /></div>
     <section className="combat-defeat-events"><div className="combat-subsection-label">WHAT HAPPENED</div><div className="combat-defeat-event-list">{snapshot.events.map((entry, index) => <CombatLogRow key={`${entry.sequence}-${index}`} entry={entry} newestTimestampMs={newestTimestampMs} latest={index === snapshot.events.length - 1} />)}</div></section>
-    <footer className="combat-defeat-foot"><span>{snapshot.dungeonId && getCombatEncounterMode(getCombatLocationByDungeonId(snapshot.dungeonId)) === 'sequence' ? 'Dungeon run reset.' : dungeon && hasBossEncounter(dungeon) ? 'Threat progress reset to 0.' : 'Encounter ended.'}</span><Button variant="primary" onClick={returnToTower}>RETURN TO TOWER</Button></footer>
+    <footer className="combat-defeat-foot"><span>{snapshot.locationId && getCombatEncounterMode(getCombatLocationById(snapshot.locationId)) === 'sequence' ? 'Dungeon run reset.' : dungeon && hasBossEncounter(dungeon) ? 'Threat progress reset to 0.' : 'Encounter ended.'}</span><Button variant="primary" onClick={returnToTower}>RETURN TO TOWER</Button></footer>
   </ModalPortal>
 }
 

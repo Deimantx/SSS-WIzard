@@ -9,7 +9,7 @@ import { CombatWorldNavigation } from './CombatWorldNavigation'
 const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => true)) => render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onHuntTarget={onHuntTarget} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
 describe('CombatWorldNavigation', () => {
-  beforeEach(() => { const state = createInitialState(); state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true; useGameStore.setState(state); setNavigationIntent({ combatDungeonId: null, combatMonsterId: null }) })
+  beforeEach(() => { const state = createInitialState(); state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true; useGameStore.setState(state); setNavigationIntent({ combatLocationId: null, combatMonsterId: null }) })
 
   it('locks fresh Whispering Woods entry until an elemental tutorial boss is defeated', () => {
     const state = createInitialState()
@@ -84,7 +84,7 @@ describe('CombatWorldNavigation', () => {
     renderNavigation()
     fireEvent.click(screen.getByRole('button', { name: 'Fire' }))
     expect(screen.getByRole('button', { name: 'Fire' }).getAttribute('aria-pressed')).toBe('true')
-    setNavigationIntent({ combatDungeonId: 'hunters-ground', combatMonsterId: null })
+    setNavigationIntent({ combatLocationId: 'hunters-ground', combatMonsterId: null })
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Gloamridge' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Fire' }).getAttribute('aria-pressed')).toBe('false')
   })
@@ -127,7 +127,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.huntersOrder.reputation = 10000
     state.progress.huntersOrder.activeContract = { id: 'ashen-only', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 5, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     useGameStore.setState(state)
     renderNavigation()
 
@@ -143,7 +143,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     useGameStore.setState(state)
     renderNavigation()
 
@@ -158,11 +158,11 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.progress.huntersOrder.activeContract = { id: 'veilwing-route', targetSpec: { type: 'monster', monsterId: 'veilwing-harrier' }, target: 153, progress: 84, tier: 'routine', reputationReward: 306, marksReward: 3 }
     useGameStore.setState(state)
-    setNavigationIntent({ combatDungeonId: 'hunters-ground', combatMonsterId: 'veilwing-harrier' })
+    setNavigationIntent({ combatLocationId: 'hunters-ground', combatMonsterId: 'veilwing-harrier' })
     renderNavigation()
 
     expect(screen.getByRole('button', { name: /Veilwing Harrier/ }).getAttribute('aria-pressed')).toBe('true')
-    expect(getNavigationIntent()).toMatchObject({ combatDungeonId: null, combatMonsterId: null })
+    expect(getNavigationIntent()).toMatchObject({ combatLocationId: null, combatMonsterId: null })
     expect(useGameStore.getState().combat.enemyId).toBeNull()
   })
 
@@ -170,14 +170,14 @@ describe('CombatWorldNavigation', () => {
     ['monster', { type: 'monster', monsterId: 'ashen-tracker' }, ['Ashen Tracker']],
     ['family', { type: 'family', familyId: 'Gloamridge Predators' }, ['Ashen Tracker', 'Gloamfang Stalker']],
     ['alignment', { type: 'alignment', alignmentId: 'Wild' }, ['Ashen Tracker', 'Gloamfang Stalker']],
-    ['region', { type: 'region', dungeonId: 'hunters-ground' }, ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute']],
+    ['region', { type: 'region', locationId: 'hunters-ground' }, ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute']],
   ] as const)('enables the canonical eligible quarry list for a %s Contract', (_kind, targetSpec, eligibleNames) => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.progress.huntersOrder.activeContract = { id: 'integration-contract', targetSpec, target: 5, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     useGameStore.setState(state)
     renderNavigation()
 
@@ -193,7 +193,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     state.combat.threatCleared = Number.MAX_SAFE_INTEGER
     useGameStore.setState(state)
     renderNavigation()
@@ -213,7 +213,7 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     state.progress.huntersOrder.activeContract = { id: 'exact-hunt', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, target: 153, progress: 84, tier: 'routine', reputationReward: 306, marksReward: 3 }
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     state.combat.targetEnemyId = 'ashen-tracker'
     useGameStore.setState(state)
     renderNavigation()
@@ -230,7 +230,7 @@ describe('CombatWorldNavigation', () => {
     const state = createInitialState()
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'cinder-moth'
     state.combat.enemyId = 'cinder-moth'
     useGameStore.setState(state)
@@ -259,7 +259,7 @@ describe('CombatWorldNavigation', () => {
   it('lets the player browse another location while the active run remains unchanged', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     useGameStore.setState(state)
     const onSelectLocation = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
@@ -269,7 +269,7 @@ describe('CombatWorldNavigation', () => {
 
     expect(onSelectLocation).toHaveBeenCalledWith('howling-den')
     expect(useGameStore.getState().combat.active).toBe(true)
-    expect(useGameStore.getState().combat.dungeonId).toBe('whispering-woods')
+    expect(useGameStore.getState().combat.locationId).toBe('whispering-woods')
     expect(screen.getByRole('heading', { name: 'Howling Den' })).toBeTruthy()
   })
 
@@ -346,7 +346,7 @@ describe('CombatWorldNavigation', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     useGameStore.setState(state)
     renderNavigation()
     fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
@@ -361,7 +361,7 @@ describe('CombatWorldNavigation', () => {
     expect(autoHunt).toBeTruthy()
 
     fireEvent.click(autoHunt)
-    expect(useGameStore.getState().progress.autoHuntBossByDungeon['howling-den']).toBe(true)
+    expect(useGameStore.getState().progress.autoHuntBossByLocation['howling-den']).toBe(true)
   })
 
   it('shows Zone Affix context in Howling Den target loot', () => {
@@ -434,7 +434,7 @@ describe('CombatWorldNavigation', () => {
     const state = createInitialState()
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'
     state.combat.threatCleared = 5000
     state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }

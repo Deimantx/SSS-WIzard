@@ -37,7 +37,7 @@ describe('EquipmentScreen', () => {
 
   it('consumes a Sigil loot deep link into the exact Vault slot while retaining normal Equipment panels', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'echo', forcedSlot: 4, forcedQuality: 'legendary', rng: () => .7 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'echo', forcedSlot: 4, forcedQuality: 'legendary', rng: () => .7 })
     setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: sigil.instanceId, equipmentSigilSlot: 4 })
     useGameStore.setState(state)
 
@@ -53,7 +53,7 @@ describe('EquipmentScreen', () => {
 
   it('opens an equipped socket on the exact instance and displays its Inspector immediately', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'precision', forcedSlot: 3, forcedQuality: 'perfect', rng: () => .4 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'precision', forcedSlot: 3, forcedQuality: 'perfect', rng: () => .4 })
     state.sigils.equipped[3] = sigil.instanceId
     useGameStore.setState(state)
     render(<TooltipProvider><EquipmentScreen /></TooltipProvider>)
@@ -136,7 +136,7 @@ describe('EquipmentScreen', () => {
 
   it('includes equipped Sigil stats in the live Wizard Stats panel', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', forcedMainStatId: 'spellPower', rng: () => .5 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', forcedMainStatId: 'spellPower', rng: () => .5 })
     state.sigils.equipped[1] = sigil.instanceId
     useGameStore.setState(state)
     const expected = getEquipmentStatSnapshot(state, state.equipment).spellPower

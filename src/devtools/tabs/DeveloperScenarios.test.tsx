@@ -80,7 +80,7 @@ describe('Developer Scenario Lab', () => {
     expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec.type).toBe('monster')
 
     fireEvent.click(buttonFor('Gloamridge — Active Contract'))
-    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'region', dungeonId: 'hunters-ground' })
+    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'region', locationId: 'hunters-ground' })
   })
 
   it('sets up the authored combat and Nightglass Master Quarry encounter', () => {
@@ -91,16 +91,16 @@ describe('Developer Scenario Lab', () => {
     fireEvent.click(buttonFor('Howling Den / Greatbear Ready'))
     expect(useGameStore.getState().combat.enemyId).toBe('corrupted-greatbear')
     fireEvent.click(buttonFor('Howling Den Unlocked'))
-    expect(useGameStore.getState().combat.dungeonId).toBe('howling-den')
+    expect(useGameStore.getState().combat.locationId).toBe('howling-den')
     fireEvent.click(buttonFor('Abandoned Catacombs Fresh Run'))
-    expect(useGameStore.getState().combat.dungeonId).toBe('abandoned-catacombs')
+    expect(useGameStore.getState().combat.locationId).toBe('abandoned-catacombs')
     expect(useGameStore.getState().combat.enemyId).toBe('restless-skeleton')
     fireEvent.click(buttonFor('Edrin — Unbound Phase'))
     expect(useGameStore.getState().combat.enemyId).toBe('archmage-edrin-shade')
     expect(['unbound-opening', 'unbound']).toContain(useGameStore.getState().combat.enemyActionPatternId)
     fireEvent.click(buttonFor('Nightglass Alpha — Master Quarry'))
     expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'monster', monsterId: 'nightglass-alpha' })
-    expect(getNavigationIntent()).toMatchObject({ combatDungeonId: 'hunters-ground', combatMonsterId: 'nightglass-alpha' })
+    expect(getNavigationIntent()).toMatchObject({ combatLocationId: 'hunters-ground', combatMonsterId: 'nightglass-alpha' })
   })
 
   it('separates RAW encounter setup from the finite TEST READY player preset', () => {

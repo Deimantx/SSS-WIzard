@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Save, X } from 'lucide-react'
 import { Button, Card, GameTooltip } from '../ui'
-import { getArcaneCorePresetSummary } from '../../game/systems/arcaneCore'
+import { getArcaneCorePresetSummary } from '../../game/systems/arcane-core'
 import { useArcaneCorePresetStore } from '../../store/arcaneCorePresetStore'
 import { useGameStore } from '../../store/gameStore'
 

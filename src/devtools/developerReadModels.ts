@@ -1,9 +1,9 @@
-import { getMonsterDungeon } from '../game/content/contentRelations'
+import { getMonsterCombatLocation } from '../game/content/contentRelations'
 import { MONSTERS } from '../game/content/monsters'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { SPELLS } from '../game/content/spells/spells'
 import { STATUS_DEFINITIONS } from '../game/content/statuses/statuses'
-import { formatAutoCastCondition, formatCombatEffect, formatCombatModifier, formatCombatRule, formatDuration, formatReadableId } from '../game/content/presentation/balanceFormatters'
+import { formatAutoCastCondition, formatCombatEffect, formatCombatModifier, formatCombatRule, formatDuration, formatReadableId } from '../game/presentation/content/balanceFormatters'
 import { DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE } from '../game/core/balance/combatStats'
 import type { ActiveStatus } from '../game/systems/combat/combatTypes'
 import type { GameState, MonsterId, SpellId, StatusId } from '../game/types'
@@ -27,10 +27,10 @@ export const getDeveloperSpellView = (state: Pick<GameState, 'progress' | 'activ
 
 export const getDeveloperMonsterView = (state: Pick<GameState, 'progress'>, monsterId: MonsterId) => {
   const monster = MONSTERS[monsterId]
-  const dungeon = getMonsterDungeon(monsterId)
+  const dungeon = getMonsterCombatLocation(monsterId)
   return {
     name: monster.name,
-    dungeon: dungeon?.dungeonName ?? 'Unassigned',
+    dungeon: dungeon?.locationName ?? 'Unassigned',
     role: dungeon?.role === 'boss' ? 'Boss' : 'Normal enemy',
     maxHealth: monster.maxHealth,
     basicDamage: monster.basicAttackDamage,

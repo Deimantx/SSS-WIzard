@@ -1,4 +1,4 @@
-import type { DungeonId, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier } from '../../types'
+import type { CombatLocationId, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier } from '../../types'
 import { SIGIL_ATTUNEMENT_WEIGHT, SIGIL_CRAFT_QUALITY_WEIGHTS, SIGIL_QUALITY_WEIGHTS } from '../../content/sigils/sigilDropConfig'
 import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
 import { getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
@@ -11,7 +11,7 @@ import { recordChronicleEvent } from '../chronicles/chronicleRuntime'
 
 export interface SigilGenerationOptions {
   state: GameState
-  dungeonId: DungeonId
+  locationId: CombatLocationId
   enemyId?: string
   enemyPower: number
   isBoss?: boolean
@@ -42,9 +42,9 @@ const rollQuality = (tier: SigilTier, isBoss: boolean, rng: () => number, overri
   return weightedPick(Object.keys(weights) as SigilQuality[], Object.values(weights), rng)
 }
 
-export const generateSigil = ({ state, dungeonId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop', persistGeneratedInstance = true }: SigilGenerationOptions): SigilInstance => {
+export const generateSigil = ({ state, locationId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop', persistGeneratedInstance = true }: SigilGenerationOptions): SigilInstance => {
   const tier = forcedTier ?? resolveSigilTierFromEnemyPower(enemyPower)
-  const pool = getSigilRegionSetPool(dungeonId)
+  const pool = getSigilRegionSetPool(locationId)
   const weights = pool.map((setId) => setId === state.sigils.attunedSetId ? SIGIL_ATTUNEMENT_WEIGHT : 1)
   const setId = forcedSetId && (pool.includes(forcedSetId) || SIGIL_SET_IDS.includes(forcedSetId)) ? forcedSetId : weightedPick(pool, weights, rng)
   const slot = forcedSlot ?? (pick([1, 2, 3, 4, 5, 6] as const, rng) as SigilSlot)

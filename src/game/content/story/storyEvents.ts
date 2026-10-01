@@ -1,5 +1,5 @@
 import type { MonsterId, ScreenId, StoryEventId } from '../../types'
-import type { PortalShardId } from '../darkPortal/portalShards'
+import type { PortalShardId } from '../dark-portal/portalShards'
 
 export interface StoryEventReward {
   type: 'portal-shard'

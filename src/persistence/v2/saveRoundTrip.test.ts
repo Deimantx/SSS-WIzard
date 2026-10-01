@@ -22,9 +22,9 @@ describe('Save System V2', () => {
     ;(state as typeof state & { recentAcquisitions?: unknown[] }).recentAcquisitions = [{ itemId: 'test' }]
 
     const document = serializeGameState(state, 1234)
-    expect(document.schemaVersion).toBe(2)
+    expect(document.schemaVersion).toBe(3)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(61)
+    expect(SAVE_VERSION).toBe(62)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -36,6 +36,38 @@ describe('Save System V2', () => {
     expect(loadProfileGame('slot-1').state?.ui.screen).toBe('home')
     expect(loadProfileGame('slot-1').state?.debug.playerStats.maxHealthFlat).toBe(0)
     expect(loadProfileGame('slot-1').state?.notifications).toEqual([])
+  })
+
+  it('migrates schema-2 Combat and Hunter location fields without losing an active checkpoint', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.locationId = 'black-gate'
+    state.combat.sequenceIndex = 4
+    state.combat.enemyId = 'black-gatekeeper'
+    state.combat.enemyHp = 321
+    state.progress.autoHuntBossByLocation['black-gate'] = true
+    state.progress.huntersOrder.activeContract = {
+      id: 'legacy-region-contract', huntingGroundId: 'hunters-ground',
+      targetSpec: { type: 'region', locationId: 'hunters-ground' }, target: 125, progress: 9,
+      tier: 'routine', reputationReward: 5, marksReward: 1,
+    }
+    const schema2 = serializeGameState(state, 1235) as unknown as Record<string, any>
+    schema2.schemaVersion = 2
+    schema2.contentVersion = 61
+    schema2.combat.dungeonId = schema2.combat.locationId
+    delete schema2.combat.locationId
+    schema2.combat.dungeonSequenceIndex = schema2.combat.sequenceIndex
+    delete schema2.combat.sequenceIndex
+    schema2.progress.autoHuntBossByDungeon = schema2.progress.autoHuntBossByLocation
+    delete schema2.progress.autoHuntBossByLocation
+    schema2.progress.huntersOrder.activeContract.targetSpec.dungeonId = schema2.progress.huntersOrder.activeContract.targetSpec.locationId
+    delete schema2.progress.huntersOrder.activeContract.targetSpec.locationId
+
+    const parsed = parsePersistedGameStateV1(JSON.stringify(schema2))
+    const loaded = loadPersistedGameStateV1(parsed)
+    expect(loaded.combat).toMatchObject({ active: true, locationId: 'black-gate', sequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 321 })
+    expect(loaded.progress.autoHuntBossByLocation['black-gate']).toBe(true)
+    expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'region', locationId: 'hunters-ground' })
   })
 
   it('preserves inventory, equipment, world progress, resource values, and contract RNG exactly', () => {
@@ -71,7 +103,7 @@ describe('Save System V2', () => {
   it('preserves the explicit deterministic combat checkpoint while excluding the event log', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     state.combat.targetEnemyId = 'forest-wisp'
     state.combat.enemyWorldTier = 1
@@ -96,7 +128,7 @@ describe('Save System V2', () => {
   it('round-trips active Wards and strips stale Wards from inactive saves', () => {
     const active = createInitialState()
     active.combat.active = true
-    active.combat.dungeonId = 'emberfall-basin'
+    active.combat.locationId = 'emberfall-basin'
     active.combat.elementalDamageReductions = [{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 21_000, durationMs: 20_000 }]
     const activeDocument = serializeGameState(active, 456)
     expect(validatePersistedGameStateV1(activeDocument)).toBe(true)
@@ -115,7 +147,7 @@ describe('Save System V2', () => {
   it('reconciles old 22-second canonical Wards and Black Sigil Chronicle history without replaying rewards', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'black-gate'
+    state.combat.locationId = 'black-gate'
     state.combat.enemyId = 'black-gatekeeper'
     state.combat.targetEnemyId = 'black-gatekeeper'
     state.combat.arcaneCoreRuntime.elapsedMs = 5_000
@@ -142,13 +174,13 @@ describe('Save System V2', () => {
     ]))
     expect(migrated.worldTier.highestUnlocked).toBe(5)
     expect(migrated.progress.chronicle.grantedUnlockRewardIds.filter((id) => id === 'sf-socket-first-crystal')).toHaveLength(1)
-    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'black-gate', enemyId: 'black-gatekeeper' })
+    expect(migrated.combat).toMatchObject({ active: true, locationId: 'black-gate', enemyId: 'black-gatekeeper' })
   })
 
   it('strictly validates persisted Ward rows and sanitizes malformed runtime input', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'emberfall-basin'
+    state.combat.locationId = 'emberfall-basin'
     const valid = serializeGameState(state, 458)
     const badEntries: unknown[] = [
       { element: 'lightning', reduction: 0.2, sourceId: 'ward' },
@@ -242,7 +274,7 @@ describe('Save System V2', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['crossroads-keeper'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'graveglass-hollow'
+    state.combat.locationId = 'graveglass-hollow'
     state.combat.enemyId = 'graveglass-shade'
     state.combat.targetEnemyId = 'graveglass-shade'
     state.combat.enemyWorldTier = 3
@@ -253,7 +285,7 @@ describe('Save System V2', () => {
     const document = serializeGameState(state, 602)
     document.contentVersion = 58
     const migrated = loadProfileGameFromRaw(JSON.stringify(document))
-    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'graveglass-hollow', enemyId: 'graveglass-shade', targetEnemyId: 'graveglass-shade', enemyWorldTier: 3, enemyHp: 4321, enemyActionPatternId: 'default', enemyCurrentActionId: null })
+    expect(migrated.combat).toMatchObject({ active: true, locationId: 'graveglass-hollow', enemyId: 'graveglass-shade', targetEnemyId: 'graveglass-shade', enemyWorldTier: 3, enemyHp: 4321, enemyActionPatternId: 'default', enemyCurrentActionId: null })
   })
 
   it('treats historical Broken Meridian entry as valid without granting a Splitter kill', () => {
@@ -263,7 +295,7 @@ describe('Save System V2', () => {
     state.progress.bossKillsByBoss['storm-archivist'] = 1
     state.progress.bossKillsByBoss['fallen-astromancer'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'broken-meridian'
+    state.combat.locationId = 'broken-meridian'
     state.combat.enemyId = 'meridian-warden'
     state.combat.targetEnemyId = 'meridian-warden'
     const document = serializeGameState(state, 605)
@@ -273,7 +305,7 @@ describe('Save System V2', () => {
     expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m4-reach-meridian')
     expect(migrated.progress.chronicle.completedObjectiveIds).not.toContain('sf-m5-meridian-splitter')
     expect(migrated.progress.bossKillsByBoss['meridian-splitter'] ?? 0).toBe(0)
-    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'broken-meridian', enemyId: 'meridian-warden', targetEnemyId: 'meridian-warden' })
+    expect(migrated.combat).toMatchObject({ active: true, locationId: 'broken-meridian', enemyId: 'meridian-warden', targetEnemyId: 'meridian-warden' })
   })
 
   it('reconciles an inactive historical Broken Meridian checkpoint without inventing a kill', () => {
@@ -283,8 +315,8 @@ describe('Save System V2', () => {
     state.progress.bossKillsByBoss['storm-archivist'] = 1
     state.progress.bossKillsByBoss['fallen-astromancer'] = 1
     state.combat.active = false
-    state.combat.dungeonId = 'broken-meridian'
-    state.ui.lastEnteredCombatDungeonId = 'broken-meridian'
+    state.combat.locationId = 'broken-meridian'
+    state.ui.lastEnteredCombatLocationId = 'broken-meridian'
     const document = serializeGameState(state, 606)
     document.contentVersion = 60
     const migrated = loadProfileGameFromRaw(JSON.stringify(document))
@@ -297,7 +329,7 @@ describe('Save System V2', () => {
   it('normalizes active Wards on v60 load and remains stable through a v61 save round trip', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.arcaneCoreRuntime.elapsedMs = 5_000
     state.combat.elementalDamageReductions = [
       { element: 'fire', sourceId: 'fire-ward', reduction: 0.15, expiresAt: 15_000, durationMs: 20_000 },
@@ -316,8 +348,8 @@ describe('Save System V2', () => {
       { element: 'air', sourceId: 'permanent-a', reduction: 0.15 },
     ])
     const savedAgain = serializeGameState(migrated, 608)
-    expect(savedAgain.schemaVersion).toBe(2)
-    expect(savedAgain.contentVersion).toBe(61)
+    expect(savedAgain.schemaVersion).toBe(3)
+    expect(savedAgain.contentVersion).toBe(62)
     expect(loadProfileGameFromRaw(JSON.stringify(savedAgain)).combat.elementalDamageReductions).toEqual(migrated.combat.elementalDamageReductions)
     savedAgain.combat.arcaneCoreRuntime.elapsedMs = 30_000
     const loadedWithStaleRuntimeWard = loadProfileGameFromRaw(JSON.stringify(savedAgain))
@@ -340,7 +372,7 @@ describe('Save System V2', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-heart'
     state.combat.enemyHp = 321
     state.combat.enemyMaxHp = 900
@@ -350,7 +382,7 @@ describe('Save System V2', () => {
     document.contentVersion = 57
     const migrated = loadProfileGameFromRaw(JSON.stringify(document))
     expect(migrated.combat.active).toBe(true)
-    expect(migrated.combat.dungeonId).toBe('whispering-woods')
+    expect(migrated.combat.locationId).toBe('whispering-woods')
     expect(migrated.combat.enemyId).toBe('forest-heart')
     expect(migrated.combat.enemyCurrentActionId).toBeNull()
     expect(migrated.combat.enemyActionPatternId).toBe('default')
@@ -417,7 +449,7 @@ describe('Save System V2', () => {
       ['Hunter rank', (document) => { (document.progress.huntersOrder as { rankId: string }).rankId = 'not-a-rank' }],
       ['Guild node rank', (document) => { document.progress.guildSkillNodeRanks['mana-efficiency' as keyof typeof document.progress.guildSkillNodeRanks] = -1 }],
       ['monster ID', (document) => { (document.combat as { enemyId: string | null }).enemyId = 'missing-monster' }],
-      ['dungeon ID', (document) => { (document.combat as { dungeonId: string | null }).dungeonId = 'missing-dungeon' }],
+      ['dungeon ID', (document) => { (document.combat as { locationId: string | null }).locationId = 'missing-dungeon' }],
       ['unapproved combat field', (document) => { (document.combat as Record<string, unknown>).runtimeDebugOverride = true }],
       ['transmutation recipe ID', (document) => { (document.activities.transmutation.jobs as Record<string, unknown>)['missing-recipe'] = { acolyteAssigned: 1, progressMs: 1 } }],
       ['research item ID', (document) => { document.activities.research.slots['research-1'] = { itemId: 'missing-item', schoolId: 'fire', progressMs: 0, acolyteAssigned: 0 } as never }],

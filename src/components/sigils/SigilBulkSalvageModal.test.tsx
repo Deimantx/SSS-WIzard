@@ -10,8 +10,8 @@ import { getSigilSalvageValue } from '../../game/systems/sigils/sigilRuntime'
 describe('SigilBulkSalvageModal', () => {
   it('selects a preset, previews authored dust, and requires a final confirmation', () => {
     const state = createInitialState()
-    const common = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5 })
-    generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 2, forcedQuality: 'legendary', rng: () => .5 })
+    const common = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5 })
+    generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 2, forcedQuality: 'legendary', rng: () => .5 })
     useGameStore.setState(state)
     const close = () => undefined
     render(<TooltipProvider><SigilBulkSalvageModal open onClose={close} /></TooltipProvider>)
@@ -28,8 +28,8 @@ describe('SigilBulkSalvageModal', () => {
 
   it('filters the stored browser with its themed quality picker', () => {
     const state = createInitialState()
-    generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5 })
-    generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 2, forcedQuality: 'legendary', rng: () => .5 })
+    generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5 })
+    generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 2, forcedQuality: 'legendary', rng: () => .5 })
     useGameStore.setState(state)
     render(<TooltipProvider><SigilBulkSalvageModal open onClose={() => undefined} /></TooltipProvider>)
 

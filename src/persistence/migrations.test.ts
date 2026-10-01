@@ -3,7 +3,7 @@ import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
 import { validateStoredSave } from './saveIntegrity'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
-import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, isTutorialCompleted } from '../game/content/dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, isTutorialCompleted } from '../game/content/combat-locations/dungeons/dungeons'
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
@@ -66,17 +66,17 @@ describe('save navigation migration', () => {
   it('round-trips the last successfully entered combat dungeon and tolerates old saves without it', () => {
     const initial = createInitialState()
     const oldSave = migrateSave({ ...initial, saveVersion: 31, ui: { screen: 'combat' } } as any)
-    expect(oldSave.ui.lastEnteredCombatDungeonId).toBeUndefined()
+    expect(oldSave.ui.lastEnteredCombatLocationId).toBeUndefined()
 
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1
-    state.ui.lastEnteredCombatDungeonId = 'howling-den'
+    state.ui.lastEnteredCombatLocationId = 'howling-den'
     const loaded = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(loaded.ui.screen).toBe('home')
-    expect(loaded.ui.lastEnteredCombatDungeonId).toBeUndefined()
+    expect(loaded.ui.lastEnteredCombatLocationId).toBeUndefined()
 
-    const malformed = migrateSave({ ...state, saveVersion: 31, ui: { screen: 'combat', lastEnteredCombatDungeonId: 'not-a-dungeon' } } as any)
-    expect(malformed.ui.lastEnteredCombatDungeonId).toBeUndefined()
+    const malformed = migrateSave({ ...state, saveVersion: 31, ui: { screen: 'combat', lastEnteredCombatLocationId: 'not-a-dungeon' } } as any)
+    expect(malformed.ui.lastEnteredCombatLocationId).toBeUndefined()
   })
 
   it('preserves the hidden-until-unlocked Summoning route and normalizes Guardian state', () => {
@@ -231,7 +231,7 @@ describe('save navigation migration', () => {
         permanentManaBonuses: { 'forest-heart': 10, 'guild-apprentice': 10, 'removed-reward': 40 },
         lifetimeKillsByMonster: { 'forest-wisp': 12, 'thornling': 3, 'removed-monster': 100 },
         bossKillsByBoss: { 'grove-sentinel': 2, 'forest-heart': 1, 'removed-boss': 100 },
-        autoHuntBossByDungeon: { 'whispering-woods': true, 'removed-dungeon': true },
+        autoHuntBossByLocation: { 'whispering-woods': true, 'removed-dungeon': true },
       },
       combat: { ...initial.combat, enemySpecialUsed: { 'ancient-growth': true, 'living-core': false, 'removed-special': true } },
     })
@@ -243,7 +243,7 @@ describe('save navigation migration', () => {
     expect(migrated.progress.permanentManaBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(migrated.progress.lifetimeKillsByMonster).toEqual({ 'forest-wisp': 12, thornling: 3 })
     expect(migrated.progress.bossKillsByBoss).toEqual({ 'grove-sentinel': 2, 'forest-heart': 1 })
-    expect(migrated.progress.autoHuntBossByDungeon).toEqual(Object.fromEntries(DUNGEON_ORDER.map((dungeonId) => [dungeonId, dungeonId === 'whispering-woods'])))
+    expect(migrated.progress.autoHuntBossByLocation).toEqual(Object.fromEntries(DUNGEON_ORDER.map((locationId) => [locationId, locationId === 'whispering-woods'])))
     expect(migrated.combat.triggeredRuleIds).toContain('enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold')
     expect(migrated.combat).not.toHaveProperty('enemySpecialUsed')
     expect(migrated.inventory).not.toHaveProperty('removed-item')
@@ -310,14 +310,14 @@ describe('save navigation migration', () => {
         research: { ...initial.activities.research, itemId: 'removed-item', targetSchoolId: 'removed-school' },
         transmutation: { ...initial.activities.transmutation, jobs: { 'removed-recipe': { echoesAssigned: 1, progressMs: 100 } } },
       },
-      combat: { ...initial.combat, dungeonId: 'removed-dungeon', enemyId: 'removed-enemy', pendingBossId: 'removed-boss' },
+      combat: { ...initial.combat, locationId: 'removed-dungeon', enemyId: 'removed-enemy', pendingBossId: 'removed-boss' },
     })
 
     expect(migrated.equipment.weapon).toBeNull()
     expect(migrated.activities.research.itemId).toBeNull()
     expect(migrated.activities.research.targetSchoolId).toBeNull()
     expect(migrated.activities.transmutation.jobs).not.toHaveProperty('removed-recipe')
-    expect(migrated.combat.dungeonId).toBeNull()
+    expect(migrated.combat.locationId).toBeNull()
     expect(migrated.combat.enemyId).toBeNull()
     expect(migrated.combat.pendingBossId).toBeNull()
   })
@@ -494,7 +494,7 @@ describe('save navigation migration', () => {
   it('round-trips V18 committed Basic, Skill, and switched-Pattern timing state', () => {
     const basic = createInitialState()
     basic.combat.active = true
-    basic.combat.dungeonId = 'whispering-woods'
+    basic.combat.locationId = 'whispering-woods'
     basic.combat.enemyId = 'forest-wisp'
     basic.combat.enemyHp = 40
     basic.combat.enemyMaxHp = 44
@@ -510,7 +510,7 @@ describe('save navigation migration', () => {
 
     const skill = createInitialState()
     skill.combat.active = true
-    skill.combat.dungeonId = 'whispering-woods'
+    skill.combat.locationId = 'whispering-woods'
     skill.combat.enemyId = 'forest-wisp'
     skill.combat.enemyHp = 40
     skill.combat.enemyMaxHp = 44
@@ -526,7 +526,7 @@ describe('save navigation migration', () => {
 
     const switched = createInitialState()
     switched.combat.active = true
-    switched.combat.dungeonId = 'howling-den'
+    switched.combat.locationId = 'howling-den'
     switched.combat.enemyId = 'corrupted-greatbear'
     switched.combat.enemyHp = 900
     switched.combat.enemyMaxHp = 900
@@ -546,7 +546,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {
       ...initial.combat,
       active: true,
-      dungeonId: 'whispering-woods',
+      locationId: 'whispering-woods',
       enemyId: 'forest-wisp',
       enemyHp: 44,
       enemyMaxHp: 44,
@@ -566,7 +566,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({ ...initial, saveVersion: 21, combat: {
       ...initial.combat,
       active: true,
-      dungeonId: 'whispering-woods',
+      locationId: 'whispering-woods',
       enemyId: 'forest-wisp',
       enemyHp: 44,
       enemyMaxHp: 44,
@@ -580,7 +580,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({ ...initial, saveVersion: 20, combat: {
       ...initial.combat,
       active: true,
-      dungeonId: 'whispering-woods',
+      locationId: 'whispering-woods',
       enemyId: 'forest-wisp',
       enemyHp: 44,
       enemyMaxHp: 44,
@@ -693,7 +693,7 @@ describe('save navigation migration', () => {
     const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {
       ...initial.combat,
       active: true,
-      dungeonId: 'whispering-woods',
+      locationId: 'whispering-woods',
       enemyId: 'forest-wisp',
       enemyHp: 44,
       enemyMaxHp: 44,
@@ -711,7 +711,7 @@ describe('save navigation migration', () => {
       inventory: { ...initial.inventory, 'fire-fragment': 37, 'tideglass-wand': 1 },
       equipment: { ...initial.equipment, weapon: 'tideglass-wand' },
       progress: { ...initial.progress, spellRanks: { ...initial.progress.spellRanks, 'fire-bolt': 1 }, bossKillsByBoss: { ...initial.progress.bossKillsByBoss, 'forest-heart': 2 } },
-      combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 } as typeof initial.combat,
+      combat: { ...initial.combat, active: true, locationId: 'whispering-woods', enemyId: 'forest-wisp', playerAttackTimerMs: 500 } as typeof initial.combat,
     })
 
     expect(migrated.currencies.gold).toBe(321)
@@ -756,13 +756,13 @@ describe('save navigation migration', () => {
 })
 
 describe('v42 power-based Threat migration', () => {
-  const activeLegacySave = (dungeonId: 'whispering-woods' | 'howling-den' | 'fractured-approach', threatCleared: number, worldTier: 1 | 2 = 1) => {
+  const activeLegacySave = (locationId: 'whispering-woods' | 'howling-den' | 'fractured-approach', threatCleared: number, worldTier: 1 | 2 = 1) => {
     const initial = createInitialState()
     return {
       ...initial,
       saveVersion: 42,
       worldTier: { current: worldTier, highestUnlocked: worldTier },
-      combat: { ...initial.combat, active: true, dungeonId, enemyId: dungeonId === 'howling-den' ? 'cavefang-wolf' : dungeonId === 'fractured-approach' ? 'warded-husk' : 'forest-wisp', threatCleared },
+      combat: { ...initial.combat, active: true, locationId, enemyId: locationId === 'howling-den' ? 'cavefang-wolf' : locationId === 'fractured-approach' ? 'warded-husk' : 'forest-wisp', threatCleared },
     }
   }
 
@@ -770,8 +770,8 @@ describe('v42 power-based Threat migration', () => {
     ['whispering-woods', 10, 1, 2500],
     ['whispering-woods', 10, 2, 5000],
     ['howling-den', 12, 1, 4800],
-  ] as const)('preserves %s progress as a percentage of the new requirement', (dungeonId, oldThreat, worldTier, expectedThreat) => {
-    const migrated = migrateSave(activeLegacySave(dungeonId, oldThreat, worldTier) as any)
+  ] as const)('preserves %s progress as a percentage of the new requirement', (locationId, oldThreat, worldTier, expectedThreat) => {
+    const migrated = migrateSave(activeLegacySave(locationId, oldThreat, worldTier) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.threatCleared).toBe(expectedThreat)
   })
@@ -787,7 +787,7 @@ describe('v42 power-based Threat migration', () => {
   it('round-trips v43 point Threat without converting it back to kills', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.threatCleared = 3720
     const loaded = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(loaded.saveVersion).toBe(SAVE_VERSION)
@@ -796,13 +796,13 @@ describe('v42 power-based Threat migration', () => {
 })
 
 describe('v43 Elemental Scar migration', () => {
-  const activeLegacySave = (dungeonId: 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow', enemyId: 'mist-wraith' | 'cinder-hound' | 'thorn-maw', threatCleared: number, worldTier: 1 | 2) => {
+  const activeLegacySave = (locationId: 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow', enemyId: 'mist-wraith' | 'cinder-hound' | 'thorn-maw', threatCleared: number, worldTier: 1 | 2) => {
     const initial = createInitialState()
     return {
       ...initial,
       saveVersion: 43,
       worldTier: { current: worldTier, highestUnlocked: worldTier },
-      combat: { ...initial.combat, active: true, dungeonId, enemyId, threatCleared },
+      combat: { ...initial.combat, active: true, locationId, enemyId, threatCleared },
     }
   }
 
@@ -810,8 +810,8 @@ describe('v43 Elemental Scar migration', () => {
     ['flooded-reliquary', 'mist-wraith', 10_000, 1, 20],
     ['ashen-watch', 'cinder-hound', 20_000, 2, 20],
     ['rootscar-hollow', 'thorn-maw', 5_000, 1, 10],
-  ] as const)('converts legacy %s kill Threat and preserves the active target', (dungeonId, enemyId, expectedThreat, worldTier, oldThreat) => {
-    const migrated = migrateSave(activeLegacySave(dungeonId, enemyId, oldThreat, worldTier) as any)
+  ] as const)('converts legacy %s kill Threat and preserves the active target', (locationId, enemyId, expectedThreat, worldTier, oldThreat) => {
+    const migrated = migrateSave(activeLegacySave(locationId, enemyId, oldThreat, worldTier) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.targetEnemyId).toBe(enemyId)
     expect(migrated.combat.threatCleared).toBe(expectedThreat)
@@ -820,14 +820,14 @@ describe('v43 Elemental Scar migration', () => {
   it.each([
     ['fractured-approach', 'withered-watcher', 2],
     ['crossroads-of-ruin', 'broken-construct', 3],
-  ] as const)('infers %s sequence position and clears Threat', (dungeonId, enemyId, expectedIndex) => {
+  ] as const)('infers %s sequence position and clears Threat', (locationId, enemyId, expectedIndex) => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
       saveVersion: 43,
-      combat: { ...initial.combat, active: true, dungeonId, enemyId, threatCleared: 40, dungeonSequenceIndex: undefined },
+      combat: { ...initial.combat, active: true, locationId, enemyId, threatCleared: 40, sequenceIndex: undefined },
     } as any)
-    expect(migrated.combat.dungeonSequenceIndex).toBe(expectedIndex)
+    expect(migrated.combat.sequenceIndex).toBe(expectedIndex)
     expect(migrated.combat.threatCleared).toBe(0)
     expect(migrated.combat.targetEnemyId).toBeNull()
   })
@@ -835,15 +835,15 @@ describe('v43 Elemental Scar migration', () => {
   it.each([
     ['fractured-approach', 'corrupted-elemental-gatekeeper', 20],
     ['crossroads-of-ruin', 'crossroads-keeper', 44],
-  ] as const)('does not reuse old Threat as sequence progress for %s between encounters', (dungeonId, pendingBossId, threatCleared) => {
+  ] as const)('does not reuse old Threat as sequence progress for %s between encounters', (locationId, pendingBossId, threatCleared) => {
     const initial = createInitialState()
     const migrated = migrateSave({
       ...initial,
       saveVersion: 43,
-      combat: { ...initial.combat, active: true, dungeonId, enemyId: null, targetEnemyId: 'forest-wisp', pendingBossId, threatCleared, dungeonSequenceIndex: undefined },
+      combat: { ...initial.combat, active: true, locationId, enemyId: null, targetEnemyId: 'forest-wisp', pendingBossId, threatCleared, sequenceIndex: undefined },
     } as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.combat.dungeonSequenceIndex).toBe(0)
+    expect(migrated.combat.sequenceIndex).toBe(0)
     expect(migrated.combat.threatCleared).toBe(0)
     expect(migrated.combat.targetEnemyId).toBeNull()
     expect(migrated.combat.pendingBossId).toBeNull()
@@ -854,9 +854,9 @@ describe('v43 Elemental Scar migration', () => {
     const migrated = migrateSave({
       ...initial,
       saveVersion: 43,
-      combat: { ...initial.combat, active: true, dungeonId: 'fractured-approach', enemyId: 'corrupted-elemental-gatekeeper', threatCleared: 20, dungeonSequenceIndex: undefined },
+      combat: { ...initial.combat, active: true, locationId: 'fractured-approach', enemyId: 'corrupted-elemental-gatekeeper', threatCleared: 20, sequenceIndex: undefined },
     } as any)
-    expect(migrated.combat.dungeonSequenceIndex).toBe(4)
+    expect(migrated.combat.sequenceIndex).toBe(4)
     expect(migrated.combat.inBossFight).toBe(true)
     expect(migrated.combat.threatCleared).toBe(0)
     expect(migrated.combat.targetEnemyId).toBeNull()
@@ -878,29 +878,29 @@ describe('v44 Shattered Meridian migration', () => {
   it.each([
     ['graveglass-hollow', 'graveglass-shade', 1, 15_000],
     ['starfallen-observatory', 'comet-wraith', 3, 45_000],
-  ] as const)('scales legacy %s Threat from the old 50-point requirement', (dungeonId, enemyId, worldTier, expectedThreat) => {
-    const migrated = migrateSave(activeSave({ dungeonId, enemyId, threatCleared: 25 }, worldTier) as any)
+  ] as const)('scales legacy %s Threat from the old 50-point requirement', (locationId, enemyId, worldTier, expectedThreat) => {
+    const migrated = migrateSave(activeSave({ locationId, enemyId, threatCleared: 25 }, worldTier) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.targetEnemyId).toBe(enemyId)
     expect(migrated.combat.threatCleared).toBe(expectedThreat)
   })
 
   it('clamps converted Shattered Threat, recovers the first target, and preserves a pending boss', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'graveglass-hollow', enemyId: 'graveglass-behemoth', targetEnemyId: 'ossuary-oracle', pendingBossId: 'graveglass-behemoth', threatCleared: 80 }) as any)
+    const migrated = migrateSave(activeSave({ locationId: 'graveglass-hollow', enemyId: 'graveglass-behemoth', targetEnemyId: 'ossuary-oracle', pendingBossId: 'graveglass-behemoth', threatCleared: 80 }) as any)
     expect(migrated.combat.targetEnemyId).toBe('graveglass-shade')
     expect(migrated.combat.pendingBossId).toBe('graveglass-behemoth')
     expect(migrated.combat.threatCleared).toBe(30_000)
 
-    const noEnemy = migrateSave(activeSave({ dungeonId: 'stormvault-gallery', enemyId: null, targetEnemyId: null, threatCleared: 0 }) as any)
+    const noEnemy = migrateSave(activeSave({ locationId: 'stormvault-gallery', enemyId: null, targetEnemyId: null, threatCleared: 0 }) as any)
     expect(noEnemy.combat.targetEnemyId).toBe('volt-wisp')
   })
 
   it('converts Broken Meridian v44 saves to its authored sequence without using old Threat or indices', () => {
     const initial = createInitialState()
     const activeNormal = migrateSave({
-      ...activeSave({ dungeonId: 'broken-meridian', enemyId: 'arc-surge-horror', targetEnemyId: 'forest-wisp', pendingBossId: 'meridian-splitter', threatCleared: 99, dungeonSequenceIndex: 0 }),
+      ...activeSave({ locationId: 'broken-meridian', enemyId: 'arc-surge-horror', targetEnemyId: 'forest-wisp', pendingBossId: 'meridian-splitter', threatCleared: 99, sequenceIndex: 0 }),
     } as any)
-    expect(activeNormal.combat.dungeonSequenceIndex).toBe(2)
+    expect(activeNormal.combat.sequenceIndex).toBe(2)
     expect(activeNormal.combat.threatCleared).toBe(0)
     expect(activeNormal.combat.targetEnemyId).toBeNull()
     expect(activeNormal.combat.pendingBossId).toBeNull()
@@ -908,17 +908,17 @@ describe('v44 Shattered Meridian migration', () => {
     const noEnemy = migrateSave({
       ...initial,
       saveVersion: 44,
-      combat: { ...initial.combat, active: true, dungeonId: 'broken-meridian', enemyId: null, threatCleared: 55, dungeonSequenceIndex: 3 },
+      combat: { ...initial.combat, active: true, locationId: 'broken-meridian', enemyId: null, threatCleared: 55, sequenceIndex: 3 },
     } as any)
-    expect(noEnemy.combat.dungeonSequenceIndex).toBe(0)
+    expect(noEnemy.combat.sequenceIndex).toBe(0)
     expect(noEnemy.combat.threatCleared).toBe(0)
 
     const boss = migrateSave({
       ...initial,
       saveVersion: 44,
-      combat: { ...initial.combat, active: true, dungeonId: 'broken-meridian', enemyId: 'meridian-splitter', threatCleared: 55, dungeonSequenceIndex: 1 },
+      combat: { ...initial.combat, active: true, locationId: 'broken-meridian', enemyId: 'meridian-splitter', threatCleared: 55, sequenceIndex: 1 },
     } as any)
-    expect(boss.combat.dungeonSequenceIndex).toBe(4)
+    expect(boss.combat.sequenceIndex).toBe(4)
     expect(boss.combat.inBossFight).toBe(true)
   })
 
@@ -945,17 +945,17 @@ describe('structured dungeon save migration', () => {
     const wraith = migrateSave({
       ...initial,
       saveVersion: 41,
-      combat: { ...initial.combat, active: true, dungeonId: 'abandoned-catacombs', enemyId: 'grave-wraith', threatCleared: 1, dungeonSequenceIndex: undefined },
+      combat: { ...initial.combat, active: true, locationId: 'abandoned-catacombs', enemyId: 'grave-wraith', threatCleared: 1, sequenceIndex: undefined },
     } as any)
-    expect(wraith.combat.dungeonSequenceIndex).toBe(1)
+    expect(wraith.combat.sequenceIndex).toBe(1)
     expect(wraith.combat.threatCleared).toBe(0)
 
     const boss = migrateSave({
       ...initial,
       saveVersion: 41,
-      combat: { ...initial.combat, active: true, dungeonId: 'abandoned-catacombs', enemyId: 'archmage-edrin-shade', dungeonSequenceIndex: undefined },
+      combat: { ...initial.combat, active: true, locationId: 'abandoned-catacombs', enemyId: 'archmage-edrin-shade', sequenceIndex: undefined },
     } as any)
-    expect(boss.combat.dungeonSequenceIndex).toBe(3)
+    expect(boss.combat.sequenceIndex).toBe(3)
   })
 
   it('repairs malformed sequence indices and clears sequence state outside sequence dungeons', () => {
@@ -963,17 +963,17 @@ describe('structured dungeon save migration', () => {
     const malformed = migrateSave({
       ...initial,
       saveVersion: SAVE_VERSION,
-      combat: { ...initial.combat, active: true, dungeonId: 'abandoned-catacombs', enemyId: 'restless-skeleton', dungeonSequenceIndex: 99 },
+      combat: { ...initial.combat, active: true, locationId: 'abandoned-catacombs', enemyId: 'restless-skeleton', sequenceIndex: 99 },
     } as any)
-    expect(malformed.combat.dungeonSequenceIndex).toBe(0)
+    expect(malformed.combat.sequenceIndex).toBe(0)
     expect(malformed.combat.threatCleared).toBe(0)
 
     const nonSequence = migrateSave({
       ...initial,
       saveVersion: SAVE_VERSION,
-      combat: { ...initial.combat, active: true, dungeonId: 'howling-den', enemyId: 'cavefang-wolf', dungeonSequenceIndex: 2 },
+      combat: { ...initial.combat, active: true, locationId: 'howling-den', enemyId: 'cavefang-wolf', sequenceIndex: 2 },
     } as any)
-    expect(nonSequence.combat.dungeonSequenceIndex).toBeNull()
+    expect(nonSequence.combat.sequenceIndex).toBeNull()
   })
 })
 
@@ -990,14 +990,14 @@ describe('v45 Black Sigil Reach migration', () => {
   }
 
   it('converts Hall kill Threat proportionally and preserves the valid target', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'hall-of-unbound-names', enemyId: 'name-eater', targetEnemyId: 'name-eater', threatCleared: 30 }) as any)
+    const migrated = migrateSave(activeSave({ locationId: 'hall-of-unbound-names', enemyId: 'name-eater', targetEnemyId: 'name-eater', threatCleared: 30 }) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
     expect(migrated.combat.targetEnemyId).toBe('name-eater')
     expect(migrated.combat.threatCleared).toBe(20000)
   })
 
   it('converts Vault kill Threat against the captured WT4 requirement', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'vault-of-the-black-sigil', enemyId: 'blackscript-colossus', threatCleared: 30 }, 4) as any)
+    const migrated = migrateSave(activeSave({ locationId: 'vault-of-the-black-sigil', enemyId: 'blackscript-colossus', threatCleared: 30 }, 4) as any)
     expect(migrated.combat.targetEnemyId).toBe('blackscript-colossus')
     expect(migrated.combat.threatCleared).toBe(80000)
   })
@@ -1005,8 +1005,8 @@ describe('v45 Black Sigil Reach migration', () => {
   it.each([
     ['hall-of-unbound-names', 'unspoken-prelate', 'name-eater'],
     ['vault-of-the-black-sigil', 'sigil-warden', 'black-seal-parasite'],
-  ] as const)('preserves an active %s boss while assigning the first future normal target', (dungeonId, bossId, firstTarget) => {
-    const migrated = migrateSave(activeSave({ dungeonId, enemyId: bossId, targetEnemyId: bossId, threatCleared: 60 }) as any)
+  ] as const)('preserves an active %s boss while assigning the first future normal target', (locationId, bossId, firstTarget) => {
+    const migrated = migrateSave(activeSave({ locationId, enemyId: bossId, targetEnemyId: bossId, threatCleared: 60 }) as any)
     expect(migrated.combat.enemyId).toBe(bossId)
     expect(migrated.combat.inBossFight).toBe(true)
     expect(migrated.combat.targetEnemyId).toBe(firstTarget)
@@ -1014,29 +1014,29 @@ describe('v45 Black Sigil Reach migration', () => {
   })
 
   it('converts an active Black Gate normal encounter to its exact sequence index', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: 'portalbound-acolyte', threatCleared: 70, targetEnemyId: 'name-eater', pendingBossId: 'black-gatekeeper' }) as any)
-    expect(migrated.combat.dungeonSequenceIndex).toBe(2)
+    const migrated = migrateSave(activeSave({ locationId: 'black-gate', enemyId: 'portalbound-acolyte', threatCleared: 70, targetEnemyId: 'name-eater', pendingBossId: 'black-gatekeeper' }) as any)
+    expect(migrated.combat.sequenceIndex).toBe(2)
     expect(migrated.combat.threatCleared).toBe(0)
     expect(migrated.combat.targetEnemyId).toBeNull()
     expect(migrated.combat.pendingBossId).toBeNull()
   })
 
   it('starts a converted Black Gate between encounters at step zero regardless of old Threat', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: null, threatCleared: 70, dungeonSequenceIndex: 4 }) as any)
-    expect(migrated.combat.dungeonSequenceIndex).toBe(0)
+    const migrated = migrateSave(activeSave({ locationId: 'black-gate', enemyId: null, threatCleared: 70, sequenceIndex: 4 }) as any)
+    expect(migrated.combat.sequenceIndex).toBe(0)
     expect(migrated.combat.threatCleared).toBe(0)
     expect(migrated.combat.targetEnemyId).toBeNull()
   })
 
   it('preserves an active Black Gate boss at the final sequence index', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: 'black-gatekeeper', threatCleared: 70 }) as any)
-    expect(migrated.combat.dungeonSequenceIndex).toBe(4)
+    const migrated = migrateSave(activeSave({ locationId: 'black-gate', enemyId: 'black-gatekeeper', threatCleared: 70 }) as any)
+    expect(migrated.combat.sequenceIndex).toBe(4)
     expect(migrated.combat.inBossFight).toBe(true)
     expect(migrated.combat.threatCleared).toBe(0)
   })
 
   it('reconciles stale WT4 access to WT5 from existing Black Gatekeeper evidence without a notification', () => {
-    const migrated = migrateSave(activeSave({ dungeonId: 'black-gate', enemyId: null }, 4, { bossKillsByBoss: { 'black-gatekeeper': 1 } }) as any)
+    const migrated = migrateSave(activeSave({ locationId: 'black-gate', enemyId: null }, 4, { bossKillsByBoss: { 'black-gatekeeper': 1 } }) as any)
     expect(migrated.worldTier).toEqual({ current: 4, highestUnlocked: 5 })
     expect(migrated.notifications).toEqual([])
   })
@@ -1044,7 +1044,7 @@ describe('v45 Black Sigil Reach migration', () => {
   it('round-trips targeted and sequence v46 combat state without losing the save version', () => {
     const targeted = createInitialState()
     targeted.combat.active = true
-    targeted.combat.dungeonId = 'hall-of-unbound-names'
+    targeted.combat.locationId = 'hall-of-unbound-names'
     targeted.combat.targetEnemyId = 'nameless-cantor'
     targeted.combat.enemyId = 'nameless-cantor'
     targeted.combat.enemyHp = 3210
@@ -1058,14 +1058,14 @@ describe('v45 Black Sigil Reach migration', () => {
 
     const sequence = createInitialState()
     sequence.combat.active = true
-    sequence.combat.dungeonId = 'black-gate'
-    sequence.combat.dungeonSequenceIndex = 4
+    sequence.combat.locationId = 'black-gate'
+    sequence.combat.sequenceIndex = 4
     sequence.combat.enemyId = 'black-gatekeeper'
     sequence.combat.inBossFight = true
     sequence.combat.enemyHp = 12000
     const sequenceLoaded = validateStoredSave(JSON.stringify(serializeGameState(sequence))).state!
     expect(sequenceLoaded.saveVersion).toBe(SAVE_VERSION)
-    expect(sequenceLoaded.combat).toMatchObject({ dungeonId: 'black-gate', dungeonSequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
+    expect(sequenceLoaded.combat).toMatchObject({ locationId: 'black-gate', sequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 12000, inBossFight: true, targetEnemyId: null, threatCleared: 0 })
   })
 })
 
@@ -1080,23 +1080,23 @@ describe('targeted combat migration', () => {
   }
 
   it('recovers a Whispering Woods target from the active normal enemy or the authored first target', () => {
-    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'cinder-moth' }).combat.targetEnemyId).toBe('cinder-moth')
-    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: null }).combat.targetEnemyId).toBe('forest-wisp')
+    expect(migrateCombat({ active: true, locationId: 'whispering-woods', enemyId: 'cinder-moth' }).combat.targetEnemyId).toBe('cinder-moth')
+    expect(migrateCombat({ active: true, locationId: 'whispering-woods', enemyId: null }).combat.targetEnemyId).toBe('forest-wisp')
   })
 
   it('never restores the Whispering Woods boss as a farming target', () => {
-    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'forest-heart', targetEnemyId: 'forest-heart' }).combat.targetEnemyId).toBe('forest-wisp')
+    expect(migrateCombat({ active: true, locationId: 'whispering-woods', enemyId: 'forest-heart', targetEnemyId: 'forest-heart' }).combat.targetEnemyId).toBe('forest-wisp')
   })
 
   it('clears targeted farming state outside the targeted combat zone and repairs malformed IDs', () => {
-    expect(migrateCombat({ active: true, dungeonId: 'abandoned-catacombs', enemyId: 'thornling', targetEnemyId: 'forest-wisp' }).combat.targetEnemyId).toBeNull()
-    expect(migrateCombat({ active: true, dungeonId: 'whispering-woods', enemyId: 'thornling', targetEnemyId: 'removed-monster' as any }).combat.targetEnemyId).toBe('thornling')
+    expect(migrateCombat({ active: true, locationId: 'abandoned-catacombs', enemyId: 'thornling', targetEnemyId: 'forest-wisp' }).combat.targetEnemyId).toBeNull()
+    expect(migrateCombat({ active: true, locationId: 'whispering-woods', enemyId: 'thornling', targetEnemyId: 'removed-monster' as any }).combat.targetEnemyId).toBe('thornling')
   })
 
   it('preserves the target in the critical save snapshot and serialized round trip', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'tempest-stag'
     state.combat.targetEnemyId = 'tempest-stag'
     const encoded = JSON.stringify(serializeGameState(state))
@@ -1302,7 +1302,7 @@ describe('Combat Spell Loadout V35 to V36 migration', () => {
       saveVersion: SAVE_VERSION,
       progress: { ...initial.progress, spellRanks: { 'fire-bolt': 1 } },
       spellPresets: { presets: [{ id: 'spell-preset-1', name: 'Prepared', slots: [{ spellId: 'fire-bolt', autoCast: false }] }], selectedPresetId: 'spell-preset-1' },
-      combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods', enemyId: null, activeSpellLoadout: { presetId: 'spell-preset-old', presetName: 'Active Snapshot', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'stale' } },
+      combat: { ...initial.combat, active: true, locationId: 'whispering-woods', enemyId: null, activeSpellLoadout: { presetId: 'spell-preset-old', presetName: 'Active Snapshot', slots: [{ spellId: 'fire-bolt', autoCast: true }], signature: 'stale' } },
     } as any)
 
     expect(migrated.combat.active).toBe(true)

@@ -20,7 +20,7 @@ const comparableStatuses = (state: GameState, actor: 'player' | 'enemy') => {
 const combatFixture = () => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.combat.targetEnemyId = 'forest-wisp'
   state.player.maxHealth = 10_000
   state.player.health = 10_000
@@ -68,7 +68,7 @@ const snapshot = (state: GameState) => ({
     enemyStatuses: comparableStatuses(state, 'enemy'),
     combatRngState: state.combat.combatRngState,
     threatCleared: state.combat.threatCleared,
-    dungeonSequenceIndex: state.combat.dungeonSequenceIndex,
+    sequenceIndex: state.combat.sequenceIndex,
     guardian: state.combat.guardian,
   },
   inventory: state.inventory,
@@ -99,10 +99,10 @@ describe('canonical simulation quantum parity', () => {
     ['abandoned-catacombs', 'restless-skeleton', 'fixed Dungeon'],
     ['broken-meridian', 'meridian-splitter', 'boss phase transition'],
     ['black-gate', 'black-gatekeeper', 'Black Gate boss'],
-  ] as const)('keeps %s (%s) deterministic between live and banked simulation', (dungeonId, enemyId, label) => {
+  ] as const)('keeps %s (%s) deterministic between live and banked simulation', (locationId, enemyId, label) => {
     const fine = createCombatTestState()
     fine.combat.active = true
-    fine.combat.dungeonId = dungeonId
+    fine.combat.locationId = locationId
     fine.combat.targetEnemyId = enemyId
     fine.debug.freezePlayerActions = true
     fine.player.maxHealth = 100_000
@@ -135,10 +135,10 @@ describe('canonical simulation quantum parity', () => {
     ['abandoned-catacombs', 'archmage-edrin-shade'],
     ['broken-meridian', 'meridian-splitter'],
     ['black-gate', 'black-gatekeeper'],
-  ] as const)('keeps %s/%s phase threshold state identical for live and banked callers', (dungeonId, enemyId) => {
+  ] as const)('keeps %s/%s phase threshold state identical for live and banked callers', (locationId, enemyId) => {
     const fine = createCombatTestState()
     fine.combat.active = true
-    fine.combat.dungeonId = dungeonId
+    fine.combat.locationId = locationId
     fine.debug.freezePlayerActions = true
     fine.player.maxHealth = fine.player.health = 100_000
     expect(spawnEnemy(fine, enemyId)).toBe(true)
@@ -181,7 +181,7 @@ describe('canonical simulation quantum parity', () => {
     const makeFixture = () => {
       const state = createCombatTestState()
       state.combat.active = true
-      state.combat.dungeonId = 'howling-den'
+      state.combat.locationId = 'howling-den'
       state.player.maxHealth = 10_000
       state.player.health = 10_000
       state.debug.freezePlayerActions = true
@@ -202,7 +202,7 @@ describe('canonical simulation quantum parity', () => {
     const makeFixture = () => {
       const state = createCombatTestState()
       state.combat.active = true
-      state.combat.dungeonId = 'howling-den'
+      state.combat.locationId = 'howling-den'
       state.player.maxHealth = 10_000
       state.player.health = 10_000
       state.debug.freezePlayerActions = true
@@ -223,7 +223,7 @@ describe('canonical simulation quantum parity', () => {
     const makeHealFixture = () => {
       const state = createCombatTestState()
       state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
+      state.combat.locationId = 'whispering-woods'
       state.debug.freezePlayerActions = true
       spawnEnemy(state, 'briar-sprite')
       state.combat.enemyHp = 100
@@ -234,7 +234,7 @@ describe('canonical simulation quantum parity', () => {
     const makeBarrierFixture = () => {
       const state = createCombatTestState()
       state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
+      state.combat.locationId = 'whispering-woods'
       state.debug.freezePlayerActions = true
       spawnEnemy(state, 'grove-sentinel')
       clearCurrentEnemyAction(state)
@@ -271,7 +271,7 @@ describe('canonical simulation quantum parity', () => {
   it('preserves encounter transition timing and the paused no-enemy combat state', () => {
     const fine = createCombatTestState()
     fine.combat.active = true
-    fine.combat.dungeonId = 'whispering-woods'
+    fine.combat.locationId = 'whispering-woods'
     fine.combat.encounterTimerMs = 250
     const coarse = cloneState(fine)
     const random = vi.spyOn(Math, 'random').mockReturnValue(0)
@@ -382,7 +382,7 @@ describe('canonical simulation quantum parity', () => {
     try {
       const fine = createCombatTestState()
       fine.combat.active = true
-      fine.combat.dungeonId = 'whispering-woods'
+      fine.combat.locationId = 'whispering-woods'
       fine.equipment.weapon = itemId
       spawnEnemy(fine, 'forest-wisp')
       const coarse = cloneState(fine)
@@ -401,7 +401,7 @@ describe('canonical simulation quantum parity', () => {
       id: itemId,
       name: 'Parity Cooldown Weapon',
       description: 'Test-only provider.',
-      icon: 'â—Œ',
+      icon: '◌',
       color: '#fff',
       kind: 'equipment',
       category: 'equipment',
@@ -440,7 +440,7 @@ describe('canonical simulation quantum parity', () => {
     const makeFixture = () => {
       const state = createCombatTestState()
       state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
       state.player.maxHealth = 10_000
       state.player.health = 10_000
       state.debug.freezePlayerActions = true

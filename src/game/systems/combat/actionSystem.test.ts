@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../../../store/initialState'
 import { createCombatTestState } from './testCombatState'
 import { MONSTERS } from '../../content/monsters'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { getCombatFlowPresentation } from '../../presentation/combat/combatFlowPresentation'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { executeCombatEffects } from './effectResolver'
@@ -18,7 +18,7 @@ import { getDefenseReductionFromRating } from './combatStats'
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   spawnEnemy(state, enemyId)
   state.combat.enemyHp = Math.max(state.combat.enemyHp, 10_000)
   state.combat.enemyMaxHp = Math.max(state.combat.enemyMaxHp, 10_000)
@@ -170,8 +170,8 @@ describe('classic real-time combat action timing', () => {
 
       const presentation = getCombatFlowPresentation({
         active: state.combat.active,
-        dungeonId: state.combat.dungeonId,
-        selectedDungeonId: 'whispering-woods',
+        locationId: state.combat.locationId,
+        selectedCombatLocationId: 'whispering-woods',
         dungeon: DUNGEONS['whispering-woods'],
         enemy: monster,
         enemyId: state.combat.enemyId,

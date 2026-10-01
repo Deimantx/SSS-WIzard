@@ -1,9 +1,9 @@
 import { BALANCE } from '../../core/balance/balance'
-import { DUNGEONS, chooseMonster, hasBossEncounter } from '../../content/dungeons/dungeons'
-import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
+import { DUNGEONS, chooseMonster, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { getCombatEncounterMode, getCombatLocationById, isCombatTargetForLocation } from '../../content/combat-locations'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { recalculateDerivedStats, appendLog, pushNotification } from '../../engine'
-import type { ActiveCombatSpellLoadout, DungeonId, GameState, ItemId, MonsterId } from '../../types'
+import type { ActiveCombatSpellLoadout, CombatLocationId, GameState, ItemId, MonsterId } from '../../types'
 import { executeCombatEffects, damageEnemy, damagePlayer, gainBarrier } from './effectResolver'
 import { gainBarrier as gainBarrierRuntime } from './barrierRuntime'
 import { applyStatus, clearStatuses } from './statusRuntime'
@@ -11,8 +11,8 @@ import { clearEnemyRuleCooldowns, resetAllCombatRuleRuntime, resetEncounterRuleF
 import { createCombatResolutionContext, type CombatEvent, type CombatEventSink, type StatusId } from './combatTypes'
 import { initializeEnemyActionRuntime, resetEnemyActionRuntime, startNextEnemyAction } from './actionRuntime'
 import { resolveMonsterLoot, type SigilLootResolution } from '../loot/lootResolution'
-import { getArcaneCoreReward } from '../../content/arcaneCore/arcaneCoreRewards'
-import { grantArcanePoints } from '../arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreReward } from '../../content/arcane-core/arcaneCoreRewards'
+import { grantArcanePoints } from '../arcane-core/arcaneCoreProgression'
 import { discoverMonster } from '../collection/discovery'
 import type { SimulationReportCollector } from '../offline-bank/offlineBankReport'
 import { nextCombatRandom } from './combatRng'
@@ -20,7 +20,7 @@ import { reconcileStoryProgression } from '../story/storyProgression'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../../content/guardians/guardians'
 import { beginGuardianEncounter, clearGuardianRuntime, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { activateSelectedSpellPresetForBattle, clearCombatSpellRuntime, getCombatEntryPreset, getSelectedSpellPreset } from '../spells'
-import { resetArcaneCoreEncounterRuntime } from '../arcaneCore/arcaneCoreRuntime'
+import { resetArcaneCoreEncounterRuntime } from '../arcane-core/arcaneCoreRuntime'
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
 import { getWorldTierDefinition, resolveWorldTierArcanePointReward, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
@@ -30,28 +30,28 @@ import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
 import { recordGuildEnemyKill } from '../guild/guildRuntime'
-import { issueFirstHunterContract, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage, getHunterHarvestBonuses } from '../huntersOrder/huntersOrderRuntime'
+import { issueFirstHunterContract, recordHunterKill, getHunterAuthorization, getHunterAuthorizationMessage, getHunterHarvestBonuses } from '../hunters-order/huntersOrderRuntime'
 import { clearElementalWards } from './elementalWardRuntime'
 
-const ELEMENTAL_TUTORIAL_DUNGEONS = new Set<DungeonId>(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'])
+const ELEMENTAL_TUTORIAL_DUNGEONS = new Set<CombatLocationId>(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'])
 
 export { applyStatus, clearStatuses, damageEnemy, damagePlayer, executeCombatEffects, gainBarrier }
 
 export const applyBarrier = (state: GameState, amount: number) => gainBarrierRuntime(state, amount, { actor: 'player', kind: 'spell', sourceId: 'legacy-barrier', tags: ['barrier'] }, 'player', ['barrier'], { mode: 'replace', durationMs: 9000 })
 
-const isHunterGround = (dungeonId: DungeonId) => getCombatLocationByDungeonId(dungeonId)?.type === 'hunting-ground'
+const isHunterGround = (locationId: CombatLocationId) => getCombatLocationById(locationId)?.type === 'hunting-ground'
 
-export const canQueueDungeonBoss = (state: GameState, dungeonId: DungeonId) => {
-  const dungeon = DUNGEONS[dungeonId]
+export const canQueueDungeonBoss = (state: GameState, locationId: CombatLocationId) => {
+  const dungeon = DUNGEONS[locationId]
   if (!dungeon || !hasBossEncounter(dungeon)) return false
-  if (!isHunterGround(dungeonId)) return true
-  return getHunterAuthorization(state, dungeon.boss, dungeonId).authorized
+  if (!isHunterGround(locationId)) return true
+  return getHunterAuthorization(state, dungeon.boss, locationId).authorized
 }
 
-export const queueAutoHuntBoss = (state: GameState, dungeonId: DungeonId) => {
-  const dungeon = DUNGEONS[dungeonId]
-  if (!dungeon || !hasBossEncounter(dungeon) || !state.progress.autoHuntBossByDungeon[dungeonId] || !canQueueDungeonBoss(state, dungeonId)) return false
-  const requirement = resolveBossThreatRequirement(dungeonId, state.worldTier.current)
+export const queueAutoHuntBoss = (state: GameState, locationId: CombatLocationId) => {
+  const dungeon = DUNGEONS[locationId]
+  if (!dungeon || !hasBossEncounter(dungeon) || !state.progress.autoHuntBossByLocation[locationId] || !canQueueDungeonBoss(state, locationId)) return false
+  const requirement = resolveBossThreatRequirement(locationId, state.worldTier.current)
   const currentEnemyId = state.combat.enemyId
   if (state.combat.threatCleared < requirement || state.combat.pendingBossId || (currentEnemyId && isBossMonster(MONSTERS[currentEnemyId]))) return false
   state.combat.pendingBossId = dungeon.boss
@@ -61,8 +61,8 @@ export const queueAutoHuntBoss = (state: GameState, dungeonId: DungeonId) => {
 
 /** Parks contract-gated Hunting Ground combat without resolving the current enemy as a kill. */
 export const stopHunterContractCombat = (state: GameState, notification?: string) => {
-  const dungeonId = state.combat.dungeonId
-  if (!dungeonId || !isHunterGround(dungeonId)) return false
+  const locationId = state.combat.locationId
+  if (!locationId || !isHunterGround(locationId)) return false
   if (state.combat.enemyId) abandonCurrentEncounter(state)
   state.combat.active = false
   clearElementalWards(state)
@@ -116,7 +116,7 @@ const getLoadoutFailureMessage = (failure: CombatLoadoutFailure, selectedPreset:
 }
 
 export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: CombatEventSink) => {
-  const authorization = getHunterAuthorization(state, enemyId, state.combat.dungeonId)
+  const authorization = getHunterAuthorization(state, enemyId, state.combat.locationId)
   if (!authorization.authorized) {
     pushNotification(state, getHunterAuthorizationMessage(authorization, MONSTERS[enemyId]?.name), 'warning', { key: `hunter-authorization:${authorization.reason}:${enemyId}`, cooldownMs: 1000 })
     return false
@@ -151,7 +151,7 @@ export const spawnEnemy = (state: GameState, enemyId: MonsterId, uiEvents?: Comb
   state.combat.pendingPlayerSpellCast = null
   state.combat.enemyStatuses = []
   discoverMonster(state, enemyId)
-  uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start', worldTier: state.combat.enemyWorldTier })
+  uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'system', sourceId: 'encounter-start', worldTier: state.combat.enemyWorldTier })
   const combatStartResolution = createCombatResolutionContext()
   runCombatTriggers(state, 'enemy', 'on-combat-start', { source: { actor: 'enemy', kind: 'system', sourceId: 'combat-start' } }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
   runCombatTriggers(state, 'player', 'on-combat-start', { source: { actor: 'player', kind: 'system', sourceId: 'combat-start' }, eventTarget: 'enemy' }, executeCombatEffects, 0, [], uiEvents, combatStartResolution)
@@ -193,13 +193,13 @@ export const abandonCurrentEncounter = (state: GameState, options: AbandonCurren
 }
 
 export const spawnNextEnemy = (state: GameState, uiEvents?: CombatEventSink) => {
-  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
-  const location = getCombatLocationByDungeonId(dungeon.id)
+  const dungeon = DUNGEONS[state.combat.locationId ?? 'whispering-woods']
+  const location = getCombatLocationById(dungeon.id)
   if (getCombatEncounterMode(location) === 'sequence' && dungeon.encounterSequence?.length) {
-    const sequenceIndex = Number.isInteger(state.combat.dungeonSequenceIndex) && state.combat.dungeonSequenceIndex! >= 0 && state.combat.dungeonSequenceIndex! <= dungeon.encounterSequence.length
-      ? state.combat.dungeonSequenceIndex!
+    const sequenceIndex = Number.isInteger(state.combat.sequenceIndex) && state.combat.sequenceIndex! >= 0 && state.combat.sequenceIndex! <= dungeon.encounterSequence.length
+      ? state.combat.sequenceIndex!
       : 0
-    state.combat.dungeonSequenceIndex = sequenceIndex
+    state.combat.sequenceIndex = sequenceIndex
     const nextEnemyId = sequenceIndex < dungeon.encounterSequence.length ? dungeon.encounterSequence[sequenceIndex] : hasBossEncounter(dungeon) ? dungeon.boss : null
     if (!nextEnemyId) { state.combat.active = false; return false }
     const spawned = spawnEnemy(state, nextEnemyId, uiEvents)
@@ -246,11 +246,11 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const undiscoveredItems = new Set(state.progress.discoveredItems)
   const resolvedDrops: CombatLootDrop[] = []
   const resolvedSigils: SigilLootResolution[] = []
-  const hunterBonuses = getHunterHarvestBonuses(state, enemyId, state.combat.dungeonId)
-  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) }, () => nextCombatRandom(state), (sigilLoot) => {
+  const hunterBonuses = getHunterHarvestBonuses(state, enemyId, state.combat.locationId)
+  const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) }, () => nextCombatRandom(state), (sigilLoot) => {
     resolvedSigils.push(sigilLoot)
     report?.recordSigil(sigilLoot)
-    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'sigil-loot', sourceId: 'sigil-loot', amount: 1, sigilLoot })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'sigil-loot', sourceId: 'sigil-loot', amount: 1, sigilLoot })
     pushNotification(state, `Sigil found: T${sigilLoot.tier} ${sigilLoot.quality} ${sigilLoot.setId}`, 'success', { key: 'sigil-loot', cooldownMs: 900 })
   }, hunterBonuses)
   const encounterWorldTier = state.combat.enemyWorldTier ?? getWorldTierDefinition(state.worldTier.current).id
@@ -260,7 +260,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     onItemAcquired?.(itemId, quantity)
     report?.recordLoot(itemId, quantity)
     resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) })
-    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'crystal-cache-drop', itemId, amount: quantity })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'crystal-cache-drop', itemId, amount: quantity })
   }
   if (resolvedDrops.length || resolvedSigils.length) onLootResolved?.(state, enemyId, resolvedDrops, resolvedSigils)
   const guildBonuses = getGuildProgressionBonuses(state)
@@ -270,7 +270,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const resonanceText = formatResonanceBundle(resonanceGained)
   const rewardText = resonanceText === '0 Resonance' ? '' : ` · ${resonanceText}`
   if (resonanceText !== '0 Resonance') {
-    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'resonance', sourceId: 'resonance-reward', worldTier: encounterWorldTier, resonanceReward })
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'resonance', sourceId: 'resonance-reward', worldTier: encounterWorldTier, resonanceReward })
   }
   report?.recordKill(enemyId)
   const guardianWasActive = Boolean(state.combat.guardian.activeGuardianId)
@@ -285,13 +285,13 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   resetEnemyActionRuntime(state)
   state.combat.enemyStatuses = []
   clearEnemyRuleCooldowns(state)
-  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
-  const location = getCombatLocationByDungeonId(dungeon.id)
+  const dungeon = DUNGEONS[state.combat.locationId ?? 'whispering-woods']
+  const location = getCombatLocationById(dungeon.id)
   const sequenceDungeon = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.length)
-  const arcaneReward = getArcaneCoreReward(state.combat.dungeonId)
+  const arcaneReward = getArcaneCoreReward(state.combat.locationId)
   const bossDefeated = isBossMonster(monster)
-  const tutorialDungeonId = state.combat.dungeonId
-  if (tutorialDungeonId && ELEMENTAL_TUTORIAL_DUNGEONS.has(tutorialDungeonId)) {
+  const tutorialCombatLocationId = state.combat.locationId
+  if (tutorialCombatLocationId && ELEMENTAL_TUTORIAL_DUNGEONS.has(tutorialCombatLocationId)) {
     if (bossDefeated) state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     else state.progress.chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
   }
@@ -347,7 +347,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.combat.active = false
       clearCombatSpellRuntime(state)
       state.combat.enemyMaxHp = 0
-      state.combat.dungeonSequenceIndex = null
+      state.combat.sequenceIndex = null
       state.combat.targetEnemyId = null
       state.combat.pendingBossId = null
       state.combat.inBossFight = false
@@ -358,7 +358,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     if (unlockedWorldTier) pushNotification(state, `WORLD TIER ${unlockedWorldTier} UNLOCKED`, 'success')
   } else if (sequenceDungeon) {
     const sequenceLength = dungeon.encounterSequence?.length ?? 0
-    state.combat.dungeonSequenceIndex = Math.min(sequenceLength, Math.max(0, (state.combat.dungeonSequenceIndex ?? 0) + 1))
+    state.combat.sequenceIndex = Math.min(sequenceLength, Math.max(0, (state.combat.sequenceIndex ?? 0) + 1))
     state.progress.lifetimeKills += 1
     state.progress.lifetimeKillsByMonster[enemyId] = (state.progress.lifetimeKillsByMonster[enemyId] ?? 0) + 1
     if (state.progress.tutorialStage === 'combat') { state.progress.tutorialStage = 'first-kill'; pushNotification(state, 'FIRST VICTORY · The Tower is ready for Acolyte work.', 'success', { key: 'tutorial-first-kill', cooldownMs: 1000 }) }
@@ -373,27 +373,27 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     const afterThreat = Math.min(requirement, beforeThreat + threatGain)
     state.combat.threatCleared = afterThreat
     if (enemyId === 'grove-sentinel') state.progress.requestProgress['sentinel-breaker'] = Math.max(state.progress.requestProgress['sentinel-breaker'] ?? 0, state.progress.lifetimeKillsByMonster[enemyId])
-    if (state.combat.dungeonId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
+    if (state.combat.locationId === 'whispering-woods') state.progress.requestProgress['clear-the-woods'] = (state.progress.requestProgress['clear-the-woods'] ?? 0) + 1
     appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}`)
     if (hasBossEncounter(dungeon) && beforeThreat < requirement && afterThreat >= requirement) pushNotification(state, `${MONSTERS[dungeon.boss].name} is ready`, 'success')
     if (hasBossEncounter(dungeon) && afterThreat >= requirement) queueAutoHuntBoss(state, dungeon.id)
   }
   if (guardianWasActive) state.progress.chronicle.eventFlags['first-guardian-combat-completed'] = true
   if (encounterWorldTier >= 2 && state.worldTier.highestUnlocked >= encounterWorldTier) state.progress.chronicle.eventFlags[`first-wt${encounterWorldTier}-kill` as import('../../types').ChronicleEventId] = true
-  recordGuildEnemyKill(state, enemyId, state.combat.dungeonId ?? 'whispering-woods', bossDefeated)
+  recordGuildEnemyKill(state, enemyId, state.combat.locationId ?? 'whispering-woods', bossDefeated)
   const hadHunterContract = Boolean(state.progress.huntersOrder.activeContract)
-  recordHunterKill(state, enemyId, state.combat.dungeonId)
+  recordHunterKill(state, enemyId, state.combat.locationId)
   if (hadHunterContract && !state.progress.huntersOrder.activeContract && isHunterGround(dungeon.id)) {
     stopHunterContractCombat(state, 'HUNT CONTRACT COMPLETE / Accept a new Contract to continue hunting in Gloamridge.')
   }
   reconcileChronicleProgress(state)
 }
 
-export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void; onCombatCompleted?: (state: GameState, dungeonId: DungeonId) => void }
+export interface ResolveCombatDeathsOptions { forceEnemyDeath?: boolean; onLootResolved?: CombatLootObserver; onPlayerDefeated?: (event: CombatEvent, state: GameState) => void; onCombatCompleted?: (state: GameState, locationId: CombatLocationId) => void }
 
 export const resolveCombatDeaths = (state: GameState, report?: SimulationReportCollector, onItemAcquired?: (itemId: ItemId, quantity: number) => void, uiEvents?: CombatEventSink, options: ResolveCombatDeathsOptions = {}) => {
   if (state.player.health <= 0 && !state.debug.playerImmortal) {
-    const deathEvent: CombatEvent = { source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' }
+    const deathEvent: CombatEvent = { source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'player', targetMonsterId: state.combat.enemyId ?? undefined, category: 'death', sourceId: 'player-defeated' }
     options.onPlayerDefeated?.(deathEvent, state)
     uiEvents?.push(deathEvent)
     report?.recordPlayerDeath()
@@ -419,14 +419,14 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
     state.combat.pendingBossId = null
     resetAllCombatRuleRuntime(state)
     state.combat.threatCleared = 0
-    if (getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence') {
-      state.combat.dungeonSequenceIndex = null
+    if (getCombatEncounterMode(getCombatLocationById(state.combat.locationId)) === 'sequence') {
+      state.combat.sequenceIndex = null
       state.combat.targetEnemyId = null
     }
     state.combat.inBossFight = false
     pushNotification(state, 'Defeated - recovering in the Tower', 'warning')
-    const sequenceDungeon = getCombatEncounterMode(getCombatLocationByDungeonId(state.combat.dungeonId)) === 'sequence'
-    const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null
+    const sequenceDungeon = getCombatEncounterMode(getCombatLocationById(state.combat.locationId)) === 'sequence'
+    const dungeon = state.combat.locationId ? DUNGEONS[state.combat.locationId] : null
     appendLog(state, sequenceDungeon ? 'The wizard falls. Dungeon run reset.' : dungeon && hasBossEncounter(dungeon) ? 'The wizard falls. Threat resets to 0.' : 'The wizard falls. Encounter ended.')
     return true
   }
@@ -438,10 +438,10 @@ export const resolveCombatDeaths = (state: GameState, report?: SimulationReportC
   }
   if (state.combat.enemyId && state.combat.enemyHp <= 0) {
     const enemyId = state.combat.enemyId
-    const dungeonId = state.combat.dungeonId
-    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: state.combat.dungeonId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'death', sourceId: 'enemy-defeated' })
+    const locationId = state.combat.locationId
+    uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'death', sourceId: 'enemy-defeated' })
     finishEnemy(state, report, onItemAcquired, uiEvents, options.onLootResolved)
-    if (!state.combat.active && dungeonId) options.onCombatCompleted?.(state, dungeonId)
+    if (!state.combat.active && locationId) options.onCombatCompleted?.(state, locationId)
     return true
   }
   return false

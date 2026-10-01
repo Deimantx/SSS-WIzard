@@ -7,7 +7,7 @@ import { advanceGameState } from '../systems/simulation/advanceGameState'
 const stateWithSpells = (...spellIds: string[]) => {
   const state = createInitialState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.player.maxHealth = 100_000
   state.player.health = 100_000
   state.player.maxMana = 1_000

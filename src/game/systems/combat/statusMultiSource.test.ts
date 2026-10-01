@@ -16,7 +16,7 @@ const burnEffect = (spellId: 'searing-touch' | 'inferno') => SPELLS[spellId].eff
 const stateWithEnemy = () => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   spawnEnemy(state, 'forest-wisp')
   state.combat.enemyMaxHp = 10_000
   state.combat.enemyHp = 10_000

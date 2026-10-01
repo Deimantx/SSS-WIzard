@@ -1,4 +1,4 @@
-﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../../../components/ui/tooltip/Tooltip'
 import { generateSigil } from '../../../../game/systems/sigils/sigilGeneration'
@@ -17,7 +17,7 @@ describe('SigilsWorkspace', () => {
 
   it('shows the same visible workflow tabs on direct entry and consumes an exact Refinement deep link', async () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, source: 'debug', forcedTier: 1, forcedSetId: 'tempest', forcedSlot: 4, forcedQuality: 'legendary', rng: () => .3 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, source: 'debug', forcedTier: 1, forcedSetId: 'tempest', forcedSlot: 4, forcedQuality: 'legendary', rng: () => .3 })
     useGameStore.setState(state)
     setUiPreferences({ screenState: { artificing: { mode: 'sigils', sigilTab: 'refinement' } } })
     render(<TooltipProvider><SigilsWorkspace /></TooltipProvider>)

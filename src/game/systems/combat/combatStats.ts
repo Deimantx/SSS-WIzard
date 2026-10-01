@@ -1,7 +1,7 @@
 import { MONSTERS } from '../../content/monsters'
 import { BALANCE } from '../../core/balance/balance'
 import { DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
-import { getEquipmentStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
+import { getPlayerBuildStaticStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
 import { getPlayerManaCapacityBreakdown, getPlayerManaRegenBreakdown } from '../mana/playerMana'
 import { getSpellPower } from '../spells/spellPower'
 import type { EquipmentStats, GameState } from '../../types'
@@ -54,14 +54,14 @@ export const getDefenseReductionFromRating = (defense: number) => {
   return Math.min(MAX_DEFENSE_REDUCTION, rating / (rating + DEFENSE_K))
 }
 
-const playerEquipmentStat = (state: EquipmentStatsState, key: keyof EquipmentStats) => finite(getEquipmentStats(state)[key] as number | undefined)
+const playerEquipmentStat = (state: EquipmentStatsState, key: keyof EquipmentStats) => finite(getPlayerBuildStaticStats(state)[key] as number | undefined)
 const playerBaseMaxHealth = (state: PlayerSheetState) => {
-  const equipment = getEquipmentStats(state)
+  const equipment = getPlayerBuildStaticStats(state)
   const debug = (state as PlayerSheetState & Partial<Pick<GameState, 'debug'>>).debug?.playerStats
   return Math.max(1, (finite(state.player.baseMaxHealth, BALANCE.player.maxHealth) + finite(equipment.maxHealth) + finite(debug?.maxHealthFlat)) * (1 + finite(equipment.maxHealthPct) + finite(debug?.maxHealthPercent)))
 }
 const getPlayerSheetStats = (state: PlayerSheetState): PlayerCombatStats => {
-  const equipment = getEquipmentStats(state)
+  const equipment = getPlayerBuildStaticStats(state)
   const defense = Math.max(0, BALANCE.player.baseDefense + finite(equipment.defense))
   return {
     maxHealth: playerBaseMaxHealth(state),

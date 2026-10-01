@@ -26,7 +26,7 @@ const enemyAttack = (state: GameState): CombatSource => ({ actor: 'enemy', kind:
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   spawnEnemy(state, enemyId)
   state.combat.activeSpellLoadout!.slots = [{ spellId: 'fire-bolt', autoCast: false }, { spellId: 'earthen-barrier', autoCast: false }]
   state.combat.activeSpellLoadout!.signature = 'fire-bolt:0|earthen-barrier:0'
@@ -258,7 +258,7 @@ describe('post-implementation combat audit regressions', () => {
     expect(state.combat.spellCooldowns).toEqual({})
 
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.player.health = 1
     state.player.mana = state.player.maxMana
     spawnEnemy(state, 'forest-wisp')
@@ -494,7 +494,7 @@ describe('post-implementation combat audit regressions', () => {
     try {
       const state = createCombatTestState()
       state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
+      state.combat.locationId = 'whispering-woods'
       applyStatus(state, 'player', 'quickening', playerSpell)
 
       spawnEnemy(state, 'forest-wisp')

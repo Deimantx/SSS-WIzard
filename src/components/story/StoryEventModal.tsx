@@ -4,7 +4,7 @@ import { ModalPortal } from '../ui'
 import { dismissGameTooltips } from '../ui/tooltip/Tooltip'
 import { useGameContextMenu } from '../../ui/context-menu/GameContextMenuProvider'
 import { getActiveStoryEvent } from '../../game/systems/story/storyProgression'
-import { getPortalShardDefinition } from '../../game/content/darkPortal/portalShards'
+import { getPortalShardDefinition } from '../../game/content/dark-portal/portalShards'
 import { ITEMS } from '../../game/content/items/items'
 import { useGameStore } from '../../store/gameStore'
 

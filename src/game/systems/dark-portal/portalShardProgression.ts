@@ -1,4 +1,4 @@
-import { getPortalShardDefinition, getPortalShardDefinitions, type PortalShardId } from '../../content/darkPortal/portalShards'
+import { getPortalShardDefinition, getPortalShardDefinitions, type PortalShardId } from '../../content/dark-portal/portalShards'
 import { discoverItem } from '../collection/discovery'
 import type { DarkPortalProgressState, GameState } from '../../types'
 

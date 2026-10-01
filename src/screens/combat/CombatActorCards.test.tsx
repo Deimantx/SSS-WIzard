@@ -24,7 +24,7 @@ describe('Combat actor card symmetry', () => {
   it('uses the same header hierarchy and resource family for a real enemy', () => {
     const state = useGameStore.getState()
     useGameStore.setState({ combat: { ...state.combat, enemyId: 'grove-sentinel', enemyHp: 360, enemyMaxHp: 360 } })
-    render(<TooltipProvider><EnemyCombatCard selectedDungeonId="whispering-woods" /></TooltipProvider>)
+    render(<TooltipProvider><EnemyCombatCard selectedCombatLocationId="whispering-woods" /></TooltipProvider>)
     expect(screen.getByText('Grove Sentinel')).toBeTruthy()
     expect(screen.getByText('ENEMY')).toBeTruthy()
     expect(document.querySelectorAll('.combat-enemy-card .combat-resource')).toHaveLength(2)

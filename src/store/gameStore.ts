@@ -12,15 +12,15 @@ import {
   getDungeonUnlockRequirement,
   hasBossEncounter,
   isDungeonUnlocked,
-} from "../game/content/dungeons/dungeons";
+} from "../game/content/combat-locations/dungeons/dungeons";
 import {
   COMBAT_LOCATIONS,
   getCombatEncounterMode,
-  getCombatLocationByDungeonId,
+  getCombatLocationById,
   isCombatTargetForLocation,
   isCombatLocationUnlocked,
   type CombatLocationId,
-} from "../game/content/world-navigation";
+} from "../game/content/combat-locations";
 import { clearElementalWards, debugApplyElementalWard, debugExpireElementalWards, debugSetElementalWardsToRemaining } from "../game/systems/combat/elementalWardRuntime";
 import { getTutorialCounterAffinity } from "../game/content/elements/elements";
 import { MONSTERS } from "../game/content/monsters";
@@ -47,7 +47,7 @@ import {
   stopHunterContractCombat,
   type CombatLootObserver,
 } from "../game/systems/combat/combatRuntime";
-import { getHunterAuthorization, getHunterAuthorizationMessage } from "../game/systems/huntersOrder/huntersOrderRuntime";
+import { getHunterAuthorization, getHunterAuthorizationMessage } from "../game/systems/hunters-order/huntersOrderRuntime";
 import {
   canManuallyEngageDungeonBoss,
   isAutoHuntEnabledForDungeon,
@@ -93,7 +93,6 @@ import type {
   ChannelingDiscoveryId,
   CrystalPresetId,
   CrystalVariantId,
-  DungeonId,
   EquipmentPosition,
   GameState,
   ChronicleEventId,
@@ -343,9 +342,9 @@ import {
   resetArcaneCoreRing,
   setArcaneCoreNodeRank,
   setArcaneCoreTotalPointsEarned,
-} from "../game/systems/arcaneCore";
-import { ARCANE_CORE_TOTAL_TREE_COST } from "../game/content/arcaneCore/arcaneCoreBalance";
-import { resetArcaneCoreCombatRuntime } from "../game/systems/arcaneCore/arcaneCoreRuntime";
+} from "../game/systems/arcane-core";
+import { ARCANE_CORE_TOTAL_TREE_COST } from "../game/content/arcane-core/arcaneCoreBalance";
+import { resetArcaneCoreCombatRuntime } from "../game/systems/arcane-core/arcaneCoreRuntime";
 import {
   getArcaneCorePresetSnapshot,
   useArcaneCorePresetStore,
@@ -441,7 +440,7 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
 };
 const combatLogUiSink = combatEventSink;
 const combatLootObserver: CombatLootObserver = (state, enemyId, drops, sigils = []) => {
-  const dungeon = DUNGEONS[state.combat.dungeonId ?? "whispering-woods"];
+  const dungeon = DUNGEONS[state.combat.locationId ?? "whispering-woods"];
   const monster = MONSTERS[enemyId];
   enqueueCombatLootReveal({
     sourceLabel: dungeon?.name ?? "Combat",
@@ -488,29 +487,29 @@ const endActiveDungeonRun = (reason: "leave" | "complete" = "leave") => {
 
 const initializeDungeonRun = (
   state: GameState,
-  dungeonId: DungeonId,
+  locationId: CombatLocationId,
   resetCombatState: boolean,
   targetEnemyId: MonsterId | null = null,
 ) => {
-  const dungeon = DUNGEONS[dungeonId];
+  const dungeon = DUNGEONS[locationId];
   if (resetCombatState) state.combat = createInitialState().combat;
   clearCombatLogUi();
   clearCombatDefeat();
   beginCombatRecapRun();
-  combatAlertsObserver.beginRun(dungeonId);
-  combatTelemetryObserver.beginRun(dungeonId);
-  dungeonStatisticsObserver.beginSession(dungeonId);
+  combatAlertsObserver.beginRun(locationId);
+  combatTelemetryObserver.beginRun(locationId);
+  dungeonStatisticsObserver.beginSession(locationId);
   resetAllCombatRuleRuntime(state);
   clearElementalWards(state);
   resetArcaneCoreCombatRuntime(state);
   state.combat.active = true;
-  state.combat.dungeonId = dungeonId;
-  const enteredLocation = getCombatLocationByDungeonId(dungeonId)
+  state.combat.locationId = locationId;
+  const enteredLocation = getCombatLocationById(locationId)
   if (enteredLocation?.primaryElement && state.progress.startingSchoolId && enteredLocation.primaryElement === getTutorialCounterAffinity(state.progress.startingSchoolId)) state.progress.chronicle.eventFlags["starting-counter-zone-entered"] = true
   state.combat.targetEnemyId = targetEnemyId;
   state.combat.encounterTimerMs = 0;
-  state.combat.dungeonSequenceIndex =
-    getCombatEncounterMode(getCombatLocationByDungeonId(dungeonId)) ===
+  state.combat.sequenceIndex =
+    getCombatEncounterMode(getCombatLocationById(locationId)) ===
     "sequence"
       ? 0
       : null;
@@ -518,9 +517,9 @@ const initializeDungeonRun = (
   if (!spawnNextEnemy(state, combatEventSink)) {
     state.combat.active = false;
     clearCombatSpellRuntime(state);
-    state.combat.dungeonId = null;
+    state.combat.locationId = null;
     state.combat.encounterTimerMs = 0;
-    state.combat.dungeonSequenceIndex = null;
+    state.combat.sequenceIndex = null;
     return;
   }
   pushNotification(state, `${dungeon.name} entered`, "info");
@@ -722,9 +721,9 @@ export interface GameActions {
     autoCast: boolean,
   ) => ApplyPresetSlotAutomationResult;
   applySpellPreset: (id: SpellPresetId) => ApplySpellPresetResult;
-  enterDungeon: (dungeonId?: DungeonId) => void;
+  enterDungeon: (locationId?: CombatLocationId) => void;
   enterTargetedCombat: (
-    dungeonId: DungeonId,
+    locationId: CombatLocationId,
     targetEnemyId: MonsterId,
   ) => boolean;
   huntCombatTarget: (
@@ -734,19 +733,19 @@ export interface GameActions {
   setCombatTarget: (enemyId: MonsterId) => boolean;
   leaveDungeon: () => void;
   engageBoss: (bossId: MonsterId) => void;
-  toggleAutoHunt: (dungeonId?: DungeonId) => void;
+  toggleAutoHunt: (locationId?: CombatLocationId) => void;
   killCurrentEnemy: () => void;
   despawnDebugEnemy: () => void;
   fastResolveDebugEnemies: (
     amount: number,
-    dungeonId?: DungeonId,
+    locationId?: CombatLocationId,
     stopAtBossReady?: boolean,
   ) => void;
-  clearDebugThreatToBoss: (dungeonId?: DungeonId) => void;
-  jumpDebugToBoss: (dungeonId?: DungeonId) => void;
+  clearDebugThreatToBoss: (locationId?: CombatLocationId) => void;
+  jumpDebugToBoss: (locationId?: CombatLocationId) => void;
   restartDebugBoss: () => void;
   advanceCombatDebug: (durationMs: number) => void;
-  spawnDebugEnemy: (enemyId: MonsterId, dungeonId?: DungeonId) => void;
+  spawnDebugEnemy: (enemyId: MonsterId, locationId?: CombatLocationId) => void;
   setEnemyHealthPercent: (percent: number) => void;
   damagePlayerForDebug: (amount: number) => void;
   debugApplyElementalWard: () => void;
@@ -862,7 +861,7 @@ export interface GameActions {
   debugGrantHunterReputation: (amount: number) => void;
   debugGrantHunterMarks: (amount: number) => void;
   debugSetHunterRngSeed: (seed: number) => void;
-  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'region' | 'boss'; tier?: 'routine' | 'special' | 'prestigious'; fixtureChoiceCount?: 1 | 2 | 3; huntingGroundId?: DungeonId }) => void;
+  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'region' | 'boss'; tier?: 'routine' | 'special' | 'prestigious'; fixtureChoiceCount?: 1 | 2 | 3; huntingGroundId?: CombatLocationId }) => void;
   debugSetHunterRank: (rank: import('../game/types').HunterRankId) => boolean;
   debugSetHunterStanding: (standingId: string) => boolean;
   debugSetHunterUpgradeRank: (upgradeId: string, rank: number) => boolean;
@@ -879,8 +878,8 @@ export interface GameActions {
   rerollHunterContracts: () => boolean;
   toggleHunterContractPin: (contractId: string) => boolean;
   setHunterPreferredContractType: (type: import('../game/types').HunterContractTarget['type'] | null) => boolean;
-  setHunterPreferredHuntingGround: (groundId: DungeonId | null) => boolean;
-  rememberHunterQuarry: (monsterId: MonsterId, groundId: DungeonId) => boolean;
+  setHunterPreferredHuntingGround: (groundId: CombatLocationId | null) => boolean;
+  rememberHunterQuarry: (monsterId: MonsterId, groundId: CombatLocationId) => boolean;
   setHunterTargetBlocked: (monsterId: MonsterId, blocked: boolean) => boolean;
   clearHunterTargetBlocks: () => boolean;
   purchaseHunterUpgrade: (upgradeId: string) => boolean;
@@ -1776,7 +1775,7 @@ export const useGameStore = create<GameStore>()(
           pushNotification(state, 'Debug spawn blocked. Use Drop Simulator for bulk testing.', 'warning', { key: 'sigil-debug-cap', cooldownMs: 1200 });
           return state;
         }
-        instanceId = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: getSigilTierDefinition(tier).minEnemyPower, source: 'debug', forcedTier: tier, forcedQuality: quality, forcedSetId: setId, forcedSlot: slot as import('../game/types').SigilSlot, forcedMainStatId: mainStatId, rng: Math.random }).instanceId;
+        instanceId = generateSigil({ state, locationId: 'whispering-woods', enemyPower: getSigilTierDefinition(tier).minEnemyPower, source: 'debug', forcedTier: tier, forcedQuality: quality, forcedSetId: setId, forcedSlot: slot as import('../game/types').SigilSlot, forcedMainStatId: mainStatId, rng: Math.random }).instanceId;
         return state;
       });
       return instanceId;
@@ -1788,7 +1787,7 @@ export const useGameStore = create<GameStore>()(
           pushNotification(state, 'Debug spawn blocked. Use Drop Simulator for bulk testing.', 'warning', { key: 'sigil-debug-cap', cooldownMs: 1200 });
           return state;
         }
-        instanceId = generateCraftedSigil({ state, dungeonId: 'whispering-woods', tier, setId, slot, rng: Math.random, source: 'debug' }).instanceId;
+        instanceId = generateCraftedSigil({ state, locationId: 'whispering-woods', tier, setId, slot, rng: Math.random, source: 'debug' }).instanceId;
         return state;
       });
       return instanceId;
@@ -2013,11 +2012,11 @@ export const useGameStore = create<GameStore>()(
       });
       return result;
     },
-    enterDungeon: (dungeonId = "whispering-woods") => {
-      const dungeon = DUNGEONS[dungeonId];
+    enterDungeon: (locationId = "whispering-woods") => {
+      const dungeon = DUNGEONS[locationId];
       const currentState = get();
       if (!dungeon) return;
-      const location = getCombatLocationByDungeonId(dungeonId)
+      const location = getCombatLocationById(locationId)
       if (location && !isCombatLocationUnlocked(location.id, currentState.progress)) {
         const requirement = location.id === 'whispering-woods' ? 'Defeat any elemental tutorial boss' : location.id === 'howling-den' ? 'Defeat the Forest Heart' : location.id === 'hunters-ground' || location.id === 'abandoned-catacombs' ? 'Defeat the Corrupted Greatbear' : 'Complete the location unlock requirement'
         set((state) => { pushNotification(state, `${location.name} is locked. ${requirement}.`, "warning"); return state })
@@ -2036,7 +2035,7 @@ export const useGameStore = create<GameStore>()(
       }
       if (
         currentState.combat.active &&
-        currentState.combat.dungeonId === dungeonId
+        currentState.combat.locationId === locationId
       )
         return;
       const preflight = validateSelectedCombatLoadout(currentState)
@@ -2050,30 +2049,30 @@ export const useGameStore = create<GameStore>()(
       const switching = currentState.combat.active;
       if (switching) endActiveDungeonRun();
       set((state) => {
-        initializeDungeonRun(state, dungeonId, switching);
-        state.ui.lastEnteredCombatDungeonId = dungeonId;
+        initializeDungeonRun(state, locationId, switching);
+        state.ui.lastEnteredCombatLocationId = locationId;
         reconcileChronicleProgress(state);
         return state;
       });
     },
-    enterTargetedCombat: (dungeonId, targetEnemyId) => {
-      const locationId = Object.values(COMBAT_LOCATIONS).find(
-        (location) => location.dungeonId === dungeonId,
+    enterTargetedCombat: (locationId, targetEnemyId) => {
+      const resolvedLocationId = Object.values(COMBAT_LOCATIONS).find(
+        (location) => location.id === locationId,
       )?.id;
-      return locationId
-        ? get().huntCombatTarget(locationId, targetEnemyId)
+      return resolvedLocationId
+        ? get().huntCombatTarget(resolvedLocationId, targetEnemyId)
         : false;
     },
     huntCombatTarget: (locationId, targetEnemyId) => {
       const location = COMBAT_LOCATIONS[locationId];
-      const dungeonId = location?.dungeonId;
-      const dungeon = dungeonId ? DUNGEONS[dungeonId] : null;
+      const resolvedLocationId = location?.id;
+      const dungeon = resolvedLocationId ? DUNGEONS[resolvedLocationId] : null;
       const currentState = get();
       if (
         !location ||
-        !dungeonId ||
+        !resolvedLocationId ||
         !dungeon ||
-        !isCombatTargetForLocation(location, dungeonId, targetEnemyId)
+        !isCombatTargetForLocation(location, resolvedLocationId, targetEnemyId)
       ) {
         set((state) => {
           pushNotification(
@@ -2100,14 +2099,14 @@ export const useGameStore = create<GameStore>()(
         set((state) => { pushNotification(state, `${location.name} is locked. Defeat an enemy in your starter counter zone to open the other elemental frontiers.`, "warning"); return state })
         return false
       }
-      const authorization = getHunterAuthorization(currentState, targetEnemyId, dungeonId)
+      const authorization = getHunterAuthorization(currentState, targetEnemyId, locationId)
       if (!authorization.authorized) {
         set((state) => { pushNotification(state, getHunterAuthorizationMessage(authorization, MONSTERS[targetEnemyId]?.name), 'warning', { key: `hunter-authorization:${authorization.reason}:${targetEnemyId}`, cooldownMs: 1000 }); return state; })
         return false;
       }
       const sameLocation = Boolean(
         currentState.combat.active &&
-        currentState.combat.dungeonId === dungeonId,
+        currentState.combat.locationId === locationId,
       );
       if (!sameLocation) {
         const preflight = validateSelectedCombatLoadout(currentState)
@@ -2122,7 +2121,7 @@ export const useGameStore = create<GameStore>()(
         set((state) => {
           initializeDungeonRun(
             state,
-            dungeonId,
+            locationId,
             currentState.combat.active,
             targetEnemyId,
           );
@@ -2131,13 +2130,13 @@ export const useGameStore = create<GameStore>()(
               state,
               `Hunting target: ${MONSTERS[targetEnemyId].name}.`,
             );
-          state.ui.lastEnteredCombatDungeonId = dungeonId;
+          state.ui.lastEnteredCombatLocationId = locationId;
           return state;
         });
         const nextState = get();
         return (
           nextState.combat.active &&
-          nextState.combat.dungeonId === dungeonId &&
+          nextState.combat.locationId === locationId &&
           nextState.combat.targetEnemyId === targetEnemyId
         );
       }
@@ -2166,15 +2165,15 @@ export const useGameStore = create<GameStore>()(
     setCombatTarget: (enemyId) => {
       let changed = false;
       set((state) => {
-        const dungeonId = state.combat.dungeonId;
-        const dungeon = dungeonId ? DUNGEONS[dungeonId] : null;
-        const location = dungeonId
-          ? getCombatLocationByDungeonId(dungeonId)
+        const locationId = state.combat.locationId;
+        const dungeon = locationId ? DUNGEONS[locationId] : null;
+        const location = locationId
+          ? getCombatLocationById(locationId)
           : null;
         if (
           !state.combat.active ||
           !dungeon ||
-          !isCombatTargetForLocation(location, dungeonId, enemyId)
+          !isCombatTargetForLocation(location, locationId, enemyId)
         ) {
           pushNotification(
             state,
@@ -2183,7 +2182,7 @@ export const useGameStore = create<GameStore>()(
           );
           return state;
         }
-        const authorization = getHunterAuthorization(state, enemyId, dungeonId)
+        const authorization = getHunterAuthorization(state, enemyId, locationId)
         if (!authorization.authorized) {
           pushNotification(state, getHunterAuthorizationMessage(authorization, MONSTERS[enemyId]?.name), 'warning', { key: `hunter-authorization:${authorization.reason}:${enemyId}`, cooldownMs: 1000 })
           return state;
@@ -2210,12 +2209,12 @@ export const useGameStore = create<GameStore>()(
         clearCombatSpellRuntime(state);
         const sequence =
           getCombatEncounterMode(
-            getCombatLocationByDungeonId(state.combat.dungeonId),
+            getCombatLocationById(state.combat.locationId),
           ) === "sequence";
-        const dungeon = state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId] : null;
+        const dungeon = state.combat.locationId ? DUNGEONS[state.combat.locationId] : null;
         state.combat = {
           ...createInitialState().combat,
-          dungeonId: state.combat.dungeonId,
+          locationId: state.combat.locationId,
           log: [
             sequence
               ? "Left the dungeon run."
@@ -2229,8 +2228,8 @@ export const useGameStore = create<GameStore>()(
     },
     engageBoss: (bossId) =>
       set((state) => {
-        const dungeon = state.combat.dungeonId
-          ? DUNGEONS[state.combat.dungeonId]
+        const dungeon = state.combat.locationId
+          ? DUNGEONS[state.combat.locationId]
           : null;
         const boss = MONSTERS[bossId];
         if (!state.combat.active || !dungeon) {
@@ -2238,7 +2237,7 @@ export const useGameStore = create<GameStore>()(
           return state;
         }
         if (
-          getCombatEncounterMode(getCombatLocationByDungeonId(dungeon.id)) ===
+          getCombatEncounterMode(getCombatLocationById(dungeon.id)) ===
           "sequence"
         )
           return state;
@@ -2289,10 +2288,10 @@ export const useGameStore = create<GameStore>()(
           pushNotification(state, `${boss.name} engaged`, "warning");
         return state;
       }),
-    toggleAutoHunt: (dungeonId = "whispering-woods") =>
+    toggleAutoHunt: (locationId = "whispering-woods") =>
       set((state) => {
-        const dungeon = DUNGEONS[dungeonId];
-        const location = getCombatLocationByDungeonId(dungeonId);
+        const dungeon = DUNGEONS[locationId];
+        const location = getCombatLocationById(locationId);
         if (
           !dungeon ||
           !hasBossEncounter(dungeon) ||
@@ -2310,14 +2309,14 @@ export const useGameStore = create<GameStore>()(
         }
 
         state.progress.autoHuntBossUnlocked = true;
-        const enabled = !state.progress.autoHuntBossByDungeon[dungeonId];
-        state.progress.autoHuntBossByDungeon[dungeonId] = enabled;
+        const enabled = !state.progress.autoHuntBossByLocation[locationId];
+        state.progress.autoHuntBossByLocation[locationId] = enabled;
 
         const activeLocation =
-          state.combat.active && state.combat.dungeonId === dungeonId;
+          state.combat.active && state.combat.locationId === locationId;
         const bossActive = isBossCurrentlyActive(state);
         const threatRequired = resolveBossThreatRequirement(
-          dungeonId,
+          locationId,
           state.worldTier.current,
         );
         if (
@@ -2332,7 +2331,7 @@ export const useGameStore = create<GameStore>()(
             `Auto Hunt disabled. ${MONSTERS[dungeon.boss].name} will not be queued.`,
           );
         }
-        if (enabled && activeLocation && state.combat.threatCleared >= threatRequired && !bossActive) queueAutoHuntBoss(state, dungeonId);
+        if (enabled && activeLocation && state.combat.threatCleared >= threatRequired && !bossActive) queueAutoHuntBoss(state, locationId);
         return state;
       }),
     killCurrentEnemy: () =>
@@ -2345,12 +2344,12 @@ export const useGameStore = create<GameStore>()(
         despawnEnemyForDebug(state);
         return state;
       }),
-    fastResolveDebugEnemies: (amount, dungeonId, stopAtBossReady = true) =>
+    fastResolveDebugEnemies: (amount, locationId, stopAtBossReady = true) =>
       set((state) => {
         fastResolveNormalEnemiesForDebug(
           state,
           amount,
-          dungeonId ?? state.combat.dungeonId ?? "whispering-woods",
+          locationId ?? state.combat.locationId ?? "whispering-woods",
           stopAtBossReady,
           {
             uiEvents: combatLogUiSink,
@@ -2361,11 +2360,11 @@ export const useGameStore = create<GameStore>()(
         );
         return state;
       }),
-    clearDebugThreatToBoss: (dungeonId) =>
+    clearDebugThreatToBoss: (locationId) =>
       set((state) => {
         clearToBossForDebug(
           state,
-          dungeonId ?? state.combat.dungeonId ?? "whispering-woods",
+          locationId ?? state.combat.locationId ?? "whispering-woods",
           {
             uiEvents: combatLogUiSink,
             onItemAcquired: (itemId, quantity) =>
@@ -2375,11 +2374,11 @@ export const useGameStore = create<GameStore>()(
         );
         return state;
       }),
-    jumpDebugToBoss: (dungeonId) =>
+    jumpDebugToBoss: (locationId) =>
       set((state) => {
         jumpToBossForDebug(
           state,
-          dungeonId ?? state.combat.dungeonId ?? "whispering-woods",
+          locationId ?? state.combat.locationId ?? "whispering-woods",
           { uiEvents: combatLogUiSink },
         );
         return state;
@@ -2403,16 +2402,16 @@ export const useGameStore = create<GameStore>()(
         });
         return state;
       }),
-    spawnDebugEnemy: (enemyId, dungeonId) =>
+    spawnDebugEnemy: (enemyId, locationId) =>
       set((state) => {
-        const contextDungeonId =
-          dungeonId ?? state.combat.dungeonId ?? "whispering-woods";
+        const contextCombatLocationId =
+          locationId ?? state.combat.locationId ?? "whispering-woods";
         state.combat.active = true;
-        state.combat.dungeonId = contextDungeonId;
+        state.combat.locationId = contextCombatLocationId;
         spawnEnemy(state, enemyId, combatLogUiSink);
         pushNotification(
           state,
-          `${MONSTERS[enemyId].name} spawned by Developer Tools in ${DUNGEONS[contextDungeonId].name}`,
+          `${MONSTERS[enemyId].name} spawned by Developer Tools in ${DUNGEONS[contextCombatLocationId].name}`,
           "warning",
         );
         return state;

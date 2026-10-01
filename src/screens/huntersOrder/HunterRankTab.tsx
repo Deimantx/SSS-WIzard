@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BookOpen, Compass, Crown, Eye, Footprints, Map, Medal, PawPrint, ScrollText, Shield, ShieldCheck, Sparkles, Target, Trophy, Wrench } from 'lucide-react'
 import { Button, Card, GameTooltip } from '../../components/ui'
-import { HUNTER_STANDINGS } from '../../game/content/huntersOrder/hunterRanks'
+import { HUNTER_STANDINGS } from '../../game/content/hunters-order/hunterRanks'
 import { getHunterRankPresentation } from '../../game/presentation/huntersOrder/hunterPresentation'
 import type { GameState, HunterRankId } from '../../game/types'
 

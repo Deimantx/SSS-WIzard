@@ -11,8 +11,8 @@ import {
   validateCombatModifier,
   validateCombatTriggerRule,
 } from "../../systems/combat/combatEffectValidation";
-import { ACT1_TRAIT_DEFINITIONS } from "./act1Traits";
-import { ACT0_TUTORIAL_TRAITS } from './act0TutorialTraits';
+import { REGIONAL_TRAIT_DEFINITIONS } from "./regionalTraits";
+import { TUTORIAL_TRAIT_DEFINITIONS } from './tutorialTraits';
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: "gain-barrier",
@@ -33,7 +33,7 @@ const applyStatus = (
   durationMs,
 });
 
-const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
+const FIRST_FRONTIER_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
   "forest-wisp-flicker": {
     id: "forest-wisp-flicker",
     name: "Flickering Current",
@@ -235,9 +235,9 @@ const ACT0_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
 };
 
 export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
-  ...ACT0_TRAIT_DEFINITIONS,
-  ...ACT0_TUTORIAL_TRAITS,
-  ...ACT1_TRAIT_DEFINITIONS,
+  ...FIRST_FRONTIER_TRAIT_DEFINITIONS,
+  ...TUTORIAL_TRAIT_DEFINITIONS,
+  ...REGIONAL_TRAIT_DEFINITIONS,
 } as Record<TraitId, TraitDefinition>;
 
 const isTraitId = (traitId: string): traitId is TraitId =>

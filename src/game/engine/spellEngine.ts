@@ -12,9 +12,9 @@ import { getSpellCombatSource, isDirectPlayerSpell } from '../systems/spells/spe
 import { getSpellCastTimeMultiplier } from '../systems/spells/spellCastTiming'
 import { consumeArtifactPreCastManaShift, getArtifactPreCastDamageMultiplier, getArtifactSpellCritDamageBonus, recordArtifactManaPayment } from '../systems/artifacts/artifactProgression'
 import { hasEnoughResource, stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
-import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
-import { getArcaneCoreCastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreCastModifiers } from '../systems/arcaneCore/arcaneCoreMechanicRuntime'
-import { getArcaneCoreCooldownPulseReduction } from '../systems/arcaneCore/arcaneCoreRuntime'
+import { beginArcaneCoreSpellCast, isArcaneCoreSpellFree } from '../systems/arcane-core/arcaneCoreRuntime'
+import { getArcaneCoreCastModifiers, type ArcaneCoreCastOrigin, type ArcaneCoreCastModifiers } from '../systems/arcane-core/arcaneCoreMechanicRuntime'
+import { getArcaneCoreCooldownPulseReduction } from '../systems/arcane-core/arcaneCoreRuntime'
 import { runCombatTriggers } from '../systems/combat/triggerRuntime'
 import { createCombatResolutionContext } from '../systems/combat/combatTypes'
 import { getSpellManaPreview } from './spellCastPreview'
@@ -78,7 +78,7 @@ export const notifySpellCastFailure = (state: GameState, spellId: SpellId, failu
 }
 
 const reportSpellFailure = (state: GameState, spellId: CanonicalSpellId, failure: 'mana' | 'no-target', uiEvents?: CombatEventSink) => {
-  uiEvents?.push({ source: { kind: 'player' }, sourceKind: 'spell', dungeonId: state.combat.dungeonId ?? undefined, target: state.combat.enemyId ? 'enemy' : undefined, targetMonsterId: state.combat.enemyId ?? undefined, category: 'system', sourceId: 'spell-cast-failed', spellId, failure, attemptedAmount: failure === 'mana' ? getEffectiveManaCost(state, SPELLS[spellId].manaCost) : undefined })
+  uiEvents?.push({ source: { kind: 'player' }, sourceKind: 'spell', locationId: state.combat.locationId ?? undefined, target: state.combat.enemyId ? 'enemy' : undefined, targetMonsterId: state.combat.enemyId ?? undefined, category: 'system', sourceId: 'spell-cast-failed', spellId, failure, attemptedAmount: failure === 'mana' ? getEffectiveManaCost(state, SPELLS[spellId].manaCost) : undefined })
 }
 
 const getSpellCastRate = (state: GameState) => {

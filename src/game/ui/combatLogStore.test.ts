@@ -45,7 +45,7 @@ describe('combatLogStore', () => {
   it('emits live combat detail while suppressing the same stream in banked simulation', () => {
     const liveState = createCombatTestState()
     liveState.combat.active = true
-    liveState.combat.dungeonId = 'whispering-woods'
+    liveState.combat.locationId = 'whispering-woods'
     liveState.player.mana = liveState.player.maxMana
     liveState.progress.spellRanks['fire-bolt'] = 1
     liveState.activities.autoCast['fire-bolt'] = true
@@ -57,7 +57,7 @@ describe('combatLogStore', () => {
 
     const bankedState = createCombatTestState()
     bankedState.combat.active = true
-    bankedState.combat.dungeonId = 'whispering-woods'
+    bankedState.combat.locationId = 'whispering-woods'
     spawnEnemy(bankedState, 'forest-wisp')
     const bankedSink: CombatUiEventSink = { push: vi.fn() }
     advanceGameState(bankedState, 1_000, { mode: 'banked', uiEvents: bankedSink })

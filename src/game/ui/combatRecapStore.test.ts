@@ -10,15 +10,15 @@ describe('combat encounter recap', () => {
   it('captures the finalized encounter scope before telemetry resets it', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     combatTelemetryObserver.beginRun('whispering-woods')
-    const encounterStart: CombatEvent = { source: { kind: 'system' }, sourceKind: 'system', dungeonId: 'whispering-woods', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'system', sourceId: 'encounter-start' }
+    const encounterStart: CombatEvent = { source: { kind: 'system' }, sourceKind: 'system', locationId: 'whispering-woods', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'system', sourceId: 'encounter-start' }
     combatTelemetrySink.push(encounterStart)
     combatTelemetryObserver.advance(2_000, state)
     combatTelemetrySink.push({ source: { kind: 'player' }, sourceKind: 'spell', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'spell', spellId: 'fire-bolt', amount: 40, healthDamage: 40 })
 
-    combatRecapSink.push({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: 'whispering-woods', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'death', sourceId: 'enemy-defeated' })
+    combatRecapSink.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: 'whispering-woods', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'death', sourceId: 'enemy-defeated' })
 
     const recap = useCombatRecapStore.getState().lastEncounterRecap
     expect(recap).toMatchObject({ monsterId: 'forest-wisp', durationMs: 2_000, dps: 20, defeated: true, boss: false })

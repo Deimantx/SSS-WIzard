@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2Act1GlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
+import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2RegionalGlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../../content/monsters/elementalTutorial'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
@@ -8,14 +8,14 @@ import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import type { TraitId } from './combatTypes'
 import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
-import { COMBAT_LOCATIONS } from '../../content/world-navigation/worldNavigation'
-import { DUNGEONS, isDungeonUnlocked } from '../../content/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
+import { DUNGEONS, isDungeonUnlocked } from '../../content/combat-locations/dungeons/dungeons'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
-const elementalScarSources = import.meta.glob('../../content/monsters/act1/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const elementalScarSources = import.meta.glob('../../content/monsters/regions/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const tutorialSource = import.meta.glob('../../content/monsters/elementalTutorial.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const shatteredSources = import.meta.glob('../../content/monsters/act1/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const convertedAct1Sources = import.meta.glob('../../content/monsters/act1/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const blackSigilSources = import.meta.glob('../../content/monsters/act1/{hallOfUnboundNames,vaultOfTheBlackSigil,blackGate}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const shatteredSources = import.meta.glob('../../content/monsters/regions/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const convertedRegionSources = import.meta.glob('../../content/monsters/regions/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const blackSigilSources = import.meta.glob('../../content/monsters/regions/{hallOfUnboundNames,vaultOfTheBlackSigil,blackGate}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 
 describe('Combat V2 authored content audit', () => {
   it('keeps tutorial tiers in their intended WT1 Power bands and above passive regeneration pressure', () => {
@@ -36,7 +36,7 @@ describe('Combat V2 authored content audit', () => {
     }
   })
 
-  it('reports source-scaled tutorial Burning and no Physical damage in reconstructed Act 0', () => {
+  it('reports source-scaled tutorial Burning and no Physical damage in reconstructed First Frontier', () => {
     const audit = buildCombatV2ContentAudit()
     expect(audit).toHaveLength(COMBAT_V2_AUDIT_MONSTER_IDS.length)
     expect(audit.filter((row) => row.physicalComponentCount > 0).map((row) => row.id)).toEqual([])
@@ -250,7 +250,7 @@ describe('Combat V2 authored content audit', () => {
       expect(row.physicalComponentCount, id).toBe(0)
       expect(row.defaultFlatPeriodicDamageCount, id).toBe(0)
       expect(row.defaultFlatPeriodicHealCount, id).toBe(0)
-      if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Act 1 combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
+      if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Regional Progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
     }
 
     const hall = DUNGEONS['hall-of-unbound-names']
@@ -269,7 +269,7 @@ describe('Combat V2 authored content audit', () => {
       expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|resistances:\s*\{[^}]*physical/)
       expect(source, file).not.toMatch(/statusId:\s*['"](?:burning|poisoned|regeneration)['"]|status:\s*\{\s*id:\s*['"](?:burning|poisoned|regeneration)['"]|\bheal:\s*[\d.]+/)
     }
-    expect(buildCombatV2Act1GlobalAudit()).toMatchObject({ implicitAffinityCount: 0, physicalComponentCount: 0, genericEquippedTraitCount: 0 })
+    expect(buildCombatV2RegionalGlobalAudit()).toMatchObject({ implicitAffinityCount: 0, physicalComponentCount: 0, genericEquippedTraitCount: 0 })
   })
 
   it('keeps Gatekeeper threshold mechanics on a single deterministic phase change', () => {
@@ -297,8 +297,8 @@ describe('Combat V2 authored content audit', () => {
     })
   })
 
-  it('finds common source mojibake markers in converted Act 1 combat definitions', () => {
-    expect(Object.keys(convertedAct1Sources).length).toBeGreaterThan(0)
-    for (const [file, source] of Object.entries(convertedAct1Sources)) expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
+  it('finds common source mojibake markers in converted Regional Progression combat definitions', () => {
+    expect(Object.keys(convertedRegionSources).length).toBeGreaterThan(0)
+    for (const [file, source] of Object.entries(convertedRegionSources)) expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
   })
 })

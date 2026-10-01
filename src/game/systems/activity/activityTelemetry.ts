@@ -1,9 +1,9 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
 import { SCHOOLS } from '../../content/schools/schools'
-import { getCombatEncounterMode, getCombatLocationByDungeonId } from '../../content/world-navigation'
+import { getCombatEncounterMode, getCombatLocationById } from '../../content/combat-locations'
 import { getCurrentEnemyActionStep, getEnemyAction, getNextEnemyActionStep } from '../combat/actionRuntime'
 import { resolveBossThreatRequirement } from '../combat/combatThreat'
 import { getRecipeOutputPerHour, getRecipeCurrentRemainingDuration, getRecipeFluxDemandPerSecond, getRecipeStatus } from '../transmutation/transmutationSelectors'
@@ -17,12 +17,12 @@ const hasAcolyte = (job: { acolyteAssigned?: boolean } | undefined) => Boolean(j
 
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
-  const dungeon = DUNGEONS[state.combat.dungeonId ?? 'whispering-woods']
-  const location = getCombatLocationByDungeonId(state.combat.dungeonId)
+  const dungeon = DUNGEONS[state.combat.locationId ?? 'whispering-woods']
+  const location = getCombatLocationById(state.combat.locationId)
   const encounterMode = getCombatEncounterMode(location)
   const sequence = encounterMode === 'sequence'
   const sequenceTotal = sequence ? (dungeon.encounterSequence?.length ?? 0) + 1 : 0
-  const sequenceStep = sequence ? Math.min(sequenceTotal, Math.max(1, (state.combat.dungeonSequenceIndex ?? 0) + 1)) : 0
+  const sequenceStep = sequence ? Math.min(sequenceTotal, Math.max(1, (state.combat.sequenceIndex ?? 0) + 1)) : 0
   const sequenceRunLabel = sequence ? `Step ${sequenceStep} / ${sequenceTotal}` : null
   const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
   const hasThreatProgress = hasBossEncounter(dungeon) && !sequence

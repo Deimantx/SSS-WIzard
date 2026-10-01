@@ -1,9 +1,9 @@
-import type { DungeonId } from '../../types'
+import type { CombatLocationId } from '../../types'
 import type { SigilSetId } from './sigilSets'
 import { SIGIL_SET_IDS } from './sigilSets'
 
 const pool = (...sets: SigilSetId[]) => sets
-export const SIGIL_REGION_SET_POOLS: Partial<Record<DungeonId, readonly SigilSetId[]>> = {
+export const SIGIL_REGION_SET_POOLS: Partial<Record<CombatLocationId, readonly SigilSetId[]>> = {
   'whispering-woods': pool('arcane', 'vital', 'ward', 'restoration', 'cinder', 'conduit'),
   'howling-den': pool('vital', 'precision', 'conduit', 'sage', 'tempest', 'predator'),
   'abandoned-catacombs': pool('arcane', 'ward', 'precision', 'sage', 'echo', 'dominion'),
@@ -21,4 +21,4 @@ export const SIGIL_REGION_SET_POOLS: Partial<Record<DungeonId, readonly SigilSet
   'black-gate': pool('predator', 'cinder', 'ward', 'vital', 'precision', 'arcane'),
 }
 
-export const getSigilRegionSetPool = (dungeonId: DungeonId): readonly SigilSetId[] => SIGIL_REGION_SET_POOLS[dungeonId] ?? SIGIL_SET_IDS
+export const getSigilRegionSetPool = (locationId: CombatLocationId): readonly SigilSetId[] => SIGIL_REGION_SET_POOLS[locationId] ?? SIGIL_SET_IDS

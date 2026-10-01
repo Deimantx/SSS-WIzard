@@ -1,6 +1,6 @@
 import { Button, Card, Status } from '../../components/ui'
 import { SCHOOLS } from '../../game/content/schools/schools'
-import { formatDuration, formatNumber } from '../../game/content/presentation/balanceFormatters'
+import { formatDuration, formatNumber } from '../../game/presentation/content/balanceFormatters'
 import { getSchoolProgressInfo } from '../../game/systems/schools'
 import { formatSpellRank, getAllSpellsInOrder, getSpellRank } from '../../game/systems/spells'
 import type { SchoolId } from '../../game/types'

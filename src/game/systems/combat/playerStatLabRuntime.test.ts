@@ -66,7 +66,7 @@ describe('Player Stat Lab runtime coverage', () => {
     const combatState = () => {
       const state = createCombatTestState()
       state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
+      state.combat.locationId = 'whispering-woods'
       spawnEnemy(state, 'forest-wisp')
       return state
     }
@@ -93,8 +93,8 @@ describe('Player Stat Lab runtime coverage', () => {
     const dotBoosted = createCombatTestState()
     dotBaseline.combat.active = true
     dotBoosted.combat.active = true
-    dotBaseline.combat.dungeonId = 'whispering-woods'
-    dotBoosted.combat.dungeonId = 'whispering-woods'
+    dotBaseline.combat.locationId = 'whispering-woods'
+    dotBoosted.combat.locationId = 'whispering-woods'
     spawnEnemy(dotBaseline, 'forest-wisp')
     spawnEnemy(dotBoosted, 'forest-wisp')
     dotBoosted.debug.playerStats.modifiers['damage-over-time-percent'] = 0.5
@@ -129,7 +129,7 @@ describe('Player Stat Lab runtime coverage', () => {
     fireResistIncoming.debug.playerStats.resistanceByType.fire = 0.25
     physicalResistIncoming.debug.playerStats.resistanceByType.physical = 0.25
     const incoming = (target: 'physical' | 'fire') => [{ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: target, magnitude: { type: 'flat' as const, value: 20 } }] }]
-    ;[baseIncoming, fireResistIncoming, physicalResistIncoming].forEach((target) => { target.combat.active = true; target.combat.dungeonId = 'whispering-woods'; spawnEnemy(target, 'forest-wisp') })
+    ;[baseIncoming, fireResistIncoming, physicalResistIncoming].forEach((target) => { target.combat.active = true; target.combat.locationId = 'whispering-woods'; spawnEnemy(target, 'forest-wisp') })
     const sourceFor = (target: ReturnType<typeof createCombatTestState>): CombatSource => ({ actor: 'enemy', kind: 'action', sourceId: 'lab-incoming', sourceMonsterId: target.combat.enemyId ?? undefined, sourceInstanceKey: target.combat.enemyInstanceKey ?? undefined, school: 'fire', tags: ['special'] })
     const beforeFire = fireResistIncoming.player.health
     const beforePhysical = physicalResistIncoming.player.health
@@ -143,7 +143,7 @@ describe('Player Stat Lab runtime coverage', () => {
 
     const takenBaseline = createCombatTestState()
     const takenReduced = createCombatTestState()
-    ;[takenBaseline, takenReduced].forEach((target) => { target.combat.active = true; target.combat.dungeonId = 'whispering-woods'; spawnEnemy(target, 'forest-wisp') })
+    ;[takenBaseline, takenReduced].forEach((target) => { target.combat.active = true; target.combat.locationId = 'whispering-woods'; spawnEnemy(target, 'forest-wisp') })
     takenReduced.debug.playerStats.modifiers['damage-taken-percent'] = -0.2
     const enemyFor = (target: ReturnType<typeof createCombatTestState>): CombatSource => ({ actor: 'enemy', kind: 'action', sourceId: 'lab-damage-taken', sourceMonsterId: target.combat.enemyId ?? undefined, sourceInstanceKey: target.combat.enemyInstanceKey ?? undefined, tags: ['special'] })
     const baselineBefore = takenBaseline.player.health
@@ -171,7 +171,7 @@ describe('Player Stat Lab runtime coverage', () => {
     state.debug.playerStats.modifiers['status-duration-received-percent'] = -0.25
     state.debug.playerStats.modifiers['control-duration-received-percent'] = -0.5
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')
     applyStatus(state, 'enemy', 'burning', playerSpell)
     expect(state.combat.enemyStatuses[0]?.remainingMs).toBe(10_000)
@@ -185,7 +185,7 @@ describe('Player Stat Lab runtime coverage', () => {
     try {
       SPELLS['fire-bolt'].manaCost = 40
       state.combat.active = true
-      state.combat.dungeonId = 'whispering-woods'
+      state.combat.locationId = 'whispering-woods'
       state.combat.enemyId = 'forest-wisp'
       state.combat.enemyInstanceKey = 'lab-fire-bolt'
       state.combat.enemyHp = 1000

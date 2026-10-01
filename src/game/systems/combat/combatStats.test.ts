@@ -73,7 +73,7 @@ describe('universal combat stats foundation', () => {
   it('keeps the enemy Basic Attack path after removing player Basic fields', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.activeSpellLoadout = { presetId: null, presetName: 'Combat test', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
     spawnEnemy(state, 'forest-wisp')
     const before = state.player.health

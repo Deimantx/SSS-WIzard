@@ -2,13 +2,13 @@ import { create } from 'zustand'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceType } from '../../content/resonance/resonance'
 import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTypes'
-import type { DungeonId, GameState, ItemId, MonsterId } from '../../types'
+import type { CombatLocationId, GameState, ItemId, MonsterId } from '../../types'
 import type { DungeonStatisticsObserver, DungeonStatisticsSession, DungeonStatisticsState } from './dungeonStatisticsTypes'
 
 interface CurrentEncounter { monsterId: MonsterId; boss: boolean; elapsedMs: number }
 interface DungeonStatisticsStore extends DungeonStatisticsState {
   currentEncounter: CurrentEncounter | null
-  beginSession: (dungeonId: DungeonId) => void
+  beginSession: (locationId: CombatLocationId) => void
   endSession: (reason: 'leave' | 'death' | 'complete' | 'dungeon-change') => void
   advanceTime: (deltaMs: number, state: GameState) => void
   beginRun: () => void
@@ -21,8 +21,8 @@ interface DungeonStatisticsStore extends DungeonStatisticsState {
 }
 
 const initialState = (): DungeonStatisticsState & { currentEncounter: CurrentEncounter | null } => ({ session: null, active: false, currentEncounter: null })
-const newSession = (dungeonId: DungeonId): DungeonStatisticsSession => ({
-  dungeonId,
+const newSession = (locationId: CombatLocationId): DungeonStatisticsSession => ({
+  locationId,
   startedAtMs: Date.now(),
   elapsedMs: 0,
   engagedMs: 0,
@@ -98,16 +98,16 @@ const cloneStatisticsState = (state: DungeonStatisticsSnapshot): DungeonStatisti
   currentEncounter: state.currentEncounter ? { ...state.currentEncounter } : null,
 })
 
-const beginSessionSnapshot = (state: DungeonStatisticsSnapshot, dungeonId: DungeonId): DungeonStatisticsSnapshot => state.active && state.session?.dungeonId === dungeonId ? state : { session: newSession(dungeonId), active: true, currentEncounter: null }
+const beginSessionSnapshot = (state: DungeonStatisticsSnapshot, locationId: CombatLocationId): DungeonStatisticsSnapshot => state.active && state.session?.locationId === locationId ? state : { session: newSession(locationId), active: true, currentEncounter: null }
 const endSessionSnapshot = (state: DungeonStatisticsSnapshot): DungeonStatisticsSnapshot => ({ ...state, active: false, currentEncounter: null })
 const advanceStatisticsSnapshot = (state: DungeonStatisticsSnapshot, deltaMs: number, gameState: GameState): DungeonStatisticsSnapshot => {
   const delta = validDuration(deltaMs)
   let active = state.active
   let session = state.session
   let currentEncounter = state.currentEncounter
-  if (!active && gameState.combat.active && gameState.combat.dungeonId) {
+  if (!active && gameState.combat.active && gameState.combat.locationId) {
     active = true
-    session = newSession(gameState.combat.dungeonId)
+    session = newSession(gameState.combat.locationId)
     currentEncounter = null
   }
   if (!active || !session || delta <= 0) return state
@@ -123,7 +123,7 @@ const advanceStatisticsSnapshot = (state: DungeonStatisticsSnapshot, deltaMs: nu
 }
 const consumeStatisticsEvent = (state: DungeonStatisticsSnapshot, event: CombatEvent): DungeonStatisticsSnapshot => {
   let next = state
-  if (!next.active && !next.session && event.dungeonId && event.sourceId === 'encounter-start') next = { ...next, active: true, session: newSession(event.dungeonId) }
+  if (!next.active && !next.session && event.locationId && event.sourceId === 'encounter-start') next = { ...next, active: true, session: newSession(event.locationId) }
   if (!next.active || !next.session) return next
   if (event.sourceId === 'encounter-start' && event.targetMonsterId) return beginEncounterState(next, event.targetMonsterId, bossFor(event.targetMonsterId))
   if (event.category === 'loot' && event.itemId && Number.isFinite(event.amount) && (event.amount ?? 0) > 0) {
@@ -152,7 +152,7 @@ export interface DungeonStatisticsAccumulator extends DungeonStatisticsObserver 
 export const createDungeonStatisticsAccumulator = (initial: DungeonStatisticsSnapshot = initialState()): DungeonStatisticsAccumulator => {
   let state = cloneStatisticsState(initial)
   return {
-    beginSession: (dungeonId) => { state = beginSessionSnapshot(state, dungeonId) },
+    beginSession: (locationId) => { state = beginSessionSnapshot(state, locationId) },
     endSession: () => { state = endSessionSnapshot(state) },
     advance: (deltaMs, gameState) => { state = advanceStatisticsSnapshot(state, deltaMs, gameState) },
     beginRun: () => { state = state.session ? { ...state, session: { ...state.session, currentRunElapsedMs: 0 }, currentEncounter: null } : state },
@@ -160,7 +160,7 @@ export const createDungeonStatisticsAccumulator = (initial: DungeonStatisticsSna
     beginEncounter: (monsterId, boss) => { state = beginEncounterState(state, monsterId, boss) },
     completeEncounter: (monsterId, durationMs, boss) => { state = completeEncounterState(state, monsterId, durationMs, boss) },
     consume: (event) => { state = consumeStatisticsEvent(state, event) },
-    reset: () => { state = !state.session || !state.active ? initialState() : { session: newSession(state.session.dungeonId), active: true, currentEncounter: state.currentEncounter ? { ...state.currentEncounter, elapsedMs: 0 } : null } },
+    reset: () => { state = !state.session || !state.active ? initialState() : { session: newSession(state.session.locationId), active: true, currentEncounter: state.currentEncounter ? { ...state.currentEncounter, elapsedMs: 0 } : null } },
     clear: () => { state = initialState() },
     getState: () => state,
   }
@@ -168,7 +168,7 @@ export const createDungeonStatisticsAccumulator = (initial: DungeonStatisticsSna
 
 export const useDungeonStatisticsStore = create<DungeonStatisticsStore>((set) => ({
   ...initialState(),
-  beginSession: (dungeonId) => set((state) => beginSessionSnapshot(state, dungeonId)),
+  beginSession: (locationId) => set((state) => beginSessionSnapshot(state, locationId)),
   endSession: (_reason) => set((state) => endSessionSnapshot(state)),
   advanceTime: (deltaMs, gameState) => set((state) => advanceStatisticsSnapshot(state, deltaMs, gameState)),
   beginRun: () => set((state) => state.session ? { ...state, session: { ...state.session, currentRunElapsedMs: 0 }, currentEncounter: null } : state),
@@ -178,7 +178,7 @@ export const useDungeonStatisticsStore = create<DungeonStatisticsStore>((set) =>
   consumeEvent: (event) => set((state) => consumeStatisticsEvent(state, event)),
   reset: () => set((state) => {
     if (!state.session || !state.active) return initialState()
-    const session = newSession(state.session.dungeonId)
+    const session = newSession(state.session.locationId)
     const currentEncounter = state.currentEncounter ? { ...state.currentEncounter, elapsedMs: 0 } : null
     return { session, active: true, currentEncounter }
   }),
@@ -186,7 +186,7 @@ export const useDungeonStatisticsStore = create<DungeonStatisticsStore>((set) =>
 }))
 
 export const dungeonStatisticsObserver: DungeonStatisticsObserver = {
-  beginSession: (dungeonId) => useDungeonStatisticsStore.getState().beginSession(dungeonId),
+  beginSession: (locationId) => useDungeonStatisticsStore.getState().beginSession(locationId),
   endSession: (reason) => useDungeonStatisticsStore.getState().endSession(reason),
   advance: (deltaMs, state) => useDungeonStatisticsStore.getState().advanceTime(deltaMs, state),
   beginRun: () => useDungeonStatisticsStore.getState().beginRun(),

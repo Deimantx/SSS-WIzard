@@ -22,7 +22,7 @@ const activeState = () => {
   state.spellPresets.presets = [{ id: 'debug-test', name: 'Debug Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
   state.spellPresets.selectedPresetId = 'debug-test'
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   return state
 }
 

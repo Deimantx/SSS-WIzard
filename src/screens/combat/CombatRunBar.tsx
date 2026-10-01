@@ -1,24 +1,24 @@
 import { Crown, LogOut } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
-import { COMBAT_LOCATION_TYPE_METADATA, getCombatLocationByDungeonId } from '../../game/content/world-navigation'
+import { COMBAT_LOCATION_TYPE_METADATA, getCombatLocationById } from '../../game/content/combat-locations'
 import { useGameStore } from '../../store/gameStore'
 import { Button, Progress } from '../../components/ui'
-import type { DungeonId } from '../../game/types'
+import type { CombatLocationId } from '../../game/types'
 
-export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDungeonId: DungeonId; onRequestLeave: () => void }) {
+export function CombatRunBar({ selectedCombatLocationId, onRequestLeave }: { selectedCombatLocationId: CombatLocationId; onRequestLeave: () => void }) {
   const combat = useGameStore(useShallow((state) => ({
     active: state.combat.active,
-    dungeonId: state.combat.dungeonId,
+    locationId: state.combat.locationId,
     enemyId: state.combat.enemyId,
     targetEnemyId: state.combat.targetEnemyId,
     inBossFight: state.combat.inBossFight,
-    dungeonSequenceIndex: state.combat.dungeonSequenceIndex,
+    sequenceIndex: state.combat.sequenceIndex,
   })))
-  const dungeonId = combat.active ? combat.dungeonId ?? selectedDungeonId : selectedDungeonId
-  const dungeon = DUNGEONS[dungeonId]
-  const location = getCombatLocationByDungeonId(dungeonId)
+  const locationId = combat.active ? combat.locationId ?? selectedCombatLocationId : selectedCombatLocationId
+  const dungeon = DUNGEONS[locationId]
+  const location = getCombatLocationById(locationId)
   const targeted = location?.encounterMode === 'targeted'
   const sequence = location?.encounterMode === 'sequence' && dungeon.encounterSequence ? dungeon.encounterSequence : null
   const activeTarget = targeted && combat.targetEnemyId ? MONSTERS[combat.targetEnemyId] : null
@@ -29,7 +29,7 @@ export function CombatRunBar({ selectedDungeonId, onRequestLeave }: { selectedDu
   }
 
   if (sequence) {
-    const index = Math.min(sequence.length, Math.max(0, combat.dungeonSequenceIndex ?? 0))
+    const index = Math.min(sequence.length, Math.max(0, combat.sequenceIndex ?? 0))
     const totalSteps = sequence.length + 1
     const boss = hasBossEncounter(dungeon) ? dungeon.boss : null
     const currentMonsterId = combat.enemyId ?? (index < sequence.length ? sequence[index] : boss)

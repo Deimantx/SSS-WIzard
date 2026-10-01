@@ -20,7 +20,7 @@ const enemySource = (state: GameState): CombatSource => ({ actor: 'enemy', kind:
 const stateWithEnemy = () => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   spawnEnemy(state, 'forest-wisp')
   return state
 }

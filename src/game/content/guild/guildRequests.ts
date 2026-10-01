@@ -1,4 +1,4 @@
-import type { DungeonId, GuildRequestKind, ItemId, MonsterId } from '../../types'
+import type { CombatLocationId, GuildRequestKind, ItemId, MonsterId } from '../../types'
 import type { GuildStandingId } from './guildStandings'
 
 export interface GuildRequestDefinition {
@@ -10,7 +10,7 @@ export interface GuildRequestDefinition {
   reputation: number
   guildPoints: number
   itemId?: ItemId
-  dungeonId?: DungeonId
+  locationId?: CombatLocationId
   monsterId?: MonsterId
   bossId?: MonsterId
 }

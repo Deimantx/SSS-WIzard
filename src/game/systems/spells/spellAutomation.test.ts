@@ -123,7 +123,7 @@ describe('spell automation evaluator', () => {
   it('maintains at least 99.5% Fire Ward coverage during a five-minute no-control run', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'
     state.progress.spellRanks['fire-ward'] = 1
     state.activities.autoCast['fire-ward'] = true
@@ -164,7 +164,7 @@ describe('spell automation evaluator', () => {
   it('allows a Ward to expire during Silence and recasts after spellcasting resumes', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'
     state.debug.freezeEnemyActions = true
     state.player.maxHealth = state.player.health = 1_000_000
@@ -206,7 +206,7 @@ describe('spell automation evaluator', () => {
   it('casts two different Wards through normal slots and mana costs while keeping both active', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'
     state.debug.freezeEnemyActions = true
     state.player.maxHealth = state.player.health = 1_000_000

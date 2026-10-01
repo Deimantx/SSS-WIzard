@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createCriticalHealthAlert, createCombatAlertSpec, type CombatAlert, type CombatAlertSpec } from '../presentation/combat/combatAlertPresentation'
 import type { CombatAlertObserver, CombatEvent, CombatEventSink } from '../systems/combat/combatTypes'
-import type { DungeonId, GameState } from '../types'
+import type { CombatLocationId, GameState } from '../types'
 
 interface CombatAlertsState {
   alerts: CombatAlert[]
@@ -56,7 +56,7 @@ export const useCombatAlertsStore = create<CombatAlertsState>((set) => ({
 }))
 
 export const combatAlertsObserver: CombatAlertObserver = {
-  beginRun: (_dungeonId: DungeonId) => useCombatAlertsStore.getState().clear(),
+  beginRun: (_locationId: CombatLocationId) => useCombatAlertsStore.getState().clear(),
   advance: (deltaMs, state) => useCombatAlertsStore.getState().advanceTime(deltaMs, state),
   consume: (event) => useCombatAlertsStore.getState().consumeEvent(event),
   clear: () => useCombatAlertsStore.getState().clear(),

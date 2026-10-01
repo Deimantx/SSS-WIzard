@@ -1,4 +1,4 @@
-import type { DungeonId, GameState, MonsterId, SpellId } from '../../types'
+import type { CombatLocationId, GameState, MonsterId, SpellId } from '../../types'
 import type { CombatEvent, CombatSource, DamageType, StatusId, TraitId } from '../../systems/combat/combatTypes'
 
 export type CombatMetricSourceKind = 'basic-attack' | 'spell' | 'action' | 'status' | 'trait' | 'equipment' | 'guardian' | 'system'
@@ -60,7 +60,7 @@ export interface CombatBarrierTelemetryLayer {
 
 export interface CombatTelemetryScope {
   scopeId: string
-  dungeonId?: DungeonId
+  locationId?: CombatLocationId
   monsterId?: MonsterId
   startedAtSequence: number
   /** Changes only when an analytics aggregate changes; clock updates do not bump it. */
@@ -82,7 +82,7 @@ export type CombatTelemetryEndReason = 'leave' | 'defeat' | 'complete' | 'reset'
 export type CombatEncounterEndReason = 'death' | 'despawn' | 'leave'
 
 export interface CombatTelemetryObserver {
-  beginRun: (dungeonId: DungeonId) => void
+  beginRun: (locationId: CombatLocationId) => void
   endRun: (reason: CombatTelemetryEndReason) => void
   beginEncounter: (monsterId: MonsterId) => void
   endEncounter: (reason: CombatEncounterEndReason) => void

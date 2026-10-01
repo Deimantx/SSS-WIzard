@@ -1,12 +1,12 @@
 import type { CombatEvent } from '../../systems/combat/combatTypes'
-import type { DungeonId, GameState, ItemId, MonsterId, ResonanceType } from '../../types'
+import type { CombatLocationId, GameState, ItemId, MonsterId, ResonanceType } from '../../types'
 
 export type DungeonStatisticsMode = 'runs' | 'drops' | 'efficiency'
 
 export const DUNGEON_STATISTICS_MODE_ORDER: readonly DungeonStatisticsMode[] = ['runs', 'drops', 'efficiency']
 
 export interface DungeonStatisticsSession {
-  dungeonId: DungeonId
+  locationId: CombatLocationId
   startedAtMs: number
   elapsedMs: number
   engagedMs: number
@@ -28,7 +28,7 @@ export interface DungeonStatisticsSession {
 }
 
 export interface DungeonStatisticsObserver {
-  beginSession: (dungeonId: DungeonId) => void
+  beginSession: (locationId: CombatLocationId) => void
   endSession: (reason: 'leave' | 'death' | 'complete' | 'dungeon-change') => void
   advance: (deltaMs: number, state: GameState) => void
   beginRun: () => void

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
-import { ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreTotalXpForLevel } from '../game/content/arcaneCore/arcaneCoreBalance'
+import { ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreTotalXpForLevel } from '../game/content/arcane-core/arcaneCoreBalance'
 import { migrateSave } from './migrations'
 
 describe('Arcane Core V6 migration', () => {

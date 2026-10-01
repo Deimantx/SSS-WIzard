@@ -1,14 +1,14 @@
 import { BALANCE } from '../../core/balance/balance'
 import { DEFENSE_K, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../../content/items/items'
-import { ARCANE_CORE_NODES } from '../../content/arcaneCore/arcaneCoreBranches'
+import { ARCANE_CORE_NODES } from '../../content/arcane-core/arcaneCoreBranches'
 import { getCrystalVariantName, getCrystalVariantStats } from '../../content/crystals/crystals'
-import { getEquipmentStats } from '../../core/equipment/equipmentStats'
+import { getPlayerBuildStaticStats } from '../../core/equipment/equipmentStats'
 import { getPlayerCombatStats, getPlayerSheetCombatStats } from '../../systems/combat/combatStats'
 import { getCombatModifierContributions } from '../../systems/combat/modifiers'
 import { getPlayerManaCapacityBreakdown, getPlayerManaRegenBreakdown } from '../../systems/mana/playerMana'
-import { getArcaneCoreResolvedEffects } from '../../systems/arcaneCore/arcaneCoreProgression'
-import { getArcaneCoreManaRegenMultiplier } from '../../systems/arcaneCore/arcaneCoreRuntime'
+import { getArcaneCoreResolvedEffects } from '../../systems/arcane-core/arcaneCoreProgression'
+import { getArcaneCoreManaRegenMultiplier } from '../../systems/arcane-core/arcaneCoreRuntime'
 import { getEquippedSigils, getEquippedSigilSetCounts, resolveSigilStatsForInstance } from '../../systems/sigils/sigilRuntime'
 import { getSigilSetBonuses } from '../../content/sigils/sigilSets'
 import { getActiveArtifactCombatProviders, getArtifactEffectiveStats, isArtifactItem } from '../../systems/artifacts/artifactProgression'
@@ -82,7 +82,7 @@ function canonicalValue(state: GameState, key: PlayerBreakdownStatKey, mode: Sta
   return values[key] ?? 0
 }
 function uncapped(state: GameState, key: PlayerBreakdownStatKey): number | undefined {
-  const stats = getEquipmentStats(state)
+  const stats = getPlayerBuildStaticStats(state)
   if (key === 'critChance') return BALANCE.player.baseCritChance + safe(stats.critChance)
   if (key === 'critDamageMultiplier') return BALANCE.player.baseCritDamage + safe(stats.critDamage)
   if (key === 'manaCostReduction') return safe(stats.manaCostReductionPct)
@@ -120,9 +120,9 @@ function temporaryContributions(state: GameState, key: PlayerBreakdownStatKey): 
 
 export const getPlayerStatBreakdown = (state: GameState, statKey: PlayerBreakdownStatKey, mode: StatBreakdownMode = 'sheet'): StatBreakdown => {
   const permanent = [entry(statKey, 'base', null, 'Base Character Value', 'base', baseValueFor(state, statKey)), ...PERMANENT_PROVIDERS.flatMap((provider) => provider.collect(state, statKey))].filter((source) => source.active)
-  if (statKey === 'maxHealth') { const pct = safe(getEquipmentStats(state).maxHealthPct); if (pct) permanent.push(entry(statKey, 'other', 'max-health-percent', 'Maximum Health Scaling', 'add-percent', pct)) }
+  if (statKey === 'maxHealth') { const pct = safe(getPlayerBuildStaticStats(state).maxHealthPct); if (pct) permanent.push(entry(statKey, 'other', 'max-health-percent', 'Maximum Health Scaling', 'add-percent', pct)) }
   if (statKey === 'maxMana') { const mana = getPlayerManaCapacityBreakdown(state); if (mana.equipmentPercent) permanent.push(entry(statKey, 'other', 'mana-capacity-percent', 'Equipment Mana Capacity', 'add-percent', mana.equipmentPercent)) }
-  if (statKey === 'spellPower') { const pct = safe(getEquipmentStats(state).spellPowerPct); if (pct) permanent.push(entry(statKey, 'other', 'spell-power-percent', 'Spell Power Scaling', 'add-percent', pct)) }
+  if (statKey === 'spellPower') { const pct = safe(getPlayerBuildStaticStats(state).spellPowerPct); if (pct) permanent.push(entry(statKey, 'other', 'spell-power-percent', 'Spell Power Scaling', 'add-percent', pct)) }
   if (statKey === 'damageReduction') permanent.push(entry(statKey, 'other', 'derived-defense', 'Defense Rating', 'derived', canonicalValue(state, 'defense', 'sheet'), false, formulaFor(statKey)))
   if (statKey === 'manaRegen') { const coreMultiplier = getArcaneCoreManaRegenMultiplier(state); if (coreMultiplier !== 1) permanent.push(entry(statKey, 'arcane-core', 'emergency-flow', 'Emergency Flow', 'multiplier', coreMultiplier, true)) }
   const temporary = mode === 'live' ? temporaryContributions(state, statKey) : []

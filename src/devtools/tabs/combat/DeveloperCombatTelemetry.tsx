@@ -1,6 +1,6 @@
 import { Button, Card } from '../../../components/ui'
 import { useMemo } from 'react'
-import { DUNGEONS } from '../../../game/content/dungeons/dungeons'
+import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../../game/content/monsters'
 import { getCombatMetricSnapshot } from '../../../game/telemetry/combat/combatTelemetrySelectors'
 import { useCombatTelemetryStore } from '../../../game/telemetry/combat/combatTelemetryStore'
@@ -11,7 +11,7 @@ import { Summary } from '../DeveloperTabPrimitives'
 import type { CombatTelemetryScope } from '../../../game/telemetry/combat/combatTelemetryTypes'
 import { useShallow } from 'zustand/react/shallow'
 import { ELEMENT_DEFINITIONS } from '../../../game/content/elements/elements'
-import { formatReadableId } from '../../../game/content/presentation/balanceFormatters'
+import { formatReadableId } from '../../../game/presentation/content/balanceFormatters'
 
 const seconds = (ms: number) => `${(Math.max(0, ms) / 1000).toFixed(1)}s`
 const metricValue = (value: number) => Math.round(value * 100) / 100
@@ -42,7 +42,7 @@ export function DeveloperCombatTelemetry({ copy }: { copy: DeveloperCopy }) {
   const enemyDamage = getCombatMetricSnapshot(run, 'enemy', 'damage')
   const playerTaken = getCombatMetricSnapshot(run, 'player', 'taken')
   const playerHealing = getCombatMetricSnapshot(run, 'player', 'healing')
-  const dungeon = DUNGEONS[combat.dungeonId ?? 'whispering-woods']
+  const dungeon = DUNGEONS[combat.locationId ?? 'whispering-woods']
   const copyState = () => copy('Combat state', { combat, player: { health: player.health, maxHealth: player.maxHealth, mana: player.mana, maxMana: player.maxMana }, debugCombatOverrides: { playerImmortal: debug.playerImmortal, enemyImmortal: debug.enemyImmortal, infiniteMana: debug.infiniteMana, ignoreSpellCooldowns: debug.ignoreSpellCooldowns, disableAutoCast: debug.disableAutoCast, freezePlayerActions: debug.freezePlayerActions, freezeEnemyActions: debug.freezeEnemyActions, combatPaused: debug.combatPaused, combatTimeScale: debug.combatTimeScale }, currentEnemyDefinition: combat.enemyId ? MONSTERS[combat.enemyId] : null, currentDungeonDefinition: dungeon })
   const copyTelemetry = () => { const current = useCombatTelemetryStore.getState(); return copy('Telemetry', { run: current.run, lastRun: current.lastRun, encounter: current.encounter }) }
   return <div className="developer-tab-grid">

@@ -1,5 +1,5 @@
 import { BALANCE } from '../../core/balance/balance'
-import { getEquipmentStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
+import { getPlayerBuildStaticStats, type EquipmentStatsState } from '../../core/equipment/equipmentStats'
 import type { GameState } from '../../types'
 
 export interface SpellPowerBreakdown {
@@ -21,7 +21,7 @@ export type SpellPowerState = EquipmentStatsState & {
 
 export const getSpellPowerBreakdown = (state: SpellPowerState): SpellPowerBreakdown => {
   const base = BALANCE.player.baseSpellPower
-  const stats = getEquipmentStats(state)
+  const stats = getPlayerBuildStaticStats(state)
   const debug = (state as SpellPowerState & Partial<Pick<GameState, 'debug'>>).debug?.playerStats
   const equipment = stats.spellPower ?? 0
   const developerFlat = debug?.spellPowerFlat ?? 0

@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { ITEMS } from '../items/items'
-import { ARTIFACTS, ACT1_ARTIFACT_IDS, validateArtifactDefinitions } from './artifacts'
+import { ARTIFACTS, ARTIFACT_TIER_RULES, validateArtifactDefinitions } from './artifacts'
 import { createInitialState } from '../../../store/initialState'
 import { getActiveArtifactCombatProviders, getArtifactEffectiveStats, getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks, mergeArtifactResolvedEffects, purchaseArtifactMinorRank } from '../../systems/artifacts/artifactProgression'
 
 describe('Artifact roster', () => {
-  it('contains the six Act 0 and six Act 1 definitions in the canonical schema', () => {
+  it('contains the six First Frontier and six Regional Progression definitions in the canonical schema', () => {
     expect(Object.keys(ARTIFACTS)).toHaveLength(12)
-    expect(ACT1_ARTIFACT_IDS).toHaveLength(6)
+    expect(Object.values(ARTIFACTS).filter((artifact) => artifact.tier === 2)).toHaveLength(6)
     Object.values(ARTIFACTS).forEach((artifact) => {
-      const expectedCount = ACT1_ARTIFACT_IDS.includes(artifact.id) ? 6 : 5
+      const expectedCount = ARTIFACT_TIER_RULES[artifact.tier].minorNodeCount
       expect(artifact.minorNodes).toHaveLength(expectedCount)
       expect(artifact.majorMilestones).toHaveLength(expectedCount)
       expect(artifact.minorNodes.every((node) => node.maxRank === 10 && node.rankCosts.length === 10 && node.rankEffects.length === 10)).toBe(true)

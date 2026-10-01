@@ -1,7 +1,7 @@
 import { SPELLS } from '../content/spells'
 import { getEffectiveManaCost } from '../systems/combat/combatStats'
-import { isArcaneCoreSpellFree } from '../systems/arcaneCore/arcaneCoreRuntime'
-import { getArcaneCoreCastModifiers, type ArcaneCoreCastOrigin } from '../systems/arcaneCore/arcaneCoreMechanicRuntime'
+import { isArcaneCoreSpellFree } from '../systems/arcane-core/arcaneCoreRuntime'
+import { getArcaneCoreCastModifiers, type ArcaneCoreCastOrigin } from '../systems/arcane-core/arcaneCoreMechanicRuntime'
 import { getArtifactPreCastManaMultiplier } from '../systems/artifacts/artifactProgression'
 import type { CanonicalSpellId, GameState, SpellId } from '../types'
 

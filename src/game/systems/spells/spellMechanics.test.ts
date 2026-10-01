@@ -12,7 +12,7 @@ const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 't
 const spellState = (spellId: 'searing-touch' | 'frost-touch' | 'harden' | 'static-charge' | 'wind-blade' | 'thunderstrike', school: 'fire' | 'water' | 'earth' | 'air') => {
   const state = createInitialState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.schools[school].level = 16
   state.progress.spellRanks[spellId] = 1
   const loadoutIds = [...new Set([spellId, 'static-charge', 'wind-blade', 'thunderstrike'])]

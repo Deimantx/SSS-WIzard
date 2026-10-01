@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getItemDropSources } from './contentRelations'
 import { ARTIFACTS, isArtifactId } from './artifacts/artifacts'
-import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './combat-locations/dungeons/dungeons'
 import { ARTIFACT_EQUIPMENT_IDS, getEquipmentIdsForDungeon, getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, validateMonsterDefinitions } from './monsters'
@@ -19,8 +19,8 @@ describe('dungeon loot and equipment ownership', () => {
   })
 
   it('keeps every current monster on the authored non-currency loot path', () => {
-    DUNGEON_ORDER.forEach((dungeonId) => {
-      const dungeon = DUNGEONS[dungeonId]
+    DUNGEON_ORDER.forEach((locationId) => {
+      const dungeon = DUNGEONS[locationId]
       dungeon.monsterPool.forEach((monsterId) => expect(MONSTERS[monsterId].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true))
       if (hasBossEncounter(dungeon)) expect(MONSTERS[dungeon.boss].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true)
     })
@@ -28,7 +28,7 @@ describe('dungeon loot and equipment ownership', () => {
 
   it('removes dungeon Equipment pools while keeping Artifact crafting one-to-one', () => {
     expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(12)
-    expect(DUNGEON_ORDER.every((dungeonId) => getEquipmentIdsForDungeon(dungeonId).length === 0)).toBe(true)
+    expect(DUNGEON_ORDER.every((locationId) => getEquipmentIdsForDungeon(locationId).length === 0)).toBe(true)
     expect(getEquipmentOrigin('ember-staff')).toBeNull()
     expect(Object.keys(ARTIFICING_RECIPES)).toEqual(expect.arrayContaining([...ARTIFACT_EQUIPMENT_IDS]))
     expect(Object.values(ARTIFACTS).every((artifact) => ARTIFICING_RECIPES[artifact.id].output.itemId === artifact.id)).toBe(true)
@@ -36,7 +36,7 @@ describe('dungeon loot and equipment ownership', () => {
     expect(RECIPES['windthread-wand']).toBeDefined()
   })
 
-  it('keeps gated Act 1 Artifact recipes gated by their authored boss', () => {
+  it('keeps gated Tier 2 Artifact recipes gated by their authored boss', () => {
     const state = createInitialState()
     expect(isRecipeUnlocked(state, ARTIFICING_RECIPES['galeshard-staff'])).toBe(false)
     state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1

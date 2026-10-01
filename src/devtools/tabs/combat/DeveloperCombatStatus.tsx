@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card } from '../../../components/ui'
 import { STATUS_DEFINITIONS, STATUS_ORDER } from '../../../game/content/statuses'
-import { formatCombatEffect, formatCombatModifier, formatDuration, formatReadableId } from '../../../game/content/presentation/balanceFormatters'
+import { formatCombatEffect, formatCombatModifier, formatDuration, formatReadableId } from '../../../game/presentation/content/balanceFormatters'
 import { resolveCombatSourceLabel } from '../../../game/presentation/combat/combatSourcePresentation'
 import type { ActiveStatus, EquipmentPosition, ItemId, StatusId } from '../../../game/types'
 import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'

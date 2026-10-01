@@ -25,7 +25,7 @@ import {
   upgradeCrystal,
 } from "./crystalRuntime";
 import { getEquippedCrystalStats } from "./crystalStats";
-import { getEquipmentStats } from "../../core/equipment/equipmentStats";
+import { getPlayerBuildStaticStats } from "../../core/equipment/equipmentStats";
 import { migrateSave } from "../../../persistence/migrations";
 
 describe("Crystal System V1", () => {
@@ -96,7 +96,7 @@ describe("Crystal System V1", () => {
       spellPower: 12,
       critDamage: 0.08,
     });
-    expect(getEquipmentStats(state)).toMatchObject({
+    expect(getPlayerBuildStaticStats(state)).toMatchObject({
       spellPower: 12,
       critDamage: 0.08,
     });
@@ -110,7 +110,7 @@ describe("Crystal System V1", () => {
       state.crystals.owned[variantId] = 1;
       state.crystals.equippedSlots[0] = variantId;
 
-      expect(getEquipmentStats(state)).toMatchObject(
+      expect(getPlayerBuildStaticStats(state)).toMatchObject(
         getCrystalVariantStats(variantId),
       );
     }

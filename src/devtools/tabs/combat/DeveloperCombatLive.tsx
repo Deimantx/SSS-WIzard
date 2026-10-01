@@ -1,8 +1,8 @@
 import { Button, Card, Progress, SelectMenu, Status, Toggle as SharedToggle } from '../../../components/ui'
-import { DUNGEONS } from '../../../game/content/dungeons/dungeons'
+import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
 import { MONSTERS, isBossMonster } from '../../../game/content/monsters'
-import { getCombatLocationByDungeonId } from '../../../game/content/world-navigation'
-import { formatDuration, formatReadableId } from '../../../game/content/presentation/balanceFormatters'
+import { getCombatLocationById } from '../../../game/content/combat-locations'
+import { formatDuration, formatReadableId } from '../../../game/presentation/content/balanceFormatters'
 import { getCurrentEnemyActionStep, getEnemyAction } from '../../../game/systems/combat/actionRuntime'
 import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import { CombatTimeControls } from './CombatTimeControls'
@@ -20,10 +20,10 @@ export function DeveloperCombatLive() {
   const player = useGameStore((state) => state.player)
   const debug = useGameStore((state) => state.debug)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  const dungeon = DUNGEONS[combat.dungeonId ?? 'whispering-woods']
+  const dungeon = DUNGEONS[combat.locationId ?? 'whispering-woods']
   const worldTier = useGameStore((state) => state.worldTier.current)
   const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier)
-  const location = getCombatLocationByDungeonId(combat.dungeonId)
+  const location = getCombatLocationById(combat.locationId)
   const setCombatTarget = useGameStore((state) => state.setCombatTarget)
   const targetIds = location?.targetMetadata
     ? Object.entries(location.targetMetadata).sort(([, left], [, right]) => (left?.order ?? 0) - (right?.order ?? 0)).map(([id]) => id as MonsterId)

@@ -20,7 +20,7 @@ import { spawnEnemy } from '../combat/combatRuntime'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 
 const equipDebugSigil = (state: ReturnType<typeof createInitialState>, slot: 1 | 2 | 3 | 4, setId: 'arcane' | 'echo' | 'precision' | 'sage' | 'tempest', traitIds: string[] = []) => {
-  const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: setId, forcedSlot: slot, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+  const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: setId, forcedSlot: slot, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
   sigil.traitIds = traitIds as typeof sigil.traitIds
   state.sigils.equipped[slot] = sigil.instanceId
 }
@@ -37,8 +37,8 @@ describe('Arcane Sigils', () => {
 
   it('derives stronger main and secondary values for T2', () => {
     const state = createInitialState()
-    const t1 = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 1, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
-    const t2 = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 5000, forcedTier: 2, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
+    const t1 = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 1, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
+    const t2 = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 5000, forcedTier: 2, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
     expect(resolveSigilStatsForInstance(t2).spellPower).toBeGreaterThan(resolveSigilStatsForInstance(t1).spellPower ?? 0)
   })
 
@@ -60,7 +60,7 @@ describe('Arcane Sigils', () => {
 
   it('enhances with dust and records milestone rolls', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, qualityWeights: { common: 0, refined: 0, perfect: 0, legendary: 100 }, rng: () => .5 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, qualityWeights: { common: 0, refined: 0, perfect: 0, legendary: 100 }, rng: () => .5 })
     state.sigils.dust = 100000
     const result = enhanceSigil(state, sigil.instanceId, { bypassGlobalCap: true, rng: () => .5 })
     expect(result.ok).toBe(true)
@@ -72,7 +72,7 @@ describe('Arcane Sigils', () => {
 
   it('grants Legendary Trait I at +15 and Trait II at +20 without a secondary at +20', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'legendary', rng: () => .5 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'legendary', rng: () => .5 })
     state.sigils.dust = 1_000_000
     for (let rank = 1; rank <= 20; rank += 1) expect(enhanceSigil(state, sigil.instanceId, { bypassGlobalCap: true, rng: () => .5 }).ok).toBe(true)
     expect(sigil.traitIds).toHaveLength(2)
@@ -83,7 +83,7 @@ describe('Arcane Sigils', () => {
 
   it('supports free debug-style enhancement without spending Dust', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5, source: 'debug' })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'common', rng: () => .5, source: 'debug' })
     state.sigils.dust = 0
     expect(enhanceSigil(state, sigil.instanceId, { bypassGlobalCap: true, free: true, rng: () => .5 })).toMatchObject({ ok: true, cost: 0 })
     expect(state.sigils.dust).toBe(0)
@@ -93,7 +93,7 @@ describe('Arcane Sigils', () => {
   it('exposes mechanical providers for every equipped combat Set and Trait', () => {
     const state = createInitialState()
     for (let slot = 1; slot <= 4; slot += 1) {
-      const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'tempest', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+      const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'tempest', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
       state.sigils.equipped[slot as 1 | 2 | 3 | 4] = sigil.instanceId
     }
     state.combat.inBossFight = true
@@ -104,7 +104,7 @@ describe('Arcane Sigils', () => {
   it('executes Tempest cooldown reduction and Predator boss damage', () => {
     const state = createInitialState()
     for (let slot = 1; slot <= 4; slot += 1) {
-      const tempest = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'tempest', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+      const tempest = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'tempest', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
       state.sigils.equipped[slot as 1 | 2 | 3 | 4] = tempest.instanceId
     }
     state.combat.spellCooldowns['fire-bolt'] = 1000
@@ -114,7 +114,7 @@ describe('Arcane Sigils', () => {
 
     const predatorState = createInitialState()
     for (let slot = 1; slot <= 4; slot += 1) {
-      const predator = generateSigil({ state: predatorState, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'predator', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
+      const predator = generateSigil({ state: predatorState, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'predator', forcedSlot: slot as 1 | 2 | 3 | 4, forcedQuality: 'legendary', rng: () => .1, source: 'debug' })
       predatorState.sigils.equipped[slot as 1 | 2 | 3 | 4] = predator.instanceId
     }
     predatorState.combat.inBossFight = true
@@ -188,8 +188,8 @@ describe('Arcane Sigils', () => {
 
   it('deduplicates UNIQUE traits while preserving repeated non-unique traits', () => {
     const state = createInitialState()
-    const uniqueA = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 1, source: 'debug', rng: () => .2 })
-    const uniqueB = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 2, source: 'debug', rng: () => .2 })
+    const uniqueA = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 1, source: 'debug', rng: () => .2 })
+    const uniqueB = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'restoration', forcedSlot: 2, source: 'debug', rng: () => .2 })
     uniqueA.traitIds = ['restorative-echo', 'execution-mark']
     uniqueB.traitIds = ['restorative-echo', 'execution-mark']
     state.sigils.equipped[1] = uniqueA.instanceId
@@ -211,7 +211,7 @@ describe('Arcane Sigils', () => {
 
   it('protects locked and equipped sigils from salvage', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, rng: () => .5 })
     sigil.locked = true
     expect(salvageSigil(state, sigil.instanceId)).toMatchObject({ ok: false })
     sigil.locked = false
@@ -246,7 +246,7 @@ describe('Arcane Sigils', () => {
     state.sigils.autoSalvage.refined = true
     state.sigils.firstDropPityKills = 4
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.offlineBankMs = 60_000
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
     state.combat.enemyHp = 0

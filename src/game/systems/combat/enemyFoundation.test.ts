@@ -21,7 +21,7 @@ import { STATUS_DEFINITIONS } from "../../content/statuses";
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1]) => {
   const state = createInitialState();
   state.combat.active = true;
-  state.combat.dungeonId =
+  state.combat.locationId =
     enemyId === "corrupted-greatbear" ? "howling-den" : "whispering-woods";
   state.combat.activeSpellLoadout = {
     presetId: null,
@@ -33,10 +33,10 @@ const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1]) => {
   return state;
 };
 
-describe("Act 0 enemy combat foundation", () => {
+describe("First Frontier enemy combat foundation", () => {
   it("transitions Meridian Splitter once at half Health without healing or transition Barrier", () => {
     const state = stateWithEnemy("meridian-splitter")
-    state.combat.dungeonId = "broken-meridian"
+    state.combat.locationId = "broken-meridian"
     state.combat.enemyHp = Math.ceil(state.combat.enemyMaxHp * 0.51)
     const hpBefore = state.combat.enemyHp
     damageEnemy(state, Math.ceil(state.combat.enemyMaxHp * 0.02), "spell")
@@ -91,7 +91,7 @@ describe("Act 0 enemy combat foundation", () => {
 
   it("transitions Black Gatekeeper once into Gate Unbound without healing or duplicate phase state", () => {
     const state = stateWithEnemy("black-gatekeeper")
-    state.combat.dungeonId = "black-gate"
+    state.combat.locationId = "black-gate"
     state.combat.enemyHp = Math.ceil(state.combat.enemyMaxHp * 0.51)
     const hpBefore = state.combat.enemyHp
 

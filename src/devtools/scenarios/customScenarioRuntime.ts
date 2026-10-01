@@ -4,9 +4,9 @@ import packageMetadata from '../../../package.json'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import { ensureDeveloperSandbox } from '../developerSandbox'
-import { HUNTER_RANKS } from '../../game/content/huntersOrder/hunterRanks'
+import { HUNTER_RANKS } from '../../game/content/hunters-order/hunterRanks'
 import { GUILD_RANK_BY_ID } from '../../game/content/guild/guildRanks'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../game/content/monsters'
 import { validateDeveloperScenario } from './customScenarioSchema'
 import type { DeveloperScenarioDraft, DeveloperScenarioRecord, DeveloperScenarioSummary } from './customScenarioTypes'
@@ -17,7 +17,7 @@ const summarize = (state: GameState): DeveloperScenarioSummary => ({
   hunterReputation: state.progress.huntersOrder.reputation,
   guildRankLabel: GUILD_RANK_BY_ID[state.progress.guildRank]?.name ?? 'Unregistered',
   guildReputation: state.progress.guildReputation,
-  activeDungeonLabel: state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId]?.name ?? null : null,
+  activeDungeonLabel: state.combat.locationId ? DUNGEONS[state.combat.locationId]?.name ?? null : null,
   activeEnemyLabel: state.combat.enemyId ? MONSTERS[state.combat.enemyId]?.name ?? null : null,
   inventoryItemCount: Object.values(state.inventory).reduce((total, amount) => total + (amount ?? 0), 0),
   spellPresetCount: state.spellPresets.presets.length,

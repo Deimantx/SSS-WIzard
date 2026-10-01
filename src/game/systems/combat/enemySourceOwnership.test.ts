@@ -16,7 +16,7 @@ import { createCombatTestState } from './testCombatState'
 const makeState = (enemyId: GameState['combat']['enemyId']) => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'howling-den'
+  state.combat.locationId = 'howling-den'
   if (enemyId) spawnEnemy(state, enemyId)
   return state
 }

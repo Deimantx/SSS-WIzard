@@ -7,13 +7,13 @@ import { clamp, uid } from './utils'
 import { getSchoolLevel as getCentralSchoolLevel, getSchoolProgressInfo } from './systems/schools'
 import { syncSpellUnlocksForSchool } from './systems/spells/spellProgression'
 import { syncSelectedSpellPresetRuntime } from './systems/spells/spellPresets'
-import { getEquipmentStats } from './core/equipment/equipmentStats'
+import { getPlayerBuildStaticStats } from './core/equipment/equipmentStats'
 import { stabilizeResourceValue } from './presentation/resources/resourcePresentation'
 export { getSpellPower, getSpellPowerBreakdown } from './systems/spells/spellPower'
 
 export const getSchoolLevel = getCentralSchoolLevel
 
-export const equipmentStats = getEquipmentStats
+export const equipmentStats = getPlayerBuildStaticStats
 
 export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)

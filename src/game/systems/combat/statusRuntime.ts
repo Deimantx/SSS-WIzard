@@ -257,7 +257,7 @@ const emitStatusLifecycle = (state: GameState, actor: CombatActor, removed: Acti
     sourceInstanceKey: removed.source.sourceInstanceKey,
     originMonsterId: root.originMonsterId ?? root.sourceMonsterId,
     originInstanceKey: root.originInstanceKey ?? root.sourceInstanceKey,
-    dungeonId: state.combat.dungeonId ?? undefined,
+    locationId: state.combat.locationId ?? undefined,
     target: actor,
     targetMonsterId: actor === 'enemy' ? state.combat.enemyId ?? undefined : undefined,
     category: 'status',

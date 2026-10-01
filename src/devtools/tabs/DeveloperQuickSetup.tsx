@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Status } from '../../components/ui'
-import { getMonsterDungeon } from '../../game/content/contentRelations'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { getMonsterCombatLocation } from '../../game/content/contentRelations'
+import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
 import { MONSTERS, MONSTER_IDS, isBossMonster } from '../../game/content/monsters'
 import { RECIPES, RECIPE_ORDER, isTransmutationRecipeId } from '../../game/content/recipes/recipes'
-import { formatReadableId } from '../../game/content/presentation/balanceFormatters'
+import { formatReadableId } from '../../game/presentation/content/balanceFormatters'
 import { getArtificingCatalogRecipeState } from '../../game/systems/artificing/artificingSelectors'
 import { getRecipeStatus } from '../../game/systems/transmutation/transmutationSelectors'
 import { SCHOOLS } from '../../game/content/schools/schools'
@@ -48,13 +48,13 @@ export function DeveloperQuickSetup() {
   const [offlineBankFeedback, setOfflineBankFeedback] = useState<{ text: string; tone: 'success' | 'warning' } | null>(null)
   const enemyOptions = useMemo(() => MONSTER_IDS.filter((id) => {
     const monster = MONSTERS[id]
-    const dungeon = getMonsterDungeon(id)
-    return `${monster.name} ${dungeon?.dungeonName ?? ''} ${dungeon?.role ?? ''} ${id}`.toLowerCase().includes(enemyQuery.trim().toLowerCase())
+    const dungeon = getMonsterCombatLocation(id)
+    return `${monster.name} ${dungeon?.locationName ?? ''} ${dungeon?.role ?? ''} ${id}`.toLowerCase().includes(enemyQuery.trim().toLowerCase())
   }), [enemyQuery])
   useEffect(() => {
     setSelectedEnemy((current) => current !== null && enemyOptions.includes(current) ? current : enemyOptions[0] ?? null)
   }, [enemyOptions])
-  const selectedDungeon = selectedEnemy ? getMonsterDungeon(selectedEnemy) : undefined
+  const selectedDungeon = selectedEnemy ? getMonsterCombatLocation(selectedEnemy) : undefined
   const selectedRecipeDefinition = RECIPES[selectedRecipe]
   const recipeCategory = 'category' in selectedRecipeDefinition ? selectedRecipeDefinition.category : 'artificing'
   const recipeStatus = 'category' in selectedRecipeDefinition
@@ -128,12 +128,12 @@ export function DeveloperQuickSetup() {
     </Card>
 
     <Card title="Quick Combat" className="developer-quick-combat">
-      <div className="developer-form-grid"><label>Search enemies<input aria-label="Search quick combat enemies" value={enemyQuery} onChange={(event) => setEnemyQuery(event.target.value)} placeholder="Enemy, dungeon, normal or boss..." /></label><label>Enemy<select aria-label="Quick combat enemy" value={selectedEnemy ?? ''} disabled={enemyOptions.length === 0} onChange={(event) => setSelectedEnemy(event.target.value as MonsterId)}>{enemyOptions.length === 0 ? <option value="">No matching enemies</option> : enemyOptions.map((id) => { const monster = MONSTERS[id]; const dungeon = getMonsterDungeon(id); return <option value={id} key={id}>{monster.name} · {dungeon?.dungeonName} · {dungeon?.role === 'boss' ? 'Boss' : 'Normal'}</option> })}</select></label></div>
-      {selectedEnemy && <div className="developer-quick-selection"><strong>{MONSTERS[selectedEnemy].name}</strong><span>{selectedDungeon?.dungeonName} · {isBossMonster(MONSTERS[selectedEnemy]) ? 'Boss' : 'Normal enemy'}</span></div>}
+      <div className="developer-form-grid"><label>Search enemies<input aria-label="Search quick combat enemies" value={enemyQuery} onChange={(event) => setEnemyQuery(event.target.value)} placeholder="Enemy, dungeon, normal or boss..." /></label><label>Enemy<select aria-label="Quick combat enemy" value={selectedEnemy ?? ''} disabled={enemyOptions.length === 0} onChange={(event) => setSelectedEnemy(event.target.value as MonsterId)}>{enemyOptions.length === 0 ? <option value="">No matching enemies</option> : enemyOptions.map((id) => { const monster = MONSTERS[id]; const dungeon = getMonsterCombatLocation(id); return <option value={id} key={id}>{monster.name} · {dungeon?.locationName} · {dungeon?.role === 'boss' ? 'Boss' : 'Normal'}</option> })}</select></label></div>
+      {selectedEnemy && <div className="developer-quick-selection"><strong>{MONSTERS[selectedEnemy].name}</strong><span>{selectedDungeon?.locationName} · {isBossMonster(MONSTERS[selectedEnemy]) ? 'Boss' : 'Normal enemy'}</span></div>}
       {selectedEnemy === null && <Status tone="warning">No matching enemies</Status>}
-      <div className="button-row"><Button onClick={() => selectedEnemy && state.spawnDebugEnemy(selectedEnemy, selectedDungeon?.dungeonId)} disabled={selectedEnemy === null}>Spawn Enemy</Button><Button variant="danger" onClick={state.killCurrentEnemy}>Kill Current Enemy</Button><Button variant="secondary" onClick={() => state.setEnemyHealthPercent(10)}>Set HP to 10%</Button><Button variant="secondary" onClick={() => state.setEnemyHealthPercent(50)}>Set HP to 50%</Button><Button variant="ghost" onClick={state.clearEnemyStatuses}>Clear Enemy Statuses</Button><Button variant="secondary" onClick={() => state.jumpDebugToBoss(selectedDungeon?.dungeonId)} disabled={selectedEnemy === null || !selectedDungeon}>Jump to Boss</Button></div>
+      <div className="button-row"><Button onClick={() => selectedEnemy && state.spawnDebugEnemy(selectedEnemy, selectedDungeon?.locationId)} disabled={selectedEnemy === null}>Spawn Enemy</Button><Button variant="danger" onClick={state.killCurrentEnemy}>Kill Current Enemy</Button><Button variant="secondary" onClick={() => state.setEnemyHealthPercent(10)}>Set HP to 10%</Button><Button variant="secondary" onClick={() => state.setEnemyHealthPercent(50)}>Set HP to 50%</Button><Button variant="ghost" onClick={state.clearEnemyStatuses}>Clear Enemy Statuses</Button><Button variant="secondary" onClick={() => state.jumpDebugToBoss(selectedDungeon?.locationId)} disabled={selectedEnemy === null || !selectedDungeon}>Jump to Boss</Button></div>
       {state.combat.enemyId && <Status tone="warning">Active enemy: {MONSTERS[state.combat.enemyId]?.name ?? state.combat.enemyId}</Status>}
     </Card>
-    <Card title="Current test context"><div className="developer-summary-grid"><div className="developer-summary"><span>Dungeon</span><strong>{state.combat.dungeonId ? DUNGEONS[state.combat.dungeonId].name : 'No dungeon'}</strong></div><div className="developer-summary"><span>Enemy</span><strong>{state.combat.enemyId ? MONSTERS[state.combat.enemyId]?.name : 'None'}</strong></div><div className="developer-summary"><span>Fire School</span><strong>Level {state.schools.fire.level}</strong></div><div className="developer-summary"><span>Water School</span><strong>{SCHOOLS.water.name} · Level {state.schools.water.level}</strong></div></div></Card>
+    <Card title="Current test context"><div className="developer-summary-grid"><div className="developer-summary"><span>Dungeon</span><strong>{state.combat.locationId ? DUNGEONS[state.combat.locationId].name : 'No dungeon'}</strong></div><div className="developer-summary"><span>Enemy</span><strong>{state.combat.enemyId ? MONSTERS[state.combat.enemyId]?.name : 'None'}</strong></div><div className="developer-summary"><span>Fire School</span><strong>Level {state.schools.fire.level}</strong></div><div className="developer-summary"><span>Water School</span><strong>{SCHOOLS.water.name} · Level {state.schools.water.level}</strong></div></div></Card>
   </div>
 }

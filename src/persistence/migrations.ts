@@ -1,13 +1,13 @@
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
-import { MANA_PILLAR_IDS } from '../game/data/manaPillars'
-import { DUNGEONS, DUNGEON_ORDER } from '../game/content/dungeons/dungeons'
-import { getCombatEncounterMode, getCombatLocationByDungeonId, isCombatTargetForLocation } from '../game/content/world-navigation'
+import { MANA_PILLAR_IDS } from '../game/content/channeling/manaPillars'
+import { DUNGEONS, DUNGEON_ORDER } from '../game/content/combat-locations/dungeons/dungeons'
+import { getCombatEncounterMode, getCombatLocationById, isCombatTargetForLocation } from '../game/content/combat-locations'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
 import { CHRONICLE_OBJECTIVES } from '../game/content/chronicles/chronicles'
 import { GUILD_SKILL_NODES, GUILD_SKILL_NODE_IDS } from '../game/content/guild/guildSkills'
-import { getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
+import { getHunterContractChoiceCount } from '../game/systems/hunters-order/huntersOrderRuntime'
 import { ensureGuildCommissionChoices } from '../game/systems/guild/guildCommissions'
 import { getGuildCommissionChoiceCount } from '../game/systems/guild/guildSelectors'
 import { GUILD_PROJECTS } from '../game/content/guild/guildProjects'
@@ -15,10 +15,10 @@ import { GUILD_RANKS } from '../game/content/guild/guildRanks'
 import { GUILD_MACRO_RANK_THRESHOLDS } from '../game/content/guild/guildStandings'
 import { ARCANE_REGISTRY_SETS } from '../game/content/guild/registry/registrySets'
 import { GUILD_COMMISSION_CHAINS } from '../game/content/guild/guildCommissionChains'
-import { HUNTER_UPGRADES } from '../game/content/huntersOrder/hunterUpgrades'
-import { HUNTER_RANKS } from '../game/content/huntersOrder/hunterRanks'
-import { HUNTER_GROUNDS } from '../game/content/huntersOrder/hunterGrounds'
-import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../game/content/monsters/huntersOrder'
+import { HUNTER_UPGRADES } from '../game/content/hunters-order/hunterUpgrades'
+import { HUNTER_RANKS } from '../game/content/hunters-order/hunterRanks'
+import { HUNTER_GROUNDS } from '../game/content/hunters-order/hunterGrounds'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../game/content/monsters/first-frontier/gloamridge'
 import { GUILD_COMMISSION_TEMPLATES } from '../game/content/guild/guildRequests'
 import { ITEMS } from '../game/content/items/items'
 import { isBossMonster, MONSTERS } from '../game/content/monsters'
@@ -31,7 +31,7 @@ import { SCHOOL_MAX_LEVEL, getSchoolTotalXpForLevel } from '../game/core/balance
 import { LEGACY_SPELL_ID_MAP, SPELLS } from '../game/content/spells/spells'
 import { SCHOOLS } from '../game/content/schools/schools'
 import { EQUIPMENT_POSITIONS, normalizeEquipmentState } from '../game/core/equipment'
-import type { ArtifactId, CanonicalSpellId, ChronicleEventId, DungeonId, EquipmentPosition, GameState, GuildSkillNodeId, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
+import type { ArtifactId, CanonicalSpellId, ChronicleEventId, CombatLocationId, EquipmentPosition, GameState, GuildSkillNodeId, ItemId, MonsterId, TransmutationRecipeId, ResearchActivity, ResearchJobState, SchoolId, SpellId, TransmutationJobState } from '../game/types'
 import { RESEARCH_SLOT_ORDER } from '../game/systems/research/researchReservations'
 import { isRecord, SaveMigrationError } from './saveSchema'
 import { recalculateDerivedStats } from '../game/engine'
@@ -48,9 +48,9 @@ import { GUARDIAN_IDS, GUARDIANS, SUMMONING_UNLOCK_BOSS_ID } from '../game/conte
 import { isSummoningUnlocked } from '../game/systems/summoning/summoningSelectors'
 import { normalizeDarkPortalProgress } from '../game/systems/dark-portal/portalShardProgression'
 import { isScreenUnlocked, reconcileStoryProgression } from '../game/systems/story/storyProgression'
-import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcaneCore/arcaneCoreBalance'
-import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcaneCore/arcaneCoreBalance'
-import { getArcaneCoreNode } from '../game/content/arcaneCore/arcaneCoreBranches'
+import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcane-core/arcaneCoreBalance'
+import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcane-core/arcaneCoreBalance'
+import { getArcaneCoreNode } from '../game/content/arcane-core/arcaneCoreBranches'
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
 import { isWorldTierId, reconcileWorldTierProgression, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
@@ -61,20 +61,20 @@ import { isElementId } from '../game/content/elements/elements'
 const statusValidationContext = createCombatValidationContext(STATUS_DEFINITIONS)
 
 /** Historical kill-count thresholds used by the pre-v44 Elemental Scar pool runs. */
-const LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS: Partial<Record<DungeonId, number>> = {
+const LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS: Partial<Record<CombatLocationId, number>> = {
   'flooded-reliquary': 40,
   'ashen-watch': 40,
   'rootscar-hollow': 40,
 }
 
 /** Historical kill-count thresholds for Hall and Vault before v46 Power Threat. */
-const LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS: Partial<Record<DungeonId, number>> = {
+const LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS: Partial<Record<CombatLocationId, number>> = {
   'hall-of-unbound-names': 60,
   'vault-of-the-black-sigil': 60,
 }
 
 /** The save version at which each dungeon became a fixed sequence. */
-const SEQUENCE_CONVERSION_VERSION_BY_DUNGEON: Partial<Record<DungeonId, number>> = {
+const SEQUENCE_CONVERSION_VERSION_BY_DUNGEON: Partial<Record<CombatLocationId, number>> = {
   'fractured-approach': 44,
   'crossroads-of-ruin': 44,
   'broken-meridian': 45,
@@ -82,7 +82,7 @@ const SEQUENCE_CONVERSION_VERSION_BY_DUNGEON: Partial<Record<DungeonId, number>>
 }
 
 /** Historical boss-kill thresholds for Shattered locations before v45. */
-const LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS: Partial<Record<DungeonId, number>> = {
+const LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS: Partial<Record<CombatLocationId, number>> = {
   'graveglass-hollow': 50,
   'stormvault-gallery': 50,
   'starfallen-observatory': 50,
@@ -101,8 +101,8 @@ const normalizeSigils = (migrated: GameState, raw: Record<string, any>) => {
   migrated.sigils = normalizeSigilState(raw.sigils)
 }
 
-const normalizeLastEnteredCombatDungeonId = (value: unknown): DungeonId | undefined => {
-  return typeof value === 'string' && DUNGEON_ORDER.includes(value as DungeonId) ? value as DungeonId : undefined
+const normalizeLastEnteredCombatLocationId = (value: unknown): CombatLocationId | undefined => {
+  return typeof value === 'string' && DUNGEON_ORDER.includes(value as CombatLocationId) ? value as CombatLocationId : undefined
 }
 
 const merge = <T extends Record<string, any>>(base: T, value: unknown): T => {
@@ -122,7 +122,7 @@ const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFini
 const itemIds = Object.keys(ITEMS)
 const monsterIds = Object.keys(MONSTERS)
 const bossIds = [...monsterIds, SUMMONING_UNLOCK_BOSS_ID]
-const dungeonIds = Object.keys(DUNGEONS)
+const locationIds = Object.keys(DUNGEONS)
 const requestIds = [...Object.keys(GUILD_REQUESTS), 'arcane-supply', 'clear-the-woods', 'sentinel-breaker']
 const spellIds = Object.keys(SPELLS) as CanonicalSpellId[]
 const normalizeSpellId = (value: unknown): CanonicalSpellId | undefined => {
@@ -335,7 +335,8 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     }
     if (rawTarget?.type === 'family' && hunterIds.some((id) => MONSTERS[id]?.hunter?.family === rawTarget.familyId)) return { type: 'family', familyId: String(rawTarget.familyId).slice(0, 80) } as const
     if (rawTarget?.type === 'alignment' && hunterIds.some((id) => MONSTERS[id]?.hunter?.alignment === rawTarget.alignmentId)) return { type: 'alignment', alignmentId: String(rawTarget.alignmentId).slice(0, 80) } as const
-    if (rawTarget?.type === 'region' && DUNGEON_ORDER.some((id) => id === rawTarget.dungeonId) && hunterIds.some((id) => DUNGEONS[rawTarget.dungeonId as DungeonId]?.monsterPool.includes(id))) return { type: 'region', dungeonId: rawTarget.dungeonId as DungeonId } as const
+    const targetLocationId = rawTarget?.locationId ?? rawTarget?.['dungeonId']
+    if (rawTarget?.type === 'region' && DUNGEON_ORDER.some((id) => id === targetLocationId) && hunterIds.some((id) => DUNGEONS[targetLocationId as CombatLocationId]?.monsterPool.includes(id))) return { type: 'region', locationId: targetLocationId as CombatLocationId } as const
     const legacyMonster = hunterIds.find((id) => id === value.targetMonsterId)
     return legacyMonster ? { type: 'monster', monsterId: legacyMonster } as const : null
   }
@@ -345,7 +346,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     if (!targetSpec) return null
     const tier = value.tier === 'special' || value.tier === 'prestigious' ? value.tier : 'routine'
     const target = Math.max(1, nonNegativeInteger(value.target) ?? 1)
-    const huntingGroundId = HUNTER_GROUNDS.some((ground) => ground.id === value.huntingGroundId) ? value.huntingGroundId as DungeonId : 'hunters-ground'
+    const huntingGroundId = HUNTER_GROUNDS.some((ground) => ground.id === value.huntingGroundId) ? value.huntingGroundId as CombatLocationId : 'hunters-ground'
     return { id: value.id.slice(0, 80), huntingGroundId, targetSpec, target, progress: Math.min(target, nonNegativeInteger(value.progress) ?? 0), tier, reputationReward: nonNegativeInteger(value.reputationReward) ?? 0, marksReward: nonNegativeInteger(value.marksReward) ?? 0 }
   }
   const hunterReputation = nonNegativeInteger(rawHunters.reputation) ?? 0
@@ -426,7 +427,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   // normal encounter (notably Grove Sentinel). They remain useful migration
   // evidence even when current combat treats the monster as non-boss.
   migrated.progress.bossKillsByBoss = normalizeDynamicRecord(fresh.progress.bossKillsByBoss, rawProgress.bossKillsByBoss, bossIds, nonNegativeInteger)
-  migrated.progress.autoHuntBossByDungeon = normalizeDynamicRecord(fresh.progress.autoHuntBossByDungeon, rawProgress.autoHuntBossByDungeon, dungeonIds, booleanValue) as GameState['progress']['autoHuntBossByDungeon']
+  migrated.progress.autoHuntBossByLocation = normalizeDynamicRecord(fresh.progress.autoHuntBossByLocation, rawProgress.autoHuntBossByLocation ?? rawProgress['autoHuntBossByDungeon'], locationIds, booleanValue) as GameState['progress']['autoHuntBossByLocation']
   const rawCurrencies = isRecord(raw.currencies) ? raw.currencies : {}
   migrated.currencies = { gold: nonNegativeGold(rawCurrencies.gold) ?? fresh.currencies.gold }
 
@@ -674,13 +675,13 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   void legacyPlayerBasicTiming
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
-  const sequenceDungeonId = typeof migrated.combat.dungeonId === 'string' ? migrated.combat.dungeonId as DungeonId : null
-  const sequenceDungeon = sequenceDungeonId ? DUNGEONS[sequenceDungeonId] : undefined
-  const isSequenceDungeon = Boolean(sequenceDungeon && getCombatEncounterMode(getCombatLocationByDungeonId(sequenceDungeonId)) === 'sequence' && sequenceDungeon.encounterSequence?.length)
+  const sequenceCombatLocationId = typeof migrated.combat.locationId === 'string' ? migrated.combat.locationId as CombatLocationId : null
+  const sequenceDungeon = sequenceCombatLocationId ? DUNGEONS[sequenceCombatLocationId] : undefined
+  const isSequenceDungeon = Boolean(sequenceDungeon && getCombatEncounterMode(getCombatLocationById(sequenceCombatLocationId)) === 'sequence' && sequenceDungeon.encounterSequence?.length)
   if (migrated.combat.active && isSequenceDungeon && sequenceDungeon?.encounterSequence) {
     const sequence = sequenceDungeon.encounterSequence
     const legacyThreatIndex = Math.min(sequence.length, Math.max(0, nonNegativeInteger(rawCombat.threatCleared) ?? 0))
-    const sequenceConversionVersion = sequenceDungeonId ? SEQUENCE_CONVERSION_VERSION_BY_DUNGEON[sequenceDungeonId] : undefined
+    const sequenceConversionVersion = sequenceCombatLocationId ? SEQUENCE_CONVERSION_VERSION_BY_DUNGEON[sequenceCombatLocationId] : undefined
     const convertedToSequence = sequenceConversionVersion !== undefined && sourceVersion < sequenceConversionVersion
     const inferredIndex = activeEnemyId
       ? activeEnemyId === sequenceDungeon.boss
@@ -689,13 +690,13 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       : convertedToSequence
         ? 0
         : legacyThreatIndex
-    const rawIndex = nonNegativeInteger(rawCombat.dungeonSequenceIndex)
+    const rawIndex = nonNegativeInteger(rawCombat.sequenceIndex ?? rawCombat['dungeonSequenceIndex'])
     const candidateIndex = sourceVersion >= 42 && !convertedToSequence && rawIndex !== undefined && rawIndex <= sequence.length ? rawIndex : inferredIndex
     const expectedEnemyId = candidateIndex === sequence.length ? sequenceDungeon.boss : sequence[candidateIndex]
     const repairedIndex = activeEnemyId && expectedEnemyId !== activeEnemyId ? inferredIndex : candidateIndex
-    migrated.combat.dungeonSequenceIndex = Math.min(sequence.length, Math.max(0, repairedIndex))
+    migrated.combat.sequenceIndex = Math.min(sequence.length, Math.max(0, repairedIndex))
     migrated.combat.threatCleared = 0
-  } else migrated.combat.dungeonSequenceIndex = null
+  } else migrated.combat.sequenceIndex = null
   const rawEnemyWorldTier = isWorldTierId(rawCombat.enemyWorldTier) ? rawCombat.enemyWorldTier : 1
   migrated.combat.enemyWorldTier = activeEnemyId ? sanitizeWorldTierState({ current: rawEnemyWorldTier, highestUnlocked: migrated.worldTier.highestUnlocked }).current : null
   const rawSerial = sourceVersion >= 22 ? nonNegativeInteger(rawCombat.enemyInstanceSerial) ?? 0 : sourceVersion === 21 && activeEnemyId ? 1 : 0
@@ -852,30 +853,30 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   migrated.equipment = normalizeEquipmentState(candidate, migrated.inventory)
 
   const rawCombat = isRecord(raw.combat) ? raw.combat : {}
-  const dungeonId = Object.prototype.hasOwnProperty.call(rawCombat, 'dungeonId') ? rawCombat.dungeonId : migrated.combat.dungeonId
-  migrated.combat.dungeonId = dungeonId === null ? null : validContentId(dungeonId, dungeonIds) ? dungeonId as GameState['combat']['dungeonId'] : fresh.combat.dungeonId
+  const locationId = Object.prototype.hasOwnProperty.call(rawCombat, 'locationId') ? rawCombat.locationId : Object.prototype.hasOwnProperty.call(rawCombat, 'dungeonId') ? rawCombat['dungeonId'] : migrated.combat.locationId
+  migrated.combat.locationId = locationId === null ? null : validContentId(locationId, locationIds) ? locationId as GameState['combat']['locationId'] : fresh.combat.locationId
   const enemyId = Object.prototype.hasOwnProperty.call(rawCombat, 'enemyId') ? rawCombat.enemyId : migrated.combat.enemyId
   migrated.combat.enemyId = enemyId === null ? null : validContentId(enemyId, monsterIds) ? enemyId as GameState['combat']['enemyId'] : fresh.combat.enemyId
   const pendingBossId = Object.prototype.hasOwnProperty.call(rawCombat, 'pendingBossId') ? rawCombat.pendingBossId : migrated.combat.pendingBossId
   migrated.combat.pendingBossId = pendingBossId === null ? null : validContentId(pendingBossId, monsterIds) ? pendingBossId as GameState['combat']['pendingBossId'] : fresh.combat.pendingBossId
-  const activeTargetedLocation = migrated.combat.active && migrated.combat.dungeonId
-    ? getCombatLocationByDungeonId(migrated.combat.dungeonId)
+  const activeTargetedLocation = migrated.combat.active && migrated.combat.locationId
+    ? getCombatLocationById(migrated.combat.locationId)
     : null
-  if (activeTargetedLocation && migrated.combat.dungeonId) {
+  if (activeTargetedLocation && migrated.combat.locationId) {
     const rawTarget = typeof rawCombat.targetEnemyId === 'string' ? rawCombat.targetEnemyId as MonsterId : null
     const rawEnemy = migrated.combat.enemyId
-    const firstTarget = DUNGEONS[migrated.combat.dungeonId].monsterPool.find((monsterId) => isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, monsterId)) ?? null
+    const firstTarget = DUNGEONS[migrated.combat.locationId].monsterPool.find((monsterId) => isCombatTargetForLocation(activeTargetedLocation, migrated.combat.locationId, monsterId)) ?? null
     const activeEnemyIsBoss = Boolean(rawEnemy && MONSTERS[rawEnemy] && isBossMonster(MONSTERS[rawEnemy]))
-    const candidate = !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawTarget)
+    const candidate = !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.locationId, rawTarget)
       ? rawTarget
-      : !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.dungeonId, rawEnemy)
+      : !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.locationId, rawEnemy)
         ? rawEnemy
         : firstTarget
     migrated.combat.targetEnemyId = candidate
   } else {
     migrated.combat.targetEnemyId = null
   }
-  if (migrated.combat.active && migrated.combat.dungeonId && getCombatEncounterMode(getCombatLocationByDungeonId(migrated.combat.dungeonId)) === 'sequence') {
+  if (migrated.combat.active && migrated.combat.locationId && getCombatEncounterMode(getCombatLocationById(migrated.combat.locationId)) === 'sequence') {
     migrated.combat.targetEnemyId = null
     migrated.combat.pendingBossId = null
     migrated.combat.threatCleared = 0
@@ -897,7 +898,7 @@ const normalizeGuardianRuntime = (migrated: GameState, raw: Record<string, any>)
   migrated.combat.guardian = { activeGuardianId, attackTimerMs, suppressedForEncounter }
 }
 
-/** Explicit V26â†’V27 cleanup for the removed Prismatic Focus content. */
+/** Explicit V26→V27 cleanup for the removed Prismatic Focus content. */
 const removeDeletedPrismaticFocus = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   if (sourceVersion >= 27) return
 
@@ -1119,7 +1120,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   const rawUi = isRecord(raw.ui) ? raw.ui : {}
   migrated.ui.screen = normalizeScreen(rawUi.screen, migrated.ui.screen)
   migrated.ui.legacyArchiveRoute = rawUi.screen === 'collection' ? 'registry' : rawUi.screen === 'bestiary' ? 'bestiary' : null
-  migrated.ui.lastEnteredCombatDungeonId = normalizeLastEnteredCombatDungeonId(rawUi.lastEnteredCombatDungeonId ?? migrated.ui.lastEnteredCombatDungeonId)
+  migrated.ui.lastEnteredCombatLocationId = normalizeLastEnteredCombatLocationId(rawUi.lastEnteredCombatLocationId ?? rawUi['lastEnteredCombatDungeonId'] ?? migrated.ui.lastEnteredCombatLocationId)
   normalizeDynamicRecords(migrated, raw)
   normalizeSigils(migrated, raw)
   normalizeDarkPortalProgress(migrated)
@@ -1149,22 +1150,22 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   }
   reconcileChronicleProgress(migrated, { notify: false })
   if (sourceVersion < SAVE_VERSION && migrated.combat.active) {
-    const dungeonId = migrated.combat.dungeonId
-    const location = getCombatLocationByDungeonId(dungeonId)
-    const legacyRequirement = dungeonId
+    const locationId = migrated.combat.locationId
+    const location = getCombatLocationById(locationId)
+    const legacyRequirement = locationId
       ? sourceVersion < 43
-        ? LEGACY_POWER_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
+        ? LEGACY_POWER_THREAT_REQUIREMENTS[locationId] ?? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[locationId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[locationId]
         : sourceVersion < 44
-          ? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId]
+          ? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[locationId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[locationId]
           : sourceVersion < 45
-            ? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[dungeonId] ?? LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS[dungeonId]
+            ? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[locationId] ?? LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS[locationId]
             : sourceVersion < 46
-              ? LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS[dungeonId]
+              ? LEGACY_BLACK_SIGIL_REACH_THREAT_REQUIREMENTS[locationId]
             : undefined
       : undefined
-    if (dungeonId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {
+    if (locationId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {
       const progressRatio = Math.min(1, Math.max(0, migrated.combat.threatCleared / legacyRequirement))
-      const requirement = resolveBossThreatRequirement(dungeonId, migrated.worldTier.current)
+      const requirement = resolveBossThreatRequirement(locationId, migrated.worldTier.current)
       migrated.combat.threatCleared = Math.min(requirement, Math.max(0, Math.round(requirement * progressRatio)))
     }
   }
@@ -1210,7 +1211,7 @@ const migrateV1 = (raw: Record<string, any>): GameState => {
     combat: { ...fresh.combat, ...(isRecord(raw.combat) ? raw.combat : {}) },
     ui: {
       screen: fresh.ui.screen,
-      lastEnteredCombatDungeonId: normalizeLastEnteredCombatDungeonId(isRecord(raw.ui) ? raw.ui.lastEnteredCombatDungeonId : undefined),
+      lastEnteredCombatLocationId: normalizeLastEnteredCombatLocationId(isRecord(raw.ui) ? raw.ui.lastEnteredCombatLocationId ?? raw.ui['lastEnteredCombatDungeonId'] : undefined),
     },
     offlineBankMs: typeof raw.offlineBankMs === 'number' ? raw.offlineBankMs : 0,
   }

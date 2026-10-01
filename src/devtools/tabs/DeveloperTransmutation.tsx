@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, FilterBar, Status, type FilterOption } from '../../components/ui'
 import { ITEMS } from '../../game/content/items/items'
-import { formatDuration, formatReadableId, formatRecipeUnlock } from '../../game/content/presentation/balanceFormatters'
+import { formatDuration, formatReadableId, formatRecipeUnlock } from '../../game/presentation/content/balanceFormatters'
 import { TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER, type RecipeDefinition } from '../../game/content/recipes/recipes'
 import { getRecipeConsumableRequirements, getRecipeCurrentEffectiveDuration, getRecipeFluxDemandPerSecond, getRecipeOutputPerHour, getRecipeStatus, getTransmutationAcolyteCapacity, getTransmutationAcolytesAssigned } from '../../game/systems/transmutation/transmutationSelectors'
 import { TRANSMUTATION_ARRAYS, TRANSMUTATION_ARRAY_IDS } from '../../game/content/transmutation/transmutationArrays'

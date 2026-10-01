@@ -1,7 +1,7 @@
 import type { GameState, ItemId } from '../../types'
 import { discoverItem } from '../collection/discovery'
 import { isArtifactItem } from '../artifacts/artifactProgression'
-import { isPortalShardItemId } from '../../content/darkPortal/portalShards'
+import { isPortalShardItemId } from '../../content/dark-portal/portalShards'
 
 /** The only gameplay primitive for adding a positive quantity of an item. */
 export function grantItem(state: GameState, itemId: ItemId, quantity: number) {

@@ -1,9 +1,9 @@
-import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './combat-locations/dungeons/dungeons'
 import { getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
 import { isArtificingRecipe, RECIPES, RECIPE_ORDER } from './recipes/recipes'
-import type { DungeonId, ItemId, MonsterId, RecipeId } from '../types'
+import type { CombatLocationId, ItemId, MonsterId, RecipeId } from '../types'
 
 /**
  * Read-only links between authored content registries.
@@ -15,7 +15,7 @@ import type { DungeonId, ItemId, MonsterId, RecipeId } from '../types'
  */
 export interface ContentRelation {
   kind: 'dungeon' | 'monster' | 'recipe'
-  id: DungeonId | MonsterId | RecipeId
+  id: CombatLocationId | MonsterId | RecipeId
   label: string
   detail: string
 }
@@ -26,10 +26,10 @@ export interface ItemSourceInfo {
   relations: readonly ContentRelation[]
 }
 
-export interface MonsterDungeonInfo {
+export interface MonsterLocationInfo {
   monsterId: MonsterId
-  dungeonId: DungeonId
-  dungeonName: string
+  locationId: CombatLocationId
+  locationName: string
   role: 'normal' | 'boss'
 }
 
@@ -37,8 +37,8 @@ export interface ItemDropSource {
   itemId: ItemId
   monsterId: MonsterId
   monsterName: string
-  dungeonId: DungeonId
-  dungeonName: string
+  locationId: CombatLocationId
+  locationName: string
   role: 'normal' | 'boss'
   min: number
   max: number
@@ -46,12 +46,12 @@ export interface ItemDropSource {
 }
 
 /** Exact authored loot entries that can produce an item. */
-export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => DUNGEON_ORDER.flatMap((dungeonId) => {
-  const dungeon = DUNGEONS[dungeonId]
+export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => DUNGEON_ORDER.flatMap((locationId) => {
+  const dungeon = DUNGEONS[locationId]
   const monsterIds = [...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])]
   return monsterIds.flatMap((monsterId) => {
     const monster = MONSTERS[monsterId]
-    return monster.loot.filter((drop) => drop.itemId === itemId).map((drop) => ({ monsterId, monsterName: monster.name, dungeonId, dungeonName: dungeon.name, role: dungeon.boss === monsterId ? 'boss' as const : 'normal' as const, ...drop, itemId }))
+    return monster.loot.filter((drop) => drop.itemId === itemId).map((drop) => ({ monsterId, monsterName: monster.name, locationId, locationName: dungeon.name, role: dungeon.boss === monsterId ? 'boss' as const : 'normal' as const, ...drop, itemId }))
   })
 })
 
@@ -59,10 +59,10 @@ const getItemRelations = (itemId: ItemId): ContentRelation[] => {
   const relations: ContentRelation[] = []
   const equipmentDungeon = getEquipmentOrigin(itemId)
   if (equipmentDungeon) {
-    relations.push({ kind: 'dungeon', id: equipmentDungeon, label: DUNGEONS[equipmentDungeon].name, detail: 'Equipment set origin' })
+      relations.push({ kind: 'dungeon', id: equipmentDungeon, label: DUNGEONS[equipmentDungeon].name, detail: 'Equipment set origin' })
   }
 
-  getItemDropSources(itemId).forEach((drop) => relations.push({ kind: 'monster', id: drop.monsterId, label: drop.monsterName, detail: `${drop.dungeonName} ${drop.role} loot` }))
+  getItemDropSources(itemId).forEach((drop) => relations.push({ kind: 'monster', id: drop.monsterId, label: drop.monsterName, detail: `${drop.locationName} ${drop.role} loot` }))
 
   RECIPE_ORDER.forEach((recipeId) => {
     const recipe = RECIPES[recipeId]
@@ -87,22 +87,22 @@ export const getItemRecipeUses = (itemId: ItemId) => RECIPE_ORDER.flatMap((recip
 })
 
 /** Every authored dungeon association for a monster, including its boss role. */
-export const getMonsterDungeon = (monsterId: MonsterId): MonsterDungeonInfo | null => {
-  for (const dungeonId of DUNGEON_ORDER) {
-    const dungeon = DUNGEONS[dungeonId]
-    if (hasBossEncounter(dungeon) && dungeon.boss === monsterId) return { monsterId, dungeonId, dungeonName: dungeon.name, role: 'boss' }
-    if (dungeon.monsterPool.includes(monsterId)) return { monsterId, dungeonId, dungeonName: dungeon.name, role: 'normal' }
+export const getMonsterCombatLocation = (monsterId: MonsterId): MonsterLocationInfo | null => {
+  for (const locationId of DUNGEON_ORDER) {
+    const dungeon = DUNGEONS[locationId]
+    if (hasBossEncounter(dungeon) && dungeon.boss === monsterId) return { monsterId, locationId, locationName: dungeon.name, role: 'boss' }
+    if (dungeon.monsterPool.includes(monsterId)) return { monsterId, locationId, locationName: dungeon.name, role: 'normal' }
   }
   return null
 }
 
-export const getEquipmentOriginDungeon = (itemId: ItemId) => getEquipmentOrigin(itemId)
+export const getEquipmentOriginLocation = (itemId: ItemId) => getEquipmentOrigin(itemId)
 
 /** Stable content graph entry point for consumers that need a single read model. */
 export const buildContentRelations = () => ({
   itemSources: (itemId: ItemId) => getItemSourceInfo(itemId),
   itemRecipeUses: (itemId: ItemId) => getItemRecipeUses(itemId),
-  monsterDungeon: (monsterId: MonsterId) => getMonsterDungeon(monsterId),
+  monsterCombatLocation: (monsterId: MonsterId) => getMonsterCombatLocation(monsterId),
   equipmentOrigins: {},
   itemIds: Object.keys(ITEMS) as ItemId[],
   monsterIds: MONSTER_IDS,

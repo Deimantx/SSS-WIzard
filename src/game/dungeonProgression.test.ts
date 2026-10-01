@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS, isDungeonCompleted, isTutorialCompleted } from './content/dungeons/dungeons'
+import { DUNGEONS, isDungeonCompleted, isTutorialCompleted } from './content/combat-locations/dungeons/dungeons'
 import { createInitialState } from '../store/initialState'
 import { finishEnemy, spawnEnemy } from './systems/combat/combatRuntime'
 import { promoteGuildAction } from '../store/actions/guildActions'
@@ -98,12 +98,12 @@ describe('dungeon progression helpers', () => {
 
     const after = useGameStore.getState()
     expect(after.combat.active).toBe(true)
-    expect(after.combat.dungeonId).toBe('howling-den')
+    expect(after.combat.locationId).toBe('howling-den')
     expect(after.combat.threatCleared).toBe(0)
     expect(after.combat.pendingBossId).toBeNull()
     expect(after.combat.inBossFight).toBe(false)
     expect(after.combat.enemyId).toBeTruthy()
-    expect(after.ui.lastEnteredCombatDungeonId).toBe('howling-den')
+    expect(after.ui.lastEnteredCombatLocationId).toBe('howling-den')
     expect(DUNGEONS['howling-den'].monsterPool).toContain(after.combat.enemyId)
     expect(after.inventory).toEqual(beforeInventory)
     expect(after.progress.lifetimeKills).toBe(beforeKills)
@@ -120,7 +120,7 @@ describe('dungeon progression helpers', () => {
     game.enterTargetedCombat('howling-den', 'cavefang-wolf')
 
     const after = useGameStore.getState()
-    expect(after.combat.dungeonId).toBe('howling-den')
+    expect(after.combat.locationId).toBe('howling-den')
     expect(after.combat.threatCleared).toBe(0)
     expect(after.combat.inBossFight).toBe(false)
     expect(after.combat.enemyId).not.toBe('forest-heart')
@@ -140,7 +140,7 @@ describe('dungeon progression helpers', () => {
     game.enterTargetedCombat('whispering-woods', 'forest-wisp')
 
     const after = useGameStore.getState()
-    expect(after.combat.dungeonId).toBe('whispering-woods')
+    expect(after.combat.locationId).toBe('whispering-woods')
     expect(after.combat.threatCleared).toBe(17)
     expect(after.combat.enemyId).toBe(beforeEnemy)
     expect(after.combat.enemyHp).toBe(beforeEnemyHp)
@@ -157,7 +157,7 @@ describe('dungeon progression helpers', () => {
 
     const after = useGameStore.getState()
     expect(after.combat.active).toBe(true)
-    expect(after.combat.dungeonId).toBe('whispering-woods')
+    expect(after.combat.locationId).toBe('whispering-woods')
     expect(after.combat.threatCleared).toBe(12)
     expect(after.combat.enemyId).toBe(before.combat.enemyId)
   })
@@ -168,7 +168,7 @@ describe('dungeon-specific Guild request progression', () => {
   it('counts Grove Sentinel as a normal kill and keeps Clear the Woods local to Whispering Woods', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     state.progress.requestProgress['clear-the-woods'] = 10
 
     for (let index = 0; index < 5; index += 1) {
@@ -177,7 +177,7 @@ describe('dungeon-specific Guild request progression', () => {
     }
     expect(state.progress.requestProgress['clear-the-woods']).toBe(10)
 
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')
     finishEnemy(state)
     expect(state.progress.requestProgress['clear-the-woods']).toBe(11)

@@ -1,8 +1,8 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
 import { resolvePowerScaledCurrencyRewardRange } from '../../systems/loot/powerScaledCurrencyRewards'
-import type { DungeonId, GameState, ItemId, MonsterId, WorldTierId } from '../../types'
+import type { CombatLocationId, GameState, ItemId, MonsterId, WorldTierId } from '../../types'
 
 export interface LocationLootEntry {
   itemId: ItemId
@@ -67,8 +67,8 @@ const aggregateLoot = (monsterIds: readonly MonsterId[], worldTier: WorldTierId,
   return [...entries.values()].map(({ sourceValues: _sourceValues, sourceMonsterIds: _sourceMonsterIds, ...entry }) => entry)
 }
 
-export function buildLocationLootPresentation(dungeonId: DungeonId, progress: Pick<GameState, 'progress'>['progress'], worldTier: WorldTierId = 1): LocationLootGroups {
-  const dungeon = DUNGEONS[dungeonId]
+export function buildLocationLootPresentation(locationId: CombatLocationId, progress: Pick<GameState, 'progress'>['progress'], worldTier: WorldTierId = 1): LocationLootGroups {
+  const dungeon = DUNGEONS[locationId]
   const discovered = new Set(progress.discoveredMonsters)
   const discoveredNormalIds = dungeon.monsterPool.filter((monsterId) => discovered.has(monsterId))
   const bossId = hasBossEncounter(dungeon) ? dungeon.boss : null

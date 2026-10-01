@@ -7,7 +7,7 @@ import {
   type ArcaneCorePresetMutationResult,
   type CreateArcaneCorePresetResult,
   type RenameArcaneCorePresetResult,
-} from '../game/systems/arcaneCore'
+} from '../game/systems/arcane-core'
 import type { ArcaneCoreState } from '../game/types'
 
 export interface ArcaneCorePresetRuntimeState {

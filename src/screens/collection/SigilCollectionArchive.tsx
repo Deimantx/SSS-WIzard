@@ -5,7 +5,7 @@ import { SIGIL_SETS, SIGIL_SET_IDS } from '../../game/content/sigils/sigilSets'
 import { SIGIL_TIERS } from '../../game/content/sigils/sigilTiers'
 import { SIGIL_TRAITS, SIGIL_TRAIT_IDS } from '../../game/content/sigils/sigilTraits'
 import type { GameState, SigilSetId } from '../../game/types'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
 import { getSigilRegionSetPool } from '../../game/content/sigils/sigilDropPools'
 import { useGameStore } from '../../store/gameStore'
 import { setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
@@ -52,7 +52,7 @@ export function SigilCollectionArchive({ state, deepLinkedSetId = null }: { stat
     })}</div>
     {selectedSet && <section className="sigil-collection-source-selector" aria-label={`${selectedSet.name} source locations`}>
       <div><span className="eyebrow">SOURCE LOCATIONS</span><h2>{selectedSet.name} Set</h2><p>{selectedSet.description}</p></div>
-      <div className="sigil-source-location-list">{sourceLocations.map((dungeon) => <Button key={dungeon.id} variant="ghost" onClick={() => { setNavigationIntent({ combatDungeonId: dungeon.id }); useGameStore.getState().setScreen('combat') }}>{dungeon.name}</Button>)}</div>
+      <div className="sigil-source-location-list">{sourceLocations.map((dungeon) => <Button key={dungeon.id} variant="ghost" onClick={() => { setNavigationIntent({ combatLocationId: dungeon.id }); useGameStore.getState().setScreen('combat') }}>{dungeon.name}</Button>)}</div>
     </section>}
     <details className="sigil-collection-traits"><summary>Trait archive · {discoveredTraits} / {SIGIL_TRAIT_IDS.length}</summary><div>{Object.values(SIGIL_TRAITS).map((trait) => <span key={trait.id} className={discovery.discoveredTraits[trait.id] ? 'found' : ''}>{discovery.discoveredTraits[trait.id] ? trait.name : 'Unknown Trait'}</span>)}</div></details>
   </div>

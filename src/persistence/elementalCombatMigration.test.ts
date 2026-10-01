@@ -5,10 +5,10 @@ import { migrateSave } from './migrations'
 describe('Combat V2 save migration', () => {
   it('migrates the prior canonical save version without losing active combat state', () => {
     const initial = createInitialState()
-    const old = { ...initial, saveVersion: SAVE_VERSION - 1, combat: { ...initial.combat, active: true, dungeonId: 'whispering-woods' as const, enemyId: 'forest-wisp' as const, enemyHp: 17, enemyMaxHp: 200 } }
+    const old = { ...initial, saveVersion: SAVE_VERSION - 1, combat: { ...initial.combat, active: true, locationId: 'whispering-woods' as const, enemyId: 'forest-wisp' as const, enemyHp: 17, enemyMaxHp: 200 } }
     const migrated = migrateSave(old)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'whispering-woods', enemyId: 'forest-wisp', enemyHp: 17 })
+    expect(migrated.combat).toMatchObject({ active: true, locationId: 'whispering-woods', enemyId: 'forest-wisp', enemyHp: 17 })
     expect(migrated.combat.elementalDamageReductions).toEqual([])
   })
 

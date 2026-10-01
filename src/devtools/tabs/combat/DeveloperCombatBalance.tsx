@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Button, Card, GameTooltip, Progress, SearchInput, SelectMenu, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { isBossMonster, MONSTERS } from '../../../game/content/monsters'
-import { DUNGEONS } from '../../../game/content/dungeons/dungeons'
+import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
 import { RESONANCE_TYPES } from '../../../game/content/resonance/resonance'
 import {
   buildCombatFarmingBenchmarkBuildSummary,
@@ -20,16 +20,16 @@ import {
   type CombatDungeonRunBenchmarkResult,
   type CombatBossCycleBenchmarkResult,
 } from '../../../game/analysis/combat/combatFarmingBenchmark'
-import { COMBAT_LOCATIONS, type CombatLocationId } from '../../../game/content/world-navigation'
+import { COMBAT_LOCATIONS, type CombatLocationId } from '../../../game/content/combat-locations'
 import type { MonsterId, WorldTierId } from '../../../game/types'
 import { buildThreatKillsToBossAudit } from '../../../game/analysis/combat/combatPowerAudit'
-import { buildCombatV2Act1GlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison, COMBAT_V2_AUDIT_MONSTER_IDS, COMBAT_V2_AUDIT_REGIONS, type CombatV2AuditRegionId } from '../../../game/systems/combat/combatContentAudit'
+import { buildCombatV2RegionalGlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison, COMBAT_V2_AUDIT_MONSTER_IDS, COMBAT_V2_AUDIT_REGIONS, type CombatV2AuditRegionId } from '../../../game/systems/combat/combatContentAudit'
 import { WORLD_TIER_IDS } from '../../../game/content/world-tier/worldTiers'
 import { useDeveloperGameStore as useGameStore } from '../../developerSandbox'
 import type { DeveloperCopy } from '../DeveloperCombat'
 import { Summary } from '../DeveloperTabPrimitives'
 
-const BENCHMARK_LOCATIONS = Object.values(COMBAT_LOCATIONS).filter((location) => location.dungeonId && (getCombatFarmingBenchmarkTargets(location.id).length > 0 || getCombatBenchmarkMode(location.id) === 'dungeon-run'))
+const BENCHMARK_LOCATIONS = Object.values(COMBAT_LOCATIONS).filter((location) => location.id && (getCombatFarmingBenchmarkTargets(location.id).length > 0 || getCombatBenchmarkMode(location.id) === 'dungeon-run'))
 const DURATION_PRESET_IDS = COMBAT_BALANCE_BENCHMARK_DURATION_PRESETS.map((preset) => preset.id)
 type DurationPresetId = typeof DURATION_PRESET_IDS[number] | 'custom'
 type TierScope = 'all' | WorldTierId
@@ -116,7 +116,7 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
   const targetFarmTargets = useMemo(() => benchmarkTargets.filter((targetId) => !isBossMonster(MONSTERS[targetId])), [benchmarkTargets])
   const benchmarkMode = getCombatBenchmarkMode(benchmarkLocationId)
   const benchmarkLocation = COMBAT_LOCATIONS[benchmarkLocationId]
-  const benchmarkBossId = benchmarkLocation?.dungeonId ? DUNGEONS[benchmarkLocation.dungeonId]?.boss : null
+  const benchmarkBossId = benchmarkLocation?.bossId ?? null
   const [auditRegion, setAuditRegion] = useState<CombatV2AuditRegionId>('all')
   const [auditSearch, setAuditSearch] = useState('')
   const [auditWarningsOnly, setAuditWarningsOnly] = useState(false)
@@ -215,7 +215,7 @@ export function DeveloperCombatBalance({ copy }: { copy: DeveloperCopy }) {
   }, [auditRegion, auditSearch, auditWarningsOnly, contentAudit])
   const powerComparison = useMemo(() => buildCombatV2MonsterWorldTierComparison(comparisonMonsterId), [comparisonMonsterId])
   const threatAudit = useMemo(() => buildThreatKillsToBossAudit(), [])
-  const globalAudit = useMemo(() => buildCombatV2Act1GlobalAudit(auditWorldTier), [auditWorldTier])
+  const globalAudit = useMemo(() => buildCombatV2RegionalGlobalAudit(auditWorldTier), [auditWorldTier])
   const targetFarmResults = results.filter((result) => result.mode === 'target-farm')
   const isolatedBossResults = results.filter((result) => result.mode === 'isolated-boss-ttk')
 

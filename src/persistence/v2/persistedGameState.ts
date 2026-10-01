@@ -1,4 +1,4 @@
-import type { DungeonId, EquipmentPosition, GameState, GuildCommissionObjective, HunterRankId, HunterUpgradeId, ItemId, MonsterId, ResearchSlotId, SchoolId, TransmutationRecipeId, WorldTierId } from '../../game/types'
+import type { CombatLocationId, EquipmentPosition, GameState, GuildCommissionObjective, HunterRankId, HunterUpgradeId, ItemId, MonsterId, ResearchSlotId, SchoolId, TransmutationRecipeId, WorldTierId } from '../../game/types'
 
 export type PersistedInventoryV1 = Partial<Record<ItemId, number>>
 export type PersistedEquipmentV1 = Record<EquipmentPosition, ItemId | null>
@@ -25,13 +25,13 @@ export type PersistedActivitiesV1 = Omit<GameState['activities'], 'research' | '
 
 export type PersistedHunterTargetV1 =
   | { type: 'monster' | 'boss'; monsterId: MonsterId }
-  | { type: 'region'; dungeonId: DungeonId }
+  | { type: 'region'; locationId: CombatLocationId }
   | { type: 'family'; familyId: string }
   | { type: 'alignment'; alignmentId: string }
 
 export interface PersistedHunterContractV1 {
   id: string
-  huntingGroundId?: DungeonId
+  huntingGroundId?: CombatLocationId
   targetSpec: PersistedHunterTargetV1
   target: number
   progress: number
@@ -49,8 +49,8 @@ export interface PersistedHunterOrderV1 {
   availableContracts: PersistedHunterContractV1[]
   pinnedContractIds?: string[]
   preferredContractType?: 'monster' | 'family' | 'alignment' | 'region' | 'boss' | null
-  preferredHuntingGroundId?: DungeonId | null
-  lastSelectedQuarryByGround?: Partial<Record<DungeonId, MonsterId>>
+  preferredHuntingGroundId?: CombatLocationId | null
+  lastSelectedQuarryByGround?: Partial<Record<CombatLocationId, MonsterId>>
   blockedTargets: MonsterId[]
   purchasedUpgrades: Partial<Record<HunterUpgradeId, number>>
   totalContractsCompleted: number
@@ -91,30 +91,30 @@ export type PersistedProgressV1 = Omit<GameState['progress'], 'huntersOrder' | '
 /** Explicit combat checkpoint allowlist. The deterministic mid-combat checkpoint stays
  * intact across reloads; UI event log and later runtime-only fields do not enter saves. */
 export type PersistedCombatStateV1 = Pick<GameState['combat'],
-  | 'active' | 'dungeonId' | 'enemyId' | 'targetEnemyId' | 'enemyWorldTier'
+  | 'active' | 'locationId' | 'enemyId' | 'targetEnemyId' | 'enemyWorldTier'
   | 'enemyInstanceSerial' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp'
   | 'enemyBarrier' | 'playerBarrier' | 'enemyBarrierRemainingMs' | 'playerBarrierRemainingMs'
   | 'enemyActionPatternId' | 'enemyNextActionIndex' | 'enemyCurrentStepId' | 'enemyCurrentActionId'
   | 'enemyCurrentActionPatternId' | 'enemyActionTimerMs' | 'enemyActionDurationMs' | 'triggeredRuleIds'
   | 'ruleCooldowns' | 'sigilRuntime' | 'pendingBossId' | 'pendingPlayerSpellCast' | 'queuedPlayerSpellId'
-  | 'activeSpellLoadout' | 'encounterTimerMs' | 'dungeonSequenceIndex' | 'spellCooldowns'
+  | 'activeSpellLoadout' | 'encounterTimerMs' | 'sequenceIndex' | 'spellCooldowns'
   | 'arcaneCoreRuntime' | 'playerStatuses' | 'enemyStatuses' | 'threatCleared' | 'inBossFight'
   | 'lastDamageDealt' | 'lastDamageTaken' | 'combatRngState' | 'guardian' | 'elementalDamageReductions'
 >
 
 export const PERSISTED_COMBAT_FIELDS_V1 = [
-  'active', 'dungeonId', 'enemyId', 'targetEnemyId', 'enemyWorldTier', 'enemyInstanceSerial', 'enemyInstanceKey',
+  'active', 'locationId', 'enemyId', 'targetEnemyId', 'enemyWorldTier', 'enemyInstanceSerial', 'enemyInstanceKey',
   'enemyHp', 'enemyMaxHp', 'enemyBarrier', 'playerBarrier', 'enemyBarrierRemainingMs', 'playerBarrierRemainingMs',
   'enemyActionPatternId', 'enemyNextActionIndex', 'enemyCurrentStepId', 'enemyCurrentActionId', 'enemyCurrentActionPatternId',
   'enemyActionTimerMs', 'enemyActionDurationMs', 'triggeredRuleIds', 'ruleCooldowns', 'sigilRuntime', 'pendingBossId',
-  'pendingPlayerSpellCast', 'queuedPlayerSpellId', 'activeSpellLoadout', 'encounterTimerMs', 'dungeonSequenceIndex',
+  'pendingPlayerSpellCast', 'queuedPlayerSpellId', 'activeSpellLoadout', 'encounterTimerMs', 'sequenceIndex',
   'spellCooldowns', 'arcaneCoreRuntime', 'playerStatuses', 'enemyStatuses', 'threatCleared', 'inBossFight',
   'lastDamageDealt', 'lastDamageTaken', 'combatRngState', 'guardian', 'elementalDamageReductions',
 ] as const satisfies readonly (keyof PersistedCombatStateV1)[]
 
 /** Purpose-built V2 document. Runtime UI, debug state, and notifications have no fields here. */
 export interface PersistedGameStateV1 {
-  schemaVersion: 2
+  schemaVersion: 3
   contentVersion?: number
   savedAt: number
   player: Pick<GameState['player'], 'health' | 'mana' | 'baseMaxHealth' | 'baseMaxMana' | 'healthRegenTimerMs'>

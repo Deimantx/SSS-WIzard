@@ -20,7 +20,7 @@ describe('canonical Combat Resonance rewards', () => {
     const state = makeInitialState()
     prepareCombat(state)
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
     state.combat.enemyHp = 0
     const events: import('./combatTypes').CombatEvent[] = []
@@ -38,7 +38,7 @@ describe('canonical Combat Resonance rewards', () => {
     const state = makeInitialState()
     prepareCombat(state)
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')
     expect(despawnEnemyForDebug(state)).toBe(true)
     expect(state.resonance.air).toBe(0)
@@ -56,7 +56,7 @@ describe('canonical Combat Resonance rewards', () => {
     const state = makeInitialState()
     prepareCombat(state)
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-heart')
     state.combat.enemyHp = 0
     finishEnemy(state)
@@ -80,7 +80,7 @@ describe('canonical Combat Resonance rewards', () => {
     state.worldTier = { current: 2, highestUnlocked: 2 }
     state.offlineBankMs = 1_000
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
     state.combat.enemyHp = 0
     const events: import('./combatTypes').CombatEvent[] = []
@@ -98,7 +98,7 @@ describe('canonical Combat Resonance rewards', () => {
     prepareCombat(state)
     state.worldTier = { current: 4, highestUnlocked: 4 }
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     const events: import('./combatTypes').CombatEvent[] = []
     expect(spawnEnemy(state, 'forest-wisp', { push: (event) => events.push(event) })).toBe(true)
     expect(state.combat.enemyWorldTier).toBe(4)
@@ -123,7 +123,7 @@ describe('canonical Combat Resonance rewards', () => {
     prepareCombat(state)
     state.worldTier = { current: 5, highestUnlocked: 5 }
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
     state.combat.enemyHp = 0
     const collector = createOfflineBankReportCollector(state, 1_000, 0)
@@ -150,7 +150,7 @@ describe('canonical Combat Resonance rewards', () => {
     const state = makeInitialState()
     prepareCombat(state)
     state.combat.active = true
-    state.combat.dungeonId = 'abandoned-catacombs'
+    state.combat.locationId = 'abandoned-catacombs'
     expect(spawnEnemy(state, 'archmage-edrin-shade')).toBe(true)
     state.combat.enemyHp = 0
     finishEnemy(state)

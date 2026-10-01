@@ -3,7 +3,7 @@ import { getDungeonStatisticsPresentation } from './dungeonStatisticsPresentatio
 import type { DungeonStatisticsSession } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 
 const session = (lootByItemId: DungeonStatisticsSession['lootByItemId']): DungeonStatisticsSession => ({
-  dungeonId: 'whispering-woods',
+  locationId: 'whispering-woods',
   startedAtMs: 0,
   elapsedMs: 3_600_000,
   engagedMs: 3_000_000,

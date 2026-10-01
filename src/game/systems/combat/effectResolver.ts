@@ -63,8 +63,8 @@ import {
   type EffectTarget,
 } from "./combatTypes";
 import { stabilizeResourceValue } from "../../presentation/resources/resourcePresentation";
-import { getArcaneCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvival } from "../arcaneCore/arcaneCoreRuntime";
-import { recordArcaneCoreCriticalResult } from "../arcaneCore/arcaneCoreMechanicRuntime";
+import { getArcaneCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvival } from "../arcane-core/arcaneCoreRuntime";
+import { recordArcaneCoreCriticalResult } from "../arcane-core/arcaneCoreMechanicRuntime";
 import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 const MAX_EFFECT_DEPTH = 20;
@@ -138,7 +138,7 @@ const eventFields = (
   return {
     source: logSource(state, source),
     sourceKind: source.kind,
-    dungeonId: state.combat.dungeonId ?? undefined,
+    locationId: state.combat.locationId ?? undefined,
     target,
     targetMonsterId:
       target === "enemy" ? (state.combat.enemyId ?? undefined) : undefined,
@@ -607,7 +607,7 @@ const applyDamage = (
     state.progress.chronicle.eventFlags['first-elemental-ward-mitigation'] = true;
     reconcileChronicleProgress(state)
   }
-  if (target === 'enemy' && dealt > 0 && state.combat.dungeonId && ELEMENTAL_TUTORIAL_DUNGEONS.has(state.combat.dungeonId)
+  if (target === 'enemy' && dealt > 0 && state.combat.locationId && ELEMENTAL_TUTORIAL_DUNGEONS.has(state.combat.locationId)
     && breakdowns.some((breakdown) => breakdown.matchup === 'strong' && breakdown.finalDamage > 0) && !state.progress.chronicle.eventFlags['first-elemental-weakness-hit']) {
     state.progress.chronicle.eventFlags['first-elemental-weakness-hit'] = true;
     reconcileChronicleProgress(state)

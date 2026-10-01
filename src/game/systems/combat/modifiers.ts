@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters'
-import { getEffectiveEquipmentItemStats, getEquipmentStats } from '../../core/equipment/equipmentStats'
+import { getEffectiveEquipmentItemStats, getPlayerBuildStaticStats } from '../../core/equipment/equipmentStats'
 import { MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../../content/items/items'
 import type { ArcaneCoreModifierKey, GameState, StatusId } from '../../types'
@@ -12,13 +12,13 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getActiveArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
-import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcane-core/arcaneCoreProgression'
 import { getEquippedCrystalStats } from '../crystals/crystalStats'
 import { getActiveSigilCombatProviders } from '../sigils/sigilCombatRuntime'
 
 export type CombatModifierState = {
   player: Pick<GameState['player'], 'health' | 'maxHealth' | 'mana' | 'maxMana'>
-  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'dungeonId' | 'targetEnemyId' | 'guardian'>>
+  combat: Pick<GameState['combat'], 'enemyId' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp' | 'playerBarrier' | 'enemyBarrier' | 'playerStatuses' | 'enemyStatuses'> & Partial<Pick<GameState['combat'], 'locationId' | 'targetEnemyId' | 'guardian'>>
   equipment: GameState['equipment']
   artifactProgress: GameState['artifactProgress']
 } & Partial<Pick<GameState, 'arcaneCore' | 'crystals' | 'sigils'>> & { debug?: Partial<Pick<GameState['debug'], 'playerStats' | 'allowManaOverCap'>> }
@@ -160,7 +160,7 @@ export const resolveModifier = getCombatModifiers
 export const getResistance = (state: CombatModifierState, actor: CombatActor, damageType: DamageType, context: ModifierContext = {}) => {
   if (actor === 'enemy' && !state.combat.enemyId) return 0
   const authored = actor === 'player'
-    ? getEquipmentStats(state).resistances?.[damageType] ?? 0
+    ? getPlayerBuildStaticStats(state).resistances?.[damageType] ?? 0
     : state.combat.enemyId
       ? MONSTERS[state.combat.enemyId]?.resistances?.[damageType] ?? 0
       : 0

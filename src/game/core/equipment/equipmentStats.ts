@@ -1,7 +1,7 @@
 import { ITEMS } from '../../content/items/items'
 import type { CombatModifier, CombatTag, DamageType, EquipmentStats, GameState, ModifierKey } from '../../types'
 import { getArtifactEffectiveStats, getActiveArtifactCombatProviders, isArtifactItem } from '../../systems/artifacts/artifactProgression'
-import { getArcaneCoreStaticStats } from '../../systems/arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreStaticStats } from '../../systems/arcane-core/arcaneCoreProgression'
 import { addEquipmentStats } from './equipmentStatAggregation'
 import { getEquippedCrystalStats } from '../../systems/crystals/crystalStats'
 import { getEquippedSigilStats } from '../../systems/sigils/sigilRuntime'
@@ -23,12 +23,18 @@ export type EquipmentStatsState = Pick<GameState, 'equipment' | 'artifactProgres
 export const getEffectiveEquipmentItemStats = (state: EquipmentStatsState, itemId: import('../../types').ItemId): EquipmentStats =>
   isArtifactItem(itemId) ? getArtifactEffectiveStats(state, itemId) : (ITEMS[itemId]?.stats ?? {})
 
-export const getEquipmentStats = (state: EquipmentStatsState): EquipmentStats => {
+export const getEquippedItemStats = (state: EquipmentStatsState): EquipmentStats => {
   const total: EquipmentStats = {}
   Object.values(state.equipment).forEach((itemId) => {
     if (!itemId || !ITEMS[itemId]) return
     addEquipmentStats(total, getEffectiveEquipmentItemStats(state, itemId))
   })
+  return total
+}
+
+/** Aggregates every always-on static player build source exactly once. */
+export const getPlayerBuildStaticStats = (state: EquipmentStatsState): EquipmentStats => {
+  const total = getEquippedItemStats(state)
   if (state.arcaneCore) addEquipmentStats(total, getArcaneCoreStaticStats(state.arcaneCore))
   if (state.crystals) addEquipmentStats(total, getEquippedCrystalStats(state as Pick<GameState, 'crystals'>))
   if (state.sigils) addEquipmentStats(total, getEquippedSigilStats(state as Pick<GameState, 'sigils'>))

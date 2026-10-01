@@ -1,9 +1,9 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
-import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/world-navigation'
+import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/combat-locations'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
-import type { DungeonId, MonsterId, WorldTierId } from '../../types'
+import type { MonsterId, WorldTierId } from '../../types'
 
 export interface MonsterPowerAuditRow {
   region: string
@@ -27,7 +27,7 @@ export interface SequencePowerAuditRow extends MonsterPowerAuditRow {
 }
 
 export interface BossPowerRatioAuditRow {
-  dungeonId: DungeonId
+  locationId: CombatLocationId
   dungeon: string
   lastNormalPower: number
   bossPower: number
@@ -68,8 +68,8 @@ const WORLD_TIERS: readonly WorldTierId[] = [1, 2, 3, 4, 5]
 
 const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): MonsterPowerAuditRow[] => {
   const location = COMBAT_LOCATIONS[locationId]
-  if (!location?.dungeonId) return []
-  const dungeon = DUNGEONS[location.dungeonId]
+  if (!location?.id) return []
+  const dungeon = DUNGEONS[location.id]
   if (!dungeon) return []
   const mode = getCombatEncounterMode(location)
   const region = COMBAT_REGIONS[location.regionId]
@@ -106,14 +106,14 @@ export const buildBossPowerRatioAudit = (worldTier: WorldTierId = 1): BossPowerR
   const sequenceRows = buildSequencePowerAudit(worldTier)
   return [...new Set(sequenceRows.map((row) => row.locationId))].flatMap((locationId) => {
     const location = COMBAT_LOCATIONS[locationId]
-    const dungeonId = location?.dungeonId
-    const dungeon = dungeonId ? DUNGEONS[dungeonId] : null
+    const resolvedLocationId = location?.id
+    const dungeon = resolvedLocationId ? DUNGEONS[resolvedLocationId] : null
     const rows = sequenceRows.filter((row) => row.locationId === locationId)
     const normalRows = rows.filter((row) => row.role === 'normal')
     const lastNormal = normalRows[normalRows.length - 1]
     const boss = rows.find((row) => row.role === 'boss')
     if (!dungeon || !lastNormal || !boss) return []
-    return [{ dungeonId: dungeon.id, dungeon: dungeon.name, lastNormalPower: lastNormal.power, bossPower: boss.power, bossToLastNormalRatio: boss.power / Math.max(1, lastNormal.power), carriesResources: true as const, normalStepCount: rows.filter((row) => row.role === 'normal').length }]
+    return [{ locationId: dungeon.id, dungeon: dungeon.name, lastNormalPower: lastNormal.power, bossPower: boss.power, bossToLastNormalRatio: boss.power / Math.max(1, lastNormal.power), carriesResources: true as const, normalStepCount: rows.filter((row) => row.role === 'normal').length }]
   })
 }
 
@@ -134,15 +134,15 @@ export const getPowerAuditWorldTiers = () => WORLD_TIERS
 export const buildThreatKillsToBossAudit = (): ThreatKillsToBossAuditRow[] => {
   const baseline = new Map<CombatLocationId, number>()
   const rows: ThreatKillsToBossAuditRow[] = []
-  Object.values(COMBAT_LOCATIONS).filter((location) => location.dungeonId && getCombatEncounterMode(location) === 'targeted' && hasBossEncounter(DUNGEONS[location.dungeonId])).forEach((location) => {
-    const dungeonId = location.dungeonId!
+  Object.values(COMBAT_LOCATIONS).filter((location) => location.id && getCombatEncounterMode(location) === 'targeted' && hasBossEncounter(DUNGEONS[location.id])).forEach((location) => {
+    const locationId = location.id!
     const targets = Object.entries(location.targetMetadata ?? {})
       .sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER))
       .map(([monsterId]) => monsterId as MonsterId)
     if (!targets.length) return
     WORLD_TIERS.forEach((worldTier) => {
       const gains = targets.map((monsterId) => resolveEnemyPowerRating(monsterId, worldTier)).sort((left, right) => left - right)
-      const requirement = resolveBossThreatRequirement(dungeonId, worldTier)
+      const requirement = resolveBossThreatRequirement(locationId, worldTier)
       const weakest = gains[0]
       const strongest = gains[gains.length - 1]
       const median = gains[Math.floor(gains.length / 2)]

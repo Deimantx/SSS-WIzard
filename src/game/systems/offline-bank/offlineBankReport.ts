@@ -1,5 +1,5 @@
 import { isBossMonster, MONSTERS } from '../../content/monsters'
-import { getArcaneCoreTotalPointsEarned } from '../arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreTotalPointsEarned } from '../arcane-core/arcaneCoreProgression'
 import { ITEMS } from '../../content/items/items'
 import type { ArtificingRecipeId, ChannelingDiscoveryId, GameState, ItemId, MonsterId, RecipeId, SchoolId, SpellId } from '../../types'
 import { RESONANCE_TYPES, type ResonanceYield } from '../../content/resonance/resonance'

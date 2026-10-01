@@ -10,7 +10,7 @@ export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSaved
   activities.research = { slots: clone(state.activities.research.slots) }
   activities.transmutation = { jobs: clone(state.activities.transmutation.jobs) }
   const document: PersistedGameStateV1 = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     contentVersion: SAVE_VERSION,
     savedAt,
     player: {

@@ -3,10 +3,10 @@ import { createInitialState } from '../../../store/initialState'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { createCombatTestState } from './testCombatState'
 
-const bossState = (bossId: 'forest-heart' | 'archmage-edrin-shade', dungeonId: 'whispering-woods' | 'abandoned-catacombs') => {
+const bossState = (bossId: 'forest-heart' | 'archmage-edrin-shade', locationId: 'whispering-woods' | 'abandoned-catacombs') => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = dungeonId
+  state.combat.locationId = locationId
   spawnEnemy(state, bossId)
   return state
 }

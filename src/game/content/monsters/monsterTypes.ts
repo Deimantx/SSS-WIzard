@@ -119,7 +119,7 @@ export const deriveBasicDamageForTargetPower = ({ maxHealth, defense, basicAttac
   return (target / 10) ** 2 * attackSeconds / effectiveHealth
 }
 
-/** Applies authored Act 0 Combat V2 identity and derives Basic damage from a target Power. */
+/** Applies authored Combat V2 identity and derives Basic damage from a target Power. */
 export const applyCombatV2Profile = (monster: MonsterDefinition, primaryAffinity: ElementId, targetPower: number, legacyPhysicalElement: ElementId = primaryAffinity): MonsterDefinition => {
   const authored = structuredClone(monster)
   const convert = (value: unknown): void => {

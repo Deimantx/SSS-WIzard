@@ -4,7 +4,7 @@ import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { MONSTERS, type MonsterDefinition } from '../../../game/content/monsters'
 import { getMonsterPrimaryAffinity, getMonsterDamageProfile } from '../../../game/content/monsters/monsterTypes'
 import { getElementCounter, getElementResistance, type ElementId } from '../../../game/content/elements/elements'
-import { COMBAT_LOCATION_TYPE_METADATA } from '../../../game/content/world-navigation'
+import { COMBAT_LOCATION_TYPE_METADATA } from '../../../game/content/combat-locations'
 import type { CombatBossHuntPresentation } from '../../../game/presentation/combat/combatBossHuntPresentation'
 import type { CombatEncounterViewModel, CombatLocationViewModel, CombatTargetViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import { getMonsterDossierCombatStats } from '../../../game/presentation/combat'
@@ -15,8 +15,8 @@ import { MonsterPortrait } from '../MonsterPortrait'
 import { useGameStore } from '../../../store/gameStore'
 import { CombatLocationIcon } from './CombatLocationIcon'
 import { CombatLocationSigilDrops } from './CombatLocationSigilDrops'
-import { getHunterAuthorization, getHunterRankProgress } from '../../../game/systems/huntersOrder/huntersOrderRuntime'
-import { HUNTER_RANKS } from '../../../game/content/huntersOrder/hunterRanks'
+import { getHunterAuthorization, getHunterRankProgress } from '../../../game/systems/hunters-order/huntersOrderRuntime'
+import { HUNTER_RANKS } from '../../../game/content/hunters-order/hunterRanks'
 import { getHunterContractCombatPresentation, type HunterContractMonsterRelation } from '../../../game/presentation/huntersOrder/hunterContractCombatPresentation'
 
 export function CombatLocationInspector({ location, activeLocationId, combatActive, selectedTargetEnemyId, onSelectTarget, onLoot, onBestiary, onEnter }: { location: CombatLocationViewModel | null; activeLocationId: string | null; combatActive: boolean; selectedTargetEnemyId: MonsterId | null; onSelectTarget: (enemyId: MonsterId) => void; onLoot: () => void; onBestiary: () => void; onEnter: () => void }) {
@@ -29,8 +29,8 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
   const locked = location.state === 'locked'
   const prototype = location.state === 'prototype'
   const selectedTarget = location.targeting?.targets.find((target) => target.monsterId === selectedTargetEnemyId) ?? null
-  const selectedAuthorization = selectedTarget && location.dungeonId ? getHunterAuthorization({ progress }, selectedTarget.monsterId, location.dungeonId) : { authorized: true as const }
-  const bossAuthorization = location.boss?.monsterId && location.dungeonId ? getHunterAuthorization({ progress }, location.boss.monsterId, location.dungeonId) : { authorized: true as const }
+  const selectedAuthorization = selectedTarget && location.locationId ? getHunterAuthorization({ progress }, selectedTarget.monsterId, location.locationId) : { authorized: true as const }
+  const bossAuthorization = location.boss?.monsterId && location.locationId ? getHunterAuthorization({ progress }, location.boss.monsterId, location.locationId) : { authorized: true as const }
   const selectedAuthorizationMessage = selectedAuthorization.authorized ? null : hunterAuthorizationMessage(selectedAuthorization.reason, false)
   const activeTarget = location.targeting?.activeTargetEnemyId ?? null
   const primaryLabel = prototype
@@ -58,8 +58,8 @@ export function CombatLocationInspector({ location, activeLocationId, combatActi
     <div className="combat-location-inspector-scroll">
       <div className="combat-location-inspector-hero"><div className="combat-location-inspector-glyph" aria-hidden="true"><CombatLocationIcon type={location.type} size={20} /><i /></div><div className="combat-location-inspector-heading"><span className="combat-subsection-label">LOCATION DETAILS</span><h3>{location.name}</h3><div className="combat-location-inspector-badges"><Status tone={tone}>{location.statusLabel}</Status><span className="combat-location-type-badge">{location.typeLabel}</span></div></div></div>
       <p className="combat-location-description">{location.description}</p>
-      {location.dungeonId && <CombatLocationSigilDrops dungeonId={location.dungeonId} />}
-      {location.targeting ? <CombatZoneBody type={location.type} targeting={location.targeting} selectedTargetEnemyId={selectedTargetEnemyId} activeTargetEnemyId={activeTarget} onSelectTarget={onSelectTarget} boss={location.boss} bossAuthorization={bossAuthorization} zoneAffix={location.zoneAffix} bossHunt={location.bossHunt} autoHuntDisabled={locked || prototype || !location.bossHunt?.autoHuntUnlocked} onToggleAutoHunt={() => { if (location.dungeonId) toggleAutoHunt(location.dungeonId) }} onEngageBoss={() => { if (location.bossHunt) engageBoss(location.bossHunt.bossId) }} /> : location.sequence ? <SequenceDungeonBody sequence={location.sequence} firstClearUnlockPreview={location.firstClearUnlockPreview} firstClearCompleted={location.firstClearCompleted} /> : <DungeonBody encounters={location.encounters} boss={location.boss} />}
+      {location.locationId && <CombatLocationSigilDrops locationId={location.locationId} />}
+      {location.targeting ? <CombatZoneBody type={location.type} targeting={location.targeting} selectedTargetEnemyId={selectedTargetEnemyId} activeTargetEnemyId={activeTarget} onSelectTarget={onSelectTarget} boss={location.boss} bossAuthorization={bossAuthorization} zoneAffix={location.zoneAffix} bossHunt={location.bossHunt} autoHuntDisabled={locked || prototype || !location.bossHunt?.autoHuntUnlocked} onToggleAutoHunt={() => { if (location.locationId) toggleAutoHunt(location.locationId) }} onEngageBoss={() => { if (location.bossHunt) engageBoss(location.bossHunt.bossId) }} /> : location.sequence ? <SequenceDungeonBody sequence={location.sequence} firstClearUnlockPreview={location.firstClearUnlockPreview} firstClearCompleted={location.firstClearCompleted} /> : <DungeonBody encounters={location.encounters} boss={location.boss} />}
       {location.type === 'hunting-ground' && selectedTarget && selectedAuthorizationMessage && <div className="combat-location-lock-note"><LockKeyhole size={14} aria-hidden="true" /><span>{selectedAuthorizationMessage}</span></div>}
       {locked && <div className="combat-location-lock-note"><LockKeyhole size={14} aria-hidden="true" /><span>{location.unlockText ?? 'This location is not available yet.'}</span></div>}
       {prototype && <div className="combat-location-lock-note is-prototype"><Gem size={14} aria-hidden="true" /><span>This location is presentation-only until gameplay content is authored.</span></div>}
@@ -85,7 +85,7 @@ function CombatZoneBody({ type, targeting, selectedTargetEnemyId, activeTargetEn
   return <>
     {zoneAffix && <section className="combat-location-section combat-location-zone-affix"><div className="combat-location-section-head"><span className="combat-location-section-label">ZONE AFFIX</span><small>ALL NORMAL ENCOUNTERS</small></div><GameTooltip block accent="warning" content={<TooltipContent title={`Zone Affix · ${zoneAffix.name}`} description={zoneAffix.description} />}><div className="combat-location-zone-affix-card" tabIndex={0}><strong>{zoneAffix.name}</strong><span>{zoneAffix.description}</span></div></GameTooltip></section>}
     {hunterContract && <HunterContractCombatStrip presentation={hunterContract} onOpenContracts={() => setScreen('hunters-order')} />}
-    <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">SELECT TARGET</span><small>{hunterContract?.active ? !hunterContract.groundAuthorized ? `CONTRACT SCOPED TO ${hunterContract.huntingGroundName?.toUpperCase()}` : hunterContract.contract?.targetSpec.type === 'monster' ? `ACTIVE CONTRACT · ${hunterContract.remaining} KILLS REMAINING` : `${hunterContract.matchingMonsterIds.length} TARGETS COUNT FOR ACTIVE CONTRACT` : 'CHOOSE A MONSTER TO HUNT'}</small></div><div className="combat-target-grid">{targeting.targets.map((target) => <TargetCard key={target.monsterId} target={target} selected={target.monsterId === selectedTargetEnemyId} hunting={target.monsterId === activeTargetEnemyId} contractRelation={hunterContract?.relationFor(target.monsterId, combat.dungeonId ?? 'hunters-ground')} onSelect={() => onSelectTarget(target.monsterId)} />)}</div></section>
+    <section className="combat-location-section"><div className="combat-location-section-head"><span className="combat-location-section-label">SELECT TARGET</span><small>{hunterContract?.active ? !hunterContract.groundAuthorized ? `CONTRACT SCOPED TO ${hunterContract.huntingGroundName?.toUpperCase()}` : hunterContract.contract?.targetSpec.type === 'monster' ? `ACTIVE CONTRACT · ${hunterContract.remaining} KILLS REMAINING` : `${hunterContract.matchingMonsterIds.length} TARGETS COUNT FOR ACTIVE CONTRACT` : 'CHOOSE A MONSTER TO HUNT'}</small></div><div className="combat-target-grid">{targeting.targets.map((target) => <TargetCard key={target.monsterId} target={target} selected={target.monsterId === selectedTargetEnemyId} hunting={target.monsterId === activeTargetEnemyId} contractRelation={hunterContract?.relationFor(target.monsterId, combat.locationId ?? 'hunters-ground')} onSelect={() => onSelectTarget(target.monsterId)} />)}</div></section>
     {boss && <section className="combat-location-section combat-location-zone-boss"><div className="combat-location-section-head"><span className="combat-location-section-label">{bossHunt?.bossLabel ?? (type === 'elite-zone' ? 'ELITE BOSS' : 'ZONE BOSS')}</span>{bossHunt && <span className="combat-location-boss-state">{bossHunt.state === 'fighting' ? 'FIGHTING' : bossHunt.state === 'queued' ? 'QUEUED' : bossHunt.state === 'ready' ? 'READY' : 'BUILDING'}</span>}</div><EncounterTile encounter={boss} /><BossRequirement bossHunt={bossHunt} bossAuthorization={bossAuthorization} autoHuntDisabled={autoHuntDisabled} onToggleAutoHunt={onToggleAutoHunt} onEngageBoss={onEngageBoss} /></section>}
   </>
 }

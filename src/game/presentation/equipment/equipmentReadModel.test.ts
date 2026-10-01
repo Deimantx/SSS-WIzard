@@ -14,7 +14,7 @@ describe('Equipment read model', () => {
     state.inventory['ember-staff'] = 1
     state.equipment.weapon = 'ember-staff'
     const sheet = getEquipmentStatSnapshot(state, state.equipment)
-    const combatState = { ...state, combat: { ...state.combat, active: true, dungeonId: 'whispering-woods' as const, enemyId: 'forest-wisp' as const, enemyHp: 1, enemyMaxHp: 44 } }
+    const combatState = { ...state, combat: { ...state.combat, active: true, locationId: 'whispering-woods' as const, enemyId: 'forest-wisp' as const, enemyHp: 1, enemyMaxHp: 44 } }
     expect(getEquipmentStatSnapshot(combatState, combatState.equipment)).toEqual(sheet)
   })
 

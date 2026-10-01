@@ -1,6 +1,6 @@
 import { GUILD_COMMISSION_TEMPLATES, type GuildCommissionTemplate } from '../../content/guild/guildRequests'
 import { GUILD_RANKS } from '../../content/guild/guildRanks'
-import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, hasBossEncounter } from '../../content/dungeons/dungeons'
+import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { ITEMS } from '../../content/items/items'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'

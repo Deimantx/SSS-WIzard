@@ -1,9 +1,9 @@
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { getCrystalVariantName } from '../../content/crystals/crystals'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { SCHOOLS } from '../../content/schools/schools'
-import { formatReadableId } from '../../content/presentation/balanceFormatters'
+import { formatReadableId } from '../content/balanceFormatters'
 import type { ChronicleCondition, ChronicleObjectiveDefinition, ChronicleReward } from '../../content/chronicles/chronicles'
 import type { GameState, GuildRankId } from '../../types'
 import { getChronicleConditionValue } from '../../systems/chronicles/chronicleRuntime'
@@ -23,7 +23,7 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'lifetime-kills': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'}`
     case 'boss-kill': return `Defeat ${MONSTERS[condition.bossId]?.name ?? formatReadableId(condition.bossId)}`
     case 'all-boss-kills': return condition.bossIds.includes('graveglass-behemoth') && condition.bossIds.includes('storm-archivist') && condition.bossIds.includes('fallen-astromancer') ? 'Break the three Shattered Meridian anchors' : `Defeat ${condition.bossIds.map((id) => MONSTERS[id]?.name ?? formatReadableId(id)).join(', ')}`
-    case 'dungeon-entered': return `Enter ${DUNGEONS[condition.dungeonId]?.name ?? formatReadableId(condition.dungeonId)}`
+    case 'dungeon-entered': return `Enter ${DUNGEONS[condition.locationId]?.name ?? formatReadableId(condition.locationId)}`
     case 'auto-cast-enabled': return 'Enable Auto-Cast for one Spell'
     case 'channeling-acolytes': return `Assign ${condition.count} Acolyte${condition.count === 1 ? '' : 's'} to Channeling`
     case 'chronicle-event': return formatReadableId(condition.eventId)

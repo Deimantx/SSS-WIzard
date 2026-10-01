@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { buildCombatFarmingBenchmarkBuildSummary, runCombatFarmingBenchmark, getCombatFarmingBenchmarkTargets, runCombatFarmingBenchmarkMatrix, getCombatBenchmarkMode, getCombatBenchmarkWorldTiers, runCombatDungeonRunBenchmark, runCombatBossCycleBenchmark } from './combatFarmingBenchmark'
 import type { GameState } from '../../types'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 
 const makeFixture = () => {
   const state = createInitialState()

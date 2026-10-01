@@ -1,5 +1,5 @@
 import { Castle, Crosshair, Crown, Gem, MapPin, Shield } from 'lucide-react'
-import type { CombatLocationType } from '../../../game/content/world-navigation'
+import type { CombatLocationType } from '../../../game/content/combat-locations'
 
 /** One semantic icon contract shared by the location browser and inspector. */
 export const COMBAT_LOCATION_ICONS = {

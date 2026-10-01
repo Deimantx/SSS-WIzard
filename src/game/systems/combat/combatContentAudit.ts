@@ -9,8 +9,8 @@ import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
-import { COMBAT_LOCATIONS } from '../../content/world-navigation/worldNavigation'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 
 export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus',
@@ -121,7 +121,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   const profile = resolveWorldTierEnemyProfile(id, worldTier)
   const affixId = monster.bestiaryCategory === 'boss' ? undefined : COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]?.zoneAffixId
   const locationDefinition = COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]
-  const dungeon = locationDefinition?.dungeonId ? DUNGEONS[locationDefinition.dungeonId] : undefined
+  const dungeon = locationDefinition?.id ? DUNGEONS[locationDefinition.id] : undefined
   const normalOrder = dungeon ? [...(dungeon.encounterSequence ?? dungeon.monsterPool)].indexOf(id) + 1 : 0
   const targetOrder = locationDefinition?.targetMetadata?.[id]?.order ?? (normalOrder > 0 ? normalOrder : dungeon?.boss === id ? (dungeon.encounterSequence ?? dungeon.monsterPool).length + 1 : 0)
   const authored = collectAuthoredEffects(monster, affixId)
@@ -175,7 +175,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   const warnings: string[] = []
   const genericActionDescriptionCount = Object.values(monster.actions).filter((action) => isGenericActionDescription(monster, action)).length
   for (const action of Object.values(monster.actions)) if (isGenericActionDescription(monster, action)) warnings.push(`Generic or missing action description: ${action.name}`)
-  const genericEquippedTraitCount = monster.traitIds.filter((traitId) => /distinct Act 1 combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? '')).length
+  const genericEquippedTraitCount = monster.traitIds.filter((traitId) => /distinct regional progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? '')).length
   if (genericEquippedTraitCount) warnings.push(`${genericEquippedTraitCount} generic equipped Trait(s)`)
   if (maximumDirectCoefficient(repeatable) > 3) warnings.push('Repeatable direct hit exceeds 3× Basic')
   if (periodicDamageCoefficient > 2) warnings.push('Repeatable DoT exceeds 2× Basic')
@@ -185,7 +185,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   if (onceOnlyBarrierPercent > 0.3) warnings.push('One-time Barrier exceeds 30% Max HP')
   if (monster.bestiaryCategory === 'boss' && repeatableSustainPercent > BOSS_REPEATABLE_SUSTAIN_BUDGET) warnings.push(`Repeatable sustain exceeds ${(BOSS_REPEATABLE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
   if (monster.bestiaryCategory === 'boss' && onceOnlySustainPercent > BOSS_ONCE_SUSTAIN_BUDGET) warnings.push(`One-transition sustain exceeds ${(BOSS_ONCE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
-  if (maxControlMs > 5000 && ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(LOCATION_BY_ID[id])) warnings.push('Act 0 control exceeds 5 seconds')
+  if (maxControlMs > 5000 && ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(LOCATION_BY_ID[id])) warnings.push('First Frontier control exceeds 5 seconds')
   if (physicalComponentCount) warnings.push(`${physicalComponentCount} Physical damage component(s)`)
   if (!monster.primaryAffinity) warnings.push('Missing explicit primary affinity')
   if (!monster.basicAttackElement) warnings.push('Missing explicit Basic Attack element')
@@ -198,7 +198,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
     physicalComponentCount, defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]
 })
 
-export const buildCombatV2Act1GlobalAudit = (worldTier: WorldTierId = 1) => {
+export const buildCombatV2RegionalGlobalAudit = (worldTier: WorldTierId = 1) => {
   const rows = buildCombatV2ContentAudit(worldTier)
   return {
     implicitAffinityCount: rows.filter((row) => !MONSTERS[row.id]?.primaryAffinity).length,

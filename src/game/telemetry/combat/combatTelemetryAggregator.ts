@@ -15,9 +15,9 @@ export const createCombatActorMetrics = (): CombatActorMetrics => ({
   barrierGrantedBySource: {},
 })
 
-export const createCombatTelemetryScope = (scopeId: string, startedAtSequence: number, dungeonId?: CombatTelemetryScope['dungeonId'], monsterId?: MonsterId): CombatTelemetryScope => ({
+export const createCombatTelemetryScope = (scopeId: string, startedAtSequence: number, locationId?: CombatTelemetryScope['locationId'], monsterId?: MonsterId): CombatTelemetryScope => ({
   scopeId,
-  dungeonId,
+  locationId,
   monsterId,
   startedAtSequence,
   aggregateRevision: 0,

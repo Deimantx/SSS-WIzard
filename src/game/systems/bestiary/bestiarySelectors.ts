@@ -1,11 +1,11 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
 import { MONSTERS, isBossMonster, type MonsterDefinition } from '../../content/monsters'
-import type { BestiaryCategory, DungeonId, GameState, MonsterId } from '../../types'
+import type { BestiaryCategory, CombatLocationId, GameState, MonsterId } from '../../types'
 import { completionPercent } from '../archive/archiveSelectors'
 import { getBestiaryActionSearchText, getBestiaryMechanicSearchText, getBestiaryResonanceSearchText, getBestiaryTraitSearchText } from '../../presentation/bestiary/bestiaryPresentation'
 import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
 import { SIGIL_SETS } from '../../content/sigils/sigilSets'
-import { getEligibleHunterContractMembers } from '../huntersOrder/huntersOrderRuntime'
+import { getEligibleHunterContractMembers } from '../hunters-order/huntersOrderRuntime'
 
 export const BESTIARY_CATEGORIES = ['all', 'monster', 'boss'] as const
 export type BestiaryCategoryFilter = typeof BESTIARY_CATEGORIES[number]
@@ -42,8 +42,8 @@ export const matchesBestiaryMetadataFilter = (monster: MonsterDefinition, progre
   if (filter === 'discovered') return progress.discoveredMonsters.includes(monster.id)
   if (filter === 'contract-targets') {
     const contract = progress.huntersOrder.activeContract
-    const dungeonId = monster.hunter?.huntingGroundId as DungeonId | undefined
-    return Boolean(contract && dungeonId && getEligibleHunterContractMembers({ progress }, contract, dungeonId).includes(monster.id))
+    const locationId = monster.hunter?.huntingGroundId as CombatLocationId | undefined
+    return Boolean(contract && locationId && getEligibleHunterContractMembers({ progress }, contract, locationId).includes(monster.id))
   }
   const separator = filter.indexOf(':')
   const kind = filter.slice(0, separator)

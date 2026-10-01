@@ -1,5 +1,5 @@
-import { COMBAT_LOCATIONS, getCombatEncounterMode, getCombatLocation, isCombatTargetForLocation, type CombatLocationId, type CombatTargetDifficulty } from '../../content/world-navigation'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { COMBAT_LOCATIONS, getCombatEncounterMode, getCombatLocation, isCombatTargetForLocation, type CombatLocationId, type CombatTargetDifficulty } from '../../content/combat-locations'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { GUARDIANS } from '../../content/guardians/guardians'
@@ -10,7 +10,7 @@ import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTy
 import { spawnEnemy } from '../../systems/combat/combatRuntime'
 import { advanceCombatState } from '../../systems/simulation/advanceGameState'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
-import type { DungeonId, EquipmentPosition, GameState, MonsterId, SchoolId, WorldTierId } from '../../types'
+import type { EquipmentPosition, GameState, MonsterId, SchoolId, WorldTierId } from '../../types'
 import { getSelectedSpellPreset } from '../../systems/spells'
 import { createEmptyResonanceState } from '../../systems/resonance/resonanceRuntime'
 import { getCrystalCacheDropChance } from '../../systems/crystals/crystalRuntime'
@@ -249,14 +249,14 @@ export const normalizeCombatFarmingBenchmarkDuration = (durationMs: number) => M
 export const getCombatFarmingBenchmarkTargets = (locationId: CombatLocationId, includeBoss = false): MonsterId[] => {
   const location = getCombatLocation(locationId)
   if (!location) return []
-  const dungeon = location.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+  const dungeon = location.id ? DUNGEONS[location.id] : undefined
   const mode = getCombatEncounterMode(location)
   if (mode === 'sequence') return []
   const orderedIds = mode === 'targeted'
     ? Object.entries(location.targetMetadata ?? {}).filter(([, metadata]) => metadata !== undefined).sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER)).map(([monsterId]) => monsterId as MonsterId)
     : []
-  const normalTargets = orderedIds.filter((monsterId) => !isBossMonster(MONSTERS[monsterId]) && isCombatTargetForLocation(location, location.dungeonId ?? null, monsterId))
-  const bossId = includeBoss && location.dungeonId ? DUNGEONS[location.dungeonId]?.boss : undefined
+  const normalTargets = orderedIds.filter((monsterId) => !isBossMonster(MONSTERS[monsterId]) && isCombatTargetForLocation(location, location.id ?? null, monsterId))
+  const bossId = includeBoss && location.id ? DUNGEONS[location.id]?.boss : undefined
   return bossId ? [...normalTargets, bossId] : normalTargets
 }
 
@@ -378,7 +378,7 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
   expectedSequence: MonsterId[] = []
   sequencePosition = 0
 
-  beginRun = (_dungeonId: DungeonId) => undefined
+  beginRun = (_locationId: CombatLocationId) => undefined
   endRun = (_reason: 'leave' | 'defeat' | 'reset' | 'complete') => undefined
   beginEncounter = (_monsterId: MonsterId) => undefined
   endEncounter = (_reason: 'death' | 'despawn' | 'leave') => undefined
@@ -491,14 +491,14 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
 
 export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput): CombatBossCycleBenchmarkResult | null => {
   const location = getCombatLocation(input.locationId)
-  const dungeon = location?.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+  const dungeon = location?.id ? DUNGEONS[location.id] : undefined
   const cyclesRequested = Math.max(1, Math.min(20, Math.floor(input.cycles)))
   const bossId = dungeon?.boss
   if (!location || !dungeon || getCombatEncounterMode(location) !== 'targeted' || !bossId || isBossMonster(MONSTERS[input.targetEnemyId]) || !isCombatTargetForLocation(location, dungeon.id, input.targetEnemyId)) return null
   const maxDurationMs = COMBAT_BALANCE_BENCHMARK_MAX_DURATION_MS
   const state = normalizeBenchmarkClone(input.sourceState, { ...input, durationMs: maxDurationMs })
   state.progress.autoHuntBossUnlocked = true
-  state.progress.autoHuntBossByDungeon[dungeon.id] = true
+  state.progress.autoHuntBossByLocation[dungeon.id] = true
   state.combat.targetEnemyId = input.targetEnemyId
   const collector = new BenchmarkCollector()
   collector.bossCycleMode = true
@@ -536,13 +536,13 @@ export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput
 
 export const runCombatDungeonRunBenchmark = (input: CombatDungeonRunBenchmarkInput): CombatDungeonRunBenchmarkResult | null => {
   const location = getCombatLocation(input.locationId)
-  const dungeon = location?.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+  const dungeon = location?.id ? DUNGEONS[location.id] : undefined
   if (!location || !dungeon || getCombatEncounterMode(location) !== 'sequence' || !dungeon.encounterSequence?.length) return null
   const sequence = [...dungeon.encounterSequence, ...(dungeon.boss ? [dungeon.boss] : [])]
   const durationMs = normalizeCombatFarmingBenchmarkDuration(input.maxDurationMs)
   const seed = getCombatFarmingBenchmarkSeed(sequence[0], input.worldTier, input.seed)
   const state = normalizeBenchmarkClone(input.sourceState, { ...input, targetEnemyId: sequence[0], durationMs })
-  state.combat.dungeonSequenceIndex = 0
+  state.combat.sequenceIndex = 0
   const collector = new BenchmarkCollector()
   collector.sequenceMode = true
   collector.expectedSequence = sequence
@@ -591,7 +591,7 @@ const normalizeBenchmarkClone = (sourceState: GameState, input: CombatFarmingBen
   const freshState = createInitialState()
   state.combat = freshState.combat
   state.combat.active = true
-  state.combat.dungeonId = getCombatLocation(input.locationId)?.dungeonId ?? null
+  state.combat.locationId = getCombatLocation(input.locationId)?.id ?? null
   state.combat.targetEnemyId = input.targetEnemyId
   state.combat.pendingBossId = null
   state.combat.threatCleared = 0
@@ -602,7 +602,7 @@ const normalizeBenchmarkClone = (sourceState: GameState, input: CombatFarmingBen
   state.player.healthRegenTimerMs = freshState.player.healthRegenTimerMs
   state.resonance = createEmptyResonanceState()
   state.offlineBankMs = 0
-  state.progress.autoHuntBossByDungeon[state.combat.dungeonId ?? 'whispering-woods'] = false
+  state.progress.autoHuntBossByLocation[state.combat.locationId ?? 'whispering-woods'] = false
   state.debug.playerImmortal = false
   state.debug.enemyImmortal = false
   state.debug.infiniteMana = false
@@ -622,7 +622,7 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
   const durationMs = normalizeCombatFarmingBenchmarkDuration(input.durationMs)
   const location = getCombatLocation(input.locationId)
   const difficulty = getCombatFarmingBenchmarkDifficulty(input.locationId, input.targetEnemyId)
-  const dungeon = location?.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+  const dungeon = location?.id ? DUNGEONS[location.id] : undefined
   if (!location || !dungeon) return emptyResult(input, difficulty, durationMs, 'Location is not backed by a combat dungeon.')
   const targetIsBoss = isBossMonster(MONSTERS[input.targetEnemyId])
   const mode = getCombatBenchmarkMode(input.locationId, input.targetEnemyId)

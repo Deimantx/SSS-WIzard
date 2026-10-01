@@ -1,4 +1,4 @@
-import type { ArtifactId, ItemId, ArtificingRecipeId, DungeonId, RecipeUnlockCondition } from '../../types'
+import type { ArtifactId, ItemId, ArtificingRecipeId, CombatLocationId, RecipeUnlockCondition } from '../../types'
 
 export interface ArtificingRecipeDefinition {
   id: ArtificingRecipeId
@@ -7,14 +7,14 @@ export interface ArtificingRecipeDefinition {
   output: { itemId: ArtificingRecipeId; quantity: 1 }
   ingredients: { itemId: ItemId; quantity: number }[]
   unlock: RecipeUnlockCondition
-  sourceDungeonId?: DungeonId
+  sourceCombatLocationId?: CombatLocationId
   description?: string
   baseDurationMs: number
 }
 
 const always: RecipeUnlockCondition = { type: 'always' }
 interface ArtifactRecipeOptions {
-  sourceDungeonId?: DungeonId
+  sourceCombatLocationId?: CombatLocationId
   unlock?: RecipeUnlockCondition
   artifactEssenceQuantity?: number
 }
@@ -35,7 +35,7 @@ const artifactRecipe = (
     { itemId: fragment, quantity: fragmentQuantity },
     { itemId: 'artifact-essence', quantity: options.artifactEssenceQuantity ?? 20 },
   ],
-  ...(options.sourceDungeonId ? { sourceDungeonId: options.sourceDungeonId } : {}),
+  ...(options.sourceCombatLocationId ? { sourceCombatLocationId: options.sourceCombatLocationId } : {}),
   unlock: options.unlock ?? always,
   baseDurationMs: 5000,
   description,
@@ -52,12 +52,12 @@ export const ARTIFICING_RECIPES: Record<ArtificingRecipeId, ArtificingRecipeDefi
   'windthread-wand': artifactRecipe('windthread-wand', 'Windthread Wand', 'air-fragment', 20, 'Silverwood bound with threads of captive wind trembles before a spell is spoken, snapping released magic forward like a drawn bowstring.'),
   'wispweave-robe': artifactRecipe('wispweave-robe', 'Wispweave Robe', 'prismatic-fragment', 5, 'Pale spirit-thread tightens around incoming force as though unseen hands were pulling every stitch into place at the moment of impact.'),
   'wispveil-hood': artifactRecipe('wispveil-hood', 'Wispveil Hood', 'prismatic-fragment', 5, 'Violet mist clings to the inside of this hood; beneath its veil, wandering thoughts sharpen and hostile enchantments struggle to take hold.'),
-  'galeshard-staff': artifactRecipe('galeshard-staff', 'Galeshard Staff', 'air-fragment', 40, 'A frontier staff cut from wind-scoured crystal, carrying the sharp rhythm of unstable Air.', { sourceDungeonId: 'fractured-approach', unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, artifactEssenceQuantity: 80 }),
-  'reliquary-scepter': artifactRecipe('reliquary-scepter', 'Reliquary Scepter', 'water-fragment', 40, 'A drowned scepter that turns cold currents into deliberate spellcraft.', { sourceDungeonId: 'flooded-reliquary', unlock: { type: 'boss-kill', bossId: 'drowned-keeper' }, artifactEssenceQuantity: 80 }),
-  'pyrebound-staff': artifactRecipe('pyrebound-staff', 'Pyrebound Staff', 'fire-fragment', 40, 'A staff that keeps a watchfire burning through every incantation.', { sourceDungeonId: 'ashen-watch', unlock: { type: 'boss-kill', bossId: 'flamebound-revenant' }, artifactEssenceQuantity: 80 }),
-  'rootheart-scepter': artifactRecipe('rootheart-scepter', 'Rootheart Scepter', 'earth-fragment', 40, 'A living scepter that answers each spell with a patient pulse.', { sourceDungeonId: 'rootscar-hollow', unlock: { type: 'boss-kill', bossId: 'rootscar-ancient' }, artifactEssenceQuantity: 80 }),
-  'convergence-robe': artifactRecipe('convergence-robe', 'Convergence Robe', 'prismatic-fragment', 40, 'A convergence-woven robe that turns the pressure of every Act 1 road into a steadier ward.', { sourceDungeonId: 'crossroads-of-ruin', unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' }, artifactEssenceQuantity: 80 }),
-  'waystone-circlet': artifactRecipe('waystone-circlet', 'Waystone Circlet', 'prismatic-fragment', 40, 'A waystone circlet that anchors spellcraft at the point where every road meets.', { sourceDungeonId: 'crossroads-of-ruin', unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' }, artifactEssenceQuantity: 80 }),
+  'galeshard-staff': artifactRecipe('galeshard-staff', 'Galeshard Staff', 'air-fragment', 40, 'A frontier staff cut from wind-scoured crystal, carrying the sharp rhythm of unstable Air.', { sourceCombatLocationId: 'fractured-approach', unlock: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper' }, artifactEssenceQuantity: 80 }),
+  'reliquary-scepter': artifactRecipe('reliquary-scepter', 'Reliquary Scepter', 'water-fragment', 40, 'A drowned scepter that turns cold currents into deliberate spellcraft.', { sourceCombatLocationId: 'flooded-reliquary', unlock: { type: 'boss-kill', bossId: 'drowned-keeper' }, artifactEssenceQuantity: 80 }),
+  'pyrebound-staff': artifactRecipe('pyrebound-staff', 'Pyrebound Staff', 'fire-fragment', 40, 'A staff that keeps a watchfire burning through every incantation.', { sourceCombatLocationId: 'ashen-watch', unlock: { type: 'boss-kill', bossId: 'flamebound-revenant' }, artifactEssenceQuantity: 80 }),
+  'rootheart-scepter': artifactRecipe('rootheart-scepter', 'Rootheart Scepter', 'earth-fragment', 40, 'A living scepter that answers each spell with a patient pulse.', { sourceCombatLocationId: 'rootscar-hollow', unlock: { type: 'boss-kill', bossId: 'rootscar-ancient' }, artifactEssenceQuantity: 80 }),
+  'convergence-robe': artifactRecipe('convergence-robe', 'Convergence Robe', 'prismatic-fragment', 40, 'A convergence-woven robe that turns the pressure of every regional road into a steadier ward.', { sourceCombatLocationId: 'crossroads-of-ruin', unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' }, artifactEssenceQuantity: 80 }),
+  'waystone-circlet': artifactRecipe('waystone-circlet', 'Waystone Circlet', 'prismatic-fragment', 40, 'A waystone circlet that anchors spellcraft at the point where every road meets.', { sourceCombatLocationId: 'crossroads-of-ruin', unlock: { type: 'boss-kill', bossId: 'crossroads-keeper' }, artifactEssenceQuantity: 80 }),
 }
 
 export const ARTIFICING_RECIPE_ORDER: readonly ArtificingRecipeId[] = [

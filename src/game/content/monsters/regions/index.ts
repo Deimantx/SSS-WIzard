@@ -1,0 +1,43 @@
+import { FRACTURED_APPROACH_MONSTERS } from './elemental-scar/fracturedApproach'
+import { FLOODED_RELIQUARY_MONSTERS } from './elemental-scar/floodedReliquary'
+import { ASHEN_WATCH_MONSTERS } from './elemental-scar/ashenWatch'
+import { ROOTSCAR_HOLLOW_MONSTERS } from './elemental-scar/rootscarHollow'
+import { CROSSROADS_OF_RUIN_MONSTERS } from './elemental-scar/crossroadsOfRuin'
+import { GRAVEGLASS_HOLLOW_MONSTERS } from './shattered-meridian/graveglassHollow'
+import { STORMVAULT_GALLERY_MONSTERS } from './shattered-meridian/stormvaultGallery'
+import { STARFALLEN_OBSERVATORY_MONSTERS } from './shattered-meridian/starfallenObservatory'
+import { BROKEN_MERIDIAN_MONSTERS } from './shattered-meridian/brokenMeridian'
+import { HALL_OF_UNBOUND_NAMES_MONSTERS } from './black-sigil-reach/hallOfUnboundNames'
+import { VAULT_OF_THE_BLACK_SIGIL_MONSTERS } from './black-sigil-reach/vaultOfTheBlackSigil'
+import { BLACK_GATE_MONSTERS } from './black-sigil-reach/blackGate'
+
+export {
+  FRACTURED_APPROACH_MONSTERS,
+  FLOODED_RELIQUARY_MONSTERS,
+  ASHEN_WATCH_MONSTERS,
+  ROOTSCAR_HOLLOW_MONSTERS,
+  CROSSROADS_OF_RUIN_MONSTERS,
+  GRAVEGLASS_HOLLOW_MONSTERS,
+  STORMVAULT_GALLERY_MONSTERS,
+  STARFALLEN_OBSERVATORY_MONSTERS,
+  BROKEN_MERIDIAN_MONSTERS,
+  HALL_OF_UNBOUND_NAMES_MONSTERS,
+  VAULT_OF_THE_BLACK_SIGIL_MONSTERS,
+  BLACK_GATE_MONSTERS,
+}
+
+export const REGIONAL_MONSTERS = Object.assign(
+  {},
+  FRACTURED_APPROACH_MONSTERS,
+  FLOODED_RELIQUARY_MONSTERS,
+  ASHEN_WATCH_MONSTERS,
+  ROOTSCAR_HOLLOW_MONSTERS,
+  CROSSROADS_OF_RUIN_MONSTERS,
+  GRAVEGLASS_HOLLOW_MONSTERS,
+  STORMVAULT_GALLERY_MONSTERS,
+  STARFALLEN_OBSERVATORY_MONSTERS,
+  BROKEN_MERIDIAN_MONSTERS,
+  HALL_OF_UNBOUND_NAMES_MONSTERS,
+  VAULT_OF_THE_BLACK_SIGIL_MONSTERS,
+  BLACK_GATE_MONSTERS,
+)

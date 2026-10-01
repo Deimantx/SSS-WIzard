@@ -1,8 +1,8 @@
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, DamageType, MonsterId } from '../../types'
-import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS, ELEMENTAL_TUTORIAL_MONSTERS } from './act0'
-import { ACT1_MONSTERS } from './act1'
-import { HUNTERS_ORDER_MONSTERS } from './huntersOrder'
+import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS, ELEMENTAL_TUTORIAL_MONSTERS } from './first-frontier'
+import { REGIONAL_MONSTERS } from './regions'
+import { HUNTERS_ORDER_MONSTERS } from './first-frontier/gloamridge'
 import type { MonsterDefinition } from './monsterTypes'
 import { getMonsterPrimaryAffinity } from './monsterTypes'
 import { isElementId } from '../elements/elements'
@@ -15,12 +15,12 @@ import { isArtifactId } from '../artifacts/artifacts'
 import { RESONANCE_TYPES } from '../resonance/resonance'
 
 export type { MonsterDefinition } from './monsterTypes'
-export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './act0'
-export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './act0'
-export { HUNTERS_ORDER_MONSTERS, HUNTER_EXCLUSIVE_MONSTER_IDS } from './huntersOrder'
-export { ACT1_MONSTERS } from './act1'
+export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './first-frontier'
+export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './first-frontier'
+export { HUNTERS_ORDER_MONSTERS, HUNTER_EXCLUSIVE_MONSTER_IDS } from './first-frontier/gloamridge'
+export { REGIONAL_MONSTERS } from './regions'
 
-const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, ACT1_MONSTERS] as const
+const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, REGIONAL_MONSTERS] as const
 const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
 const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
 

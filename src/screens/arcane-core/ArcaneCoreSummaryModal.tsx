@@ -2,13 +2,13 @@ import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Button, GameTooltip } from "../../components/ui";
 import { TooltipContent } from "../../components/ui/tooltip/Tooltip";
-import { ARCANE_CORE_TOTAL_COST_PER_CORE } from "../../game/content/arcaneCore/arcaneCoreBalance";
+import { ARCANE_CORE_TOTAL_COST_PER_CORE } from "../../game/content/arcane-core/arcaneCoreBalance";
 import { getArcaneCoreBranchEffectSummary } from "../../game/presentation/arcaneCore/arcaneCorePresentation";
 import {
   getArcaneCoreHighestUnlockedRing,
   getArcaneCoreNodeRank,
   getArcaneCorePointsSpent,
-} from "../../game/systems/arcaneCore";
+} from "../../game/systems/arcane-core";
 import type {
   ArcaneCoreBranchDefinition,
   ArcaneCoreState,

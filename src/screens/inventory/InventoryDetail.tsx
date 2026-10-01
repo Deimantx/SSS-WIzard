@@ -63,7 +63,7 @@ export function InventoryDetail({ itemId, inventory, protectedItems, equipment, 
   const openResearch = () => { setNavigationIntent({ researchItemId: itemId, researchSchoolId: null }); navigate?.('tower-research') }
   const openSource = () => {
     const drop = getItemDropSources(itemId)[0]
-    if (source?.destination === 'combat' && drop) setNavigationIntent({ combatDungeonId: drop.dungeonId, combatMonsterId: drop.monsterId })
+    if (source?.destination === 'combat' && drop) setNavigationIntent({ combatLocationId: drop.locationId, combatMonsterId: drop.monsterId })
     else if (source?.destination === 'tower-research') setNavigationIntent({ researchItemId: itemId, researchSchoolId: null })
     else if (source?.destination === 'tower-artificing' || source?.destination === 'tower-transmutation') {
       const output = getItemSources(itemId).find((relation) => relation.kind === 'recipe' && relation.detail === (source.destination === 'tower-artificing' ? 'Artificing output' : 'Transmutation output'))

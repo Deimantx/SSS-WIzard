@@ -46,7 +46,7 @@ export interface OfflineBankDetachedObservers {
   /** Receives every resolved combat event produced by the detached simulation. */
   combatEvents?: CombatEventSink
   getEncounterTelemetry?: () => CombatTelemetryScope | null
-  onCombatCompleted?: (state: GameState, dungeonId: import('../../types').DungeonId) => void
+  onCombatCompleted?: (state: GameState, locationId: import('../../types').CombatLocationId) => void
   commit: () => void
 }
 export interface OfflineBankSimulationObservers {
@@ -56,7 +56,7 @@ export interface OfflineBankSimulationObservers {
   getEncounterTelemetry?: () => CombatTelemetryScope | null
   snapshot?: () => unknown
   restore?: (snapshot: unknown) => void
-  onCombatCompleted?: (state: GameState, dungeonId: import('../../types').DungeonId) => void
+  onCombatCompleted?: (state: GameState, locationId: import('../../types').CombatLocationId) => void
   createDetached?: () => OfflineBankDetachedObservers
 }
 

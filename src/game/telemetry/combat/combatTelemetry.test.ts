@@ -10,7 +10,7 @@ import { createCombatTestState } from '../../systems/combat/testCombatState'
 import { advanceCombatTelemetryScope, consumeCombatEvent, createCombatTelemetryScope, getCombatMetricRate, getCombatMetricSourceKey, reconcileCombatBarrierTelemetry } from './combatTelemetryAggregator'
 import { combatTelemetryObserver, useCombatTelemetryStore } from './combatTelemetryStore'
 
-const damageEvent = (source: CombatEvent['source'], sourceKind: NonNullable<CombatEvent['sourceKind']>, sourceId: string, amount: number, target: 'player' | 'enemy', targetMonsterId?: CombatEvent['targetMonsterId']): CombatEvent => ({ source, sourceKind, sourceId, target, targetMonsterId, dungeonId: 'whispering-woods', category: 'damage', damageType: 'fire', amount, healthDamage: amount - 20, barrierAbsorbed: 20 })
+const damageEvent = (source: CombatEvent['source'], sourceKind: NonNullable<CombatEvent['sourceKind']>, sourceId: string, amount: number, target: 'player' | 'enemy', targetMonsterId?: CombatEvent['targetMonsterId']): CombatEvent => ({ source, sourceKind, sourceId, target, targetMonsterId, locationId: 'whispering-woods', category: 'damage', damageType: 'fire', amount, healthDamage: amount - 20, barrierAbsorbed: 20 })
 const barrierEvent = (source: CombatEvent['source'], sourceId: string, amount: number, target: 'player' | 'enemy', mode: 'add' | 'replace' = 'add'): CombatEvent => ({ source, sourceKind: source.kind === 'player' ? 'spell' : 'action', sourceId, spellId: source.kind === 'player' ? sourceId as 'water-ward' : undefined, actionId: source.kind === 'enemy' ? sourceId : undefined, target, category: 'barrier', amount, barrierGranted: amount, barrierMode: mode, barrierAfter: amount })
 const absorbedDamage = (amount: number, target: 'player' | 'enemy' = 'player'): CombatEvent => ({ source: target === 'player' ? { kind: 'enemy', monsterId: 'grove-sentinel' } : { kind: 'player' }, sourceKind: target === 'player' ? 'action' : 'spell', sourceId: target === 'player' ? 'root-crush' : 'fire-bolt', actionId: target === 'player' ? 'root-crush' : undefined, spellId: target === 'enemy' ? 'fire-bolt' : undefined, target, targetMonsterId: target === 'enemy' ? 'grove-sentinel' : undefined, category: 'damage', damageType: 'physical', amount, healthDamage: 0, barrierAbsorbed: amount })
 
@@ -91,7 +91,7 @@ describe('combat telemetry foundation', () => {
   it('uses resolved runtime barrier capacity and damage-before values for attribution', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'grove-sentinel'
     state.combat.enemyInstanceSerial = 1
     state.combat.enemyInstanceKey = 'enemy:1'
@@ -112,7 +112,7 @@ describe('combat telemetry foundation', () => {
 
   it('emits a resolved heal event even when the attempt is fully overheal', () => {
     const state = createInitialState()
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     const events: CombatEvent[] = []
     executeCombatEffects(state, [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 60 } }], { actor: 'player', kind: 'spell', sourceId: 'flow-mend' }, undefined, { push: (event) => events.push(event) })
     expect(events).toContainEqual(expect.objectContaining({ category: 'heal', attemptedAmount: 60, effectiveAmount: 0, overheal: 60 }))
@@ -170,7 +170,7 @@ describe('combat telemetry foundation', () => {
   it('preserves Ignite and Fireball origins through runtime Status ticks', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')
     const ignite = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'ignite', tags: ['spell', 'fire'] as ('spell' | 'fire')[] }
     const fireball = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'fireball', tags: ['spell', 'fire'] as ('spell' | 'fire')[] }
@@ -243,7 +243,7 @@ describe('combat telemetry foundation', () => {
   })
 
   it('collects lifecycle events without depending on a mounted Combat screen', () => {
-    combatTelemetryObserver.consume({ source: { kind: 'system' }, sourceKind: 'system', dungeonId: 'whispering-woods', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'system', sourceId: 'encounter-start' })
+    combatTelemetryObserver.consume({ source: { kind: 'system' }, sourceKind: 'system', locationId: 'whispering-woods', target: 'enemy', targetMonsterId: 'forest-wisp', category: 'system', sourceId: 'encounter-start' })
     combatTelemetryObserver.advance(500, { combat: { active: true, enemyId: 'forest-wisp' } } as ReturnType<typeof createInitialState>)
     combatTelemetryObserver.consume(damageEvent({ kind: 'player' }, 'spell', 'fire-bolt', 10, 'enemy', 'forest-wisp'))
     expect(useCombatTelemetryStore.getState().run?.engagedMs).toBe(500)
@@ -253,7 +253,7 @@ describe('combat telemetry foundation', () => {
   it('resets transient measurements without touching gameplay barriers and neutralizes pre-reset shield provenance', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'grove-sentinel'
     state.combat.playerBarrier = 35
     combatTelemetryObserver.beginRun('whispering-woods')

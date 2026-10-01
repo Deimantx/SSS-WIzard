@@ -1,11 +1,11 @@
 import { BALANCE } from '../core/balance/balance'
 import { CHANNELING_DISCOVERIES } from '../content/channeling/channelingDiscoveries'
 import { MANA_PILLARS } from '../content/channeling/manaPillars'
-import { getEquipmentStats } from '../core/equipment/equipmentStats'
+import { getPlayerBuildStaticStats } from '../core/equipment/equipmentStats'
 import type { ChannelingDiscoveryId, GameState, ManaPillarId } from '../types'
 import { clamp } from '../utils'
 import { stabilizeResourceValue } from '../presentation/resources/resourcePresentation'
-import { getArcaneCoreSpecialEffects } from '../systems/arcaneCore/arcaneCoreProgression'
+import { getArcaneCoreSpecialEffects } from '../systems/arcane-core/arcaneCoreProgression'
 import { gainBarrier } from '../systems/combat/barrierRuntime'
 import { getPlayerManaRegenBreakdown, playerManaRegenPerSecond } from '../systems/mana/playerMana'
 import { getArcaneFluxCapacityBreakdown } from '../systems/channeling/channelingRuntime'
@@ -47,7 +47,7 @@ export type ChannelingCapacityState = Pick<GameState, 'player' | 'progress' | 'e
 export type ChannelingRegenState = Pick<GameState, 'activities' | 'progress' | 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'debug' | 'player' | 'combat' | 'arcaneCore'>>
 
 export const getManaCapacityBreakdown = (state: ChannelingCapacityState): ManaCapacityBreakdown => {
-  const stats = getEquipmentStats(state)
+  const stats = getPlayerBuildStaticStats(state)
   const arcaneReservoirBonus = pillarLevel(state, 'arcane-reservoir') * 25
   const deepReservoirBonus = state.progress.channeling.discoveries['deep-reservoir'] ? BALANCE.channeling.deepReservoirCapacityBonus : 0
   const equipmentBonus = stats.maxMana ?? 0

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
-import { getCombatLocationByDungeonId, isCombatTargetForLocation } from '../../content/world-navigation'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { getCombatLocationById, isCombatTargetForLocation } from '../../content/combat-locations'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { abandonCurrentEncounter, finishEnemy, spawnNextEnemy, spawnEnemy } from './combatRuntime'
@@ -16,13 +16,13 @@ const prepare = () => {
   state.spellPresets.selectedPresetId = 'targeted-test'
   state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   return state
 }
 
 const prepareHunter = (targetSpec: { type: 'monster'; monsterId: 'ashen-tracker' | 'gloamfang-stalker' } = { type: 'monster', monsterId: 'ashen-tracker' }) => {
   const state = prepare()
-  state.combat.dungeonId = 'hunters-ground'
+  state.combat.locationId = 'hunters-ground'
   state.combat.targetEnemyId = 'ashen-tracker'
   state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
   state.progress.huntersOrder.activeContract = { id: 'test-hunt', targetSpec, target: 1, progress: 0, tier: 'routine', reputationReward: 100, marksReward: 3 }
@@ -36,11 +36,11 @@ const installStoreState = (state: ReturnType<typeof prepare>) => {
 
 describe('Whispering Woods targeted farming', () => {
   it('validates only authored normal targets and rejects the Zone Boss', () => {
-    const location = getCombatLocationByDungeonId('whispering-woods')
+    const location = getCombatLocationById('whispering-woods')
     expect(isCombatTargetForLocation(location, 'whispering-woods', 'cinder-moth')).toBe(true)
     expect(isCombatTargetForLocation(location, 'whispering-woods', 'forest-heart')).toBe(false)
     expect(isCombatTargetForLocation(location, 'whispering-woods', 'corrupted-greatbear')).toBe(false)
-    expect(isCombatTargetForLocation(getCombatLocationByDungeonId('howling-den'), 'howling-den', 'cinder-moth')).toBe(false)
+    expect(isCombatTargetForLocation(getCombatLocationById('howling-den'), 'howling-den', 'cinder-moth')).toBe(false)
   })
 
   it('repeats the selected target regardless of encounter RNG', () => {
@@ -105,7 +105,7 @@ describe('Whispering Woods targeted farming', () => {
 
   it('honors target selection in every targeted zone and Fast Resolve', () => {
     const randomState = prepare()
-    randomState.combat.dungeonId = 'howling-den'
+    randomState.combat.locationId = 'howling-den'
     randomState.combat.targetEnemyId = 'cavefang-wolf'
     const randomResult = fastResolveNormalEnemiesForDebug(randomState, 1, 'howling-den', false)
     expect(randomResult.resolved).toBe(1)
@@ -161,7 +161,7 @@ describe('Whispering Woods targeted farming', () => {
     state.combat.enemyHp = 123
     state.combat.encounterTimerMs = 456
     installStoreState(state)
-    const locationId = getCombatLocationByDungeonId('hunters-ground')!.id
+    const locationId = getCombatLocationById('hunters-ground')!.id
 
     expect(useGameStore.getState().huntCombatTarget(locationId, 'gloamfang-stalker')).toBe(false)
     const next = useGameStore.getState()
@@ -197,7 +197,7 @@ describe('Whispering Woods targeted farming', () => {
     expect(state.progress.huntersOrder.totalContractsCompleted).toBe(1)
     expect(state.progress.lifetimeKillsByMonster['ashen-tracker']).toBe(1)
     expect(state.combat.active).toBe(false)
-    expect(state.combat.dungeonId).toBe('hunters-ground')
+    expect(state.combat.locationId).toBe('hunters-ground')
     expect(state.combat.targetEnemyId).toBeNull()
     expect(state.combat.pendingBossId).toBeNull()
     expect(state.notifications.some((note) => note.text.includes('HUNT CONTRACT COMPLETE') && note.text.includes('Gloamridge'))).toBe(true)
@@ -229,7 +229,7 @@ describe('Whispering Woods targeted farming', () => {
     expect(useGameStore.getState().skipHunterContract()).toBe(true)
     const next = useGameStore.getState()
     expect(next.combat.active).toBe(false)
-    expect(next.combat.dungeonId).toBe('hunters-ground')
+    expect(next.combat.locationId).toBe('hunters-ground')
     expect(next.combat.enemyId).toBeNull()
     expect(next.combat.targetEnemyId).toBeNull()
     expect(next.combat.pendingBossId).toBeNull()
@@ -277,14 +277,14 @@ describe('Whispering Woods targeted farming', () => {
 
   it('switches to a different Location through the same canonical Hunt action', () => {
     const state = prepare()
-    state.combat.dungeonId = 'howling-den'
+    state.combat.locationId = 'howling-den'
     spawnEnemy(state, 'cavefang-wolf')
     installStoreState(state)
 
     expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'forest-wisp')).toBe(true)
     const next = useGameStore.getState()
     expect(next.combat.active).toBe(true)
-    expect(next.combat.dungeonId).toBe('whispering-woods')
+    expect(next.combat.locationId).toBe('whispering-woods')
     expect(next.combat.enemyId).toBe('forest-wisp')
     expect(next.combat.targetEnemyId).toBe('forest-wisp')
   })
@@ -293,7 +293,7 @@ describe('Whispering Woods targeted farming', () => {
     const state = prepare()
     state.combat.targetEnemyId = 'forest-wisp'
     state.combat.pendingBossId = 'forest-heart'
-    state.progress.autoHuntBossByDungeon['whispering-woods'] = true
+    state.progress.autoHuntBossByLocation['whispering-woods'] = true
     installStoreState(state)
 
     expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'forest-wisp')).toBe(true)
@@ -327,18 +327,18 @@ describe('Elemental Scar targeted farming', () => {
     const state = prepare()
     state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
     state.combat.active = false
-    state.combat.dungeonId = null
+    state.combat.locationId = null
     installStoreState(state)
     useGameStore.getState().enterDungeon('flooded-reliquary')
     const next = useGameStore.getState()
     expect(next.combat.active).toBe(false)
-    expect(next.combat.dungeonId).toBeNull()
+    expect(next.combat.locationId).toBeNull()
     expect(next.notifications.some((note) => note.text.toLowerCase().includes('locked'))).toBe(true)
   })
 
   it('requires a valid Hunt Target instead of falling back to a random pool', () => {
     const state = prepare()
-    state.combat.dungeonId = 'flooded-reliquary'
+    state.combat.locationId = 'flooded-reliquary'
     expect(spawnNextEnemy(state)).toBe(false)
     expect(state.combat.enemyId).toBeNull()
     expect(state.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
@@ -348,9 +348,9 @@ describe('Elemental Scar targeted farming', () => {
     ['flooded-reliquary', 'tidefang-serpent', 'water'],
     ['ashen-watch', 'emberwing-harrier', 'fire'],
     ['rootscar-hollow', 'sporeback-brute', 'earth'],
-  ] as const)('repeats %s target and resolves Power Threat plus Resonance', (dungeonId, targetEnemyId, resonanceType) => {
+  ] as const)('repeats %s target and resolves Power Threat plus Resonance', (locationId, targetEnemyId, resonanceType) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     state.combat.targetEnemyId = targetEnemyId
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(targetEnemyId)
@@ -368,9 +368,9 @@ describe('Shattered Meridian targeted farming', () => {
     ['graveglass-hollow', 'epitaph-weaver', 'water'],
     ['stormvault-gallery', 'thundercoil-serpent', 'air'],
     ['starfallen-observatory', 'comet-wraith', 'fire'],
-  ] as const)('repeats the selected %s target without random fallback', (dungeonId, targetEnemyId, resonanceType) => {
+  ] as const)('repeats the selected %s target without random fallback', (locationId, targetEnemyId, resonanceType) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     state.combat.targetEnemyId = targetEnemyId
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(targetEnemyId)
@@ -382,9 +382,9 @@ describe('Shattered Meridian targeted farming', () => {
     expect(state.combat.enemyId).toBe(targetEnemyId)
   })
 
-  it.each(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const)('rejects a no-target spawn for %s instead of choosing a random normal', (dungeonId) => {
+  it.each(['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const)('rejects a no-target spawn for %s instead of choosing a random normal', (locationId) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     expect(spawnNextEnemy(state)).toBe(false)
     expect(state.combat.enemyId).toBeNull()
     expect(state.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)
@@ -392,7 +392,7 @@ describe('Shattered Meridian targeted farming', () => {
 
   it('preserves the selected Shattered target through its boss encounter', () => {
     const state = prepare()
-    state.combat.dungeonId = 'graveglass-hollow'
+    state.combat.locationId = 'graveglass-hollow'
     state.combat.targetEnemyId = 'ossuary-oracle'
     spawnEnemy(state, 'graveglass-behemoth')
     state.combat.enemyHp = 0
@@ -407,9 +407,9 @@ describe('Black Sigil Reach targeted farming', () => {
   it.each([
     ['hall-of-unbound-names', 'nameless-cantor', 'unspoken-prelate', 'air'],
     ['vault-of-the-black-sigil', 'blackscript-colossus', 'sigil-warden', 'earth'],
-  ] as const)('repeats the selected %s target without random fallback', (dungeonId, targetEnemyId, bossId, resonanceType) => {
+  ] as const)('repeats the selected %s target without random fallback', (locationId, targetEnemyId, bossId, resonanceType) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     state.combat.targetEnemyId = targetEnemyId
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(targetEnemyId)
@@ -422,9 +422,9 @@ describe('Black Sigil Reach targeted farming', () => {
     expect(bossId).not.toBe(targetEnemyId)
   })
 
-  it.each(['hall-of-unbound-names', 'vault-of-the-black-sigil'] as const)('rejects a no-target spawn for %s instead of selecting a random normal', (dungeonId) => {
+  it.each(['hall-of-unbound-names', 'vault-of-the-black-sigil'] as const)('rejects a no-target spawn for %s instead of selecting a random normal', (locationId) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     expect(spawnNextEnemy(state)).toBe(false)
     expect(state.combat.enemyId).toBeNull()
     expect(state.notifications.some((note) => note.text.includes('Select a Hunt Target'))).toBe(true)

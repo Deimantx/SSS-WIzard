@@ -17,7 +17,7 @@ describe('Sigil save invariants', () => {
   })
   it('round-trips a newly generated +0 Sigil with starting Secondary rolls at rank 0', () => {
     const state = createInitialState()
-    const sigil = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'legendary', rng: () => .4 })
+    const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'legendary', rng: () => .4 })
 
     expect(sigil.rank).toBe(0)
     expect(sigil.secondaries.length).toBeGreaterThan(0)
@@ -46,7 +46,7 @@ describe('Sigil save invariants', () => {
     const state = createInitialState()
     const instances = Array.from({ length: 6 }, (_, index) => generateSigil({
       state,
-      dungeonId: 'whispering-woods',
+      locationId: 'whispering-woods',
       enemyPower: 0,
       forcedTier: index > 3 ? 2 : 1,
       forcedSetId: index % 2 ? 'precision' : 'arcane',
@@ -74,7 +74,7 @@ describe('Sigil save invariants', () => {
     state.spellPresets.selectedPresetId = 'offline-p0'
     state.sigils.firstDropPityKills = 4
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'
     state.offlineBankMs = durationMs
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)

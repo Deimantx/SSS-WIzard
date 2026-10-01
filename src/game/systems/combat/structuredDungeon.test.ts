@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { fastResolveNormalEnemiesForDebug } from './debugCombatRuntime'
 import { resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from './combatRuntime'
@@ -14,8 +14,8 @@ const prepare = () => {
   state.spellPresets.presets = [{ id: 'sequence-test', name: 'Sequence Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
   state.spellPresets.selectedPresetId = 'sequence-test'
   state.combat.active = true
-  state.combat.dungeonId = 'abandoned-catacombs'
-  state.combat.dungeonSequenceIndex = 0
+  state.combat.locationId = 'abandoned-catacombs'
+  state.combat.sequenceIndex = 0
   return state
 }
 
@@ -28,12 +28,12 @@ describe('structured dungeon encounters', () => {
   it('spawns Catacombs in authored order without Threat or Auto Hunt progression', () => {
     const state = prepare()
     state.progress.autoHuntBossUnlocked = true
-    state.progress.autoHuntBossByDungeon['abandoned-catacombs'] = true
+    state.progress.autoHuntBossByLocation['abandoned-catacombs'] = true
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('restless-skeleton')
 
     killCurrent(state)
-    expect(state.combat.dungeonSequenceIndex).toBe(1)
+    expect(state.combat.sequenceIndex).toBe(1)
     expect(state.combat.threatCleared).toBe(0)
     expect(state.combat.pendingBossId).toBeNull()
     expect(spawnNextEnemy(state)).toBe(true)
@@ -42,7 +42,7 @@ describe('structured dungeon encounters', () => {
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('fallen-acolyte')
     killCurrent(state)
-    expect(state.combat.dungeonSequenceIndex).toBe(3)
+    expect(state.combat.sequenceIndex).toBe(3)
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('archmage-edrin-shade')
     expect(state.combat.inBossFight).toBe(true)
@@ -53,10 +53,10 @@ describe('structured dungeon encounters', () => {
     ['crossroads-of-ruin', ['arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct'], 'crossroads-keeper'],
     ['broken-meridian', ['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'], 'meridian-splitter'],
     ['black-gate', ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'], 'black-gatekeeper'],
-  ] as const)('spawns %s in the authored order without Threat', (dungeonId, sequence, bossId) => {
+  ] as const)('spawns %s in the authored order without Threat', (locationId, sequence, bossId) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
-    state.combat.dungeonSequenceIndex = 0
+    state.combat.locationId = locationId
+    state.combat.sequenceIndex = 0
     for (const expectedEnemyId of sequence) {
       expect(spawnNextEnemy(state)).toBe(true)
       expect(state.combat.enemyId).toBe(expectedEnemyId)
@@ -70,7 +70,7 @@ describe('structured dungeon encounters', () => {
 
   it('uses the Broken Meridian unlock prerequisites and keeps it as a sequence dungeon', () => {
     const state = prepare()
-    state.combat.dungeonId = 'broken-meridian'
+    state.combat.locationId = 'broken-meridian'
     expect(DUNGEONS['broken-meridian'].unlock).toEqual({ type: 'all-boss-kills', bossIds: ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] })
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('meridian-warden')
@@ -79,7 +79,7 @@ describe('structured dungeon encounters', () => {
 
   it('ends the Black Gate after Black Gatekeeper and unlocks WT5 once through the generic boss map', () => {
     const state = prepare()
-    state.combat.dungeonId = 'black-gate'
+    state.combat.locationId = 'black-gate'
     state.worldTier = { current: 4, highestUnlocked: 4 }
     for (const expectedEnemyId of ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'] as const) {
       expect(spawnNextEnemy(state)).toBe(true)
@@ -102,14 +102,14 @@ describe('structured dungeon encounters', () => {
     state.player.mana = 37
     const result = fastResolveNormalEnemiesForDebug(state, 3, 'abandoned-catacombs', false)
     expect(result).toMatchObject({ resolved: 3, bossReady: true })
-    expect(state.combat.dungeonSequenceIndex).toBe(3)
+    expect(state.combat.sequenceIndex).toBe(3)
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('archmage-edrin-shade')
     killCurrent(state)
     expect(state.combat.active).toBe(false)
     expect(state.combat.enemyId).toBeNull()
     expect(state.combat.enemyWorldTier).toBeNull()
-    expect(state.combat.dungeonSequenceIndex).toBeNull()
+    expect(state.combat.sequenceIndex).toBeNull()
     expect(state.combat.targetEnemyId).toBeNull()
     expect(state.combat.pendingBossId).toBeNull()
     expect(state.combat.inBossFight).toBe(false)
@@ -126,26 +126,26 @@ describe('structured dungeon encounters', () => {
     death.player.health = 0
     expect(resolveCombatDeaths(death)).toBe(true)
     expect(death.combat.active).toBe(false)
-    expect(death.combat.dungeonSequenceIndex).toBeNull()
+    expect(death.combat.sequenceIndex).toBeNull()
     expect(death.combat.log).toContain('The wizard falls. Dungeon run reset.')
 
     const leave = prepare()
     useGameStore.setState({ ...useGameStore.getState(), ...leave })
     useGameStore.getState().leaveDungeon()
     expect(useGameStore.getState().combat.active).toBe(false)
-    expect(useGameStore.getState().combat.dungeonSequenceIndex).toBeNull()
+    expect(useGameStore.getState().combat.sequenceIndex).toBeNull()
     expect(useGameStore.getState().combat.targetEnemyId).toBeNull()
     expect(useGameStore.getState().combat.log).toContain('Left the dungeon run.')
 
     const combatLeave = prepare()
-    combatLeave.combat.dungeonId = 'whispering-woods'
+    combatLeave.combat.locationId = 'whispering-woods'
     useGameStore.setState({ ...useGameStore.getState(), ...combatLeave })
     useGameStore.getState().leaveDungeon()
     expect(useGameStore.getState().combat.log).toContain('Left the Location. Threat resets.')
     expect(useGameStore.getState().combat.log).not.toContain('Left the dungeon.')
 
     const hunterGround = prepare()
-    hunterGround.combat.dungeonId = 'hunters-ground'
+    hunterGround.combat.locationId = 'hunters-ground'
     useGameStore.setState({ ...useGameStore.getState(), ...hunterGround })
     useGameStore.getState().leaveDungeon()
     expect(useGameStore.getState().combat.log).toContain('Left the Location.')
@@ -161,7 +161,7 @@ describe('structured dungeon encounters', () => {
     expect(offlineResult.ok).toBe(true)
     expect(offline.progress.lifetimeKillsByMonster['restless-skeleton']).toBe(1)
     expect(offline.combat.enemyId).toBe('grave-wraith')
-    expect(offline.combat.dungeonSequenceIndex).toBe(1)
+    expect(offline.combat.sequenceIndex).toBe(1)
     expect(offline.combat.threatCleared).toBe(0)
 
     const fast = prepare()
@@ -170,28 +170,28 @@ describe('structured dungeon encounters', () => {
     expect(fast.progress.lifetimeKillsByMonster['restless-skeleton']).toBe(1)
     expect(fast.progress.lifetimeKillsByMonster['grave-wraith']).toBe(1)
     expect(fast.progress.lifetimeKillsByMonster['fallen-acolyte']).toBe(1)
-    expect(fast.combat.dungeonSequenceIndex).toBe(3)
+    expect(fast.combat.sequenceIndex).toBe(3)
     expect(fast.combat.threatCleared).toBe(0)
   })
 
   it('keeps Broken Meridian sequence order and zero Threat across Offline Bank and Fast Resolve', async () => {
     const offline = prepare()
-    offline.combat.dungeonId = 'broken-meridian'
-    offline.combat.dungeonSequenceIndex = 0
+    offline.combat.locationId = 'broken-meridian'
+    offline.combat.sequenceIndex = 0
     offline.offlineBankMs = 6_000
     expect(spawnNextEnemy(offline)).toBe(true)
     offline.combat.enemyHp = 0
     const offlineResult = await advanceWithOfflineBank(6_000, () => offline, (recipe) => recipe(offline), () => {}, undefined, {})
     expect(offlineResult.ok).toBe(true)
     expect(offline.combat.enemyId).toBe('fractured-channeler')
-    expect(offline.combat.dungeonSequenceIndex).toBe(1)
+    expect(offline.combat.sequenceIndex).toBe(1)
     expect(offline.combat.threatCleared).toBe(0)
 
     const fast = prepare()
-    fast.combat.dungeonId = 'broken-meridian'
+    fast.combat.locationId = 'broken-meridian'
     const result = fastResolveNormalEnemiesForDebug(fast, 2, 'broken-meridian', false)
     expect(result.resolved).toBe(2)
-    expect(fast.combat.dungeonSequenceIndex).toBe(2)
+    expect(fast.combat.sequenceIndex).toBe(2)
     expect(fast.combat.threatCleared).toBe(0)
   })
 })

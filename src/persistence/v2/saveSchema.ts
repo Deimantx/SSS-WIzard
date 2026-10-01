@@ -2,9 +2,9 @@ import { isRecord } from '../saveSchema'
 import { PERSISTED_COMBAT_FIELDS_V1, type PersistedGameStateV1 } from './persistedGameState'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTERS } from '../../game/content/monsters'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { HUNTER_RANKS } from '../../game/content/huntersOrder/hunterRanks'
-import { HUNTER_UPGRADES } from '../../game/content/huntersOrder/hunterUpgrades'
+import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { HUNTER_RANKS } from '../../game/content/hunters-order/hunterRanks'
+import { HUNTER_UPGRADES } from '../../game/content/hunters-order/hunterUpgrades'
 import { GUILD_SKILL_NODES } from '../../game/content/guild/guildSkills'
 import { TRANSMUTATION_RECIPES } from '../../game/content/recipes/transmutationRecipes'
 import { ARTIFICING_RECIPES } from '../../game/content/recipes/artificingRecipes'
@@ -34,7 +34,7 @@ const isNonNegativeNumber = (value: unknown): value is number => typeof value ==
 const isHunterTarget = (value: unknown) => {
   if (!isRecord(value) || typeof value.type !== 'string') return false
   if (value.type === 'monster' || value.type === 'boss') return typeof value.monsterId === 'string' && Object.prototype.hasOwnProperty.call(MONSTERS, value.monsterId)
-  if (value.type === 'region') return typeof value.dungeonId === 'string' && Object.prototype.hasOwnProperty.call(DUNGEONS, value.dungeonId)
+  if (value.type === 'region') return typeof value.locationId === 'string' && Object.prototype.hasOwnProperty.call(DUNGEONS, value.locationId)
   if (value.type === 'family' || value.type === 'alignment') {
     const field = `${value.type}Id`
     const target = value[field]
@@ -67,8 +67,40 @@ const isGuildCommission = (value: unknown) => {
   return true
 }
 
+const migrateSchema2LocationFields = (value: Record<string, unknown>): Record<string, unknown> => {
+  if (value.schemaVersion !== 2) return value
+  const combat = isRecord(value.combat) ? { ...value.combat } : null
+  const progress = isRecord(value.progress) ? { ...value.progress } : null
+  if (combat) {
+    if (!Object.prototype.hasOwnProperty.call(combat, 'locationId') && Object.prototype.hasOwnProperty.call(combat, 'dungeonId')) combat.locationId = combat.dungeonId
+    if (!Object.prototype.hasOwnProperty.call(combat, 'sequenceIndex') && Object.prototype.hasOwnProperty.call(combat, 'dungeonSequenceIndex')) combat.sequenceIndex = combat.dungeonSequenceIndex
+    delete combat.dungeonId
+    delete combat.dungeonSequenceIndex
+  }
+  if (progress) {
+    if (!Object.prototype.hasOwnProperty.call(progress, 'autoHuntBossByLocation') && Object.prototype.hasOwnProperty.call(progress, 'autoHuntBossByDungeon')) progress.autoHuntBossByLocation = progress.autoHuntBossByDungeon
+    delete progress.autoHuntBossByDungeon
+    const hunters = isRecord(progress.huntersOrder) ? { ...progress.huntersOrder } : null
+    if (hunters) {
+      const remapContract = (candidate: unknown) => {
+        if (!isRecord(candidate)) return candidate
+        const contract = { ...candidate }
+        if (isRecord(contract.targetSpec) && contract.targetSpec.type === 'region' && !Object.prototype.hasOwnProperty.call(contract.targetSpec, 'locationId')) {
+          contract.targetSpec = { ...contract.targetSpec, locationId: contract.targetSpec.dungeonId }
+          delete (contract.targetSpec as Record<string, unknown>).dungeonId
+        }
+        return contract
+      }
+      hunters.activeContract = remapContract(hunters.activeContract)
+      if (Array.isArray(hunters.availableContracts)) hunters.availableContracts = hunters.availableContracts.map(remapContract)
+      progress.huntersOrder = hunters
+    }
+  }
+  return { ...value, schemaVersion: 3, ...(combat ? { combat } : {}), ...(progress ? { progress } : {}) }
+}
+
 export const validatePersistedGameStateV1 = (value: unknown): value is PersistedGameStateV1 => {
-  if (!isRecord(value) || value.schemaVersion !== 2) return false
+  if (!isRecord(value) || value.schemaVersion !== 3) return false
   if (Object.keys(value).some((key) => !documentFields.has(key))) return false
   if (typeof value.savedAt !== 'number' || !Number.isFinite(value.savedAt) || value.savedAt < 0) return false
   if (typeof value.offlineBankMs !== 'number' || !Number.isFinite(value.offlineBankMs) || value.offlineBankMs < 0) return false
@@ -123,7 +155,7 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
   if (!isRecord(guild.projects) || Object.values(guild.projects).some((project) => !isRecord(project) || Object.entries(project).some(([id, amount]) => !Object.prototype.hasOwnProperty.call(ITEMS, id) || !isNonNegativeNumber(amount)))) return false
   if (!isRecord(progress.guildSkillNodeRanks) || Object.entries(progress.guildSkillNodeRanks).some(([id, rank]) => !Object.prototype.hasOwnProperty.call(GUILD_SKILL_NODES, id) || !Number.isInteger(rank) || (rank as number) < 0 || (rank as number) > GUILD_SKILL_NODES[id as keyof typeof GUILD_SKILL_NODES].maxRank)) return false
 
-  const combatDungeon = (combat as Record<string, unknown>).dungeonId
+  const combatDungeon = (combat as Record<string, unknown>).locationId
   const combatEnemy = (combat as Record<string, unknown>).enemyId
   const combatTarget = (combat as Record<string, unknown>).targetEnemyId
   const combatTier = (combat as Record<string, unknown>).enemyWorldTier
@@ -162,7 +194,8 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
 }
 
 export const parsePersistedGameStateV1 = (encoded: string): PersistedGameStateV1 => {
-  const value: unknown = JSON.parse(encoded)
-  if (!validatePersistedGameStateV1(value)) throw new Error('Save does not match the V2 schema.')
+  const parsed: unknown = JSON.parse(encoded)
+  const value = isRecord(parsed) ? migrateSchema2LocationFields(parsed) : parsed
+  if (!validatePersistedGameStateV1(value)) throw new Error('Save does not match the V3 schema.')
   return value
 }

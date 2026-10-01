@@ -3,14 +3,14 @@ import { isBossMonster, MONSTERS } from '../content/monsters'
 import { getCombatMetricRate } from '../telemetry/combat/combatTelemetryAggregator'
 import { useCombatTelemetryStore } from '../telemetry/combat/combatTelemetryStore'
 import type { CombatEvent, CombatEventSink } from '../systems/combat/combatTypes'
-import type { DungeonId, MonsterId } from '../types'
+import type { CombatLocationId, MonsterId } from '../types'
 import type { CombatMetricSourceContribution } from '../telemetry/combat/combatTelemetryTypes'
 
 export type EncounterRecapSource = Pick<CombatMetricSourceContribution, 'key' | 'actor' | 'kind' | 'sourceId' | 'spellId' | 'actionId' | 'statusId' | 'traitId' | 'total' | 'healthDamage' | 'barrierAbsorbed' | 'effectiveHealing'>
 
 export interface EncounterRecap {
   monsterId: MonsterId
-  dungeonId?: DungeonId
+  locationId?: CombatLocationId
   durationMs: number
   dps: number
   dtps: number
@@ -55,7 +55,7 @@ export const useCombatRecapStore = create<CombatRecapState>((set) => ({
     const damageSources = Object.values(scope.player.damageDone.bySource).sort((left, right) => right.total - left.total || left.key.localeCompare(right.key)).slice(0, 5).map(copySource)
     set({ lastEncounterRecap: {
       monsterId: event.targetMonsterId,
-      dungeonId: scope.dungeonId,
+      locationId: scope.locationId,
       durationMs: scope.elapsedMs,
       dps: getCombatMetricRate(scope.player.damageDone.total, scope.engagedMs),
       dtps: getCombatMetricRate(scope.player.damageTaken.total, scope.engagedMs),

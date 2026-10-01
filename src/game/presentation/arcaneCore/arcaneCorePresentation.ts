@@ -7,19 +7,19 @@ import type {
   ArcaneCoreResolvedEffects,
   ArcaneCoreState,
 } from "../../types";
-import { ARCANE_CORE_RING_OFFSETS } from "../../content/arcaneCore/arcaneCoreRings";
+import { ARCANE_CORE_RING_OFFSETS } from "../../content/arcane-core/arcaneCoreRings";
 import type {
   CombatEffect,
   CombatModifier,
   CombatTriggerRule,
   Magnitude,
 } from "../../systems/combat/combatTypes";
-import { ARCANE_CORE_NODES } from "../../content/arcaneCore/arcaneCoreBranches";
-import { ARCANE_CORE_MECHANIC_REGISTRY } from "../../content/arcaneCore/arcaneCoreMechanics";
+import { ARCANE_CORE_NODES } from "../../content/arcane-core/arcaneCoreBranches";
+import { ARCANE_CORE_MECHANIC_REGISTRY } from "../../content/arcane-core/arcaneCoreMechanics";
 import {
   getArcaneCoreNodeRank,
   getArcaneCoreResolvedEffects,
-} from "../../systems/arcaneCore/arcaneCoreProgression";
+} from "../../systems/arcane-core/arcaneCoreProgression";
 
 const PERCENT_STATS = new Set<ArcaneCoreModifierKey>([
   "spellPowerPct",

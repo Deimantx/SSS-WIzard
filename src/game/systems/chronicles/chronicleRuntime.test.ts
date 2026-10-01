@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { CHRONICLE_OBJECTIVES } from '../../content/chronicles/chronicles'
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, evaluateChronicleCondition, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, getChronicleConditionValue, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
-import { isCombatLocationUnlocked } from '../../content/world-navigation/worldNavigation'
+import { isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 
 describe('Chronicle runtime', () => {
   it('keeps first Arcane Guild Commission as one objective and gives the Tower milestone a distinct condition', () => {
@@ -134,7 +134,7 @@ describe('Chronicle runtime', () => {
     expect(isCombatLocationUnlocked('broken-meridian', state.progress)).toBe(true)
     expect(getChronicleMainObjective(state)?.id).toBe('sf-m4-reach-meridian')
     state.combat.active = true
-    state.combat.dungeonId = 'broken-meridian'
+    state.combat.locationId = 'broken-meridian'
     reconcileChronicleProgress(state, { notify: false })
     expect(getChronicleMainObjective(state)?.id).toBe('sf-m5-meridian-splitter')
   })

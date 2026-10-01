@@ -1,6 +1,6 @@
 import { ARTIFACTS, isArtifactId } from '../artifacts/artifacts'
 import { ITEMS } from '../items/items'
-import type { DungeonId, ItemDefinition, ItemId } from '../../types'
+import type { CombatLocationId, ItemDefinition, ItemId } from '../../types'
 
 /** The only finished Equipment content is the permanent Artifact roster. */
 export const ARTIFACT_EQUIPMENT_IDS = [
@@ -19,8 +19,8 @@ export const ARTIFACT_EQUIPMENT_IDS = [
 ] as const satisfies readonly ItemId[]
 
 /** Dungeon origin is intentionally empty: combat awards materials, not gear. */
-export const getEquipmentOrigin = (_itemId: ItemId): DungeonId | null => null
-export const getEquipmentIdsForDungeon = (_dungeonId: DungeonId): readonly ItemId[] => []
+export const getEquipmentOrigin = (_itemId: ItemId): CombatLocationId | null => null
+export const getEquipmentIdsForDungeon = (_locationId: CombatLocationId): readonly ItemId[] => []
 
 export const validateEquipmentSetDefinitions = (items: Record<string, ItemDefinition> = ITEMS) => {
   const errors: string[] = []

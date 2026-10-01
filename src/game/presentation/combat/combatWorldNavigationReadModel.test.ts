@@ -8,11 +8,11 @@ describe('combat world navigation read model', () => {
     expect(getInitialCombatLocationId({ combat: state.combat, progress: state.progress })).toBe('stonewake-hollow')
 
     state.progress.bossKillsByBoss['forest-heart'] = 1
-    expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredDungeonId: 'howling-den', progress: state.progress })).toBe('howling-den')
+    expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredCombatLocationId: 'howling-den', progress: state.progress })).toBe('howling-den')
 
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
-    expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredDungeonId: 'howling-den', progress: state.progress })).toBe('whispering-woods')
+    state.combat.locationId = 'whispering-woods'
+    expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredCombatLocationId: 'howling-den', progress: state.progress })).toBe('whispering-woods')
   })
 
   it('presents First Frontier as one authored-order location list', () => {
@@ -50,7 +50,7 @@ describe('combat world navigation read model', () => {
     const state = createInitialState()
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.threatCleared = 7
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'howling-den' })
 
@@ -105,7 +105,7 @@ describe('combat world navigation read model', () => {
     state.progress.bossKillsByBoss['unspoken-prelate'] = 1
     state.progress.bossKillsByBoss['sigil-warden'] = 1
     state.combat.active = true
-    state.combat.dungeonId = 'black-gate'
+    state.combat.locationId = 'black-gate'
     state.combat.threatCleared = Number.MAX_SAFE_INTEGER
 
     const gate = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'black-gate' }).selectedLocation

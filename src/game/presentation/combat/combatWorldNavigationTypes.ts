@@ -1,7 +1,7 @@
-import type { CombatEncounterMode, CombatLocationId, CombatLocationType, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
+import type { CombatEncounterMode, CombatLocationId, CombatLocationType, CombatTargetDifficulty, CombatZoneType } from '../../content/combat-locations'
 import type { ElementId } from '../../content/elements/elements'
 import type { EliteZoneAffixId } from '../../content/elite-affixes'
-import type { DungeonId, MonsterId, WorldTierId } from '../../types'
+import type { MonsterId, WorldTierId } from '../../types'
 import type { CombatBossHuntPresentation } from './combatBossHuntPresentation'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
@@ -50,7 +50,7 @@ export interface CombatLocationViewModel {
   state: CombatLocationState
   statusLabel: string
   unlockText: string | null
-  dungeonId: DungeonId | null
+  locationId: CombatLocationId | null
   description: string
   encounterMode: CombatEncounterMode
   zoneAffix: { id: EliteZoneAffixId; name: string; description: string } | null

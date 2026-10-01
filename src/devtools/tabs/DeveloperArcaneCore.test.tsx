@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useGameStore } from '../../store/gameStore'
-import { getArcaneCorePointsSpent, getArcaneCoreRingPointsSpent } from '../../game/systems/arcaneCore'
+import { getArcaneCorePointsSpent, getArcaneCoreRingPointsSpent } from '../../game/systems/arcane-core'
 import { DeveloperArcaneCore } from './DeveloperArcaneCore'
 
 describe('Developer Arcane Core tab', () => {

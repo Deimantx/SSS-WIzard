@@ -1,4 +1,4 @@
-import type { DungeonId, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
+import type { CombatLocationId, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
 import type { ResonanceRewardEventPayload } from '../resonance/resonanceRuntime'
 import type { WorldTierId } from '../../types'
 import type { ElementId } from '../../content/elements/elements'
@@ -140,7 +140,7 @@ export interface CombatEvent {
   sourceKind?: CombatSource['kind']
   target?: 'player' | 'enemy'
   targetMonsterId?: MonsterId
-  dungeonId?: DungeonId
+  locationId?: CombatLocationId
   category: CombatLogCategory
   sourceId?: string
   originSourceId?: string
@@ -208,7 +208,7 @@ export interface CombatEventSink {
 }
 
 export interface CombatAlertObserver {
-  beginRun: (dungeonId: DungeonId) => void
+  beginRun: (locationId: CombatLocationId) => void
   advance: (deltaMs: number, state: import('../../types').GameState) => void
   consume: (event: CombatEvent) => void
   clear: () => void

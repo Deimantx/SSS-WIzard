@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getArcaneRegistryEntries } from '../game/systems/guild/arcaneRegistry'
 import { generateGuildCommissionChoices } from '../game/systems/guild/guildCommissions'
-import { acceptHunterContract, generateHunterContractChoices, getHunterContractChoiceCount } from '../game/systems/huntersOrder/huntersOrderRuntime'
+import { acceptHunterContract, generateHunterContractChoices, getHunterContractChoiceCount } from '../game/systems/hunters-order/huntersOrderRuntime'
 import { createInitialState } from '../store/initialState'
 import type { GameState } from '../game/types'
 import { serializeGameState } from './profileSaveManager'

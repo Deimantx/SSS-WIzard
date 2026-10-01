@@ -4,10 +4,10 @@ import { useCombatTelemetryStore } from '../telemetry/combat/combatTelemetryStor
 import type { CombatEvent, CombatEventSink, CombatLogEntry } from '../systems/combat/combatTypes'
 import type { OfflineCombatDefeatResult } from '../systems/offline-bank/offlineCombatTrace'
 import type { CombatTelemetryScope } from '../telemetry/combat/combatTelemetryTypes'
-import type { DungeonId, MonsterId } from '../types'
+import type { CombatLocationId, MonsterId } from '../types'
 
 export interface CombatDefeatSnapshot {
-  dungeonId: DungeonId | null
+  locationId: CombatLocationId | null
   enemyId: MonsterId | null
   defeatedAtMs: number
   encounterDurationMs?: number
@@ -21,7 +21,7 @@ interface CombatDefeatSnapshotInput {
   event: CombatEvent
   recentEvents: readonly CombatEvent[]
   telemetry?: CombatTelemetryScope | null
-  dungeonId?: DungeonId | null
+  locationId?: CombatLocationId | null
   enemyId?: MonsterId | null
   encounterDurationMs?: number
   damageDone?: number
@@ -34,7 +34,7 @@ const initialState = (): Pick<CombatDefeatState, 'snapshot'> => ({ snapshot: nul
 
 const finiteOrUndefined = (value: number | undefined) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : undefined
 
-export const buildCombatDefeatSnapshot = ({ event, recentEvents, telemetry, dungeonId, enemyId, encounterDurationMs, damageDone, damageTaken, healing, timestampMs }: CombatDefeatSnapshotInput): CombatDefeatSnapshot => {
+export const buildCombatDefeatSnapshot = ({ event, recentEvents, telemetry, locationId, enemyId, encounterDurationMs, damageDone, damageTaken, healing, timestampMs }: CombatDefeatSnapshotInput): CombatDefeatSnapshot => {
   const fallbackTimestamp = timestampMs ?? event.timestampMs ?? recentEvents.find((entry) => entry.timestampMs !== undefined)?.timestampMs ?? Date.now()
   const newestEvents = recentEvents.filter((entry) => entry.actionPhase !== 'start')
   const withDeath = newestEvents.some((entry) => entry.sourceId === 'player-defeated') ? newestEvents : [event, ...newestEvents]
@@ -48,7 +48,7 @@ export const buildCombatDefeatSnapshot = ({ event, recentEvents, telemetry, dung
     }
   }).reverse()
   return {
-    dungeonId: dungeonId ?? event.dungeonId ?? telemetry?.dungeonId ?? null,
+    locationId: locationId ?? event.locationId ?? telemetry?.locationId ?? null,
     enemyId: enemyId ?? event.targetMonsterId ?? telemetry?.monsterId ?? null,
     defeatedAtMs: event.timestampMs ?? fallbackTimestamp,
     encounterDurationMs: finiteOrUndefined(encounterDurationMs ?? telemetry?.elapsedMs),
@@ -82,7 +82,7 @@ export const publishOfflineCombatDefeat = (defeat: OfflineCombatDefeatResult) =>
   const snapshot = buildCombatDefeatSnapshot({
     event: defeat.event,
     recentEvents: defeat.recentEvents,
-    dungeonId: defeat.dungeonId,
+    locationId: defeat.locationId,
     enemyId: defeat.enemyId,
     encounterDurationMs: defeat.encounterDurationMs,
     damageDone: defeat.damageDone,

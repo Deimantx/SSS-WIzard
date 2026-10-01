@@ -14,8 +14,8 @@ describe('player stat contribution ledger', () => {
   })
   it('attributes equipped Sigils and their activated set bonus while matching the sheet total', () => {
     const state = createInitialState()
-    const first = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', rng: () => .5 })
-    const second = generateSigil({ state, dungeonId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 2, forcedQuality: 'refined', rng: () => .5 })
+    const first = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 1, forcedQuality: 'refined', rng: () => .5 })
+    const second = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'arcane', forcedSlot: 2, forcedQuality: 'refined', rng: () => .5 })
     state.sigils.equipped[1] = first.instanceId
     state.sigils.equipped[2] = second.instanceId
 

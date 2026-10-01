@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getItemRecipeUses, getItemSourceInfo, getMonsterDungeon } from './contentRelations'
+import { getItemRecipeUses, getItemSourceInfo, getMonsterCombatLocation } from './contentRelations'
 
 describe('content relations', () => {
   it('keeps Artifact recipe origin separate from dungeon loot origin', () => {
@@ -12,8 +12,8 @@ describe('content relations', () => {
     const info = getItemSourceInfo('artifact-essence')
     expect(info.relations.filter((relation) => relation.kind === 'monster')).toEqual([])
     expect(info.authoredSource).toContain('Combat')
-    expect(getMonsterDungeon('grove-sentinel')).toMatchObject({ dungeonId: 'whispering-woods', role: 'normal' })
-    expect(getMonsterDungeon('corrupted-greatbear')).toMatchObject({ dungeonId: 'howling-den', role: 'boss' })
+    expect(getMonsterCombatLocation('grove-sentinel')).toMatchObject({ locationId: 'whispering-woods', role: 'normal' })
+    expect(getMonsterCombatLocation('corrupted-greatbear')).toMatchObject({ locationId: 'howling-den', role: 'boss' })
   })
 
   it('returns every recipe that consumes an item', () => {

@@ -1,12 +1,12 @@
-﻿import { describe, expect, it } from 'vitest'
-import { HUNTER_UPGRADES } from '../../content/huntersOrder/hunterUpgrades'
+import { describe, expect, it } from 'vitest'
+import { HUNTER_UPGRADES } from '../../content/hunters-order/hunterUpgrades'
 import { createInitialState } from '../../../store/initialState'
 import { getHunterUpgradeEffectBreakdown, getHunterForecastPresentation } from './hunterUpgradeEffectBreakdown'
-import { getHunterUpgradePurchaseStatus } from '../../systems/huntersOrder/huntersOrderRuntime'
+import { getHunterUpgradePurchaseStatus } from '../../systems/hunters-order/huntersOrderRuntime'
 import type { DungeonStatisticsSession } from '../../telemetry/dungeon/dungeonStatisticsTypes'
 import type { HunterContractState } from '../../types'
 import { resolvePreferredHunterContractMonster } from './hunterContractCombatPresentation'
-import { getHunterRerollMarkCost, getHunterContractTargetReduction } from '../../systems/huntersOrder/huntersOrderRuntime'
+import { getHunterRerollMarkCost, getHunterContractTargetReduction } from '../../systems/hunters-order/huntersOrderRuntime'
 
 const stateAtStanding = () => {
   const state = createInitialState()
@@ -95,14 +95,14 @@ describe('Hunter upgrade effect presentation', () => {
 describe('Hunter measured forecast presentation', () => {
   it('returns unavailable until three completed eligible encounters at the contract ground exist', () => {
     const state = stateAtStanding()
-    const session = { dungeonId: 'hunters-ground', hunterEncounterSamplesByMonster: { 'ashen-tracker': { kills: 2, combatMs: 20_000 } } } as unknown as DungeonStatisticsSession
+    const session = { locationId: 'hunters-ground', hunterEncounterSamplesByMonster: { 'ashen-tracker': { kills: 2, combatMs: 20_000 } } } as unknown as DungeonStatisticsSession
     expect(getHunterForecastPresentation(state, session, contract)).toMatchObject({ kills: 2, killsPerHour: null, etaMs: null })
-    expect(getHunterForecastPresentation(state, { ...session, dungeonId: 'whispering-woods' }, contract)).toBeNull()
+    expect(getHunterForecastPresentation(state, { ...session, locationId: 'whispering-woods' }, contract)).toBeNull()
   })
 
   it('uses measured eligible kill time to calculate rate and remaining contract estimate', () => {
     const state = stateAtStanding()
-    const session = { dungeonId: 'hunters-ground', hunterEncounterSamplesByMonster: { 'ashen-tracker': { kills: 4, combatMs: 20_000 } } } as unknown as DungeonStatisticsSession
+    const session = { locationId: 'hunters-ground', hunterEncounterSamplesByMonster: { 'ashen-tracker': { kills: 4, combatMs: 20_000 } } } as unknown as DungeonStatisticsSession
     const forecast = getHunterForecastPresentation(state, session, contract)
     expect(forecast?.averageKillMs).toBe(5_000)
     expect(forecast?.killsPerHour).toBe(720)

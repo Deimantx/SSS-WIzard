@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
 
 const installActiveReadyRun = () => {
   const state = createInitialState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.combat.targetEnemyId = 'forest-wisp'
   state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
   state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
@@ -27,7 +27,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
   it('queues a ready Boss immediately when Auto Hunt turns on', () => {
     useGameStore.getState().toggleAutoHunt('whispering-woods')
 
-    expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
+    expect(useGameStore.getState().progress.autoHuntBossByLocation['whispering-woods']).toBe(true)
     expect(useGameStore.getState().combat.pendingBossId).toBe('forest-heart')
   })
 
@@ -36,7 +36,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
     game.toggleAutoHunt('whispering-woods')
     game.toggleAutoHunt('whispering-woods')
 
-    expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(false)
+    expect(useGameStore.getState().progress.autoHuntBossByLocation['whispering-woods']).toBe(false)
     expect(useGameStore.getState().combat.pendingBossId).toBeNull()
   })
 
@@ -49,19 +49,19 @@ describe('targeted Boss and Auto Hunt flow', () => {
 
     expect(useGameStore.getState().combat.enemyId).toBe('forest-heart')
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
-    expect(useGameStore.getState().progress.autoHuntBossByDungeon['whispering-woods']).toBe(false)
+    expect(useGameStore.getState().progress.autoHuntBossByLocation['whispering-woods']).toBe(false)
   })
 
   it('does not queue a boss in Gloamridge with a Hunter contract active', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     state.combat.targetEnemyId = 'ashen-tracker'
     state.combat.threatCleared = 0
     state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
     state.progress.autoHuntBossUnlocked = true
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    state.progress.huntersOrder.activeContract = { id: 'normal-hunt', targetSpec: { type: 'region', dungeonId: 'hunters-ground' }, target: 2, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 3 }
+    state.progress.huntersOrder.activeContract = { id: 'normal-hunt', targetSpec: { type: 'region', locationId: 'hunters-ground' }, target: 2, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 3 }
     useGameStore.setState(state)
 
     useGameStore.getState().toggleAutoHunt('hunters-ground')
@@ -71,7 +71,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
   it('keeps Gloamridge bossless even when legacy Auto Hunt and boss-contract state is present', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'hunters-ground'
+    state.combat.locationId = 'hunters-ground'
     state.combat.targetEnemyId = 'ashen-tracker'
     state.combat.threatCleared = 999999
     state.progress.autoHuntBossUnlocked = true

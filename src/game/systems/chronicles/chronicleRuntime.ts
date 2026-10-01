@@ -1,12 +1,12 @@
 import { CHRONICLE_CHAPTERS, CHRONICLE_OBJECTIVES, CHRONICLE_OBJECTIVE_BY_ID, type ChronicleCondition, type ChronicleReward } from '../../content/chronicles/chronicles'
 import { STARTING_SCHOOL_CONFIG } from '../../content/onboarding/startingSchool'
 import { grantItem } from '../inventory/itemAcquisition'
-import { grantArcanePoints } from '../arcaneCore/arcaneCoreProgression'
+import { grantArcanePoints } from '../arcane-core/arcaneCoreProgression'
 import { getArtifactTotalInvestedRanks } from '../artifacts/artifactProgression'
 import { pushNotification } from '../../engine'
 import type { ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, GameState, GuildRankId } from '../../types'
 import { getEquippedSigilSetCounts } from '../sigils/sigilRuntime'
-import { isHuntersOrderUnlocked } from '../huntersOrder/huntersOrderRuntime'
+import { isHuntersOrderUnlocked } from '../hunters-order/huntersOrderRuntime'
 
 export const createInitialChronicleProgress = () => ({ completedObjectiveIds: [], grantedUnlockRewardIds: [], eventFlags: {} }) satisfies GameState['progress']['chronicle']
 
@@ -32,7 +32,7 @@ export const getChronicleConditionValue = (state: GameState, condition: Chronicl
     case 'lifetime-kills': return { current: safeCount(state.progress.lifetimeKills), target: condition.count }
     case 'boss-kill': return { current: safeCount(state.progress.bossKillsByBoss[condition.bossId]), target: condition.count }
     case 'all-boss-kills': return { current: condition.bossIds.filter((bossId) => safeCount(state.progress.bossKillsByBoss[bossId]) > 0).length, target: condition.bossIds.length }
-    case 'dungeon-entered': return { current: state.ui.lastEnteredCombatDungeonId === condition.dungeonId || state.combat.dungeonId === condition.dungeonId ? 1 : 0, target: 1 }
+    case 'dungeon-entered': return { current: state.ui.lastEnteredCombatLocationId === condition.locationId || state.combat.locationId === condition.locationId ? 1 : 0, target: 1 }
     case 'auto-cast-enabled': return { current: hasAutoCast(state) ? 1 : 0, target: 1 }
     case 'channeling-acolytes': return { current: safeCount(state.activities.channeling.acolytesAssigned), target: condition.count }
     case 'chronicle-event': return { current: state.progress.chronicle.eventFlags[condition.eventId] ? 1 : 0, target: 1 }
@@ -76,7 +76,7 @@ export const evaluateChronicleCondition = (state: GameState, condition: Chronicl
     case 'lifetime-kills': return safeCount(state.progress.lifetimeKills) >= condition.count
     case 'boss-kill': return safeCount(state.progress.bossKillsByBoss[condition.bossId]) >= condition.count
     case 'all-boss-kills': return condition.bossIds.every((bossId) => safeCount(state.progress.bossKillsByBoss[bossId]) > 0)
-    case 'dungeon-entered': return state.combat.active && (state.ui.lastEnteredCombatDungeonId === condition.dungeonId || state.combat.dungeonId === condition.dungeonId)
+    case 'dungeon-entered': return state.combat.active && (state.ui.lastEnteredCombatLocationId === condition.locationId || state.combat.locationId === condition.locationId)
     case 'auto-cast-enabled': return hasAutoCast(state)
     case 'channeling-acolytes': return safeCount(state.activities.channeling.acolytesAssigned) >= condition.count
     case 'chronicle-event': return state.progress.chronicle.eventFlags[condition.eventId] === true

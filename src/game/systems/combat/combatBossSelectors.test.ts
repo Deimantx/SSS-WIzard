@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
 import { canManuallyEngageDungeonBoss, isBossCurrentlyActive } from './combatBossSelectors'
 import { spawnEnemy } from './combatRuntime'
@@ -10,7 +10,7 @@ const activeReadyState = () => {
   state.spellPresets.presets = [{ id: 'boss-selector-test', name: 'Boss Selector Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
   state.spellPresets.selectedPresetId = 'boss-selector-test'
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
   return state
 }
@@ -30,7 +30,7 @@ describe('manual Boss engage eligibility', () => {
 
     const autoHunt = activeReadyState()
     autoHunt.progress.autoHuntBossUnlocked = true
-    autoHunt.progress.autoHuntBossByDungeon['whispering-woods'] = true
+    autoHunt.progress.autoHuntBossByLocation['whispering-woods'] = true
     expect(canManuallyEngageDungeonBoss(autoHunt, DUNGEONS['whispering-woods'])).toBe(false)
 
     const queued = activeReadyState()

@@ -6,7 +6,7 @@ import { pushNotification } from '../../engine'
 import { canPurchaseGuildSkillNode, getGuildPromotionProgress, getGuildProgressionBonuses } from './guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from './guildCommissions'
-import type { DungeonId, GameState, GuildRankId, GuildSkillNodeId, MonsterId } from '../../types'
+import type { CombatLocationId, GameState, GuildRankId, GuildSkillNodeId, MonsterId } from '../../types'
 import { GUILD_MACRO_RANK_THRESHOLDS } from '../../content/guild/guildStandings'
 import { grantGuildReputation, setGuildReputation } from './guildReputation'
 import { reconcileArcaneRegistrySets } from './arcaneRegistry'
@@ -29,7 +29,7 @@ export const donateGuildRequest = (state: GameState, requestId: string, amount: 
 }
 
 /** @deprecated Monster-kill progression belongs to Hunter’s Order. */
-export const recordGuildEnemyKill = (_state: GameState, _enemyId: MonsterId, _dungeonId: DungeonId, _boss: boolean) => undefined
+export const recordGuildEnemyKill = (_state: GameState, _enemyId: MonsterId, _locationId: CombatLocationId, _boss: boolean) => undefined
 
 export const claimGuildRequest = (state: GameState, requestId: string) => {
   const request = getRequest(requestId)

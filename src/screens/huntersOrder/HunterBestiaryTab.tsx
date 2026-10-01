@@ -11,14 +11,14 @@ import { BestiarySequence } from '../bestiary/BestiarySequence'
 import { BestiarySigilDrops } from '../bestiary/BestiarySigilDrops'
 import { BestiaryStats } from '../bestiary/BestiaryStats'
 import { BestiaryTraits } from '../bestiary/BestiaryTraits'
-import { DUNGEONS } from '../../game/content/dungeons/dungeons'
-import { HUNTER_GROUNDS } from '../../game/content/huntersOrder/hunterGrounds'
-import { HUNTER_STANDINGS } from '../../game/content/huntersOrder/hunterRanks'
-import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters/huntersOrder'
+import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { HUNTER_GROUNDS } from '../../game/content/hunters-order/hunterGrounds'
+import { HUNTER_STANDINGS } from '../../game/content/hunters-order/hunterRanks'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters/first-frontier/gloamridge'
 import { MONSTERS, isBossMonster } from '../../game/content/monsters'
 import { getBestiaryEntryPresentation } from '../../game/presentation/bestiary/bestiaryEntryPresentation'
 import { getHunterContractCombatPresentation, getMonsterHunterContractRelation } from '../../game/presentation/huntersOrder/hunterContractCombatPresentation'
-import { getEligibleHunterContractMembers, getHunterAuthorization, getHunterBlockSlotCount, getHunterBlockableTargets, doesMonsterMatchHunterContract, getHunterUpgradeRank, isHunterMonsterRankEligible } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { getEligibleHunterContractMembers, getHunterAuthorization, getHunterBlockSlotCount, getHunterBlockableTargets, doesMonsterMatchHunterContract, getHunterUpgradeRank, isHunterMonsterRankEligible } from '../../game/systems/hunters-order/huntersOrderRuntime'
 import { getBestiaryCompletion, getBestiaryEntries, getBestiarySearchText, getMonsterLocationEntries } from '../../game/systems/bestiary/bestiarySelectors'
 import { useGameStore } from '../../store/gameStore'
 import { formatBasicAttackTime, getMonsterDossierCombatStats } from '../../game/presentation/combat/enemyCombatStatPresentation'
@@ -31,7 +31,7 @@ import { getActiveProfileId } from '../../profiles/profileSessionStore'
 import { openHunterContractInCombat } from '../../ui/navigation/hunterContractNavigation'
 import { openHuntersOrderTab } from '../../ui/navigation/hunterOrderNavigation'
 import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
-import type { DungeonId, GameState, MonsterId } from '../../game/types'
+import type { CombatLocationId, GameState, MonsterId } from '../../game/types'
 
 type PrimaryFilter = 'all' | 'hunter' | 'contract' | 'discovered' | 'bosses'
 type DossierTab = 'overview' | 'combat' | 'rewards' | 'record'
@@ -102,7 +102,7 @@ export function HunterBestiaryTab() {
     setSelected(requestedMonsterId)
     clearAttentionFor(requestedMonsterId)
     setMobileDossier(true)
-    setNavigationIntent({ combatMonsterId: null, combatDungeonId: null })
+    setNavigationIntent({ combatMonsterId: null, combatLocationId: null })
   }, [navigationIntent.combatMonsterId])
 
   return <div className={`hunter-bestiary-workspace${mobileDossier ? ' is-mobile-dossier' : ''}`}>
@@ -128,7 +128,7 @@ export function HunterBestiaryTab() {
         </div>
         <div ref={listRef} className="hunter-quarry-index-list smart-scroll-region">
           {quarryGroups.map((group) => <section className="hunter-quarry-ground-group" key={group.groundId}>{group.groundId !== 'catalog' && <header><strong>{HUNTER_GROUNDS.find((ground) => ground.id === group.groundId)?.name ?? group.groundId}</strong><span>{group.entries.length} QUARRY</span></header>}<div className="hunter-quarry-tile-grid">{group.entries.map((monster) => {
-            const entry = getBestiaryEntryPresentation(state, monster.id, (monster.hunter?.huntingGroundId ?? 'hunters-ground') as DungeonId)!
+            const entry = getBestiaryEntryPresentation(state, monster.id, (monster.hunter?.huntingGroundId ?? 'hunters-ground') as CombatLocationId)!
             const relation = entry.hunter?.relation
             return <button key={monster.id} type="button" className={`hunter-quarry-tile${selected === monster.id ? ' is-selected' : ''}${entry.discovered ? '' : ' is-undiscovered'}`} aria-pressed={selected === monster.id} onClick={() => openDossier(monster.id)}>
               {(() => { const dossierReveal = !entry.discovered && getHunterUpgradeRank(state, 'master-dossier') > 0 && isHunterMonsterRankEligible(state, monster.id); return <><span className="hunter-quarry-tile-portrait">{entry.discovered ? <MonsterPortrait monster={monster} boss={entry.boss} /> : <span aria-hidden="true">{dossierReveal ? '◈' : '?'}</span>}</span>
@@ -159,7 +159,7 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
   const worldTier = state.worldTier.current
   const isHunter = Boolean(monster?.hunter?.exclusive)
   const masterDossierAvailable = Boolean(!discovered && monster?.hunter?.exclusive && getHunterUpgradeRank(state, 'master-dossier') > 0 && isHunterMonsterRankEligible(state, monster.id))
-  const groundId = (monster?.hunter?.huntingGroundId ?? 'hunters-ground') as DungeonId
+  const groundId = (monster?.hunter?.huntingGroundId ?? 'hunters-ground') as CombatLocationId
   const groundName = DUNGEONS[groundId]?.name ?? 'Hunting Ground'
   const huntInGround = () => {
     if (!monster || !selectedId || !monster.hunter?.exclusive || !authorized) return

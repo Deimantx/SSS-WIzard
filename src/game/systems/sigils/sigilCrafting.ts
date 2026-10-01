@@ -17,6 +17,6 @@ export const craftSigil = (state: GameState, mode: SigilCraftMode, tier: SigilTi
   const cost = getSigilCraftCost(mode, tier)
   if (state.sigils.dust < cost) return { ok: false, reason: `Requires ${cost} Sigil Dust.` }
   state.sigils.dust -= cost
-  const sigil = generateCraftedSigil({ state, dungeonId: 'whispering-woods', tier, setId, slot, rng })
+  const sigil = generateCraftedSigil({ state, locationId: 'whispering-woods', tier, setId, slot, rng })
   return { ok: true, instanceId: sigil.instanceId, cost }
 }

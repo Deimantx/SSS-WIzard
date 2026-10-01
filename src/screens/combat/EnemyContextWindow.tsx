@@ -1,11 +1,11 @@
 import { Clock3, X, Sparkles } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/dungeons/dungeons'
+import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getTraitDefinitions } from '../../game/content/traits'
 import { buildCombatActionPresentation, buildEnemyCombatStatRows, formatResistanceEffect } from '../../game/presentation/combat'
-import type { DungeonId, ItemId, MonsterId } from '../../game/types'
+import type { CombatLocationId, ItemId, MonsterId } from '../../game/types'
 import { formatNumber, formatTime } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
 import { Button, GameTooltip } from '../../components/ui'
@@ -61,12 +61,12 @@ interface EnemyContextWindowProps {
   mode: EnemyContextMode
   anchorRef: RefObject<HTMLElement | null>
   triggerRef: RefObject<HTMLElement | null>
-  selectedDungeonId: DungeonId
+  selectedCombatLocationId: CombatLocationId
   onModeChange: (mode: EnemyContextMode) => void
   onClose: () => void
 }
 
-export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeonId, onModeChange, onClose }: EnemyContextWindowProps) {
+export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedCombatLocationId, onModeChange, onClose }: EnemyContextWindowProps) {
   const surfaceRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<EnemyContextPosition>({ top: 16, left: 16, width: 320, maxHeight: 600 })
   const active = useGameStore((state) => state.combat.active)
@@ -110,7 +110,7 @@ export function EnemyContextWindow({ mode, anchorRef, triggerRef, selectedDungeo
       <div><span className="combat-subsection-label">CURRENT ENCOUNTER</span><strong>{mode === 'intel' ? 'ENEMY INTEL' : mode === 'stats' ? 'ENEMY STATS' : 'LOOT'}</strong></div>
       <div className="enemy-context-header-actions"><div className="enemy-context-tabs" role="tablist" aria-label="Enemy context"><button type="button" role="tab" aria-selected={mode === 'intel'} className={mode === 'intel' ? 'is-active' : ''} onClick={() => onModeChange('intel')}>OVERVIEW</button><button type="button" role="tab" aria-selected={mode === 'stats'} className={mode === 'stats' ? 'is-active' : ''} onClick={() => onModeChange('stats')}>STATS</button><button type="button" role="tab" aria-selected={mode === 'loot'} className={mode === 'loot' ? 'is-active' : ''} onClick={() => onModeChange('loot')}>LOOT</button></div><Button icon variant="ghost" ariaLabel="Close enemy context" onClick={onClose}><X size={15} /></Button></div>
     </header>
-    <div className="enemy-context-body">{mode === 'intel' ? <EnemyIntelContent selectedDungeonId={selectedDungeonId} /> : mode === 'stats' ? <EnemyStatsContent /> : <EnemyLootContent selectedDungeonId={selectedDungeonId} />}</div>
+    <div className="enemy-context-body">{mode === 'intel' ? <EnemyIntelContent selectedCombatLocationId={selectedCombatLocationId} /> : mode === 'stats' ? <EnemyStatsContent /> : <EnemyLootContent selectedCombatLocationId={selectedCombatLocationId} />}</div>
   </div>, document.body)
 }
 
@@ -127,10 +127,10 @@ export function EnemyStatsContent() {
   </section>
 }
 
-export function EnemyIntelContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
+export function EnemyIntelContent({ selectedCombatLocationId }: { selectedCombatLocationId: CombatLocationId }) {
   const combat = useGameStore((state) => state.combat)
   const progress = useGameStore((state) => state.progress)
-  const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
+  const dungeon = DUNGEONS[combat.locationId ?? selectedCombatLocationId]
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   return enemy ? <div className="enemy-intel-content"><div className="enemy-context-identity"><MonsterPortrait monster={enemy} boss={isBossMonster(enemy)} /><div><span className="combat-subsection-label">{isBossMonster(enemy) ? 'BOSS DOSSIER' : 'CURRENT ENEMY'}</span><h3>{enemy.name}</h3><p>{enemy.subtitle}</p><small>Defeated {formatNumber(isBossMonster(enemy) ? progress.bossKillsByBoss[enemy.id] ?? 0 : progress.lifetimeKillsByMonster[enemy.id] ?? 0)} times</small></div></div><IntelTraits monsterId={enemy.id} /><ResistanceIntel monsterId={enemy.id} /><ActionIntel monsterId={enemy.id} /></div> : <div className="enemy-context-empty"><span className="combat-subsection-label">NO ACTIVE ENEMY</span><strong>No active enemy.</strong><p>{combat.active ? 'The next encounter is being selected from this hunting ground.' : `Enter ${dungeon.name} to inspect its threats.`}</p></div>
 }
@@ -157,11 +157,11 @@ function ActionIntel({ monsterId }: { monsterId: MonsterId }) {
   return <section className="enemy-context-section"><div className="combat-subsection-label">COMBAT PATTERN · ACTIONS</div><div className="enemy-intel-actions">{Object.values(monster.actions).map((action) => { const presentation = buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: monster.id }, { monster }); return <GameTooltip key={action.id} block wide content={<EnemyActionTooltip action={presentation} />}><div tabIndex={0} className={`enemy-intel-action${presentation.effects[0] ? ` effect-tone-${presentation.effects[0].tone}` : ''}`}><div><strong>{presentation.name}</strong><span><Clock3 size={11} aria-hidden="true" />{formatTime(presentation.actionTimeMs)}</span></div><p>{presentation.description}</p><div className="enemy-intel-action-effects">{presentation.effects.map((effect, index) => <CombatEffectChip key={`${effect.label}-${index}`} effect={effect} />)}</div></div></GameTooltip>})}</div></section>
 }
 
-export function EnemyLootContent({ selectedDungeonId }: { selectedDungeonId: DungeonId }) {
+export function EnemyLootContent({ selectedCombatLocationId }: { selectedCombatLocationId: CombatLocationId }) {
   const combat = useGameStore((state) => state.combat)
   const inventory = useGameStore((state) => state.inventory)
   const worldTier = useGameStore((state) => state.combat.enemyWorldTier ?? state.worldTier.current)
-  const dungeon = DUNGEONS[combat.dungeonId ?? selectedDungeonId]
+  const dungeon = DUNGEONS[combat.locationId ?? selectedCombatLocationId]
   const current = combat.enemyId ? MONSTERS[combat.enemyId] : null
   return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} worldTier={worldTier} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div>{hasBossEncounter(dungeon) && <div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} worldTier={worldTier} /></div>}</div>
 }

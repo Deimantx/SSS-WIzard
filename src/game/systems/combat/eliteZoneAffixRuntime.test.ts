@@ -12,7 +12,7 @@ const prepare = () => {
   state.spellPresets.presets = [{ id: 'affix-test', name: 'Affix Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
   state.spellPresets.selectedPresetId = 'affix-test'
   state.combat.active = true
-  state.combat.dungeonId = 'howling-den'
+  state.combat.locationId = 'howling-den'
   return state
 }
 
@@ -37,7 +37,7 @@ describe('Elite Zone Affix runtime provider', () => {
 
   it('does not leak the Howling Den affix into another location', () => {
     const state = prepare()
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'cavefang-wolf'
     expect(getActiveEliteZoneAffixId(state)).toBeNull()
   })
@@ -45,9 +45,9 @@ describe('Elite Zone Affix runtime provider', () => {
   it.each([
     ['graveglass-hollow', 'graveglass-shade', 'warded'],
     ['starfallen-observatory', 'starbound-eye', 'relentless'],
-  ] as const)('derives the authored %s affix from the location for normal targets', (dungeonId, enemyId, affixId) => {
+  ] as const)('derives the authored %s affix from the location for normal targets', (locationId, enemyId, affixId) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     state.combat.enemyId = enemyId
     expect(getActiveEliteZoneAffixId(state)).toBe(affixId)
     expect(getActiveEliteZoneAffix(state)?.id).toBe(affixId)
@@ -55,7 +55,7 @@ describe('Elite Zone Affix runtime provider', () => {
 
   it('limits Shattered Elite affixes to normal enemies and applies their authored mechanics', () => {
     const warded = prepare()
-    warded.combat.dungeonId = 'graveglass-hollow'
+    warded.combat.locationId = 'graveglass-hollow'
     expect(spawnEnemy(warded, 'graveglass-shade')).toBe(true)
     expect(getActiveEliteZoneAffixId(warded)).toBe('warded')
     expect(getActiveBarrier(warded, 'enemy')).toBe(Math.round(warded.combat.enemyMaxHp * 0.15))
@@ -63,7 +63,7 @@ describe('Elite Zone Affix runtime provider', () => {
     expect(getActiveEliteZoneAffixId(warded)).toBeNull()
 
     const relentless = prepare()
-    relentless.combat.dungeonId = 'starfallen-observatory'
+    relentless.combat.locationId = 'starfallen-observatory'
     relentless.combat.enemyId = 'starbound-eye'
     expect(getActiveEliteZoneAffixId(relentless)).toBe('relentless')
     expect(getActorTraits(relentless, 'enemy').flatMap((trait) => trait.modifiers ?? []).find((modifier) => modifier.key === 'status-duration-received-percent')?.value).toBe(-0.4)
@@ -74,9 +74,9 @@ describe('Elite Zone Affix runtime provider', () => {
   it.each([
     ['hall-of-unbound-names', 'nameless-cantor', 'unspoken-prelate', 'vicious'],
     ['vault-of-the-black-sigil', 'blackscript-colossus', 'sigil-warden', 'armored'],
-  ] as const)('applies %s only to normal targets and not its boss', (dungeonId, normalId, bossId, affixId) => {
+  ] as const)('applies %s only to normal targets and not its boss', (locationId, normalId, bossId, affixId) => {
     const state = prepare()
-    state.combat.dungeonId = dungeonId
+    state.combat.locationId = locationId
     state.combat.enemyId = normalId
     expect(getActiveEliteZoneAffixId(state)).toBe(affixId)
     state.combat.enemyId = bossId

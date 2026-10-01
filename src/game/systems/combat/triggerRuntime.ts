@@ -10,8 +10,8 @@ import { createCombatResolutionContext, type CombatConditionContext, type Combat
 import { isEnemySourceOwnerActive } from './combatProvenance'
 import { nextCombatRandom } from './combatRng'
 import { getActiveArtifactCombatProviders, isArtifactItem, processArtifactSpecialCombatEvent } from '../artifacts/artifactProgression'
-import { getArcaneCoreCombatRules } from '../arcaneCore/arcaneCoreProgression'
-import { processArcaneCoreCombatEvent } from '../arcaneCore/arcaneCoreMechanicRuntime'
+import { getArcaneCoreCombatRules } from '../arcane-core/arcaneCoreProgression'
+import { processArcaneCoreCombatEvent } from '../arcane-core/arcaneCoreMechanicRuntime'
 import { getActiveSigilCombatProviders, processSigilSpecialCombatEvent } from '../sigils/sigilCombatRuntime'
 
 export type CombatEventContext = CombatConditionContext

@@ -1,10 +1,10 @@
-import type { DungeonId, MonsterId, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier, WorldTierId } from '../../types'
+import type { CombatLocationId, MonsterId, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier, WorldTierId } from '../../types'
 import { createInitialState } from '../../../store/initialState'
 import { generateSigil } from './sigilGeneration'
 import { getSigilSalvageValue } from './sigilRuntime'
 
 export interface SigilDropSimulationInput {
-  dungeonId: DungeonId
+  locationId: CombatLocationId
   enemyId: MonsterId
   worldTier: WorldTierId
   attunedSetId: SigilSetId | null
@@ -45,7 +45,7 @@ export const simulateSigilDrops = (input: SigilDropSimulationInput): SigilDropSi
   const result: SigilDropSimulationResult = { iterations, sigilsFound: 0, byTier: {}, byQuality: {}, bySet: {}, bySlot: {}, byMainStat: {}, autoSalvageDustEstimate: 0 }
   const tier = (Math.min(2, Math.max(1, input.worldTier)) as SigilTier)
   for (let index = 0; index < iterations; index += 1) {
-    const sigil = generateSigil({ state: fixture, dungeonId: input.dungeonId, enemyId: input.enemyId, enemyPower: 0, forcedTier: tier, source: 'debug', persistGeneratedInstance: false, rng: () => nextRandom(seed) })
+    const sigil = generateSigil({ state: fixture, locationId: input.locationId, enemyId: input.enemyId, enemyPower: 0, forcedTier: tier, source: 'debug', persistGeneratedInstance: false, rng: () => nextRandom(seed) })
     result.sigilsFound += 1
     bump(result.byTier, sigil.tier)
     bump(result.byQuality, sigil.quality)

@@ -145,7 +145,7 @@ describe('profile storage and session lifecycle', () => {
       state.progress.requestClaims['arcane-supply'] = true
       state.progress.permanentManaBonuses['forest-heart'] = 10
       state.progress.permanentManaBonuses['guild-apprentice'] = 10
-      state.progress.autoHuntBossByDungeon['whispering-woods'] = true
+      state.progress.autoHuntBossByLocation['whispering-woods'] = true
       return state
     })
     const saved = useGameStore.getState().saveGame('manual')
@@ -160,7 +160,7 @@ describe('profile storage and session lifecycle', () => {
     expect(progress.requestClaims['arcane-supply']).toBe(true)
     expect(progress.permanentManaBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(Object.values(progress.permanentManaBonuses).reduce((sum, value) => sum + value, 0)).toBe(20)
-    expect(progress.autoHuntBossByDungeon['whispering-woods']).toBe(true)
+    expect(progress.autoHuntBossByLocation['whispering-woods']).toBe(true)
   })
 
   it('persists inventory, schools, activities, equipment, currency, and pillars through the profile lifecycle', () => {

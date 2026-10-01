@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { dungeonStatisticsObserver, useDungeonStatisticsStore } from './dungeonStatisticsStore'
 
-const event = (sourceId: string, targetMonsterId?: 'forest-wisp' | 'forest-heart', itemId?: 'life-essence' | 'tier-1-crystal-cache', amount?: number, category: 'loot' | 'death' = sourceId === 'loot-drop' ? 'loot' : 'death') => ({ source: { kind: 'system' as const }, sourceKind: 'system' as const, dungeonId: 'whispering-woods' as const, target: targetMonsterId ? 'enemy' as const : undefined, targetMonsterId, category, sourceId, itemId, amount })
+const event = (sourceId: string, targetMonsterId?: 'forest-wisp' | 'forest-heart', itemId?: 'life-essence' | 'tier-1-crystal-cache', amount?: number, category: 'loot' | 'death' = sourceId === 'loot-drop' ? 'loot' : 'death') => ({ source: { kind: 'system' as const }, sourceKind: 'system' as const, locationId: 'whispering-woods' as const, target: targetMonsterId ? 'enemy' as const : undefined, targetMonsterId, category, sourceId, itemId, amount })
 
 describe('Dungeon Statistics observer', () => {
   beforeEach(() => dungeonStatisticsObserver.clear())
@@ -10,7 +10,7 @@ describe('Dungeon Statistics observer', () => {
   it('counts a full run only when the boss is defeated', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.beginSession('whispering-woods')
     dungeonStatisticsObserver.beginEncounter('forest-wisp', false)
@@ -28,7 +28,7 @@ describe('Dungeon Statistics observer', () => {
   it('tracks loot quantities and uptime independently of screen mounting', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.beginSession('whispering-woods')
     dungeonStatisticsObserver.advance(4_000, state)
@@ -41,7 +41,7 @@ describe('Dungeon Statistics observer', () => {
   it('ends without recording a failed run on leave or player death', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.beginSession('whispering-woods')
     dungeonStatisticsObserver.advance(4_000, state)
@@ -52,7 +52,7 @@ describe('Dungeon Statistics observer', () => {
   it('reset starts a clean measurement session while combat continues', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.beginSession('whispering-woods')
     dungeonStatisticsObserver.advance(5_000, state)
@@ -109,7 +109,7 @@ describe('Dungeon Statistics observer', () => {
   it('does not restart an already valid session from repeated lifecycle signals', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.beginSession('whispering-woods')
     dungeonStatisticsObserver.advance(5_000, state)
@@ -123,7 +123,7 @@ describe('Dungeon Statistics observer', () => {
   it('auto-starts from encounter-start only when no live session exists', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.consume(event('encounter-start', 'forest-wisp'))
     dungeonStatisticsObserver.advance(5_000, state)
@@ -135,7 +135,7 @@ describe('Dungeon Statistics observer', () => {
   it('stops the statistics clock after death', () => {
     const state = createInitialState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     dungeonStatisticsObserver.beginSession('whispering-woods')
     dungeonStatisticsObserver.advance(5_000, state)

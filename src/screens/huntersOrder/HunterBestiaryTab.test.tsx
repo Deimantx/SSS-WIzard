@@ -87,7 +87,7 @@ describe('Hunter Bestiary field workspace', () => {
     const state = createInitialState()
     state.progress.discoveredMonsters = ['veilwing-harrier']
     useGameStore.setState(state)
-    setNavigationIntent({ combatDungeonId: null, combatMonsterId: null })
+    setNavigationIntent({ combatLocationId: null, combatMonsterId: null })
     openHunterBestiaryEntry('veilwing-harrier')
     renderBestiary()
     expect(screen.getByRole('heading', { name: 'Veilwing Harrier' })).toBeTruthy()

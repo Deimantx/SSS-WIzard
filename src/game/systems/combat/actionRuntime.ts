@@ -104,7 +104,7 @@ export const setEnemyActionPattern = (state: GameState, patternId: string, uiEve
   if (!pattern || pattern.steps.length === 0 || !isCombatActorAlive(state, 'enemy') || !enemyId) return false
   state.combat.enemyActionPatternId = pattern.id
   state.combat.enemyNextActionIndex = 0
-  uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'system', sourceMonsterId: enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, category: 'pattern', sourceId: pattern.id })
+  uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'system', sourceMonsterId: enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, locationId: state.combat.locationId ?? undefined, category: 'pattern', sourceId: pattern.id })
   return true
 }
 
@@ -134,7 +134,7 @@ const startActionDefinition = (state: GameState, action: CombatActionDefinition,
   if (!state.combat.enemyId || state.combat.enemyCurrentStepId) return false
   commitAction(state, stepId, action.id, patternId, action.actionTimeMs)
   const context = actionContext(state, action, patternId, stepId ?? undefined)
-  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'action', sourceMonsterId: state.combat.enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'system', sourceId: action.id, actionId: action.id, actionPhase: 'start', durationMs: state.combat.enemyActionDurationMs })
+  uiEvents?.push({ source: { kind: 'enemy', monsterId: state.combat.enemyId }, sourceKind: 'action', sourceMonsterId: state.combat.enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, locationId: state.combat.locationId ?? undefined, target: 'player', category: 'system', sourceId: action.id, actionId: action.id, actionPhase: 'start', durationMs: state.combat.enemyActionDurationMs })
   runActionEventObservers(state, 'on-action-start', context, executeEffects, depth, uiEvents)
   if (state.combat.enemyHp <= 0 || state.player.health <= 0) clearCurrentEnemyAction(state)
   return true
@@ -211,7 +211,7 @@ export const resolveCurrentEnemyAction = (state: GameState, executeEffects: Acti
       resolveBasicAttack(state, enemyId, MONSTERS[enemyId], executeEffects, depth + 1, uiEvents)
     } else {
       const context = actionContext(state, action, originPatternId, stepId ?? undefined)
-      if (action.effects.length === 0) uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'action', sourceMonsterId: enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, dungeonId: state.combat.dungeonId ?? undefined, target: 'player', category: 'enemy-action', sourceId: action.id, actionId: action.id, actionPhase: 'resolve' })
+      if (action.effects.length === 0) uiEvents?.push({ source: { kind: 'enemy', monsterId: enemyId }, sourceKind: 'action', sourceMonsterId: enemyId, sourceInstanceKey: state.combat.enemyInstanceKey ?? undefined, locationId: state.combat.locationId ?? undefined, target: 'player', category: 'enemy-action', sourceId: action.id, actionId: action.id, actionPhase: 'resolve' })
       executeEffects(state, action.effects, context.source as CombatSource, depth + 1, uiEvents)
       runActionEventObservers(state, 'on-action-resolve', context, executeEffects, depth + 1, uiEvents)
       appendLog(state, `${action.name} resolves.`)

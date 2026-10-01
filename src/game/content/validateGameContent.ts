@@ -1,4 +1,4 @@
-import { validateDungeonDefinitions } from './dungeons/dungeons'
+import { validateDungeonDefinitions } from './combat-locations/dungeons/dungeons'
 import { validateItemDefinitions } from './items/items'
 import { validateRecipeDefinitions } from './recipes/recipes'
 import { validateMonsterDefinitions } from './monsters'

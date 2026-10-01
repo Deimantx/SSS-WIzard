@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
 import { getCombatFlowPresentation, type CombatFlowRuntimeInput } from './combatFlowPresentation'
 
@@ -8,7 +8,7 @@ const dungeon = DUNGEONS['whispering-woods']
 const pattern = enemy.actionPatterns.default
 
 const input = (changes: Partial<CombatFlowRuntimeInput> = {}): CombatFlowRuntimeInput => ({
-  active: true, dungeonId: 'whispering-woods', selectedDungeonId: 'whispering-woods', enemyId: 'grove-sentinel', dungeon, enemy,
+  active: true, locationId: 'whispering-woods', selectedCombatLocationId: 'whispering-woods', enemyId: 'grove-sentinel', dungeon, enemy,
   threatCleared: 0, inBossFight: false, encounterTimerMs: 0,
   playerSpellCast: { spellId: 'fire-bolt', targetInstanceKey: 'enemy:1', remainingWorkMs: 500, castWorkMs: 2800, manaCostSnapshot: 30, arcaneCoreFree: false, castWorkMultiplier: 1 },
   playerSpellCastRate: 1,
@@ -92,12 +92,12 @@ describe('getCombatFlowPresentation', () => {
 
   it('keeps sequence runs in encounter delay even if stale Threat reaches the Boss threshold', () => {
     const sequenceDungeon = DUNGEONS['broken-meridian']
-    expect(getCombatFlowPresentation(input({ dungeon: sequenceDungeon, dungeonId: sequenceDungeon.id, selectedDungeonId: sequenceDungeon.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
+    expect(getCombatFlowPresentation(input({ dungeon: sequenceDungeon, locationId: sequenceDungeon.id, selectedCombatLocationId: sequenceDungeon.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
   })
 
   it('never presents boss-ready mode for the bossless Gloamridge Hunting Ground', () => {
     const huntingGround = DUNGEONS['hunters-ground']
-    expect(getCombatFlowPresentation(input({ dungeon: huntingGround, dungeonId: huntingGround.id, selectedDungeonId: huntingGround.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
+    expect(getCombatFlowPresentation(input({ dungeon: huntingGround, locationId: huntingGround.id, selectedCombatLocationId: huntingGround.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
   })
 
   it('keeps Boss-ready presentation independent from the retired Run Bar control', () => {

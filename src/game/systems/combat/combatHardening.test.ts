@@ -22,7 +22,7 @@ const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'ha
 const stateWithEnemy = () => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.combat.targetEnemyId = 'forest-wisp'
   state.player.health = 10_000
   state.player.maxHealth = 10_000
@@ -159,7 +159,7 @@ describe('equipment combat providers', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'combat-start-buff', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'quickening' }] }] } }
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.equipment.weapon = testItemId
     state.equipment.head = testItemId
     spawnEnemy(state, 'forest-wisp')
@@ -175,7 +175,7 @@ describe('equipment combat providers', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'apply-burning', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'opponent', statusId: 'burning' }] }] } }
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.equipment.weapon = testItemId
     state.equipment.head = testItemId
     const events: Array<{ sourceKind?: string; statusInstanceKey?: string; providerInstanceKey?: string }> = []
@@ -552,7 +552,7 @@ describe('equipment combat providers', () => {
   it('does not activate an Enemy threshold Trait when the threshold Hit is lethal', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     state.player.health = 100
     state.player.maxHealth = 100
     spawnEnemy(state, 'grove-sentinel')

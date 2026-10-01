@@ -3,7 +3,7 @@ import { createInitialState } from '../../../store/initialState'
 import { chooseStartingSchoolAction } from '../../../store/actions/onboardingActions'
 import { assignChannelingAcolyteAction } from '../../../store/actions/acolyteActions'
 import { spawnEnemy } from './combatRuntime'
-import { DUNGEONS } from '../../content/dungeons/dungeons'
+import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 
 describe('combat independence', () => {
   it('starts combat with every Acolyte assigned to Tower work', () => {
@@ -11,7 +11,7 @@ describe('combat independence', () => {
     chooseStartingSchoolAction(state, 'fire')
     for (let index = 0; index < 5; index += 1) assignChannelingAcolyteAction(state)
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     const enemyId = DUNGEONS['whispering-woods'].monsterPool[0]
     expect(enemyId).toBeTruthy()
     expect(spawnEnemy(state, enemyId!)).toBe(true)

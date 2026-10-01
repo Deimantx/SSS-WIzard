@@ -1,7 +1,7 @@
 import type { HuntersOrderScreenTab } from '../../ui/preferences/uiPreferencesTypes'
 import { Button, GameTooltip } from '../../components/ui'
 import { ScreenGrid } from '../../components/layout/ScreenGrid'
-import { isHuntersOrderUnlocked } from '../../game/systems/huntersOrder/huntersOrderRuntime'
+import { isHuntersOrderUnlocked } from '../../game/systems/hunters-order/huntersOrderRuntime'
 import { useGameStore } from '../../store/gameStore'
 import { HunterBestiaryTab } from './HunterBestiaryTab'
 import { HunterHeader } from './HunterHeader'

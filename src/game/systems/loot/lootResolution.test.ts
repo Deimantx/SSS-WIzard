@@ -3,7 +3,7 @@ import { createInitialState } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
 import { resolvePowerScaledCurrencyRewardRange } from './powerScaledCurrencyRewards'
 import { resolveMonsterLoot } from './lootResolution'
-import { getHunterHarvestBonuses } from '../huntersOrder/huntersOrderRuntime'
+import { getHunterHarvestBonuses } from '../hunters-order/huntersOrderRuntime'
 
 describe('monster loot resolution', () => {
   it('grants universal Life Essence through the normal item acquisition path', () => {

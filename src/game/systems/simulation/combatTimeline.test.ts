@@ -14,7 +14,7 @@ const playerSource: CombatSource = { actor: 'player', kind: 'spell', sourceId: '
 const stateWithEnemy = (enemyId: Parameters<typeof spawnEnemy>[1] = 'forest-wisp') => {
   const state = createCombatTestState()
   state.combat.active = true
-  state.combat.dungeonId = 'whispering-woods'
+  state.combat.locationId = 'whispering-woods'
   state.player.maxHealth = 10_000
   state.player.health = 10_000
   spawnEnemy(state, enemyId)

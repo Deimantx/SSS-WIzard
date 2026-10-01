@@ -40,8 +40,8 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   const unspokenPrelate = (progress.bossKillsByBoss['unspoken-prelate'] ?? 0) > 0
   const sigilWarden = (progress.bossKillsByBoss['sigil-warden'] ?? 0) > 0
   const blackGatekeeper = (progress.bossKillsByBoss['black-gatekeeper'] ?? 0) > 0
-  const enteredBlackGate = state.combat.dungeonId === 'black-gate' || state.ui.lastEnteredCombatDungeonId === 'black-gate'
-  const enteredBrokenMeridian = state.combat.dungeonId === 'broken-meridian' || state.ui.lastEnteredCombatDungeonId === 'broken-meridian'
+  const enteredBlackGate = state.combat.locationId === 'black-gate' || state.ui.lastEnteredCombatLocationId === 'black-gate'
+  const enteredBrokenMeridian = state.combat.locationId === 'broken-meridian' || state.ui.lastEnteredCombatLocationId === 'broken-meridian'
   const shatteredBossIds = ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] as const
   const allShatteredBosses = shatteredBossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
   const clearlyProgressed = progress.lifetimeKills > 0 || hasAnyBoss || progress.tutorialStage === 'complete' || forest || bear || edrin

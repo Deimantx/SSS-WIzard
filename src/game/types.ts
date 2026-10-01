@@ -1,4 +1,4 @@
-import type { PortalShardId } from './content/darkPortal/portalShards'
+import type { PortalShardId } from './content/dark-portal/portalShards'
 import type { ResonanceState } from './content/resonance/resonance'
 import type { ElementId as CombatElementId } from './content/elements/elements'
 export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
@@ -47,7 +47,7 @@ export interface ChronicleProgressState {
 
 /**
  * Canonical item IDs grouped by authored ownership. Keep this list aligned
- * with src/game/content/items/shared, act0, and act1.
+ * with the material, special-item, and Artifact item registries.
  */
 export type ItemId =
   // Shared / global materials
@@ -59,36 +59,36 @@ export type ItemId =
   | 'artifact-essence'
   | 'life-essence'
   | 'tier-1-crystal-cache'
-  // Act 0 — Artifacts
+  // Tier 1 Artifact Equipment
   | 'ember-staff'
   | 'tideglass-wand'
   | 'stoneheart-scepter'
   | 'windthread-wand'
   | 'wispweave-robe'
   | 'wispveil-hood'
-  // Act 0 — Whispering Woods
-  // Act 0 — Howling Den
-  // Act 0 — Abandoned Catacombs
+  // First Frontier — Whispering Woods
+  // First Frontier — Howling Den
+  // First Frontier — Abandoned Catacombs
   | 'black-portal-shard'
-  // Act 1 — Artifacts
+  // Tier 2 Artifact Equipment
   | 'galeshard-staff'
   | 'reliquary-scepter'
   | 'pyrebound-staff'
   | 'rootheart-scepter'
   | 'convergence-robe'
   | 'waystone-circlet'
-  // Act 1 — Fractured Approach
-  // Act 1 — Flooded Reliquary
-  // Act 1 — Ashen Watch
-  // Act 1 — Rootscar Hollow
-  // Act 1 — Crossroads of Ruin
-  // Act 1 — Graveglass Hollow
-  // Act 1 — Stormvault Gallery
-  // Act 1 — Starfallen Observatory
-  // Act 1 — Broken Meridian
-  // Act 1 — Hall of Unbound Names
-  // Act 1 — Vault of the Black Sigil
-  // Act 1 — Black Gate
+  // Regional Progression — Fractured Approach
+  // Regional Progression — Flooded Reliquary
+  // Regional Progression — Ashen Watch
+  // Regional Progression — Rootscar Hollow
+  // Regional Progression — Crossroads of Ruin
+  // Regional Progression — Graveglass Hollow
+  // Regional Progression — Stormvault Gallery
+  // Regional Progression — Starfallen Observatory
+  // Regional Progression — Broken Meridian
+  // Regional Progression — Hall of Unbound Names
+  // Regional Progression — Vault of the Black Sigil
+  // Regional Progression — Black Gate
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 
@@ -147,19 +147,19 @@ export interface CrystalState {
 
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
-export type DungeonId = 'whispering-woods' | 'howling-den' | 'hunters-ground' | 'abandoned-catacombs' | 'fractured-approach' | 'flooded-reliquary' | 'ashen-watch' | 'rootscar-hollow' | 'crossroads-of-ruin' | 'graveglass-hollow' | 'stormvault-gallery' | 'starfallen-observatory' | 'broken-meridian' | 'hall-of-unbound-names' | 'vault-of-the-black-sigil' | 'black-gate' | 'stonewake-hollow' | 'galecrest-heights' | 'tideglass-caverns' | 'emberfall-basin'
+export type CombatLocationId = string
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet'
 export type EquipmentPosition = 'weapon' | 'armor' | 'head'
-/** Permanent Artifacts grouped by authored Act ownership. */
+/** Permanent Artifact Equipment identifiers. */
 export type ArtifactId =
-  // Act 0 Artifacts
+  // First Frontier Artifacts
   | 'ember-staff'
   | 'tideglass-wand'
   | 'stoneheart-scepter'
   | 'windthread-wand'
   | 'wispweave-robe'
   | 'wispveil-hood'
-  // Act 1 Artifacts
+  // Regional Progression Artifacts
   | 'galeshard-staff'
   | 'reliquary-scepter'
   | 'pyrebound-staff'
@@ -205,8 +205,8 @@ export type RecipeUnlockCondition =
   | { type: 'always' }
   | { type: 'boss-kill'; bossId: MonsterId; count?: number }
   | { type: 'monster-kill'; monsterId: MonsterId; count?: number }
-  | { type: 'dungeon-monster-kills'; dungeonId: DungeonId; count?: number }
-  | { type: 'dungeon-unlocked'; dungeonId: DungeonId }
+  | { type: 'location-monster-kills'; locationId: CombatLocationId; count?: number }
+  | { type: 'location-unlocked'; locationId: CombatLocationId }
   /** @deprecated V1-V23 compatibility for external callers and old authored data. */
   | { type: 'first-dungeon-boss-kill' }
 
@@ -524,7 +524,7 @@ export interface ActiveCombatSpellLoadout {
 }
 export interface CombatState {
   active: boolean
-  dungeonId: DungeonId | null
+  locationId: CombatLocationId | null
   enemyId: MonsterId | null
   /** Authored normal encounter target for targeted Locations; null for random-pool runs. */
   targetEnemyId: MonsterId | null
@@ -566,7 +566,7 @@ export interface CombatState {
   /** Spawn downtime countdown only. Never use as a gameplay clock. */
   encounterTimerMs: number
   /** Current deterministic step for sequence Dungeons; null outside sequence mode. */
-  dungeonSequenceIndex: number | null
+  sequenceIndex: number | null
   spellCooldowns: Record<SpellId, number>
   /** Runtime Auto-Cast starvation latch; persisted harmlessly with combat state. */
   /** Deterministic transient counters for Arcane Core combat specials. */
@@ -753,7 +753,7 @@ export interface ProgressState {
   tutorialStage: TutorialStage
   lifetimeKillsByMonster: Partial<Record<MonsterId, number>>
   bossKillsByBoss: Partial<Record<MonsterId, number>>
-  autoHuntBossByDungeon: Record<DungeonId, boolean>
+  autoHuntBossByLocation: Record<CombatLocationId, boolean>
   channeling: ChannelingProgress
   transmutation: TransmutationProgress
 }
@@ -812,12 +812,12 @@ export type HunterUpgradeId = 'negotiated-rerolls' | 'order-privilege' | 'extend
 export type HunterContractTarget =
   | { type: 'monster'; monsterId: MonsterId }
   | { type: 'family'; familyId: string }
-  | { type: 'region'; dungeonId: DungeonId }
+  | { type: 'region'; locationId: CombatLocationId }
   | { type: 'alignment'; alignmentId: string }
   | { type: 'boss'; monsterId: MonsterId }
 export interface HunterContractState {
   id: string
-  huntingGroundId?: DungeonId
+  huntingGroundId?: CombatLocationId
   targetSpec: HunterContractTarget
   target: number
   progress: number
@@ -834,8 +834,8 @@ export interface HuntersOrderProgress {
   availableContracts: HunterContractState[]
   pinnedContractIds?: string[]
   preferredContractType?: HunterContractTarget['type'] | null
-  preferredHuntingGroundId?: DungeonId | null
-  lastSelectedQuarryByGround?: Partial<Record<DungeonId, MonsterId>>
+  preferredHuntingGroundId?: CombatLocationId | null
+  lastSelectedQuarryByGround?: Partial<Record<CombatLocationId, MonsterId>>
   blockedTargets: MonsterId[]
   purchasedUpgrades: Record<string, number>
   totalContractsCompleted: number
@@ -892,7 +892,7 @@ export interface ManaPillarState {
 export interface UiState {
   screen: ScreenId
   /** The last dungeon the player successfully entered, not a world browse selection. */
-  lastEnteredCombatDungeonId?: DungeonId
+  lastEnteredCombatLocationId?: CombatLocationId
   /** One-shot destination for pre-embedded Collection / Bestiary save routes. */
   legacyArchiveRoute?: 'registry' | 'bestiary' | null
 }

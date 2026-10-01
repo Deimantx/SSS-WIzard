@@ -1,7 +1,7 @@
-﻿import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import type {
   ArtificingRecipeId,
-  DungeonId,
+  CombatLocationId,
   EquipmentPosition,
   ItemId,
   MonsterId,
@@ -26,7 +26,7 @@ export interface NavigationIntent {
   researchSchoolId: SchoolId | null;
   schoolSpellId: SpellId | null;
   schoolId: SchoolId | null;
-  combatDungeonId: DungeonId | null;
+  combatLocationId: CombatLocationId | null;
   combatMonsterId: MonsterId | null;
   sigilSetId: import('../../game/types').SigilSetId | null;
   openCrystalInventory: boolean;
@@ -47,7 +47,7 @@ const emptyIntent: NavigationIntent = {
   researchSchoolId: null,
   schoolSpellId: null,
   schoolId: null,
-  combatDungeonId: null,
+  combatLocationId: null,
   combatMonsterId: null,
   sigilSetId: null,
   openCrystalInventory: false,

@@ -11,7 +11,7 @@ describe('DefeatSummaryModal', () => {
   beforeEach(() => { clearCombatDefeat(); useGameStore.getState().hydrateState(createInitialState()) })
 
   it('opens with enemy identity, summary totals, and the final typed event', () => {
-    combatDefeatSink.push({ source: { kind: 'system' }, dungeonId: 'whispering-woods', target: 'player', targetMonsterId: 'forest-wisp', category: 'death', sourceId: 'player-defeated', timestampMs: 100 })
+    combatDefeatSink.push({ source: { kind: 'system' }, locationId: 'whispering-woods', target: 'player', targetMonsterId: 'forest-wisp', category: 'death', sourceId: 'player-defeated', timestampMs: 100 })
     render(<TooltipProvider><DefeatSummaryModal /></TooltipProvider>)
     expect(screen.getByRole('dialog', { name: 'DEFEAT SUMMARY' })).toBeTruthy()
     expect(screen.getByText('FOREST WISP DEFEATED')).toBeTruthy()
@@ -20,7 +20,7 @@ describe('DefeatSummaryModal', () => {
 
   it('returns to the inactive Tower state without auto-retry', async () => {
     const user = userEvent.setup()
-    combatDefeatSink.push({ source: { kind: 'system' }, dungeonId: 'whispering-woods', target: 'player', targetMonsterId: 'forest-wisp', category: 'death', sourceId: 'player-defeated' })
+    combatDefeatSink.push({ source: { kind: 'system' }, locationId: 'whispering-woods', target: 'player', targetMonsterId: 'forest-wisp', category: 'death', sourceId: 'player-defeated' })
     render(<TooltipProvider><DefeatSummaryModal /></TooltipProvider>)
     await user.click(screen.getByRole('button', { name: 'RETURN TO TOWER' }))
     expect(useCombatDefeatStore.getState().snapshot).toBeNull()
@@ -29,7 +29,7 @@ describe('DefeatSummaryModal', () => {
   })
 
   it('uses bossless encounter copy for a Gloamridge defeat', () => {
-    combatDefeatSink.push({ source: { kind: 'system' }, dungeonId: 'hunters-ground', target: 'player', targetMonsterId: 'nightglass-alpha', category: 'death', sourceId: 'player-defeated' })
+    combatDefeatSink.push({ source: { kind: 'system' }, locationId: 'hunters-ground', target: 'player', targetMonsterId: 'nightglass-alpha', category: 'death', sourceId: 'player-defeated' })
     render(<TooltipProvider><DefeatSummaryModal /></TooltipProvider>)
     expect(screen.getByText('Encounter ended.')).toBeTruthy()
     expect(screen.queryByText('Threat progress reset to 0.')).toBeNull()

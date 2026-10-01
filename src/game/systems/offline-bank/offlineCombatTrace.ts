@@ -1,6 +1,6 @@
 import type { CombatEvent, CombatEventSink } from '../combat/combatTypes'
 import type { CombatTelemetryScope } from '../../telemetry/combat/combatTelemetryTypes'
-import type { DungeonId, MonsterId } from '../../types'
+import type { CombatLocationId, MonsterId } from '../../types'
 
 export const MAX_OFFLINE_COMBAT_TRACE_EVENTS = 20
 
@@ -8,7 +8,7 @@ export interface OfflineCombatDefeatResult {
   event: CombatEvent
   /** Newest event first while the trace is collecting. */
   recentEvents: CombatEvent[]
-  dungeonId: DungeonId | null
+  locationId: CombatLocationId | null
   enemyId: MonsterId | null
   encounterDurationMs?: number
   damageDone?: number
@@ -39,7 +39,7 @@ export const createOfflineCombatTrace = () => {
     defeat = {
       event: { ...event },
       recentEvents: [],
-      dungeonId: event.dungeonId ?? telemetry?.dungeonId ?? null,
+      locationId: event.locationId ?? telemetry?.locationId ?? null,
       enemyId: event.targetMonsterId ?? telemetry?.monsterId ?? null,
       encounterDurationMs: finitePositive(telemetry?.elapsedMs),
       damageDone: finitePositive(telemetry?.player.damageDone.total),

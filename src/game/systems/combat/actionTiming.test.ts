@@ -8,7 +8,7 @@ describe('canonical combat action timing selectors', () => {
   it('reports enemy work progress and real-time ETA from one interpretation', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     expect(spawnEnemy(state, 'forest-wisp')).toBe(true)
     expect(getCurrentEnemyActionTiming(state)).toMatchObject({ baseWorkMs: 2_800, remainingWorkMs: 2_800, progress: 0, rate: 1, etaMs: 2_800, blocked: false })
   })
@@ -16,7 +16,7 @@ describe('canonical combat action timing selectors', () => {
   it('uses a null ETA and PAUSED state while Stunned', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')
     applyStatus(state, 'enemy', 'stunned', { actor: 'player', kind: 'spell', sourceId: 'timing-stun' })
     expect(getCurrentEnemyActionTiming(state)).toMatchObject({ remainingWorkMs: 2_800, progress: 0, rate: 0, etaMs: null, blocked: true, blockReason: 'status-control' })
@@ -25,7 +25,7 @@ describe('canonical combat action timing selectors', () => {
   it('reports debug freeze and fallback timing without labeling it Stunned', () => {
     const state = createCombatTestState()
     state.combat.active = true
-    state.combat.dungeonId = 'whispering-woods'
+    state.combat.locationId = 'whispering-woods'
     spawnEnemy(state, 'forest-wisp')
     state.debug.freezeEnemyActions = true
     expect(getCurrentEnemyActionTiming(state)).toMatchObject({ blocked: true, blockReason: 'debug-freeze' })

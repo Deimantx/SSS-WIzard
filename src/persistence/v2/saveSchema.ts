@@ -84,7 +84,8 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
       || !ELEMENT_IDS.includes(ward.element as typeof ELEMENT_IDS[number])
       || typeof ward.sourceId !== 'string' || ward.sourceId.trim().length === 0
       || typeof ward.reduction !== 'number' || !Number.isFinite(ward.reduction) || ward.reduction <= 0 || ward.reduction >= 1
-      || (ward.expiresAt !== undefined && (typeof ward.expiresAt !== 'number' || !Number.isFinite(ward.expiresAt) || ward.expiresAt < 0))))) return false
+      || (ward.expiresAt !== undefined && (typeof ward.expiresAt !== 'number' || !Number.isFinite(ward.expiresAt) || ward.expiresAt < 0))
+      || (ward.durationMs !== undefined && (typeof ward.durationMs !== 'number' || !Number.isFinite(ward.durationMs) || ward.durationMs < 0))))) return false
   if (value.contentVersion !== undefined && (!Number.isInteger(value.contentVersion) || (value.contentVersion as number) < 0)) return false
   const inventory = value.inventory as Record<string, unknown>
   if (Object.entries(inventory).some(([id, quantity]) => !Object.prototype.hasOwnProperty.call(ITEMS, id) || typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 0)) return false

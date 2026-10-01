@@ -488,6 +488,8 @@ const applyDamage = (
         targetAffinity: breakdown.targetAffinity,
         affinityMultiplier: breakdown.affinityMultiplier,
         damageAfterAffinity: breakdown.damageAfterAffinity,
+        beforeWard: breakdown.afterDefense,
+        afterWard: breakdown.afterWard,
         wardMultiplier: breakdown.wardMultiplier,
         wardPrevented: Math.max(0, breakdown.afterDefense - breakdown.afterWard),
         mitigationMultiplier: breakdown.mitigationMultiplier,

@@ -21,6 +21,27 @@ describe('progressive Spell effect tooltip details', () => {
     expect(model.description).toBe('Replaces the current Barrier only when the new Barrier is stronger.')
   })
 
+  it('describes an Elemental Ward as a BUFF with its reduction and duration', () => {
+    const model = buildSpellEffectTooltipModel(createInitialState(), 'fire-ward', 0)
+    expect(model.category).toBe('BUFF')
+    expect(model.categoryKey).toBe('buff')
+    expect(model.title).toBe('Fire Ward')
+    expect(model.rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Element', value: 'Fire' }),
+      expect.objectContaining({ label: 'Incoming Fire Damage', value: '-15%' }),
+      expect.objectContaining({ label: 'Duration', value: '20.0s' }),
+      expect.objectContaining({ label: 'Target', value: 'Self', detailLevel: 'advanced' }),
+      expect.objectContaining({ label: 'Source', value: 'Fire Ward', detailLevel: 'advanced' }),
+    ]))
+    expect(getCompactSpellEffectRows(model).map((row) => row.value)).toContain('-15%')
+    const detail = buildSpellDetailPresentation(createInitialState(), 'fire-ward', 1)
+    expect(detail.effects[0].category).toBe('BUFF')
+    expect(detail.effects[0].rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Incoming Fire Damage', value: '-15%' }),
+      expect.objectContaining({ label: 'Duration', value: '20.0s' }),
+    ]))
+  })
+
   it('keeps Ignite gameplay rows compact and reveals technical rows while Alt is held', async () => {
     const model = igniteModel()
     const compactLabels = getCompactSpellEffectRows(model).map((row) => row.label)

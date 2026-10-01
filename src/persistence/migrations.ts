@@ -638,8 +638,15 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
   migrated.combat.elementalDamageReductions = rawWards.slice(-32).flatMap((entry): GameState['combat']['elementalDamageReductions'][number][] => {
     if (!isRecord(entry) || !isElementId(entry.element) || typeof entry.sourceId !== 'string' || !entry.sourceId.trim() || typeof entry.reduction !== 'number' || !Number.isFinite(entry.reduction) || entry.reduction <= 0 || entry.reduction >= 1) return []
     const expiresAt = typeof entry.expiresAt === 'number' && Number.isFinite(entry.expiresAt) && entry.expiresAt >= 0 ? entry.expiresAt : undefined
-    return [{ element: entry.element, sourceId: entry.sourceId, reduction: entry.reduction, ...(expiresAt === undefined ? {} : { expiresAt }) }]
+    const now = isRecord(rawCombat.arcaneCoreRuntime) && typeof rawCombat.arcaneCoreRuntime.elapsedMs === 'number' && Number.isFinite(rawCombat.arcaneCoreRuntime.elapsedMs) ? Math.max(0, rawCombat.arcaneCoreRuntime.elapsedMs) : 0
+    const canonicalSpellWard = entry.sourceId === `${entry.element}-ward`
+    const durationMs = typeof entry.durationMs === 'number' && Number.isFinite(entry.durationMs) && entry.durationMs >= 0 ? entry.durationMs : canonicalSpellWard ? 20_000 : undefined
+    const normalizedExpiry = expiresAt === undefined ? undefined : sourceVersion < 60 && canonicalSpellWard ? Math.min(expiresAt, now + 20_000) : expiresAt
+    return [{ element: entry.element, sourceId: entry.sourceId, reduction: entry.reduction, ...(normalizedExpiry === undefined ? {} : { expiresAt: normalizedExpiry }), ...(durationMs === undefined ? {} : { durationMs: canonicalSpellWard && sourceVersion < 60 ? 20_000 : durationMs }) }]
   })
+  const normalizedWards = new Map<string, GameState['combat']['elementalDamageReductions'][number]>()
+  for (const ward of migrated.combat.elementalDamageReductions) normalizedWards.set(`${ward.element}:${ward.sourceId}`, ward)
+  migrated.combat.elementalDamageReductions = [...normalizedWards.values()].slice(-32)
   if (!migrated.combat.active) migrated.combat.elementalDamageReductions = []
   migrated.combat.pendingPlayerSpellCast = null
   migrated.combat.queuedPlayerSpellId = null

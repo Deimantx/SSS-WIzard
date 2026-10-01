@@ -24,7 +24,7 @@ describe('Save System V2', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(2)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(59)
+    expect(SAVE_VERSION).toBe(60)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -97,7 +97,7 @@ describe('Save System V2', () => {
     const active = createInitialState()
     active.combat.active = true
     active.combat.dungeonId = 'emberfall-basin'
-    active.combat.elementalDamageReductions = [{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 21_000 }]
+    active.combat.elementalDamageReductions = [{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 21_000, durationMs: 20_000 }]
     const activeDocument = serializeGameState(active, 456)
     expect(validatePersistedGameStateV1(activeDocument)).toBe(true)
     expect(validateV2RoundTrip(JSON.stringify(activeDocument), active).state?.combat.elementalDamageReductions).toEqual(active.combat.elementalDamageReductions)
@@ -110,6 +110,39 @@ describe('Save System V2', () => {
     const inactive = createInitialState()
     inactive.combat.elementalDamageReductions = active.combat.elementalDamageReductions
     expect(serializeGameState(inactive, 457).combat.elementalDamageReductions).toEqual([])
+  })
+
+  it('reconciles old 22-second canonical Wards and Black Sigil Chronicle history without replaying rewards', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'black-gate'
+    state.combat.enemyId = 'black-gatekeeper'
+    state.combat.targetEnemyId = 'black-gatekeeper'
+    state.combat.arcaneCoreRuntime.elapsedMs = 5_000
+    state.combat.elementalDamageReductions = [
+      { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 27_000 },
+      { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 26_000 },
+      { element: 'water', reduction: 0.1, sourceId: 'legacy-water-source', expiresAt: 27_000 },
+    ]
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.bossKillsByBoss['unspoken-prelate'] = 1
+    state.progress.bossKillsByBoss['sigil-warden'] = 1
+    state.progress.bossKillsByBoss['black-gatekeeper'] = 1
+    state.progress.chronicle.grantedUnlockRewardIds.push('sf-socket-first-crystal')
+    const oldDocument = serializeGameState(state, 460)
+    oldDocument.contentVersion = 59
+
+    const migrated = loadProfileGameFromRaw(JSON.stringify(oldDocument))
+    expect(migrated.combat.elementalDamageReductions).toEqual([
+      { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 25_000, durationMs: 20_000 },
+      { element: 'water', reduction: 0.1, sourceId: 'legacy-water-source', expiresAt: 27_000 },
+    ])
+    expect(migrated.progress.chronicle.completedObjectiveIds).toEqual(expect.arrayContaining([
+      'sf-m5a-break-black-sigil-reach', 'sf-m5b-enter-black-gate', 'sf-m5c-black-gatekeeper',
+    ]))
+    expect(migrated.worldTier.highestUnlocked).toBe(5)
+    expect(migrated.progress.chronicle.grantedUnlockRewardIds.filter((id) => id === 'sf-socket-first-crystal')).toHaveLength(1)
+    expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'black-gate', enemyId: 'black-gatekeeper' })
   })
 
   it('strictly validates persisted Ward rows and sanitizes malformed runtime input', () => {

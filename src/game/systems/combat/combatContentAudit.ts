@@ -29,6 +29,9 @@ export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'volt-wisp', 'gale-scribe', 'charged-seeker', 'thundercoil-serpent', 'static-armor', 'stormbound-curator', 'tempest-engine', 'storm-archivist',
   'starbound-eye', 'astral-husk', 'orbiting-fragment', 'lenskeeper-remnant', 'comet-wraith', 'voidglass-custodian', 'zenith-horror', 'fallen-astromancer',
   'meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'meridian-splitter',
+  'name-eater', 'bound-echo', 'hollow-liturgist', 'whisper-archivist', 'nameless-cantor', 'oathless-confessor', 'unwritten-hierophant', 'unspoken-prelate',
+  'sigil-guardian', 'black-seal-parasite', 'vault-devourer', 'inkbound-specter', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter', 'sigil-warden',
+  'gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper',
 ]
 
 export interface CombatV2ContentAuditRow {
@@ -36,7 +39,7 @@ export interface CombatV2ContentAuditRow {
   maxRepeatableDirectCoefficient: number; dotTotalCoefficient: number; periodicDamageCoefficient: number; periodicHealPercent: number
   repeatableHealPercent: number; repeatableBarrierPercent: number; onceOnlyHealPercent: number; onceOnlyBarrierPercent: number
   repeatableSustainPercent: number; onceOnlySustainPercent: number; physicalComponentCount: number
-  defaultFlatPeriodicDamageCount: number; defaultFlatPeriodicHealCount: number; defaultFlatPeriodicCount: number
+  defaultFlatPeriodicDamageCount: number; defaultFlatPeriodicHealCount: number; defaultFlatPeriodicCount: number; genericActionDescriptionCount: number; genericEquippedTraitCount: number
   maxControlMs: number; patternCycleMs: number; warnings: string[]
 }
 
@@ -46,6 +49,7 @@ export const COMBAT_V2_AUDIT_REGIONS = [
   { id: 'first-frontier', label: 'First Frontier' },
   { id: 'elemental-scar', label: 'Elemental Scar' },
   { id: 'shattered-meridian', label: 'Shattered Meridian' },
+  { id: 'black-sigil-reach', label: 'Black Sigil Reach' },
 ] as const
 export type CombatV2AuditRegionId = typeof COMBAT_V2_AUDIT_REGIONS[number]['id']
 
@@ -54,6 +58,7 @@ const LOCATIONS: Record<string, string> = {
   'whispering-woods': 'Whispering Woods', 'howling-den': 'Howling Den', 'hunters-ground': 'Gloamridge', 'abandoned-catacombs': 'Abandoned Catacombs',
   'fractured-approach': 'Fractured Approach', 'flooded-reliquary': 'Flooded Reliquary', 'ashen-watch': 'Ashen Watch', 'rootscar-hollow': 'Rootscar Hollow', 'crossroads-of-ruin': 'Crossroads of Ruin',
   'graveglass-hollow': 'Graveglass Hollow', 'stormvault-gallery': 'Stormvault Gallery', 'starfallen-observatory': 'Starfallen Observatory', 'broken-meridian': 'Broken Meridian',
+  'hall-of-unbound-names': 'Hall of Unbound Names', 'vault-of-the-black-sigil': 'Vault of the Black Sigil', 'black-gate': 'The Black Gate',
 }
 const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries({
   'stonewake-hollow': ['stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus'],
@@ -73,11 +78,15 @@ const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries
   'stormvault-gallery': ['volt-wisp', 'gale-scribe', 'charged-seeker', 'thundercoil-serpent', 'static-armor', 'stormbound-curator', 'tempest-engine', 'storm-archivist'],
   'starfallen-observatory': ['starbound-eye', 'astral-husk', 'orbiting-fragment', 'lenskeeper-remnant', 'comet-wraith', 'voidglass-custodian', 'zenith-horror', 'fallen-astromancer'],
   'broken-meridian': ['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'meridian-splitter'],
+  'hall-of-unbound-names': ['name-eater', 'bound-echo', 'hollow-liturgist', 'whisper-archivist', 'nameless-cantor', 'oathless-confessor', 'unwritten-hierophant', 'unspoken-prelate'],
+  'vault-of-the-black-sigil': ['sigil-guardian', 'black-seal-parasite', 'vault-devourer', 'inkbound-specter', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter', 'sigil-warden'],
+  'black-gate': ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper'],
 }).flatMap(([location, ids]) => (ids as string[]).map((id) => [id, location])))
 const regionForLocation = (location: string): Exclude<CombatV2AuditRegionId, 'all'> => {
   if (['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(location)) return 'tutorial'
   if (['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(location)) return 'first-frontier'
   if (['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'].includes(location)) return 'elemental-scar'
+  if (['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'].includes(location)) return 'black-sigil-reach'
   return 'shattered-meridian'
 }
 
@@ -131,6 +140,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   let defaultFlatPeriodicDamageCount = 0
   let defaultFlatPeriodicHealCount = 0
   let physicalComponentCount = 0
+  authored.forEach(({ effect }) => { if (effect.type === 'deal-damage') physicalComponentCount += effect.components.filter((component) => component.damageType === 'physical').length })
   periodic.forEach((entry) => {
     const ticks = ticksFor(entry.statusId, entry.durationMs)
     if (entry.effect.type === 'deal-damage') {
@@ -158,7 +168,10 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   const maxControlMs = authored.reduce((max, { effect }) => effect.type === 'apply-status' && STATUS_DEFINITIONS[effect.statusId]?.tags.includes('control') ? Math.max(max, effect.durationMs ?? STATUS_DEFINITIONS[effect.statusId]?.defaultDurationMs ?? 0) : max, 0)
   const patternCycleMs = Object.values(monster.actionPatterns).reduce((max, pattern) => Math.max(max, pattern.steps.reduce((sum, step) => sum + (step.type === 'basic' ? monster.basicAttackTimeMs : monster.actions[step.actionId ?? '']?.actionTimeMs ?? 0), 0)), 0)
   const warnings: string[] = []
+  const genericActionDescriptionCount = Object.values(monster.actions).filter((action) => isGenericActionDescription(monster, action)).length
   for (const action of Object.values(monster.actions)) if (isGenericActionDescription(monster, action)) warnings.push(`Generic or missing action description: ${action.name}`)
+  const genericEquippedTraitCount = monster.traitIds.filter((traitId) => /distinct Act 1 combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? '')).length
+  if (genericEquippedTraitCount) warnings.push(`${genericEquippedTraitCount} generic equipped Trait(s)`)
   if (maximumDirectCoefficient(repeatable) > 3) warnings.push('Repeatable direct hit exceeds 3× Basic')
   if (periodicDamageCoefficient > 2) warnings.push('Repeatable DoT exceeds 2× Basic')
   if (repeatableHealPercent > 0.2) warnings.push('Repeatable healing exceeds 20% Max HP')
@@ -177,8 +190,20 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   return [{ id, name: monster.name, region: regionForLocation(LOCATION_BY_ID[id]), location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps,
     maxRepeatableDirectCoefficient: maximumDirectCoefficient(repeatable), dotTotalCoefficient: periodicDamageCoefficient, periodicDamageCoefficient, periodicHealPercent,
     repeatableHealPercent, repeatableBarrierPercent, onceOnlyHealPercent, onceOnlyBarrierPercent, repeatableSustainPercent, onceOnlySustainPercent,
-    physicalComponentCount, defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, maxControlMs, patternCycleMs, warnings }]
+    physicalComponentCount, defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]
 })
+
+export const buildCombatV2Act1GlobalAudit = (worldTier: WorldTierId = 1) => {
+  const rows = buildCombatV2ContentAudit(worldTier)
+  return {
+    implicitAffinityCount: rows.filter((row) => !MONSTERS[row.id]?.primaryAffinity).length,
+    physicalComponentCount: rows.reduce((sum, row) => sum + row.physicalComponentCount, 0),
+    defaultFlatPeriodicDamageCount: rows.reduce((sum, row) => sum + row.defaultFlatPeriodicDamageCount, 0),
+    defaultFlatPeriodicHealCount: rows.reduce((sum, row) => sum + row.defaultFlatPeriodicHealCount, 0),
+    genericActionDescriptionCount: rows.reduce((sum, row) => sum + row.genericActionDescriptionCount, 0),
+    genericEquippedTraitCount: rows.reduce((sum, row) => sum + row.genericEquippedTraitCount, 0),
+  }
+}
 
 export const buildCombatV2MonsterWorldTierComparison = (monsterId: MonsterId) => Object.values(WORLD_TIERS).map(({ id: worldTier }) => {
   const profile = resolveWorldTierEnemyProfile(monsterId, worldTier)

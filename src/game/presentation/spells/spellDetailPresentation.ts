@@ -37,7 +37,7 @@ const INLINE_ROW_PRIORITY: Record<string, number> = {
 export const getSpellbookTooltipRows = (model: SpellEffectTooltipModel): SpellEffectTooltipRow[] => getCompactSpellEffectRows(model).filter((row) => row.label !== SOURCE_ROW_LABEL)
 /** Full row set used by the expanded rich tooltip. */
 export const getFullSpellTooltipRows = (model: SpellEffectTooltipModel): SpellEffectTooltipRow[] => getExpandedSpellEffectRows(model)
-const inlinePriority = (row: SpellEffectTooltipRow) => { if (INLINE_ROW_PRIORITY[row.label] !== undefined) return INLINE_ROW_PRIORITY[row.label]; if (row.label.endsWith('Damage Taken')) return INLINE_ROW_PRIORITY['Damage Taken']; return 90 }
+const inlinePriority = (row: SpellEffectTooltipRow) => { if (INLINE_ROW_PRIORITY[row.label] !== undefined) return INLINE_ROW_PRIORITY[row.label]; if (row.label.endsWith('Damage Taken') || (row.label.startsWith('Incoming ') && row.label.endsWith(' Damage'))) return INLINE_ROW_PRIORITY['Damage Taken']; return 90 }
 const inlineSupplementalPriority = (row: SpellEffectTooltipRow) => {
   if (row.label === 'Target') return 10
   if (row.label === 'Applied Stacks') return 20

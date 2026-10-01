@@ -19,7 +19,7 @@ describe('Combat V2 save migration', () => {
       { element: 'unknown', reduction: 0.15, sourceId: 'bad' },
       { element: 'water', reduction: 1, sourceId: 'immune' },
     ] } } as never)
-    expect(current.combat.elementalDamageReductions).toEqual([{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 5000 }])
+    expect(current.combat.elementalDamageReductions).toEqual([{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 5000, durationMs: 20_000 }])
   })
 
   it('opens the elemental frontier for players with progress from before this tutorial', () => {

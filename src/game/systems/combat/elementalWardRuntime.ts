@@ -19,7 +19,7 @@ export const applyElementalWard = (state: GameState, options: ApplyElementalWard
     element,
     reduction: options.reduction,
     sourceId,
-    ...(duration === undefined ? {} : { expiresAt: now + duration }),
+    ...(duration === undefined ? {} : { expiresAt: now + duration, durationMs: duration }),
   }
   const activeWards = (state.combat.elementalDamageReductions ?? [])
     .filter((active) => active.expiresAt === undefined || active.expiresAt > now)
@@ -30,9 +30,10 @@ export const applyElementalWard = (state: GameState, options: ApplyElementalWard
 
 export const getElementalWardMultiplier = (state: GameState, element: ElementId | null, now = state.combat.arcaneCoreRuntime.elapsedMs): number => {
   if (!element) return 1
-  return (state.combat.elementalDamageReductions ?? [])
+  const strongest = (state.combat.elementalDamageReductions ?? [])
     .filter((ward) => ward.element === element && (ward.expiresAt === undefined || ward.expiresAt > now))
-    .reduce((multiplier, ward) => multiplier * (1 - ward.reduction), 1)
+    .reduce((reduction, ward) => Math.max(reduction, ward.reduction), 0)
+  return 1 - strongest
 }
 
 export const clearExpiredElementalWards = (state: GameState) => {
@@ -41,5 +42,9 @@ export const clearExpiredElementalWards = (state: GameState) => {
 }
 
 export const clearElementalWards = (state: GameState) => { state.combat.elementalDamageReductions = [] }
-export const debugApplyElementalWard = (state: GameState, element: ElementId) => applyElementalWard(state, { element, reduction: 0.15, sourceId: 'developer-ward-fixture', durationMs: 22_000 })
+export const debugApplyElementalWard = (state: GameState, element: ElementId, sourceId = `developer-${element}-ward-fixture`) => applyElementalWard(state, { element, reduction: 0.15, sourceId, durationMs: 20_000 })
+export const debugSetElementalWardsToRemaining = (state: GameState, remainingMs: number) => {
+  const now = state.combat.arcaneCoreRuntime.elapsedMs
+  state.combat.elementalDamageReductions = (state.combat.elementalDamageReductions ?? []).map((ward) => ({ ...ward, expiresAt: now + Math.max(0, remainingMs), durationMs: ward.durationMs ?? 20_000 }))
+}
 export const debugExpireElementalWards = (state: GameState) => { const now = state.combat.arcaneCoreRuntime.elapsedMs; state.combat.elementalDamageReductions = (state.combat.elementalDamageReductions ?? []).map((ward) => ({ ...ward, expiresAt: now })) }

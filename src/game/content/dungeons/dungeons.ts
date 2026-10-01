@@ -61,7 +61,7 @@ export const validateDungeonDefinitions = (content: Record<DungeonId, DungeonDef
     const dungeon = content[dungeonId]
     if (!dungeon) { errors.push(`${dungeonId}: missing dungeon definition`); return }
     if (hasBossEncounter(dungeon)) {
-      if (!Number.isInteger(dungeon.threatRequired) || dungeon.threatRequired <= 0) errors.push(`${dungeon.id}: threatRequired must be a positive integer`)
+      if (!Number.isInteger(dungeon.threatRequired) || (dungeon.threatRequired <= 0 && !dungeon.encounterSequence)) errors.push(`${dungeon.id}: threatRequired must be a positive integer unless the Dungeon uses a fixed sequence`)
       if (!MONSTERS[dungeon.boss]) errors.push(`${dungeon.id}: unknown boss ${dungeon.boss}`)
       if (dungeon.monsterPool.includes(dungeon.boss)) errors.push(`${dungeon.id}: boss must not be in the normal monster pool`)
     } else {

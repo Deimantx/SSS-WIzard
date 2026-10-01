@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
+import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2Act1GlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../../content/monsters/elementalTutorial'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
@@ -9,10 +9,13 @@ import type { TraitId } from './combatTypes'
 import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
 import { COMBAT_LOCATIONS } from '../../content/world-navigation/worldNavigation'
+import { DUNGEONS, isDungeonUnlocked } from '../../content/dungeons/dungeons'
+import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 const elementalScarSources = import.meta.glob('../../content/monsters/act1/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const tutorialSource = import.meta.glob('../../content/monsters/elementalTutorial.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const shatteredSources = import.meta.glob('../../content/monsters/act1/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const convertedAct1Sources = import.meta.glob('../../content/monsters/act1/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const blackSigilSources = import.meta.glob('../../content/monsters/act1/{hallOfUnboundNames,vaultOfTheBlackSigil,blackGate}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 
 describe('Combat V2 authored content audit', () => {
   it('keeps tutorial tiers in their intended WT1 Power bands and above passive regeneration pressure', () => {
@@ -207,6 +210,67 @@ describe('Combat V2 authored content audit', () => {
       expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|statusId:\s*['"]poisoned['"]|status:\s*\{\s*id:\s*['"]regeneration['"]|status:\s*\{\s*id:\s*['"]burning['"]|applyCombatV2Profile/)
       expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
     }
+  })
+
+  it('pins Black Sigil target Power, affinity, damage profile, and normal/boss dungeon behavior', () => {
+    const profiles: readonly [keyof typeof MONSTERS, number, string, readonly string[]][] = [
+      ['name-eater', 9800, 'arcane', ['arcane']], ['bound-echo', 10300, 'air', ['air', 'arcane']], ['hollow-liturgist', 10800, 'water', ['water', 'arcane']], ['whisper-archivist', 11300, 'air', ['air', 'arcane']], ['nameless-cantor', 11900, 'water', ['water', 'arcane']], ['oathless-confessor', 12600, 'water', ['water', 'arcane']], ['unwritten-hierophant', 13300, 'arcane', ['arcane']], ['unspoken-prelate', 15500, 'arcane', ['arcane', 'air', 'water']],
+      ['black-seal-parasite', 10000, 'fire', ['fire', 'arcane']], ['inkbound-specter', 10500, 'arcane', ['arcane']], ['sigil-guardian', 11100, 'earth', ['earth']], ['vault-devourer', 11700, 'earth', ['earth', 'arcane']], ['sealbound-custodian', 12300, 'earth', ['earth', 'arcane']], ['blackscript-colossus', 13000, 'earth', ['earth', 'arcane']], ['voidseal-arbiter', 13800, 'fire', ['fire', 'arcane']], ['sigil-warden', 16000, 'earth', ['earth', 'fire', 'arcane']],
+      ['gatebound-remnant', 14000, 'earth', ['earth']], ['black-rift-stalker', 14500, 'air', ['air', 'arcane']], ['portalbound-acolyte', 15000, 'arcane', ['arcane']], ['sealbreaker-construct', 15500, 'earth', ['earth', 'arcane']], ['black-gatekeeper', 20000, 'arcane', ['arcane', 'fire', 'water', 'earth', 'air']],
+    ]
+    const audit = buildCombatV2ContentAudit(1)
+    const blackSigilRows = audit.filter((row) => row.region === 'black-sigil-reach')
+    expect(blackSigilRows).toHaveLength(profiles.length)
+    for (const [id, targetPower, affinity, damageProfile] of profiles) {
+      const monster = MONSTERS[id]
+      const row = blackSigilRows.find((entry) => entry.id === id)!
+      expect(monster.primaryAffinity, id).toBe(affinity)
+      expect(monster.basicAttackElement, id).toBe(affinity)
+      expect(row.power, id).toBe(targetPower)
+      expect(row.location, id).not.toBe('Unknown')
+      expect(row.hp, id).toBeGreaterThan(0)
+      expect(row.basicDamage, id).toBeGreaterThan(0)
+      expect(row.basicIntervalMs, id).toBeGreaterThan(0)
+      expect(getMonsterDamageProfile(monster).sort(), id).toEqual([...damageProfile].sort())
+      expect(row.physicalComponentCount, id).toBe(0)
+      expect(row.defaultFlatPeriodicDamageCount, id).toBe(0)
+      expect(row.defaultFlatPeriodicHealCount, id).toBe(0)
+      if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Act 1 combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
+    }
+
+    const hall = DUNGEONS['hall-of-unbound-names']
+    const vault = DUNGEONS['vault-of-the-black-sigil']
+    const gate = DUNGEONS['black-gate']
+    expect([hall.threatRequired, vault.threatRequired]).toEqual([40000, 40000])
+    expect(hall.unlock).toEqual({ type: 'boss-kill', bossId: 'meridian-splitter' })
+    expect(vault.unlock).toEqual({ type: 'boss-kill', bossId: 'meridian-splitter' })
+    expect(isDungeonUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 0 } } as never)).toBe(false)
+    expect(isDungeonUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 1 } } as never)).toBe(true)
+    expect(gate).toMatchObject({ threatRequired: 0, encounterSequence: ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'] })
+    expect(COMBAT_LOCATIONS['hall-of-unbound-names']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'vicious' })
+    expect(COMBAT_LOCATIONS['vault-of-the-black-sigil']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'armored' })
+    expect(blackSigilRows.every((row) => row.genericActionDescriptionCount === 0 && row.genericEquippedTraitCount === 0), JSON.stringify(blackSigilRows.filter((row) => row.genericActionDescriptionCount || row.genericEquippedTraitCount))).toBe(true)
+    for (const [file, source] of Object.entries(blackSigilSources)) {
+      expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|resistances:\s*\{[^}]*physical/)
+      expect(source, file).not.toMatch(/statusId:\s*['"](?:burning|poisoned|regeneration)['"]|status:\s*\{\s*id:\s*['"](?:burning|poisoned|regeneration)['"]|\bheal:\s*[\d.]+/)
+    }
+    expect(buildCombatV2Act1GlobalAudit()).toMatchObject({ implicitAffinityCount: 0, physicalComponentCount: 0, genericEquippedTraitCount: 0 })
+  })
+
+  it('keeps Gatekeeper threshold mechanics on a single deterministic phase change', () => {
+    const gatekeeper = MONSTERS['black-gatekeeper']
+    expect(gatekeeper.traitIds).toContain('black-gatekeeper-unbound-phase')
+    const gatekeeperTrait = TRAIT_DEFINITIONS['black-gatekeeper-unbound-phase']
+    if (!gatekeeperTrait) throw new Error('Missing Gatekeeper phase Trait.')
+    const phaseRule = gatekeeperTrait.rules?.[0]
+    if (!phaseRule) throw new Error('Missing Gatekeeper phase rule.')
+    expect(phaseRule).toMatchObject({ oncePerEncounter: true, effects: [{ type: 'apply-status', statusId: 'gate-unbound' }, { type: 'set-action-pattern', patternId: 'unbound' }] })
+    const actionIds = (steps: typeof gatekeeper.actionPatterns[string]['steps']) => steps.flatMap((step) => step.type === 'action' ? [step.actionId] : [])
+    expect(actionIds(gatekeeper.actionPatterns['sealed']!.steps)).toEqual(['gatefire', 'abyssal-tide', 'broken-earth', 'black-gale', 'gate-seal'])
+    expect(actionIds(gatekeeper.actionPatterns['unbound']!.steps)).toEqual(['portal-corruption', 'unspoken-lock', 'rift-convergence', 'rupture-axis', 'gate-seal', 'black-rupture'])
+    expect(gatekeeper.actions['black-rupture']!.effects).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'deal-damage', components: expect.arrayContaining([expect.objectContaining({ damageType: 'arcane', magnitude: expect.objectContaining({ value: 2.5 }) })]) })]))
+    expect(phaseRule.effects.some((effect) => effect.type === 'heal' || effect.type === 'gain-barrier')).toBe(false)
+    expect(STATUS_DEFINITIONS['gate-unbound']).toMatchObject({ defaultDurationMs: null, cleanseable: false, dispellable: false, modifiers: [expect.objectContaining({ key: 'damage-dealt-percent', value: 0.15 })] })
   })
 
   it('produces canonical WT1 through WT5 Power and stat comparisons', () => {

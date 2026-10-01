@@ -1,7 +1,7 @@
-﻿import type { TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
+import type { TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
 
 const ACT1_TRAIT_IDS: TraitId[] = [
-  'drowned-acolyte-devotion', 'reliquary-slime-engulf', 'mist-wraith-fade', 'rune-leech-siphon', 'cinder-hound-flameblood', 'flamebound-rekindle', 'rootscar-ancient-regrowth', 'ash-cultist-fan', 'fire-elemental-emberheart', 'lava-eel-molten-hide', 'thorn-maw-venom', 'rootbound-stalker-ambush', 'briar-sprite-bloom', 'moss-carapace-regrowth', 'remnant-marauder-pressure', 'arcane-binder-binding', 'broken-construct-ward', 'rift-archer-precision', 'graveglass-shade-cursed', 'bone-shardling-brittle', 'silent-mourner-fade', 'crypt-guardian-ward', 'volt-wisp-static', 'static-armor-ward', 'gale-scribe-acceleration', 'charged-seeker-twin-arc', 'starbound-eye-gaze', 'astral-husk-weight', 'orbiting-fragment-ward', 'lenskeeper-disruption', 'meridian-warden-ward', 'fractured-channeler-split', 'arc-surge-vulnerability', 'linebreaker-disruption', 'name-eater-silence', 'bound-echo-repetition', 'hollow-liturgist-curse', 'whisper-archivist-erasure', 'sigil-guardian-ward', 'black-seal-parasite-corruption', 'vault-devourer-regrowth', 'inkbound-specter-curse', 'gatebound-remnant-cleave', 'black-rift-stalker-corruption', 'portalbound-acolyte-mute', 'sealbreaker-construct-ward', 'meridian-splitter-severed-phase',
+  'drowned-acolyte-devotion', 'reliquary-slime-engulf', 'mist-wraith-fade', 'rune-leech-siphon', 'cinder-hound-flameblood', 'flamebound-rekindle', 'rootscar-ancient-regrowth', 'ash-cultist-fan', 'fire-elemental-emberheart', 'lava-eel-molten-hide', 'thorn-maw-venom', 'rootbound-stalker-ambush', 'briar-sprite-bloom', 'moss-carapace-regrowth', 'remnant-marauder-pressure', 'arcane-binder-binding', 'broken-construct-ward', 'rift-archer-precision', 'graveglass-shade-cursed', 'bone-shardling-brittle', 'silent-mourner-fade', 'crypt-guardian-ward', 'volt-wisp-static', 'static-armor-ward', 'gale-scribe-acceleration', 'charged-seeker-twin-arc', 'starbound-eye-gaze', 'astral-husk-weight', 'orbiting-fragment-ward', 'lenskeeper-disruption', 'meridian-warden-ward', 'fractured-channeler-split', 'arc-surge-vulnerability', 'linebreaker-disruption', 'name-eater-silence', 'bound-echo-repetition', 'hollow-liturgist-curse', 'whisper-archivist-erasure', 'sigil-guardian-ward', 'black-seal-parasite-corruption', 'vault-devourer-regrowth', 'inkbound-specter-curse', 'gatebound-remnant-cleave', 'black-rift-stalker-corruption', 'portalbound-acolyte-mute', 'sealbreaker-construct-ward', 'meridian-splitter-severed-phase', 'black-gatekeeper-unbound-phase',
 ]
 
 const genericAct1Traits: Record<string, TraitDefinition> = Object.fromEntries(ACT1_TRAIT_IDS.map((id) => [id, {
@@ -33,5 +33,9 @@ export const ACT1_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
   'meridian-splitter-severed-phase': {
     id: 'meridian-splitter-severed-phase', name: 'Severed Meridian', description: 'At 50% Health, gains Meridian Overload and changes to the Severed pattern once.',
     rules: [{ id: 'meridian-splitter-severed-phase-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [{ type: 'apply-status', target: 'self', statusId: 'meridian-overload' }, { type: 'set-action-pattern', target: 'self', patternId: 'severed' }], oncePerEncounter: true }],
+  },
+  'black-gatekeeper-unbound-phase': {
+    id: 'black-gatekeeper-unbound-phase', name: 'Gate Unbound', description: 'At 50% Health, gains Gate Unbound and changes to the Unbound Gate pattern once.',
+    rules: [{ id: 'black-gatekeeper-unbound-phase-threshold', event: 'on-hp-threshold', condition: { type: 'self-hp-below-percent', percent: 50 }, effects: [{ type: 'apply-status', target: 'self', statusId: 'gate-unbound' }, { type: 'set-action-pattern', target: 'self', patternId: 'unbound' }], oncePerEncounter: true }],
   },
 }

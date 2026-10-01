@@ -572,6 +572,18 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
     cleanseable: false,
     dispellable: false,
   },
+  "gate-unbound": {
+    id: "gate-unbound",
+    name: "Gate Unbound",
+    description: "The Black Gatekeeper deals 15% more damage for the rest of the encounter.",
+    classification: "buff",
+    tags: ["buff", "arcane"],
+    defaultDurationMs: null,
+    stacking: { mode: "refresh" },
+    modifiers: [modifier("damage-dealt-percent", 0.15)],
+    cleanseable: false,
+    dispellable: false,
+  },
   "final-incantation-empowerment": {
     id: "final-incantation-empowerment",
     name: "Final Incantation Empowerment",

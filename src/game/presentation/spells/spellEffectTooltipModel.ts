@@ -85,6 +85,7 @@ export const getSpellEffectCategory = (effect: CombatEffect) => {
   if (effect.type === 'heal') return { category: 'HEAL', categoryKey: 'heal' as const }
   if (effect.type === 'gain-barrier') return { category: 'BARRIER', categoryKey: 'barrier' as const }
   if (effect.type === 'apply-status') return categoryForStatus(effect.statusId, effect)
+  if (effect.type === 'apply-elemental-ward') return { category: 'BUFF', categoryKey: 'buff' as const }
   return { category: effect.type === 'restore-resource' ? 'RESTORE' : effect.type === 'drain-resource' ? 'DRAIN' : 'EFFECT', categoryKey: 'effect' as const }
 }
 
@@ -239,6 +240,14 @@ export function buildSpellEffectTooltipModel(state: SpellPresentationState, spel
     } else if (durationPreview.base !== 0) rows.push({ label: 'Duration', value: formatTime(durationPreview.base), semantic: 'time' })
     appendTargetAndSource(rows, effect, spell.name)
     return { school: spell.school, ...category, title: status?.name ?? capitalize(effect.statusId), description: status?.description ?? 'Applies a combat status.', rows }
+  }
+
+  if (effect.type === 'apply-elemental-ward') {
+    rows.push({ label: 'Element', value: capitalize(effect.element), semantic: 'school' })
+    rows.push({ label: `Incoming ${capitalize(effect.element)} Damage`, value: `-${formatValue(effect.reduction * 100)}%`, semantic: 'positive' })
+    rows.push({ label: 'Duration', value: formatTime(effect.durationMs), semantic: 'time' })
+    appendTargetAndSource(rows, effect, spell.name)
+    return { school: spell.school, ...category, title: `${capitalize(effect.element)} Ward`, description: `Reduces incoming ${capitalize(effect.element)} damage while active.`, rows }
   }
 
   if (effect.type === 'restore-resource' || effect.type === 'drain-resource') {

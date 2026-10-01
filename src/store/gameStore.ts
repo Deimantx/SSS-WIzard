@@ -21,7 +21,7 @@ import {
   isCombatLocationUnlocked,
   type CombatLocationId,
 } from "../game/content/world-navigation";
-import { clearElementalWards, debugApplyElementalWard, debugExpireElementalWards } from "../game/systems/combat/elementalWardRuntime";
+import { clearElementalWards, debugApplyElementalWard, debugExpireElementalWards, debugSetElementalWardsToRemaining } from "../game/systems/combat/elementalWardRuntime";
 import { getTutorialCounterAffinity } from "../game/content/elements/elements";
 import { MONSTERS } from "../game/content/monsters";
 import { ITEMS } from "../game/content/items/items";
@@ -750,6 +750,9 @@ export interface GameActions {
   setEnemyHealthPercent: (percent: number) => void;
   damagePlayerForDebug: (amount: number) => void;
   debugApplyElementalWard: () => void;
+  debugApplyElementalWardForElement: (element: 'fire' | 'water' | 'earth' | 'air') => void;
+  debugApplyAllElementalWards: () => void;
+  debugSetElementalWardRemaining: (remainingMs: number) => void;
   debugExpireElementalWards: () => void;
   debugClearElementalWards: () => void;
   applyPlayerStatus: (statusId: StatusId) => void;
@@ -2481,6 +2484,9 @@ export const useGameStore = create<GameStore>()(
         return state;
       }),
     debugApplyElementalWard: () => set((state) => { const enemy = state.combat.enemyId ? MONSTERS[state.combat.enemyId] : null; const element = enemy?.basicAttackElement ?? enemy?.primaryAffinity ?? 'fire'; debugApplyElementalWard(state, element); return state; }),
+    debugApplyElementalWardForElement: (element) => set((state) => { debugApplyElementalWard(state, element); return state; }),
+    debugApplyAllElementalWards: () => set((state) => { (['fire', 'water', 'earth', 'air'] as const).forEach((element) => debugApplyElementalWard(state, element)); return state; }),
+    debugSetElementalWardRemaining: (remainingMs) => set((state) => { debugSetElementalWardsToRemaining(state, remainingMs); return state; }),
     debugExpireElementalWards: () => set((state) => { debugExpireElementalWards(state); return state; }),
     debugClearElementalWards: () => set((state) => { clearElementalWards(state); return state; }),
     applyPlayerStatus: (statusId) =>

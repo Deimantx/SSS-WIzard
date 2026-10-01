@@ -21,7 +21,7 @@ export type ChronicleObjectiveId =
   | 'mg1-strengthen-artifact' | 'mg2-expand-spellbook' | 'mg3-four-spell-arsenal'
   | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle' | 't5-read-a-sigil'
   | 'g1-join-verdant-circle' | 'g2-first-guild-contract' | 'g3-guild-apprentice' | 'g4-hunters-calling' | 'g5-first-hunt-contract' | 'g6-arcane-service' | 'g7-professional-standing' | 'g8-guild-rank-two' | 'g9-restore-guild-archive' | 'g10-first-registry-set' | 'g11-invest-in-the-guild' | 'g12-enter-gloamridge' | 'g13-accept-a-hunt' | 'g14-hunter-training'
-  | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m3a-stabilize-elemental-scar' | 'sf-m3b-enter-crossroads' | 'sf-m3c-crossroads-keeper' | 'sf-m3d-stabilize-shattered-meridian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m6-world-tier-two' | 'sf-c1-world-tier-three' | 'sf-c2-world-tier-four'
+  | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m3a-stabilize-elemental-scar' | 'sf-m3b-enter-crossroads' | 'sf-m3c-crossroads-keeper' | 'sf-m3d-stabilize-shattered-meridian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m5a-break-black-sigil-reach' | 'sf-m5b-enter-black-gate' | 'sf-m5c-black-gatekeeper' | 'sf-m6-world-tier-two' | 'sf-c1-world-tier-three' | 'sf-c2-world-tier-four' | 'sf-c3-world-tier-five'
   | 'sf-bind-guardian' | 'sf-fight-together' | 'sf-socket-first-crystal' | 'sf-step-into-harder-world'
   | `sigil-${string}`
 export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill' | 'first-wt3-kill' | 'first-wt4-kill' | 'first-wt5-kill' | 'first-sigil-earned' | 'first-elemental-weakness-hit' | 'elemental-tutorial-zones-opened' | 'first-elemental-ward-equipped' | 'first-elemental-ward-mitigation' | 'first-elemental-tutorial-boss-defeated' | 'starting-counter-zone-entered'
@@ -784,6 +784,7 @@ export interface ElementalDamageReduction {
   reduction: number
   sourceId: string
   expiresAt?: number
+  durationMs?: number
 }
 export interface GuildCommissionChainState { id: string; stageIndex: number; stageProgress: number }
 export interface ArcaneGuildProgress {

@@ -33,7 +33,7 @@ export type TraitId =
   | 'name-eater-silence' | 'bound-echo-repetition' | 'hollow-liturgist-curse' | 'whisper-archivist-erasure'
   | 'sigil-guardian-ward' | 'black-seal-parasite-corruption' | 'vault-devourer-regrowth' | 'inkbound-specter-curse'
   | 'gatebound-remnant-cleave' | 'black-rift-stalker-corruption' | 'portalbound-acolyte-mute' | 'sealbreaker-construct-ward'
-  | 'tutorial-living-stone' | 'tutorial-restorative-tide' | 'meridian-splitter-severed-phase'
+  | 'tutorial-living-stone' | 'tutorial-restorative-tide' | 'meridian-splitter-severed-phase' | 'black-gatekeeper-unbound-phase'
   | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate' | 'flamebound-rekindle' | 'rootscar-ancient-regrowth'
 
 export type CombatTag =
@@ -71,6 +71,8 @@ export interface CombatDamageComponentEvent {
   targetAffinity?: import('../../content/elements/elements').ElementId | null
   affinityMultiplier?: number
   damageAfterAffinity?: number
+  beforeWard?: number
+  afterWard?: number
   wardMultiplier?: number
   wardPrevented?: number
   mitigationMultiplier?: number
@@ -337,6 +339,7 @@ export type StatusId =
   | 'meridian-overload'
   | 'corrupted-fury'
   | 'unbound-power'
+  | 'gate-unbound'
   | 'final-incantation-empowerment'
   | 'root-rot'
 

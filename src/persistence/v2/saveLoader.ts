@@ -13,6 +13,15 @@ const FIRST_FRONTIER_OPENING_IDS = ['m1-choose-school', 'm1a-enter-elemental-cou
 
 export const reconcileLoadedProfileState = (state: GameState, sourceContentVersion?: number): GameState => {
   if (sourceContentVersion !== undefined && sourceContentVersion >= SAVE_VERSION) return state
+  const wardNow = Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs || 0)
+  const wards = new Map<string, GameState['combat']['elementalDamageReductions'][number]>()
+  for (const ward of state.combat.elementalDamageReductions ?? []) {
+    const canonical = ward.sourceId === `${ward.element}-ward`
+    const durationMs = ward.durationMs ?? (canonical ? 20_000 : undefined)
+    const expiresAt = ward.expiresAt === undefined ? undefined : sourceContentVersion !== undefined && sourceContentVersion < 60 && canonical ? Math.min(ward.expiresAt, wardNow + 20_000) : ward.expiresAt
+    wards.set(`${ward.element}:${ward.sourceId}`, { ...ward, ...(expiresAt === undefined ? {} : { expiresAt }), ...(durationMs === undefined ? {} : { durationMs: canonical && sourceContentVersion !== undefined && sourceContentVersion < 60 ? 20_000 : durationMs }) })
+  }
+  state.combat.elementalDamageReductions = state.combat.active ? [...wards.values()].slice(-32) : []
   const progress = state.progress
   const chronicle = progress.chronicle
   const hasAnyBoss = Object.values(progress.bossKillsByBoss).some((kills) => kills > 0)
@@ -24,6 +33,10 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   const allRegionalBosses = sideBosses.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
   const crossroadsKeeper = (progress.bossKillsByBoss['crossroads-keeper'] ?? 0) > 0
   const meridianSplitter = (progress.bossKillsByBoss['meridian-splitter'] ?? 0) > 0
+  const unspokenPrelate = (progress.bossKillsByBoss['unspoken-prelate'] ?? 0) > 0
+  const sigilWarden = (progress.bossKillsByBoss['sigil-warden'] ?? 0) > 0
+  const blackGatekeeper = (progress.bossKillsByBoss['black-gatekeeper'] ?? 0) > 0
+  const enteredBlackGate = state.combat.dungeonId === 'black-gate' || state.ui.lastEnteredCombatDungeonId === 'black-gate'
   const enteredBrokenMeridian = state.combat.active && state.combat.dungeonId === 'broken-meridian'
   const shatteredBossIds = ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] as const
   const allShatteredBosses = shatteredBossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
@@ -47,6 +60,9 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   if (allShatteredBosses || meridianSplitter || enteredBrokenMeridian) completedHistoricalBosses.push('sf-m3d-stabilize-shattered-meridian')
   if (meridianSplitter) completedHistoricalBosses.push('sf-m4-reach-meridian', 'sf-m5-meridian-splitter')
   else if (enteredBrokenMeridian) completedHistoricalBosses.push('sf-m4-reach-meridian')
+  if (unspokenPrelate && sigilWarden) completedHistoricalBosses.push('sf-m5a-break-black-sigil-reach')
+  if (blackGatekeeper) completedHistoricalBosses.push('sf-m5a-break-black-sigil-reach', 'sf-m5b-enter-black-gate', 'sf-m5c-black-gatekeeper')
+  else if (enteredBlackGate && unspokenPrelate && sigilWarden) completedHistoricalBosses.push('sf-m5b-enter-black-gate')
   const completedIds = new Set(chronicle.completedObjectiveIds)
   if (completedIds.has('sf-step-into-harder-world')) completedIds.add('sf-m6-world-tier-two')
   chronicle.completedObjectiveIds = [...completedIds]
@@ -85,7 +101,7 @@ const sanitizeWards = (value: unknown) => Array.isArray(value) ? value.filter((w
     && typeof candidate.sourceId === 'string' && candidate.sourceId.trim().length > 0
     && typeof candidate.reduction === 'number' && Number.isFinite(candidate.reduction) && candidate.reduction > 0 && candidate.reduction < 1
     && (candidate.expiresAt === undefined || typeof candidate.expiresAt === 'number' && Number.isFinite(candidate.expiresAt) && candidate.expiresAt >= 0)
-}).slice(0, 32) : []
+}).slice(0, 32).map((ward) => ({ ...ward, ...(typeof ward.durationMs === 'number' ? { durationMs: ward.durationMs } : {}) })) : []
 
 export const loadPersistedGameStateV1 = (document: PersistedGameStateV1): GameState => {
   const state = createInitialState()

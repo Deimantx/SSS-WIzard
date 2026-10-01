@@ -238,7 +238,7 @@ describe('profile storage and session lifecycle', () => {
     const result = saveProfileGame('slot-1', invalidState)
 
     expect(result.ok).toBe(false)
-    expect(result.error).toContain('V2 save schema')
+    expect(result.error).toContain('V3 save schema')
     expect(localStorage.getItem(profileSaveKey('slot-1'))).toBe(primaryBefore)
     expect(localStorage.getItem(profileSaveBackupKey('slot-1'))).toBe(backupBefore)
   })

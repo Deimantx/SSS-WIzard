@@ -29,7 +29,7 @@ const EQUIPMENT_IDS = ITEM_IDS.filter((id) => ITEMS[id].kind === 'equipment')
 const MATERIAL_IDS = ITEM_IDS.filter((id) => ITEMS[id].kind === 'material')
 const DUNGEON_MATERIAL_IDS: readonly ItemId[] = ['artifact-essence']
 
-const sourceMatchesDungeon = (itemId: ItemId, locationId: CombatLocationId) => getItemSourceInfo(itemId).relations.some((relation) => (relation.kind === 'dungeon' && relation.id === locationId) || (relation.kind === 'monster' && getMonsterCombatLocation(relation.id as MonsterId)?.locationId === locationId))
+const sourceMatchesDungeon = (itemId: ItemId, locationId: CombatLocationId) => getItemSourceInfo(itemId).relations.some((relation) => relation.kind === 'monster' && getMonsterCombatLocation(relation.id as MonsterId)?.locationId === locationId)
 const matchesSource = (itemId: ItemId, filter: InventorySourceFilter) => {
   if (filter === 'all') return true
   if (filter === 'transmutation') return getItemSourceInfo(itemId).relations.some((relation) => relation.kind === 'recipe' && isTransmutationRecipeId(relation.id))

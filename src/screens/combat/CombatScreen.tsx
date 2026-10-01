@@ -14,7 +14,7 @@ import { useCombatDefeatStore } from '../../game/ui/combatDefeatStore'
 import { CombatAmbientBackdrop } from './CombatAmbientBackdrop'
 import { setNavigationIntent, useNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { CombatWorldNavigation } from './navigation/CombatWorldNavigation'
-import { COMBAT_LOCATIONS } from '../../game/content/combat-locations'
+import { COMBAT_LOCATIONS, isCombatLocationId } from '../../game/content/combat-locations'
 import { getInitialCombatLocationId } from '../../game/presentation/combat/combatWorldNavigationReadModel'
 import type { CombatLocationViewModel } from '../../game/presentation/combat/combatWorldNavigationTypes'
 
@@ -55,9 +55,9 @@ export function CombatScreenV2() {
   }, [combat.active, combat.enemyId, enemyContextMode])
   const requestLeave = useCallback(() => { dismissGameTooltips(); useGameStore.getState().leaveDungeon() }, [])
   useEffect(() => { if (defeatSnapshot) setEnemyContextMode(null) }, [defeatSnapshot])
-  const selectLocation = useCallback((locationId: string) => { const resolvedLocationId = COMBAT_LOCATIONS[locationId]?.id; if (resolvedLocationId) setSelectedCombatLocationId(resolvedLocationId) }, [])
-  const enterLocation = useCallback((locationId: string) => { const resolvedLocationId = COMBAT_LOCATIONS[locationId]?.id; if (!resolvedLocationId) return; setSelectedCombatLocationId(resolvedLocationId); dismissGameTooltips(); useGameStore.getState().enterDungeon(resolvedLocationId) }, [])
-  const huntTarget = useCallback((locationId: string, targetEnemyId: MonsterId) => { const resolvedLocationId = COMBAT_LOCATIONS[locationId]?.id; if (!resolvedLocationId) return false; setSelectedCombatLocationId(resolvedLocationId); dismissGameTooltips(); return useGameStore.getState().huntCombatTarget(resolvedLocationId, targetEnemyId) }, [])
+  const selectLocation = useCallback((locationId: string) => { if (isCombatLocationId(locationId)) setSelectedCombatLocationId(locationId) }, [])
+  const enterLocation = useCallback((locationId: string) => { if (!isCombatLocationId(locationId)) return; setSelectedCombatLocationId(locationId); dismissGameTooltips(); useGameStore.getState().enterDungeon(locationId) }, [])
+  const huntTarget = useCallback((locationId: string, targetEnemyId: MonsterId) => { if (!isCombatLocationId(locationId)) return false; setSelectedCombatLocationId(locationId); dismissGameTooltips(); return useGameStore.getState().huntCombatTarget(locationId, targetEnemyId) }, [])
   const openLocationBestiary = useCallback((location: CombatLocationViewModel, monsterId: MonsterId | null = null) => { if (!location.id) return; setNavigationIntent({ combatLocationId: location.id, combatMonsterId: monsterId }); useGameStore.getState().setScreen('hunters-order') }, [])
   const returnToCombat = useCallback(() => { const stage = document.querySelector('.combat-stage-panel'); if (stage instanceof HTMLElement && typeof stage.scrollIntoView === 'function') stage.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [])
   const bossActive = Boolean(combat.active && combat.inBossFight)

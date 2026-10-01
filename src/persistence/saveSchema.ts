@@ -1,7 +1,7 @@
-/** Old global key is intentionally not read by Save System V2. */
+/** Old global key is intentionally not read by current Save System. */
 export const LEGACY_SAVE_KEY = 'sss-wizard-save-v1'
 export const CURRENT_SAVE_VERSION = 62
-export const V2_SAVE_SCHEMA_VERSION = 3
+export const CURRENT_PERSISTED_SCHEMA_VERSION = 3
 
 export class SaveMigrationError extends Error {
   constructor(message: string) { super(message); this.name = 'SaveMigrationError' }

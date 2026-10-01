@@ -3,18 +3,18 @@ import { createInitialState, SAVE_VERSION } from '../../store/initialState'
 import { loadProfileGame, saveProfileGame, serializeGameState } from '../profileSaveManager'
 import { profileSaveBackupKey, profileSaveKey } from '../../profiles/profileKeys'
 import { setDeveloperSandboxSavePaused } from '../developerSandboxSaveGuard'
-import { validateV2RoundTrip } from './saveRoundTrip'
+import { validateV3RoundTrip } from './saveRoundTrip'
 import { validateStoredSave } from '../saveIntegrity'
-import { loadPersistedGameStateV1 } from './saveLoader'
-import { parsePersistedGameStateV1, validatePersistedGameStateV1 } from './saveSchema'
+import { loadPersistedGameStateV3 } from './saveLoader'
+import { parsePersistedGameStateV3, validatePersistedGameStateV3 } from './saveSchema'
 
-describe('Save System V2', () => {
+describe('current Save System', () => {
   beforeEach(() => {
     localStorage.clear()
     setDeveloperSandboxSavePaused(false)
   })
 
-  it('round-trips a new game without saving runtime UI, developer, or notification state', () => {
+  it('round-trips a new game without saving transient UI, developer, or notification state', () => {
     const state = createInitialState()
     state.debug.playerStats.maxHealthFlat = 500
     state.notifications = [{ id: 'test', text: 'runtime-only', tone: 'info' }]
@@ -29,7 +29,7 @@ describe('Save System V2', () => {
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
     expect(document).not.toHaveProperty('recentAcquisitions')
-    expect(validateV2RoundTrip(JSON.stringify(document), state).ok).toBe(true)
+    expect(validateV3RoundTrip(JSON.stringify(document), state).ok).toBe(true)
 
     const result = saveProfileGame('slot-1', state, { savedAt: 1234 })
     expect(result.ok).toBe(true)
@@ -62,12 +62,26 @@ describe('Save System V2', () => {
     delete schema2.progress.autoHuntBossByLocation
     schema2.progress.huntersOrder.activeContract.targetSpec.dungeonId = schema2.progress.huntersOrder.activeContract.targetSpec.locationId
     delete schema2.progress.huntersOrder.activeContract.targetSpec.locationId
+    schema2.ui = { lastEnteredCombatDungeonId: 'black-gate', screen: 'combat' }
 
-    const parsed = parsePersistedGameStateV1(JSON.stringify(schema2))
-    const loaded = loadPersistedGameStateV1(parsed)
+    const parsed = parsePersistedGameStateV3(JSON.stringify(schema2))
+    const loaded = loadPersistedGameStateV3(parsed)
     expect(loaded.combat).toMatchObject({ active: true, locationId: 'black-gate', sequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 321 })
     expect(loaded.progress.autoHuntBossByLocation['black-gate']).toBe(true)
     expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'region', locationId: 'hunters-ground' })
+    expect(loaded.ui.lastEnteredCombatLocationId).toBe('black-gate')
+  })
+
+  it('persists only the last-entered Combat Location from UI state', () => {
+    const state = createInitialState()
+    state.ui.lastEnteredCombatLocationId = 'broken-meridian'
+    state.ui.screen = 'combat'
+
+    const document = serializeGameState(state, 1236)
+    expect(document.ui).toEqual({ lastEnteredCombatLocationId: 'broken-meridian' })
+    const loaded = loadPersistedGameStateV3(parsePersistedGameStateV3(JSON.stringify(document)))
+    expect(loaded.ui.lastEnteredCombatLocationId).toBe('broken-meridian')
+    expect(loaded.ui.screen).toBe('home')
   })
 
   it('preserves inventory, equipment, world progress, resource values, and contract RNG exactly', () => {
@@ -89,7 +103,7 @@ describe('Save System V2', () => {
     state.combat.playerBarrier = 7
 
     const encoded = JSON.stringify(serializeGameState(state, 500))
-    const roundTrip = validateV2RoundTrip(encoded, state)
+    const roundTrip = validateV3RoundTrip(encoded, state)
     expect(roundTrip.ok).toBe(true)
     expect(roundTrip.state?.progress.huntersOrder).toEqual(state.progress.huntersOrder)
     expect(roundTrip.state?.progress.arcaneGuild).toEqual(state.progress.arcaneGuild)
@@ -117,7 +131,7 @@ describe('Save System V2', () => {
     state.combat.log = ['runtime-only event']
 
     const document = serializeGameState(state, 88)
-    const roundTrip = validateV2RoundTrip(JSON.stringify(document), state)
+    const roundTrip = validateV3RoundTrip(JSON.stringify(document), state)
     const expected = structuredClone(state.combat)
     delete (expected as Partial<typeof expected>).log
     expect(roundTrip.ok).toBe(true)
@@ -131,13 +145,13 @@ describe('Save System V2', () => {
     active.combat.locationId = 'emberfall-basin'
     active.combat.elementalDamageReductions = [{ element: 'fire', reduction: 0.15, sourceId: 'fire-ward', expiresAt: 21_000, durationMs: 20_000 }]
     const activeDocument = serializeGameState(active, 456)
-    expect(validatePersistedGameStateV1(activeDocument)).toBe(true)
-    expect(validateV2RoundTrip(JSON.stringify(activeDocument), active).state?.combat.elementalDamageReductions).toEqual(active.combat.elementalDamageReductions)
+    expect(validatePersistedGameStateV3(activeDocument)).toBe(true)
+    expect(validateV3RoundTrip(JSON.stringify(activeDocument), active).state?.combat.elementalDamageReductions).toEqual(active.combat.elementalDamageReductions)
 
     const legacySchemaV2 = structuredClone(activeDocument) as unknown as { combat: Record<string, unknown> }
     delete legacySchemaV2.combat.elementalDamageReductions
-    expect(validatePersistedGameStateV1(legacySchemaV2)).toBe(true)
-    expect(loadPersistedGameStateV1(legacySchemaV2 as unknown as typeof activeDocument).combat.elementalDamageReductions).toEqual([])
+    expect(validatePersistedGameStateV3(legacySchemaV2)).toBe(true)
+    expect(loadPersistedGameStateV3(legacySchemaV2 as unknown as typeof activeDocument).combat.elementalDamageReductions).toEqual([])
 
     const inactive = createInitialState()
     inactive.combat.elementalDamageReductions = active.combat.elementalDamageReductions
@@ -194,13 +208,13 @@ describe('Save System V2', () => {
     for (const ward of badEntries) {
       const document = structuredClone(valid) as unknown as { combat: Record<string, unknown> }
       document.combat.elementalDamageReductions = [ward]
-      expect(validatePersistedGameStateV1(document)).toBe(false)
-      expect(loadPersistedGameStateV1(document as unknown as typeof valid).combat.elementalDamageReductions).toEqual([])
+      expect(validatePersistedGameStateV3(document)).toBe(false)
+      expect(loadPersistedGameStateV3(document as unknown as typeof valid).combat.elementalDamageReductions).toEqual([])
     }
     const tooMany = structuredClone(valid) as unknown as { combat: Record<string, unknown> }
     tooMany.combat.elementalDamageReductions = Array.from({ length: 33 }, (_, index) => ({ element: 'fire', reduction: 0.15, sourceId: `ward-${index}` }))
-    expect(validatePersistedGameStateV1(tooMany)).toBe(false)
-    const sanitizeMany = loadPersistedGameStateV1(tooMany as unknown as typeof valid)
+    expect(validatePersistedGameStateV3(tooMany)).toBe(false)
+    const sanitizeMany = loadPersistedGameStateV3(tooMany as unknown as typeof valid)
     expect(sanitizeMany.combat.elementalDamageReductions).toHaveLength(32)
   })
 
@@ -218,7 +232,7 @@ describe('Save System V2', () => {
     expect(loaded.progress.chronicle.completedObjectiveIds).toContain('m3-heart-of-the-woods')
     expect(loaded.progress.chronicle.completedObjectiveIds).toContain('m4-break-the-den')
     expect(loaded.progress.bossKillsByBoss['corrupted-greatbear']).toBe(1)
-    expect(loadPersistedGameStateV1(serializeGameState(loaded)).progress.chronicle.completedObjectiveIds).toEqual(loaded.progress.chronicle.completedObjectiveIds)
+    expect(loadPersistedGameStateV3(serializeGameState(loaded)).progress.chronicle.completedObjectiveIds).toEqual(loaded.progress.chronicle.completedObjectiveIds)
   })
 
   it('migrates v57 Elemental Scar history through the canonical V2 profile loader', () => {
@@ -413,7 +427,7 @@ describe('Save System V2', () => {
     document.player.health = 1_000_000
     document.player.mana = 1_000_000
     document.combat.playerBarrier = -50
-    const loaded = loadPersistedGameStateV1(parsePersistedGameStateV1(JSON.stringify(document)))
+    const loaded = loadPersistedGameStateV3(parsePersistedGameStateV3(JSON.stringify(document)))
 
     expect(loaded.player.health).toBe(loaded.player.maxHealth)
     expect(loaded.player.mana).toBe(loaded.player.maxMana)
@@ -457,7 +471,7 @@ describe('Save System V2', () => {
     for (const [label, corrupt] of malformed) {
       const document = structuredClone(baseline)
       corrupt(document)
-      expect(validatePersistedGameStateV1(document), label).toBe(false)
+      expect(validatePersistedGameStateV3(document), label).toBe(false)
     }
   })
 })

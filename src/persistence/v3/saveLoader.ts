@@ -1,7 +1,7 @@
 import type { GameState } from '../../game/types'
 import { createInitialState } from '../../store/initialState'
 import { recalculateDerivedStats } from '../../game/engine'
-import type { PersistedGameStateV1 } from './persistedGameState'
+import type { PersistedGameStateV3 } from './persistedGameState'
 import { SAVE_VERSION } from '../../store/initialState'
 import { CHRONICLE_OBJECTIVES } from '../../game/content/chronicles/chronicles'
 import { reconcileChronicleProgress } from '../../game/systems/chronicles/chronicleRuntime'
@@ -107,7 +107,7 @@ const sanitizeWards = (value: unknown) => Array.isArray(value) ? value.filter((w
     && (candidate.expiresAt === undefined || typeof candidate.expiresAt === 'number' && Number.isFinite(candidate.expiresAt) && candidate.expiresAt >= 0)
 }).slice(0, 32).map((ward) => ({ ...ward, ...(typeof ward.durationMs === 'number' ? { durationMs: ward.durationMs } : {}) })) : []
 
-export const loadPersistedGameStateV1 = (document: PersistedGameStateV1): GameState => {
+export const loadPersistedGameStateV3 = (document: PersistedGameStateV3): GameState => {
   const state = createInitialState()
   state.player = { ...state.player, ...structuredClone(document.player) }
   state.schools = structuredClone(document.schools)
@@ -132,7 +132,7 @@ export const loadPersistedGameStateV1 = (document: PersistedGameStateV1): GameSt
   state.spellPresets = structuredClone(document.spellPresets)
   state.offlineBankMs = document.offlineBankMs
   state.lastSavedAt = document.savedAt
-  state.ui = { screen: 'home', legacyArchiveRoute: null }
+  state.ui = { screen: 'home', legacyArchiveRoute: null, ...(document.ui?.lastEnteredCombatLocationId ? { lastEnteredCombatLocationId: document.ui.lastEnteredCombatLocationId } : {}) }
   state.notifications = []
   reconcileLoadedProfileState(state, document.contentVersion)
   recalculateDerivedStats(state)

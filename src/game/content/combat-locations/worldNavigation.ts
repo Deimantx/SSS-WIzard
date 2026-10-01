@@ -297,7 +297,7 @@ export const COMBAT_LOCATIONS: Record<CombatLocationId, CombatLocationDefinition
       primaryElement: isElementalStarterLocation(id) && elementsPresent.length === 1 ? elementsPresent[0] : undefined,
     }]
   }),
-) as Record<CombatLocationId, CombatLocationDefinition>
+) as unknown as Record<CombatLocationId, CombatLocationDefinition>
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined) => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null
 

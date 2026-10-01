@@ -3,6 +3,7 @@ import type { ResonanceState } from './content/resonance/resonance'
 import type { ElementId as CombatElementId } from './content/elements/elements'
 export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
 import type { WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
+import type { CombatLocationId } from './content/combat-locations/combatLocationIds'
 import type { DamageType, ModifierKey } from './systems/combat/combatTypes'
 export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
 
@@ -147,7 +148,7 @@ export interface CrystalState {
 
 export type GuardianId = 'fire-guardian' | 'water-guardian' | 'earth-guardian' | 'air-guardian'
 export type BestiaryCategory = 'monster' | 'boss'
-export type CombatLocationId = string
+export type { CombatLocationId }
 export type EquipmentItemSlot = 'weapon' | 'armor' | 'helmet'
 export type EquipmentPosition = 'weapon' | 'armor' | 'head'
 /** Permanent Artifact Equipment identifiers. */

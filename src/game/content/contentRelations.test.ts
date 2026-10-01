@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { getItemRecipeUses, getItemSourceInfo, getMonsterCombatLocation } from './contentRelations'
 
 describe('content relations', () => {
-  it('keeps Artifact recipe origin separate from dungeon loot origin', () => {
+  it('uses Artificing recipes as the Artifact Equipment origin', () => {
     const info = getItemSourceInfo('ember-staff')
     expect(info.relations).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'recipe', id: 'ember-staff' })]))
-    expect(info.relations.some((relation) => relation.kind === 'dungeon' || relation.kind === 'monster')).toBe(false)
+    expect(info.relations.some((relation) => relation.kind === 'monster')).toBe(false)
   })
 
   it('keeps universal combat currencies out of authored monster source relations', () => {

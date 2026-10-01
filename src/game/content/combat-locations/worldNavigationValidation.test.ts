@@ -8,6 +8,7 @@ import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../monsters/elementalTutorial'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { validateCombatWorldNavigation, type CombatWorldNavigationContent } from './worldNavigationValidation'
 import { getElementMultiplier } from '../elements/elements'
+import { COMBAT_LOCATION_IDS, COMBAT_REGION_IDS, isCombatLocationId } from './combatLocationIds'
 
 const validContent = (): CombatWorldNavigationContent => ({
   regions: { ...COMBAT_REGIONS },
@@ -15,6 +16,14 @@ const validContent = (): CombatWorldNavigationContent => ({
 })
 
 describe('combat world navigation content', () => {
+  it('keeps the closed location and region ID sets aligned with their registries', () => {
+    expect(Object.keys(COMBAT_LOCATIONS).sort()).toEqual([...COMBAT_LOCATION_IDS].sort())
+    expect(Object.keys(COMBAT_REGIONS).sort()).toEqual([...COMBAT_REGION_IDS].sort())
+    expect(COMBAT_LOCATION_IDS.every((locationId) => COMBAT_REGIONS[COMBAT_LOCATIONS[locationId].regionId].locationIds.includes(locationId))).toBe(true)
+    expect(isCombatLocationId('broken-meridian')).toBe(true)
+    expect(isCombatLocationId('not-a-location')).toBe(false)
+  })
+
   it('authors four pure elemental tutorial zones with five correctly powered encounters each', () => {
     const expected = { 'stonewake-hollow': 'earth', 'galecrest-heights': 'air', 'tideglass-caverns': 'water', 'emberfall-basin': 'fire' } as const
     for (const [locationId, element] of Object.entries(expected) as Array<[keyof typeof expected, (typeof expected)[keyof typeof expected]]>) {
@@ -172,8 +181,8 @@ describe('combat world navigation content', () => {
 
   it('reports broken parent links, duplicate mappings, and invalid orders', () => {
     const content = validContent()
-    content.regions['orphan'] = { id: 'orphan', name: 'Orphan', locationIds: ['missing-location'], order: 1 }
-    content.locations['duplicate-location'] = { ...content.locations['whispering-woods'], id: 'duplicate-location', regionId: 'first-frontier', order: 1 }
+    content.regions['orphan'] = { id: 'orphan', name: 'Orphan', locationIds: ['missing-location'], order: 1 } as never
+    content.locations['duplicate-location'] = { ...content.locations['whispering-woods'], id: 'duplicate-location', regionId: 'first-frontier', order: 1 } as never
 
     const errors = validateCombatWorldNavigation(content)
     expect(errors).toEqual(expect.arrayContaining([

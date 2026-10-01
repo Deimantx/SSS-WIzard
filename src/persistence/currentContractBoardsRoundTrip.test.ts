@@ -6,9 +6,9 @@ import { createInitialState } from '../store/initialState'
 import type { GameState } from '../game/types'
 import { serializeGameState } from './profileSaveManager'
 import { getAuthoritativeSaveSnapshot, validateSerializedSave } from './saveIntegrity'
-import { loadPersistedGameStateV1 } from './v2/saveLoader'
-import { parsePersistedGameStateV1 } from './v2/saveSchema'
-import { persistedGameStatesEqual } from './v2/saveRoundTrip'
+import { loadPersistedGameStateV3 } from './v3/saveLoader'
+import { parsePersistedGameStateV3 } from './v3/saveSchema'
+import { persistedGameStatesEqual } from './v3/saveRoundTrip'
 
 const unlockedHunterState = () => {
   const state = createInitialState()
@@ -136,7 +136,7 @@ describe('current Hunter and Guild board save integrity', () => {
     const current = unlockedHunterState()
     const currentRaw = serializeGameState(current) as unknown as Record<string, any>
     currentRaw.progress.huntersOrder.availableContracts = []
-    const loaded = loadPersistedGameStateV1(parsePersistedGameStateV1(JSON.stringify(currentRaw)))
+    const loaded = loadPersistedGameStateV3(parsePersistedGameStateV3(JSON.stringify(currentRaw)))
     expect(loaded.progress.huntersOrder.availableContracts).toEqual([])
     expect(loaded.progress.huntersOrder.rngState).toBe(current.progress.huntersOrder.rngState)
   })
@@ -151,7 +151,7 @@ describe('current Hunter and Guild board save integrity', () => {
     state.progress.guildSkillNodeRanks['major-favored-contractor'] = 1
     state.progress.arcaneGuild.availableCommissions = generateGuildCommissionChoices(state)
     const first = serializeGameState(state)
-    const loaded = loadPersistedGameStateV1(parsePersistedGameStateV1(JSON.stringify(first)))
+    const loaded = loadPersistedGameStateV3(parsePersistedGameStateV3(JSON.stringify(first)))
     const second = serializeGameState(loaded, first.savedAt)
     expect(persistedGameStatesEqual(second, first)).toBe(true)
     expect(getAuthoritativeSaveSnapshot(loaded)).toEqual(getAuthoritativeSaveSnapshot(state))

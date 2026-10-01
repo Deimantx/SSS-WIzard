@@ -1,15 +1,15 @@
 import type { GameState } from '../../game/types'
-import { PERSISTED_COMBAT_FIELDS_V1, type PersistedCombatStateV1, type PersistedGameStateV1 } from './persistedGameState'
-import { validatePersistedGameStateV1 } from './saveSchema'
+import { PERSISTED_COMBAT_FIELDS_V3, type PersistedCombatStateV3, type PersistedGameStateV3 } from './persistedGameState'
+import { validatePersistedGameStateV3 } from './saveSchema'
 import { SAVE_VERSION } from '../../store/initialState'
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
-export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSavedAt): PersistedGameStateV1 => {
+export const serializeGameStateV3 = (state: GameState, savedAt = state.lastSavedAt): PersistedGameStateV3 => {
   const activities = clone(state.activities)
   activities.research = { slots: clone(state.activities.research.slots) }
   activities.transmutation = { jobs: clone(state.activities.transmutation.jobs) }
-  const document: PersistedGameStateV1 = {
+  const document: PersistedGameStateV3 = {
     schemaVersion: 3,
     contentVersion: SAVE_VERSION,
     savedAt,
@@ -34,13 +34,14 @@ export const serializeGameStateV1 = (state: GameState, savedAt = state.lastSaved
     sigils: clone(state.sigils),
     guardians: clone(state.guardians),
     activities,
-    combat: Object.fromEntries(PERSISTED_COMBAT_FIELDS_V1.map((field) => [field, field === 'elementalDamageReductions' && !state.combat.active ? [] : clone(state.combat[field])])) as PersistedCombatStateV1,
+    combat: Object.fromEntries(PERSISTED_COMBAT_FIELDS_V3.map((field) => [field, field === 'elementalDamageReductions' && !state.combat.active ? [] : clone(state.combat[field])])) as PersistedCombatStateV3,
     progress: clone(state.progress),
     storyProgress: clone(state.storyProgress),
     darkPortal: clone(state.darkPortal),
     spellPresets: clone(state.spellPresets),
+    ...(state.ui.lastEnteredCombatLocationId ? { ui: { lastEnteredCombatLocationId: state.ui.lastEnteredCombatLocationId } } : {}),
     offlineBankMs: state.offlineBankMs,
   }
-  if (!validatePersistedGameStateV1(document)) throw new Error('Runtime state could not be mapped to the V2 save schema.')
+  if (!validatePersistedGameStateV3(document)) throw new Error('Runtime state could not be mapped to the V3 save schema.')
   return document
 }

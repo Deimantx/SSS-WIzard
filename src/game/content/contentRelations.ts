@@ -1,5 +1,4 @@
 import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './combat-locations/dungeons/dungeons'
-import { getEquipmentOrigin } from './equipment/equipmentSets'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
 import { isArtificingRecipe, RECIPES, RECIPE_ORDER } from './recipes/recipes'
@@ -14,7 +13,7 @@ import type { CombatLocationId, ItemId, MonsterId, RecipeId } from '../types'
  * from?" question without maintaining separate relationship tables.
  */
 export interface ContentRelation {
-  kind: 'dungeon' | 'monster' | 'recipe'
+  kind: 'monster' | 'recipe'
   id: CombatLocationId | MonsterId | RecipeId
   label: string
   detail: string
@@ -57,11 +56,6 @@ export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => DUNGEON_
 
 const getItemRelations = (itemId: ItemId): ContentRelation[] => {
   const relations: ContentRelation[] = []
-  const equipmentDungeon = getEquipmentOrigin(itemId)
-  if (equipmentDungeon) {
-      relations.push({ kind: 'dungeon', id: equipmentDungeon, label: DUNGEONS[equipmentDungeon].name, detail: 'Equipment set origin' })
-  }
-
   getItemDropSources(itemId).forEach((drop) => relations.push({ kind: 'monster', id: drop.monsterId, label: drop.monsterName, detail: `${drop.locationName} ${drop.role} loot` }))
 
   RECIPE_ORDER.forEach((recipeId) => {
@@ -96,14 +90,11 @@ export const getMonsterCombatLocation = (monsterId: MonsterId): MonsterLocationI
   return null
 }
 
-export const getEquipmentOriginLocation = (itemId: ItemId) => getEquipmentOrigin(itemId)
-
 /** Stable content graph entry point for consumers that need a single read model. */
 export const buildContentRelations = () => ({
   itemSources: (itemId: ItemId) => getItemSourceInfo(itemId),
   itemRecipeUses: (itemId: ItemId) => getItemRecipeUses(itemId),
   monsterCombatLocation: (monsterId: MonsterId) => getMonsterCombatLocation(monsterId),
-  equipmentOrigins: {},
   itemIds: Object.keys(ITEMS) as ItemId[],
   monsterIds: MONSTER_IDS,
 })

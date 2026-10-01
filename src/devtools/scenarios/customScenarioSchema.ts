@@ -1,5 +1,5 @@
 import { createInitialState } from '../../store/initialState'
-import { serializeGameStateV1 } from '../../persistence/v2/saveSerializer'
+import { serializeGameStateV3 } from '../../persistence/v3/saveSerializer'
 import { validateSerializedSave } from '../../persistence/saveIntegrity'
 import { DEVELOPER_SCENARIO_SCHEMA_VERSION, type DeveloperScenarioRecord } from './customScenarioTypes'
 
@@ -31,7 +31,7 @@ export const validateDeveloperScenario = (value: unknown): { ok: true; record: D
   if (!finiteTree(value.snapshot.gameState)) return { ok: false, reason: 'Scenario contains a non-finite number.' }
   if (!finiteTree(value.snapshot.summary)) return { ok: false, reason: 'Scenario summary contains invalid values.' }
   try {
-    const persistedCheck = validateSerializedSave(JSON.stringify(serializeGameStateV1(value.snapshot.gameState as never)))
+    const persistedCheck = validateSerializedSave(JSON.stringify(serializeGameStateV3(value.snapshot.gameState as never)))
     if (!persistedCheck.ok) return { ok: false, reason: persistedCheck.error ?? 'Scenario contains invalid gameplay data.' }
   } catch { return { ok: false, reason: 'Scenario gameplay data could not be validated.' } }
   let byteLength = 0

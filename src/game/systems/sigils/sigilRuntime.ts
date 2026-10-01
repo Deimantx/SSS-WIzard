@@ -15,10 +15,17 @@ export const getEquippedSigils = (state: Pick<GameState, 'sigils'>): SigilInstan
 
 export const getEquippedSigilSetCounts = (state: Pick<GameState, 'sigils'>): Partial<Record<SigilSetId, number>> => getEquippedSigils(state).reduce<Partial<Record<SigilSetId, number>>>((counts, sigil) => { counts[sigil.setId] = (counts[sigil.setId] ?? 0) + 1; return counts }, {})
 
-export const getEquippedSigilStats = (state: Pick<GameState, 'sigils'>): EquipmentStats => {
+export const getEquippedSigilInstanceStats = (state: Pick<GameState, 'sigils'>): EquipmentStats => {
   const total: EquipmentStats = {}
   getEquippedSigils(state).forEach((sigil) => addEquipmentStats(total, resolveSigilStatsForInstance(sigil)))
-  addEquipmentStats(total, getSigilSetBonuses(getEquippedSigilSetCounts(state)))
+  return total
+}
+
+export const getEquippedSigilSetStats = (state: Pick<GameState, 'sigils'>): EquipmentStats => getSigilSetBonuses(getEquippedSigilSetCounts(state))
+
+export const getEquippedSigilStats = (state: Pick<GameState, 'sigils'>): EquipmentStats => {
+  const total = getEquippedSigilInstanceStats(state)
+  addEquipmentStats(total, getEquippedSigilSetStats(state))
   return total
 }
 

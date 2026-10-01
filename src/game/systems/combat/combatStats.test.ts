@@ -5,16 +5,58 @@ import { calculateCombatDamage, damageEnemy } from './effectResolver'
 import { executeCombatEffects } from './effectResolver'
 import { resolveCurrentEnemyAction } from './actionRuntime'
 import { spawnEnemy } from './combatRuntime'
-import { getBlockChance, getCritChance, getCritDamageMultiplier, getDefense, getDefenseReduction, getDefenseReductionFromRating, getEnemyCombatStats, getPlayerCombatStats } from './combatStats'
+import { getBarrierPowerBonus, getBlockChance, getCooldownRecoveryMultiplier, getCritChance, getCritDamageMultiplier, getDamageOverTimeBonus, getDefense, getDefenseReduction, getDefenseReductionFromRating, getEnemyCombatStats, getHealingDoneBonus, getPlayerCombatStats, getPlayerSheetCombatStats, getStatusDurationBonus } from './combatStats'
 import { getResistance } from './modifiers'
 import { nextCombatRandom } from './combatRng'
 import type { CombatSource } from './combatTypes'
 import { ITEMS } from '../../content/items/items'
 import type { ItemDefinition, ItemId } from '../../types'
+import { generateSigil } from '../sigils/sigilGeneration'
+import { getEquippedSigilInstanceStats } from '../sigils/sigilRuntime'
+import { SIGIL_SETS } from '../../content/sigils/sigilSets'
 
 const playerSpell: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'stats-test', school: 'fire', tags: ['spell', 'direct', 'fire'] }
 
 describe('universal combat stats foundation', () => {
+  it('applies equipped Sigil static rolls to sheet and live Combat selectors', () => {
+    const cases = [
+      { statId: 'critChance', slot: 4 as const, setId: 'arcane' as const, sheetKey: 'critChance', select: getCritChance, baseline: .05 },
+      { statId: 'critDamage', slot: 4 as const, setId: 'arcane' as const, sheetKey: 'critDamageMultiplier', select: getCritDamageMultiplier, baseline: 1.5 },
+      { statId: 'cooldownRecoveryPct', slot: 2 as const, setId: 'arcane' as const, sheetKey: 'cooldownRecovery', select: getCooldownRecoveryMultiplier, baseline: 1 },
+      { statId: 'healingDonePct', slot: 4 as const, setId: 'arcane' as const, sheetKey: 'healingDoneBonus', select: getHealingDoneBonus, baseline: 0 },
+      { statId: 'barrierPowerPct', slot: 4 as const, setId: 'arcane' as const, sheetKey: 'barrierPowerBonus', select: getBarrierPowerBonus, baseline: 0 },
+      { statId: 'damageOverTimePct', slot: 4 as const, setId: 'arcane' as const, sheetKey: 'damageOverTimeBonus', select: getDamageOverTimeBonus, baseline: 0 },
+      { statId: 'statusDurationPct', slot: 6 as const, setId: 'arcane' as const, sheetKey: 'statusDurationBonus', select: getStatusDurationBonus, baseline: 0 },
+    ] as const
+
+    for (const fixture of cases) {
+      const state = createInitialState()
+      const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: fixture.setId, forcedSlot: fixture.slot, forcedQuality: 'common', forcedMainStatId: fixture.statId, rng: () => 0, source: 'debug' })
+      state.sigils.equipped[fixture.slot] = sigil.instanceId
+      const expectedDelta = getEquippedSigilInstanceStats(state)[fixture.statId]
+      const baselineSheet = getPlayerSheetCombatStats(createInitialState())[fixture.sheetKey]
+      const baselineLive = fixture.select(createInitialState(), 'player')
+      expect(getPlayerSheetCombatStats(state)[fixture.sheetKey] - baselineSheet, fixture.statId).toBeCloseTo(expectedDelta ?? 0)
+      expect(fixture.select(state, 'player') - baselineLive, fixture.statId).toBeCloseTo(expectedDelta ?? 0)
+    }
+  })
+
+  it('routes generic static Sigil Set stats through the same live build-stat path once', () => {
+    const state = createInitialState()
+    const original = SIGIL_SETS.ward.staticStats
+    try {
+      SIGIL_SETS.ward.staticStats = { defense: 9 }
+      const baseline = getDefense(state, 'player')
+      for (const slot of [1, 2] as const) {
+        const sigil = generateSigil({ state, locationId: 'whispering-woods', enemyPower: 0, forcedTier: 1, forcedSetId: 'ward', forcedSlot: slot, forcedQuality: 'common', rng: () => 0, source: 'debug' })
+        state.sigils.equipped[slot] = sigil.instanceId
+      }
+      expect(getPlayerSheetCombatStats(state).defense).toBe(BALANCE.player.baseDefense + 9)
+      expect(getDefense(state, 'player') - baseline).toBe(9)
+    } finally {
+      SIGIL_SETS.ward.staticStats = original
+    }
+  })
   it('uses the canonical Defense curve for direct hits and ignores it for DoT', () => {
     const state = createInitialState()
     state.combat.enemyId = 'forest-wisp'

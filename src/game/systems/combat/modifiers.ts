@@ -1,6 +1,6 @@
 import { STATUS_DEFINITIONS } from '../../content/statuses'
 import { MONSTERS } from '../../content/monsters'
-import { getEffectiveEquipmentItemStats, getPlayerBuildStaticStats } from '../../core/equipment/equipmentStats'
+import { getPlayerBuildStaticStatSources, getPlayerBuildStaticStats } from '../../core/equipment/equipmentStats'
 import { MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../../content/items/items'
 import type { ArcaneCoreModifierKey, GameState, StatusId } from '../../types'
@@ -12,8 +12,7 @@ import { getStatusGroupStacks } from './statusSelectors'
 import { getRootCombatSourceProvenance, isEnemySourceOwnerActive } from './combatProvenance'
 import { getActiveArtifactCombatProviders, isArtifactItem } from '../artifacts/artifactProgression'
 import { getGuardianPassiveProviders } from '../summoning/summoningSelectors'
-import { getArcaneCoreCombatModifierProviders, getArcaneCoreStaticStats } from '../arcane-core/arcaneCoreProgression'
-import { getEquippedCrystalStats } from '../crystals/crystalStats'
+import { getArcaneCoreCombatModifierProviders } from '../arcane-core/arcaneCoreProgression'
 import { getActiveSigilCombatProviders } from '../sigils/sigilCombatRuntime'
 
 export type CombatModifierState = {
@@ -133,18 +132,13 @@ export const getCombatModifierContributions = (state: CombatModifierState, actor
       }))
     })
     const equipmentField = EQUIPMENT_MODIFIER_STATS[key]
-    if (equipmentField) Object.values(state.equipment).forEach((itemId) => {
-      if (!itemId) return
-      const value = Number(getEffectiveEquipmentItemStats(state, itemId)[equipmentField] ?? 0)
-      if (value !== 0) add({ key, value }, 'equipment-stats', itemId, ITEMS[itemId]?.name, value)
-    })
-    if (equipmentField && state.arcaneCore) {
-      const value = Number(getArcaneCoreStaticStats(state.arcaneCore)[equipmentField] ?? 0)
-      if (value !== 0) add({ key, value }, 'equipment-stats', 'arcane-core', 'Arcane Core', value)
-    }
-    if (equipmentField && state.crystals) {
-      const value = Number(getEquippedCrystalStats({ crystals: state.crystals })[equipmentField] ?? 0)
-      if (value !== 0) add({ key, value }, 'equipment-stats', 'crystals', 'Crystals', value)
+    if (equipmentField) {
+      const sources = getPlayerBuildStaticStatSources(state)
+      const sourceNames: Record<keyof typeof sources, string> = { equipment: 'Equipment', artifact: 'Artifacts', arcaneCore: 'Arcane Core', crystal: 'Crystals', sigil: 'Sigils', sigilSet: 'Sigil Set' }
+      Object.entries(sources).forEach(([sourceId, stats]) => {
+        const value = Number(stats[equipmentField] ?? 0)
+        if (value !== 0) add({ key, value }, 'equipment-stats', sourceId, sourceNames[sourceId as keyof typeof sources], value)
+      })
     }
     getGuardianPassiveProviders(state).forEach(({ modifier, sourceId, sourceName }) => add(modifier, 'guardian', sourceId, sourceName))
   }

@@ -5,7 +5,7 @@ import type { ProfileSlotId } from '../profiles/profileTypes'
 import { recordRecoveredProfile, recordSaveFailure, recordSuccessfulSave, type SaveFailureKind } from './saveDiagnosticsStore'
 import { isDeveloperSandboxSavePaused } from './developerSandboxSaveGuard'
 import { validateSerializedSave, validateStoredSave, type SaveValidationReport } from './saveIntegrity'
-import { serializeGameStateV1 } from './v2/saveSerializer'
+import { serializeGameStateV3 } from './v3/saveSerializer'
 
 export interface ProfileSaveResult { ok: boolean; skipped?: true; reason?: 'developer-sandbox'; error: string | null; kind?: SaveFailureKind; detail?: string; serializedBytes?: number; validationReport?: SaveValidationReport }
 export interface StoredCandidateDiagnostic { present: boolean; ok: boolean; error: string | null; saveVersion: number | null; savedAt: number | null; progression: null }
@@ -31,7 +31,7 @@ const readCandidates = (slotId: ProfileSlotId) => {
   return { primary, backup, diagnostics }
 }
 
-export const serializeGameState = serializeGameStateV1
+export const serializeGameState = serializeGameStateV3
 
 export const getProfileSaveDiagnostics = (slotId: ProfileSlotId): ProfileSaveDiagnostics => {
   const empty = (): ProfileSaveDiagnostics => ({ primary: missing(), backup: missing() })

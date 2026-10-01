@@ -5,8 +5,8 @@ import { completeTransmutationCycle } from '../transmutation/transmutationEngine
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
 import { advanceArcaneFlux } from '../channeling/channelingRuntime'
 import { RESONANCE_TYPES } from '../../content/resonance/resonance'
-import { validateV2RoundTrip } from '../../../persistence/v2/saveRoundTrip'
-import { serializeGameStateV1 } from '../../../persistence/v2/saveSerializer'
+import { validateV3RoundTrip } from '../../../persistence/v3/saveRoundTrip'
+import { serializeGameStateV3 } from '../../../persistence/v3/saveSerializer'
 
 const guildState = () => {
   const state = createInitialState()
@@ -126,7 +126,7 @@ describe('Arcane Guild commissions', () => {
     expect(state.progress.arcaneGuild.activeCommission?.objectives[0]?.progress).toBe(25)
     expect(RESONANCE_TYPES).toContain('earth')
     const expected = structuredClone(state.progress.arcaneGuild.activeCommission)
-    const result = validateV2RoundTrip(JSON.stringify(serializeGameStateV1(state)), state)
+    const result = validateV3RoundTrip(JSON.stringify(serializeGameStateV3(state)), state)
     expect(result.ok, result.error ?? '').toBe(true)
     expect(result.state?.progress.arcaneGuild.activeCommission).toEqual(expected)
   })

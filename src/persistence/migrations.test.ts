@@ -63,7 +63,7 @@ describe('save navigation migration', () => {
     expect(migrated.activities.autoCastPriority).toEqual([])
   })
 
-  it('round-trips the last successfully entered combat dungeon and tolerates old saves without it', () => {
+  it('persists the last entered Combat Location and tolerates old saves without it', () => {
     const initial = createInitialState()
     const oldSave = migrateSave({ ...initial, saveVersion: 31, ui: { screen: 'combat' } } as any)
     expect(oldSave.ui.lastEnteredCombatLocationId).toBeUndefined()
@@ -73,7 +73,7 @@ describe('save navigation migration', () => {
     state.ui.lastEnteredCombatLocationId = 'howling-den'
     const loaded = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(loaded.ui.screen).toBe('home')
-    expect(loaded.ui.lastEnteredCombatLocationId).toBeUndefined()
+    expect(loaded.ui.lastEnteredCombatLocationId).toBe('howling-den')
 
     const malformed = migrateSave({ ...state, saveVersion: 31, ui: { screen: 'combat', lastEnteredCombatLocationId: 'not-a-dungeon' } } as any)
     expect(malformed.ui.lastEnteredCombatLocationId).toBeUndefined()

@@ -1,4 +1,5 @@
 export * from './worldNavigationTypes'
+export * from './combatLocationIds'
 export * from './worldNavigation'
 export * from './worldNavigationValidation'
 export * from './dungeons'

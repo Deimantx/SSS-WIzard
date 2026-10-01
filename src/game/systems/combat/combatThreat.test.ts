@@ -5,8 +5,9 @@ import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRat
 import { createInitialState } from '../../../store/initialState'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combatThreat'
+import type { CombatLocationId } from '../../types'
 
-const prepareCombat = (locationId: string = 'whispering-woods') => {
+const prepareCombat = (locationId: CombatLocationId = 'whispering-woods') => {
   const state = createInitialState()
   state.progress.spellRanks['fire-bolt'] = 1
   state.spellPresets.presets = [{ id: 'threat-test', name: 'Threat Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]

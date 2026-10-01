@@ -2,9 +2,9 @@ import type { MonsterId } from '../../types'
 import type { EliteZoneAffixId } from '../elite-affixes'
 import type { ElementId } from '../elements/elements'
 import type { ChronicleEventId } from '../../types'
+import type { CombatLocationId, CombatRegionId } from './combatLocationIds'
 
-export type CombatRegionId = string
-export type CombatLocationId = string
+export type { CombatLocationId, CombatRegionId } from './combatLocationIds'
 
 export type CombatLocationType =
   | 'combat-zone'

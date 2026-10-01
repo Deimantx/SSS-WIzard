@@ -4,7 +4,7 @@ import { getArtifactEffectiveStats, getActiveArtifactCombatProviders, isArtifact
 import { getArcaneCoreStaticStats } from '../../systems/arcane-core/arcaneCoreProgression'
 import { addEquipmentStats } from './equipmentStatAggregation'
 import { getEquippedCrystalStats } from '../../systems/crystals/crystalStats'
-import { getEquippedSigilStats } from '../../systems/sigils/sigilRuntime'
+import { getEquippedSigilInstanceStats, getEquippedSigilSetStats } from '../../systems/sigils/sigilRuntime'
 
 export { addEquipmentStats } from './equipmentStatAggregation'
 
@@ -19,25 +19,52 @@ export interface EquipmentModifierContext {
 
 export type EquipmentStatsState = Pick<GameState, 'equipment' | 'artifactProgress'> & Partial<Pick<GameState, 'arcaneCore' | 'crystals' | 'sigils'>>
 
+export interface PlayerBuildStaticStatSources {
+  equipment: EquipmentStats
+  artifact: EquipmentStats
+  arcaneCore: EquipmentStats
+  crystal: EquipmentStats
+  sigil: EquipmentStats
+  sigilSet: EquipmentStats
+}
+
 /** Aggregates authored equipped-item stats for every derived combat/system selector. */
 export const getEffectiveEquipmentItemStats = (state: EquipmentStatsState, itemId: import('../../types').ItemId): EquipmentStats =>
   isArtifactItem(itemId) ? getArtifactEffectiveStats(state, itemId) : (ITEMS[itemId]?.stats ?? {})
 
-export const getEquippedItemStats = (state: EquipmentStatsState): EquipmentStats => {
-  const total: EquipmentStats = {}
+export const getEquippedItemStatSources = (state: EquipmentStatsState): Pick<PlayerBuildStaticStatSources, 'equipment' | 'artifact'> => {
+  const equipment: EquipmentStats = {}
+  const artifact: EquipmentStats = {}
   Object.values(state.equipment).forEach((itemId) => {
     if (!itemId || !ITEMS[itemId]) return
-    addEquipmentStats(total, getEffectiveEquipmentItemStats(state, itemId))
+    addEquipmentStats(isArtifactItem(itemId) ? artifact : equipment, getEffectiveEquipmentItemStats(state, itemId))
   })
+  return { equipment, artifact }
+}
+
+/** Resolves each always-on static player build source once for sheet and Combat consumers. */
+export const getPlayerBuildStaticStatSources = (state: EquipmentStatsState): PlayerBuildStaticStatSources => {
+  const items = getEquippedItemStatSources(state)
+  return {
+    ...items,
+    arcaneCore: state.arcaneCore ? getArcaneCoreStaticStats(state.arcaneCore) : {},
+    crystal: state.crystals ? getEquippedCrystalStats(state as Pick<GameState, 'crystals'>) : {},
+    sigil: state.sigils ? getEquippedSigilInstanceStats(state as Pick<GameState, 'sigils'>) : {},
+    sigilSet: state.sigils ? getEquippedSigilSetStats(state as Pick<GameState, 'sigils'>) : {},
+  }
+}
+
+export const getEquippedItemStats = (state: EquipmentStatsState): EquipmentStats => {
+  const { equipment, artifact } = getEquippedItemStatSources(state)
+  const total = { ...equipment }
+  addEquipmentStats(total, artifact)
   return total
 }
 
 /** Aggregates every always-on static player build source exactly once. */
 export const getPlayerBuildStaticStats = (state: EquipmentStatsState): EquipmentStats => {
-  const total = getEquippedItemStats(state)
-  if (state.arcaneCore) addEquipmentStats(total, getArcaneCoreStaticStats(state.arcaneCore))
-  if (state.crystals) addEquipmentStats(total, getEquippedCrystalStats(state as Pick<GameState, 'crystals'>))
-  if (state.sigils) addEquipmentStats(total, getEquippedSigilStats(state as Pick<GameState, 'sigils'>))
+  const total: EquipmentStats = {}
+  Object.values(getPlayerBuildStaticStatSources(state)).forEach((source) => addEquipmentStats(total, source))
   return total
 }
 

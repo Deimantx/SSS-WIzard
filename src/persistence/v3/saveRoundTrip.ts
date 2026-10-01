@@ -1,7 +1,7 @@
 import type { GameState } from '../../game/types'
-import { loadPersistedGameStateV1 } from './saveLoader'
-import { serializeGameStateV1 } from './saveSerializer'
-import { parsePersistedGameStateV1 } from './saveSchema'
+import { loadPersistedGameStateV3 } from './saveLoader'
+import { serializeGameStateV3 } from './saveSerializer'
+import { parsePersistedGameStateV3 } from './saveSchema'
 
 const canonical = (value: unknown): unknown => Array.isArray(value)
   ? value.map(canonical)
@@ -24,16 +24,16 @@ const collectChanges = (before: unknown, after: unknown, path = '', changes: Arr
   return changes
 }
 
-export const validateV2RoundTrip = (encoded: string, expected?: GameState) => {
+export const validateV3RoundTrip = (encoded: string, expected?: GameState) => {
   try {
-    const parsed = parsePersistedGameStateV1(encoded)
-    const loaded = loadPersistedGameStateV1(parsed)
-    const serialized = serializeGameStateV1(loaded, parsed.savedAt)
-    const expectedDocument = expected ? serializeGameStateV1(expected, parsed.savedAt) : parsed
+    const parsed = parsePersistedGameStateV3(encoded)
+    const loaded = loadPersistedGameStateV3(parsed)
+    const serialized = serializeGameStateV3(loaded, parsed.savedAt)
+    const expectedDocument = expected ? serializeGameStateV3(expected, parsed.savedAt) : parsed
     const ok = persistedGameStatesEqual(expectedDocument, serialized)
     const changes = ok ? [] : collectChanges(expectedDocument, serialized)
-    return { ok, state: ok ? loaded : null, error: ok ? null : 'Authoritative gameplay state changed during V2 round-trip.', report: { classification: ok ? 'MATCH' as const : 'AUTHORITATIVE_CHANGE' as const, changes, summary: ok ? 'V2 save round-trip preserves authoritative gameplay state.' : 'V2 save round-trip changed authoritative gameplay state.' } }
+    return { ok, state: ok ? loaded : null, error: ok ? null : 'Authoritative gameplay state changed during V3 round-trip.', report: { classification: ok ? 'MATCH' as const : 'AUTHORITATIVE_CHANGE' as const, changes, summary: ok ? 'V3 save round-trip preserves authoritative gameplay state.' : 'V3 save round-trip changed authoritative gameplay state.' } }
   } catch (error) {
-    return { ok: false, state: null, error: error instanceof Error ? error.message : 'Save data could not be validated.', report: { classification: 'STRUCTURAL_INVALID' as const, changes: [], summary: 'Save data does not match the V2 schema.' } }
+    return { ok: false, state: null, error: error instanceof Error ? error.message : 'Save data could not be validated.', report: { classification: 'STRUCTURAL_INVALID' as const, changes: [], summary: 'Save data does not match the V3 schema.' } }
   }
 }

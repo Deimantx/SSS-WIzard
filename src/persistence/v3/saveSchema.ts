@@ -1,5 +1,6 @@
 import { isRecord } from '../saveSchema'
-import { PERSISTED_COMBAT_FIELDS_V1, type PersistedGameStateV1 } from './persistedGameState'
+import { migrateSchema2LocationFields } from '../legacy/schema2LocationMigration'
+import { PERSISTED_COMBAT_FIELDS_V3, PERSISTED_UI_FIELDS, type PersistedGameStateV3 } from './persistedGameState'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTERS } from '../../game/content/monsters'
 import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
@@ -21,9 +22,9 @@ const gameplayFields = [
   'protectedItems', 'equipment', 'arcaneCore', 'artifactProgress', 'sigils', 'guardians', 'activities',
   'combat', 'progress', 'storyProgress', 'darkPortal', 'spellPresets',
 ] as const
-const documentFields = new Set(['schemaVersion', 'contentVersion', 'savedAt', 'offlineBankMs', ...gameplayFields])
+const documentFields = new Set(['schemaVersion', 'contentVersion', 'savedAt', 'offlineBankMs', 'ui', ...gameplayFields])
 const playerFields = ['health', 'mana', 'baseMaxHealth', 'baseMaxMana', 'healthRegenTimerMs'] as const
-const combatFields = new Set<string>(PERSISTED_COMBAT_FIELDS_V1)
+const combatFields = new Set<string>(PERSISTED_COMBAT_FIELDS_V3)
 const isFiniteTree = (value: unknown): boolean => {
   if (typeof value === 'number') return Number.isFinite(value)
   if (Array.isArray(value)) return value.every(isFiniteTree)
@@ -67,39 +68,7 @@ const isGuildCommission = (value: unknown) => {
   return true
 }
 
-const migrateSchema2LocationFields = (value: Record<string, unknown>): Record<string, unknown> => {
-  if (value.schemaVersion !== 2) return value
-  const combat = isRecord(value.combat) ? { ...value.combat } : null
-  const progress = isRecord(value.progress) ? { ...value.progress } : null
-  if (combat) {
-    if (!Object.prototype.hasOwnProperty.call(combat, 'locationId') && Object.prototype.hasOwnProperty.call(combat, 'dungeonId')) combat.locationId = combat.dungeonId
-    if (!Object.prototype.hasOwnProperty.call(combat, 'sequenceIndex') && Object.prototype.hasOwnProperty.call(combat, 'dungeonSequenceIndex')) combat.sequenceIndex = combat.dungeonSequenceIndex
-    delete combat.dungeonId
-    delete combat.dungeonSequenceIndex
-  }
-  if (progress) {
-    if (!Object.prototype.hasOwnProperty.call(progress, 'autoHuntBossByLocation') && Object.prototype.hasOwnProperty.call(progress, 'autoHuntBossByDungeon')) progress.autoHuntBossByLocation = progress.autoHuntBossByDungeon
-    delete progress.autoHuntBossByDungeon
-    const hunters = isRecord(progress.huntersOrder) ? { ...progress.huntersOrder } : null
-    if (hunters) {
-      const remapContract = (candidate: unknown) => {
-        if (!isRecord(candidate)) return candidate
-        const contract = { ...candidate }
-        if (isRecord(contract.targetSpec) && contract.targetSpec.type === 'region' && !Object.prototype.hasOwnProperty.call(contract.targetSpec, 'locationId')) {
-          contract.targetSpec = { ...contract.targetSpec, locationId: contract.targetSpec.dungeonId }
-          delete (contract.targetSpec as Record<string, unknown>).dungeonId
-        }
-        return contract
-      }
-      hunters.activeContract = remapContract(hunters.activeContract)
-      if (Array.isArray(hunters.availableContracts)) hunters.availableContracts = hunters.availableContracts.map(remapContract)
-      progress.huntersOrder = hunters
-    }
-  }
-  return { ...value, schemaVersion: 3, ...(combat ? { combat } : {}), ...(progress ? { progress } : {}) }
-}
-
-export const validatePersistedGameStateV1 = (value: unknown): value is PersistedGameStateV1 => {
+export const validatePersistedGameStateV3 = (value: unknown): value is PersistedGameStateV3 => {
   if (!isRecord(value) || value.schemaVersion !== 3) return false
   if (Object.keys(value).some((key) => !documentFields.has(key))) return false
   if (typeof value.savedAt !== 'number' || !Number.isFinite(value.savedAt) || value.savedAt < 0) return false
@@ -109,7 +78,7 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
   if (Object.keys(player).some((key) => !playerFields.includes(key as typeof playerFields[number]))) return false
   if (!playerFields.every((key) => typeof player[key] === 'number' && Number.isFinite(player[key]))) return false
   const combat = value.combat as Record<string, unknown>
-  if (Object.keys(combat).some((key) => !combatFields.has(key)) || PERSISTED_COMBAT_FIELDS_V1.some((key) => key !== 'elementalDamageReductions' && !Object.prototype.hasOwnProperty.call(combat, key))) return false
+  if (Object.keys(combat).some((key) => !combatFields.has(key)) || PERSISTED_COMBAT_FIELDS_V3.some((key) => key !== 'elementalDamageReductions' && !Object.prototype.hasOwnProperty.call(combat, key))) return false
   if (combat.elementalDamageReductions !== undefined && (!Array.isArray(combat.elementalDamageReductions)
     || combat.elementalDamageReductions.length > 32
     || combat.elementalDamageReductions.some((ward) => !isRecord(ward)
@@ -119,6 +88,9 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
       || (ward.expiresAt !== undefined && (typeof ward.expiresAt !== 'number' || !Number.isFinite(ward.expiresAt) || ward.expiresAt < 0))
       || (ward.durationMs !== undefined && (typeof ward.durationMs !== 'number' || !Number.isFinite(ward.durationMs) || ward.durationMs < 0))))) return false
   if (value.contentVersion !== undefined && (!Number.isInteger(value.contentVersion) || (value.contentVersion as number) < 0)) return false
+  if (value.ui !== undefined && (!isRecord(value.ui)
+    || Object.keys(value.ui).some((key) => !PERSISTED_UI_FIELDS.includes(key as typeof PERSISTED_UI_FIELDS[number]))
+    || (value.ui.lastEnteredCombatLocationId !== undefined && (typeof value.ui.lastEnteredCombatLocationId !== 'string' || !Object.prototype.hasOwnProperty.call(DUNGEONS, value.ui.lastEnteredCombatLocationId))))) return false
   const inventory = value.inventory as Record<string, unknown>
   if (Object.entries(inventory).some(([id, quantity]) => !Object.prototype.hasOwnProperty.call(ITEMS, id) || typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 0)) return false
   const protectedItems = value.protectedItems as Record<string, unknown>
@@ -193,9 +165,9 @@ export const validatePersistedGameStateV1 = (value: unknown): value is Persisted
   return true
 }
 
-export const parsePersistedGameStateV1 = (encoded: string): PersistedGameStateV1 => {
+export const parsePersistedGameStateV3 = (encoded: string): PersistedGameStateV3 => {
   const parsed: unknown = JSON.parse(encoded)
   const value = isRecord(parsed) ? migrateSchema2LocationFields(parsed) : parsed
-  if (!validatePersistedGameStateV1(value)) throw new Error('Save does not match the V3 schema.')
+  if (!validatePersistedGameStateV3(value)) throw new Error('Save does not match the V3 schema.')
   return value
 }

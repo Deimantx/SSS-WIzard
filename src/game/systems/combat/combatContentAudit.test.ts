@@ -49,6 +49,21 @@ describe('Combat V2 authored content audit', () => {
     expect(MONSTERS['stonewake-stonebound-warden'].actions.quake.effects.some((effect) => effect.type === 'apply-status' && effect.statusId === 'tremored')).toBe(true)
   })
 
+  it('covers every current Combat V2 boss and hard-fails incomplete profiles', () => {
+    const expectedBosses = [
+      'heartstone-colossus', 'tempest-roc', 'deepwater-oracle', 'pyre-guardian',
+      'forest-heart', 'corrupted-greatbear', 'archmage-edrin-shade',
+      'corrupted-elemental-gatekeeper', 'drowned-keeper', 'flamebound-revenant', 'rootscar-ancient', 'crossroads-keeper',
+      'graveglass-behemoth', 'storm-archivist', 'fallen-astromancer', 'meridian-splitter',
+      'unspoken-prelate', 'sigil-warden', 'black-gatekeeper',
+    ] as const
+    const audit = buildCombatV2ContentAudit(1)
+    const bosses = audit.filter((row) => MONSTERS[row.id].bestiaryCategory === 'boss')
+    expect(bosses.map((row) => row.id)).toEqual(expectedBosses)
+    expect(bosses.every((row) => row.boss && row.affinity !== '—' && row.order > 0 && row.hp > 0 && row.defense >= 0 && row.basicDamage > 0 && row.basicIntervalMs > 0 && row.basicDps > 0 && row.damageProfile.length > 0)).toBe(true)
+    expect(bosses.flatMap((row) => row.warnings.filter((warning) => /Physical|Missing explicit|Generic or missing|default flat|pattern|phase|Action/i.test(warning)))).toEqual([])
+  })
+
   it('pins every rebuilt first-frontier WT1 roster to its authored Power target', () => {
     const profiles: readonly [keyof typeof MONSTERS, number][] = [
       ['forest-wisp', 300], ['thornling', 340], ['dewbound-sprite', 380], ['cinder-moth', 420], ['stone-root', 460], ['grove-sentinel', 520], ['tempest-stag', 600], ['forest-heart', 850],

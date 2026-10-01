@@ -1,14 +1,14 @@
 import { DUNGEONS, getDungeonUnlockRequirement, hasBossEncounter, isDungeonCompleted } from '../../content/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
-import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/world-navigation'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationByDungeonId, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/world-navigation'
 import { getEliteZoneAffix } from '../../content/elite-affixes'
 import { buildCombatBossHuntPresentation } from './combatBossHuntPresentation'
-import type { CombatNavigationUnlockCondition, CombatContinentId, CombatLocationDefinition, CombatLocationId, CombatRegionId, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
+import type { CombatNavigationUnlockCondition, CombatLocationDefinition, CombatLocationId, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
 import { isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 import type { CombatState, DungeonId, GameState, MonsterId, WorldTierState } from '../../types'
-import type { CombatContinentSummaryViewModel, CombatDungeonSequenceStepViewModel, CombatEncounterViewModel, CombatLocationState, CombatLocationViewModel, CombatRegionSummaryViewModel, CombatRegionViewModel, CombatTargetViewModel, CombatWorldNavigationViewModel } from './combatWorldNavigationTypes'
+import type { CombatDungeonSequenceStepViewModel, CombatEncounterViewModel, CombatLocationState, CombatLocationViewModel, CombatTargetViewModel, CombatWorldNavigationViewModel } from './combatWorldNavigationTypes'
 
 const sorted = <T extends { order: number }>(entries: T[]) => [...entries].sort((left, right) => left.order - right.order)
 
@@ -24,11 +24,6 @@ const getConditionText = (condition: CombatNavigationUnlockCondition | undefined
   if (condition.type === 'all') return condition.conditions.map(getConditionText).filter(Boolean).join(' and ')
   const names = condition.bossIds.map((bossId) => MONSTERS[bossId]?.name ?? bossId)
   return `Defeat ${names.slice(0, -1).join(', ')}${names.length > 1 ? `, and ${names[names.length - 1]}` : names[0]}`
-}
-
-const isRegionUnlocked = (regionId: CombatRegionId, progress: NavigationProgress) => {
-  const region = COMBAT_REGIONS[regionId]
-  return Boolean(region && isConditionUnlocked(region.unlock, progress))
 }
 
 const isLocationUnlocked = (locationId: CombatLocationId, progress: NavigationProgress) => isCombatLocationUnlocked(locationId, progress)
@@ -135,53 +130,17 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
   }
 }
 
-const buildContinentSummary = (continentId: CombatContinentId, progress: NavigationProgress): CombatContinentSummaryViewModel => {
-  const continent = COMBAT_CONTINENTS[continentId]
-  const unlocked = Boolean(continent && isConditionUnlocked(continent.unlock, progress))
-  return { id: continentId, name: continent?.name ?? 'Unknown Continent', description: continent?.description ?? '', state: unlocked ? 'available' : 'locked', unlockText: unlocked ? null : getConditionText(continent?.unlock) }
-}
-
-const buildRegionSummary = (regionId: CombatRegionId, progress: NavigationProgress): CombatRegionSummaryViewModel => {
-  const region = COMBAT_REGIONS[regionId]
-  const unlocked = Boolean(region && isRegionUnlocked(regionId, progress))
-  return { id: regionId, name: region?.name ?? 'Unknown Region', description: region?.description ?? '', state: unlocked ? 'available' : 'locked', unlockText: unlocked ? null : getConditionText(region?.unlock), locationCount: region?.locationIds.length ?? 0 }
-}
-
-const firstUnlockedRegion = (continentId: CombatContinentId, progress: NavigationProgress) => {
-  const continent = COMBAT_CONTINENTS[continentId]
-  return sorted((continent?.regionIds ?? []).map((regionId) => COMBAT_REGIONS[regionId]).filter((region): region is NonNullable<typeof region> => Boolean(region))).find((region) => isRegionUnlocked(region.id, progress)) ?? null
-}
-
-const firstLocationInRegion = (regionId: CombatRegionId, progress: NavigationProgress) => {
-  const region = COMBAT_REGIONS[regionId]
-  return sorted((region?.locationIds ?? []).map((locationId) => COMBAT_LOCATIONS[locationId]).filter((location): location is NonNullable<typeof location> => Boolean(location))).find((location) => isLocationUnlocked(location.id, progress))?.id ?? region?.locationIds[0] ?? null
-}
-
-export const getFirstCombatRegionId = (continentId: CombatContinentId, progress: NavigationProgress) => firstUnlockedRegion(continentId, progress)?.id ?? null
-export const getFirstCombatLocationId = (regionId: CombatRegionId, progress: NavigationProgress) => firstLocationInRegion(regionId, progress)
-
 export function getInitialCombatLocationId({ combat, lastEnteredDungeonId, progress }: { combat: Pick<CombatState, 'active' | 'dungeonId'>; lastEnteredDungeonId?: DungeonId; progress: NavigationProgress }): CombatLocationId {
   if (combat.active && combat.dungeonId) return getCombatLocationByDungeonId(combat.dungeonId)?.id ?? 'whispering-woods'
   const lastEnteredLocation = lastEnteredDungeonId ? getCombatLocationByDungeonId(lastEnteredDungeonId) : null
   if (lastEnteredLocation && isLocationUnlocked(lastEnteredLocation.id, progress)) return lastEnteredLocation.id
-  const firstContinent = sorted(Object.values(COMBAT_CONTINENTS)).find((continent) => isConditionUnlocked(continent.unlock, progress))
-  const region = firstContinent ? firstUnlockedRegion(firstContinent.id, progress) : null
-  return region ? firstLocationInRegion(region.id, progress) ?? 'whispering-woods' : 'whispering-woods'
+  const firstUnlocked = Object.values(COMBAT_LOCATIONS).sort(locationOrder).find((location) => isLocationUnlocked(location.id, progress))
+  return firstUnlocked?.id ?? 'stonewake-hollow'
 }
 
-export function buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedContinentId, selectedRegionId, selectedLocationId, selectedType }: { progress: GameState['progress']; combat: CombatState; worldTier?: WorldTierState; selectedContinentId?: CombatContinentId | null; selectedRegionId?: CombatRegionId | null; selectedLocationId?: CombatLocationId | null; selectedType?: CombatZoneType }): CombatWorldNavigationViewModel {
-  const continents = sorted(Object.values(COMBAT_CONTINENTS)).map((continent) => buildContinentSummary(continent.id, progress))
-  const firstContinent = continents.find((continent) => continent.state === 'available') ?? continents[0]
-  const continentId = selectedContinentId && continents.some((continent) => continent.id === selectedContinentId && continent.state === 'available') ? selectedContinentId : firstContinent?.id ?? 'continent-1'
-  const selectedContinent = continents.find((continent) => continent.id === continentId) ?? buildContinentSummary(continentId, progress)
-  const regionCandidates = sorted((COMBAT_CONTINENTS[continentId]?.regionIds ?? []).map((regionId) => COMBAT_REGIONS[regionId]).filter((region): region is NonNullable<typeof region> => Boolean(region)))
-  const requestedRegion = selectedRegionId ? regionCandidates.find((region) => region.id === selectedRegionId) : undefined
-  const selectedRegionDefinition = requestedRegion && isRegionUnlocked(requestedRegion.id, progress) ? requestedRegion : firstUnlockedRegion(continentId, progress) ?? regionCandidates[0]
-  const regions = regionCandidates.map((region) => buildRegionSummary(region.id, progress))
-  const selectedRegionSummary = regions.find((region) => region.id === selectedRegionDefinition?.id) ?? buildRegionSummary('first-frontier', progress)
-  const regionLocationIds = selectedRegionDefinition?.locationIds ?? []
-  const locations = sorted(regionLocationIds.map((locationId) => COMBAT_LOCATIONS[locationId]).filter((location): location is NonNullable<typeof location> => Boolean(location))).map((location) => buildLocation(location.id, progress, combat, worldTier))
-  const locationOrder = (left: CombatLocationDefinition, right: CombatLocationDefinition) => (COMBAT_REGIONS[left.regionId]?.order ?? 0) - (COMBAT_REGIONS[right.regionId]?.order ?? 0) || left.order - right.order
+const locationOrder = (left: CombatLocationDefinition, right: CombatLocationDefinition) => (COMBAT_REGIONS[left.regionId]?.order ?? 0) - (COMBAT_REGIONS[right.regionId]?.order ?? 0) || left.order - right.order
+
+export function buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedLocationId, selectedType }: { progress: GameState['progress']; combat: CombatState; worldTier?: WorldTierState; selectedLocationId?: CombatLocationId | null; selectedType?: CombatZoneType }): CombatWorldNavigationViewModel {
   const allLocations = Object.values(COMBAT_LOCATIONS).sort(locationOrder).map((location) => buildLocation(location.id, progress, combat, worldTier))
   const selectedLocationCandidate = selectedLocationId ? allLocations.find((location) => location.id === selectedLocationId) : undefined
   const validTypes: CombatZoneType[] = ['combat-zone', 'elite-zone', 'hunting-ground', 'dungeon']
@@ -193,5 +152,5 @@ export function buildCombatWorldNavigationViewModel({ progress, combat, worldTie
   const selectedLocation = resolvedLocationId ? allLocations.find((location) => location.id === resolvedLocationId) ?? null : null
   const activeLocationId = getCombatLocationByDungeonId(combat.active ? combat.dungeonId : null)?.id ?? null
   const activeLocation = activeLocationId ? buildLocation(activeLocationId, progress, combat, worldTier) : null
-  return { continents, regions, selectedContinent, selectedRegion: { ...selectedRegionSummary, locations }, allLocations, selectedType: resolvedType, selectedLocation, activeLocationId, activeLocation }
+  return { allLocations, selectedType: resolvedType, selectedLocation, activeLocationId, activeLocation }
 }

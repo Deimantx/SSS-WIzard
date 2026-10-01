@@ -24,7 +24,7 @@ describe('Save System V2', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(2)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(60)
+    expect(SAVE_VERSION).toBe(61)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -274,6 +274,54 @@ describe('Save System V2', () => {
     expect(migrated.progress.chronicle.completedObjectiveIds).not.toContain('sf-m5-meridian-splitter')
     expect(migrated.progress.bossKillsByBoss['meridian-splitter'] ?? 0).toBe(0)
     expect(migrated.combat).toMatchObject({ active: true, dungeonId: 'broken-meridian', enemyId: 'meridian-warden', targetEnemyId: 'meridian-warden' })
+  })
+
+  it('reconciles an inactive historical Broken Meridian checkpoint without inventing a kill', () => {
+    const state = createInitialState()
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    state.progress.bossKillsByBoss['graveglass-behemoth'] = 1
+    state.progress.bossKillsByBoss['storm-archivist'] = 1
+    state.progress.bossKillsByBoss['fallen-astromancer'] = 1
+    state.combat.active = false
+    state.combat.dungeonId = 'broken-meridian'
+    state.ui.lastEnteredCombatDungeonId = 'broken-meridian'
+    const document = serializeGameState(state, 606)
+    document.contentVersion = 60
+    const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+    expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m3d-stabilize-shattered-meridian')
+    expect(migrated.progress.chronicle.completedObjectiveIds).toContain('sf-m4-reach-meridian')
+    expect(migrated.progress.chronicle.completedObjectiveIds).not.toContain('sf-m5-meridian-splitter')
+    expect(migrated.progress.bossKillsByBoss['meridian-splitter'] ?? 0).toBe(0)
+  })
+
+  it('normalizes active Wards on v60 load and remains stable through a v61 save round trip', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.dungeonId = 'whispering-woods'
+    state.combat.arcaneCoreRuntime.elapsedMs = 5_000
+    state.combat.elementalDamageReductions = [
+      { element: 'fire', sourceId: 'fire-ward', reduction: 0.15, expiresAt: 15_000, durationMs: 20_000 },
+      { element: 'water', sourceId: 'expired', reduction: 0.15, expiresAt: 4_000, durationMs: 20_000 },
+      { element: 'earth', sourceId: 'duplicate', reduction: 0.1, expiresAt: 12_000, durationMs: 10_000 },
+      { element: 'earth', sourceId: 'duplicate', reduction: 0.2, expiresAt: 16_000, durationMs: 10_000 },
+      { element: 'air', sourceId: 'permanent-a', reduction: 0.15 },
+      { element: 'air', sourceId: 'permanent-a', reduction: 0.1, expiresAt: 40_000, durationMs: 35_000 },
+    ]
+    const document = serializeGameState(state, 607)
+    document.contentVersion = 60
+    const migrated = loadProfileGameFromRaw(JSON.stringify(document))
+    expect(migrated.combat.elementalDamageReductions).toEqual([
+      { element: 'fire', sourceId: 'fire-ward', reduction: 0.15, expiresAt: 15_000, durationMs: 20_000 },
+      { element: 'earth', sourceId: 'duplicate', reduction: 0.2, expiresAt: 16_000, durationMs: 10_000 },
+      { element: 'air', sourceId: 'permanent-a', reduction: 0.15 },
+    ])
+    const savedAgain = serializeGameState(migrated, 608)
+    expect(savedAgain.schemaVersion).toBe(2)
+    expect(savedAgain.contentVersion).toBe(61)
+    expect(loadProfileGameFromRaw(JSON.stringify(savedAgain)).combat.elementalDamageReductions).toEqual(migrated.combat.elementalDamageReductions)
+    savedAgain.combat.arcaneCoreRuntime.elapsedMs = 30_000
+    const loadedWithStaleRuntimeWard = loadProfileGameFromRaw(JSON.stringify(savedAgain))
+    expect(loadedWithStaleRuntimeWard.combat.elementalDamageReductions).toEqual([{ element: 'air', sourceId: 'permanent-a', reduction: 0.15 }])
   })
 
   it('keeps the starter Crystal reward idempotent when a legacy profile already recorded it', () => {

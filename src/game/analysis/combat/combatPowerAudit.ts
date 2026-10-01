@@ -2,6 +2,7 @@ import { DUNGEONS, hasBossEncounter } from '../../content/dungeons/dungeons'
 import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/world-navigation'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
+import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 import type { DungeonId, MonsterId, WorldTierId } from '../../types'
 
 export interface MonsterPowerAuditRow {
@@ -44,6 +45,22 @@ export interface DifficultyInversionAudit {
   higherDifficulty: CombatTargetDifficulty
   higherTargetId: MonsterId
   higherPower: number
+}
+
+export interface ThreatKillsToBossAuditRow {
+  region: string
+  location: string
+  locationId: CombatLocationId
+  worldTier: WorldTierId
+  threatRequired: number
+  weakestThreatPerKill: number
+  medianThreatPerKill: number
+  strongestThreatPerKill: number
+  killsUsingWeakest: number
+  killsUsingMedian: number
+  killsUsingStrongest: number
+  worldTierDriftPercent: number
+  warnings: string[]
 }
 
 const DIFFICULTY_RANK: Record<CombatTargetDifficulty, number> = { easy: 0, standard: 1, hard: 2, apex: 3 }
@@ -112,3 +129,35 @@ export const buildDifficultyInversionAudit = (worldTier: WorldTierId = 1): Diffi
 }
 
 export const getPowerAuditWorldTiers = () => WORLD_TIERS
+
+/** Power-based boss pacing from authored target order and the canonical threat functions. */
+export const buildThreatKillsToBossAudit = (): ThreatKillsToBossAuditRow[] => {
+  const baseline = new Map<CombatLocationId, number>()
+  const rows: ThreatKillsToBossAuditRow[] = []
+  Object.values(COMBAT_LOCATIONS).filter((location) => location.dungeonId && getCombatEncounterMode(location) === 'targeted' && hasBossEncounter(DUNGEONS[location.dungeonId])).forEach((location) => {
+    const dungeonId = location.dungeonId!
+    const targets = Object.entries(location.targetMetadata ?? {})
+      .sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER))
+      .map(([monsterId]) => monsterId as MonsterId)
+    if (!targets.length) return
+    WORLD_TIERS.forEach((worldTier) => {
+      const gains = targets.map((monsterId) => resolveEnemyPowerRating(monsterId, worldTier)).sort((left, right) => left - right)
+      const requirement = resolveBossThreatRequirement(dungeonId, worldTier)
+      const weakest = gains[0]
+      const strongest = gains[gains.length - 1]
+      const median = gains[Math.floor(gains.length / 2)]
+      const killsUsingWeakest = Math.ceil(requirement / weakest)
+      const killsUsingMedian = Math.ceil(requirement / median)
+      const killsUsingStrongest = Math.ceil(requirement / strongest)
+      const wt1Median = baseline.get(location.id) ?? (worldTier === 1 ? killsUsingMedian : 0)
+      if (worldTier === 1) baseline.set(location.id, killsUsingMedian)
+      const worldTierDriftPercent = wt1Median > 0 ? Math.abs(killsUsingMedian - wt1Median) / wt1Median * 100 : 0
+      const warnings: string[] = []
+      if (killsUsingStrongest === 1) warnings.push('Strongest normal target unlocks the boss in one kill')
+      if (worldTier >= 3 && killsUsingMedian > 12) warnings.push('Median target requires more than 12 kills per boss attempt')
+      if (worldTier > 1 && worldTierDriftPercent > 25) warnings.push(`WT pacing drifts ${worldTierDriftPercent.toFixed(1)}% from WT1`)
+      rows.push({ region: COMBAT_REGIONS[location.regionId]?.name ?? location.regionId, location: location.name, locationId: location.id, worldTier, threatRequired: requirement, weakestThreatPerKill: weakest, medianThreatPerKill: median, strongestThreatPerKill: strongest, killsUsingWeakest, killsUsingMedian, killsUsingStrongest, worldTierDriftPercent, warnings })
+    })
+  })
+  return rows
+}

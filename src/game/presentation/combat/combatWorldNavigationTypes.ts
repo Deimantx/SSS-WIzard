@@ -1,12 +1,10 @@
-import type { CombatContinentId, CombatEncounterMode, CombatLocationId, CombatLocationType, CombatRegionId, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
+import type { CombatEncounterMode, CombatLocationId, CombatLocationType, CombatTargetDifficulty, CombatZoneType } from '../../content/world-navigation'
 import type { ElementId } from '../../content/elements/elements'
 import type { EliteZoneAffixId } from '../../content/elite-affixes'
 import type { DungeonId, MonsterId, WorldTierId } from '../../types'
 import type { CombatBossHuntPresentation } from './combatBossHuntPresentation'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
-export type CombatNavigationNodeState = 'locked' | 'available'
-
 export interface CombatEncounterViewModel {
   id: string
   monsterId: MonsterId | null
@@ -65,33 +63,7 @@ export interface CombatLocationViewModel {
   firstClearCompleted: boolean
 }
 
-export interface CombatContinentSummaryViewModel {
-  id: CombatContinentId
-  name: string
-  description: string
-  state: CombatNavigationNodeState
-  unlockText: string | null
-}
-
-export interface CombatRegionSummaryViewModel {
-  id: CombatRegionId
-  name: string
-  description: string
-  state: CombatNavigationNodeState
-  unlockText: string | null
-  locationCount: number
-}
-
-export interface CombatRegionViewModel extends CombatRegionSummaryViewModel {
-  locations: CombatLocationViewModel[]
-}
-
 export interface CombatWorldNavigationViewModel {
-  continents: CombatContinentSummaryViewModel[]
-  regions: CombatRegionSummaryViewModel[]
-  selectedContinent: CombatContinentSummaryViewModel
-  selectedRegion: CombatRegionViewModel
-  /** Flat canonical browse list; region metadata remains available for progression systems. */
   allLocations: CombatLocationViewModel[]
   selectedType: CombatZoneType
   selectedLocation: CombatLocationViewModel | null

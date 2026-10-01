@@ -3,7 +3,6 @@ import type { EliteZoneAffixId } from '../elite-affixes'
 import type { ElementId } from '../elements/elements'
 import type { ChronicleEventId } from '../../types'
 
-export type CombatContinentId = string
 export type CombatRegionId = string
 export type CombatLocationId = string
 
@@ -34,18 +33,8 @@ export type CombatNavigationUnlockCondition =
   | { type: 'any'; conditions: CombatNavigationUnlockCondition[] }
   | { type: 'all'; conditions: CombatNavigationUnlockCondition[] }
 
-export interface CombatContinentDefinition {
-  id: CombatContinentId
-  name: string
-  description?: string
-  regionIds: CombatRegionId[]
-  order: number
-  unlock?: CombatNavigationUnlockCondition
-}
-
 export interface CombatRegionDefinition {
   id: CombatRegionId
-  continentId: CombatContinentId
   name: string
   description?: string
   locationIds: CombatLocationId[]

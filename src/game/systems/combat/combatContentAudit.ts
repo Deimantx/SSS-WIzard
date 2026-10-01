@@ -10,6 +10,7 @@ import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
 import { COMBAT_LOCATIONS } from '../../content/world-navigation/worldNavigation'
+import { DUNGEONS } from '../../content/dungeons/dungeons'
 
 export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus',
@@ -35,7 +36,7 @@ export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
 ]
 
 export interface CombatV2ContentAuditRow {
-  id: MonsterId; name: string; region: CombatV2AuditRegionId; location: string; affinity: string; damageProfile: string[]; power: number; hp: number; basicDamage: number; basicIntervalMs: number; basicDps: number
+  id: MonsterId; name: string; region: CombatV2AuditRegionId; location: string; order: number; boss: boolean; affinity: string; damageProfile: string[]; power: number; hp: number; defense: number; basicDamage: number; basicIntervalMs: number; basicDps: number; zoneAffix: string | null
   maxRepeatableDirectCoefficient: number; dotTotalCoefficient: number; periodicDamageCoefficient: number; periodicHealPercent: number
   repeatableHealPercent: number; repeatableBarrierPercent: number; onceOnlyHealPercent: number; onceOnlyBarrierPercent: number
   repeatableSustainPercent: number; onceOnlySustainPercent: number; physicalComponentCount: number
@@ -119,6 +120,10 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   const power = resolveEnemyPowerBreakdown(id, worldTier)
   const profile = resolveWorldTierEnemyProfile(id, worldTier)
   const affixId = monster.bestiaryCategory === 'boss' ? undefined : COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]?.zoneAffixId
+  const locationDefinition = COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]
+  const dungeon = locationDefinition?.dungeonId ? DUNGEONS[locationDefinition.dungeonId] : undefined
+  const normalOrder = dungeon ? [...(dungeon.encounterSequence ?? dungeon.monsterPool)].indexOf(id) + 1 : 0
+  const targetOrder = locationDefinition?.targetMetadata?.[id]?.order ?? (normalOrder > 0 ? normalOrder : dungeon?.boss === id ? (dungeon.encounterSequence ?? dungeon.monsterPool).length + 1 : 0)
   const authored = collectAuthoredEffects(monster, affixId)
   const periodic = authored.flatMap(({ effect, onceOnly, sourceName }) => effect.type === 'apply-status' ?
     (effect.periodicEffects ?? STATUS_DEFINITIONS[effect.statusId]?.periodic?.effects ?? []).map((periodicEffect) => ({
@@ -187,7 +192,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   if (defaultFlatPeriodicDamageCount) warnings.push(`${defaultFlatPeriodicDamageCount} default flat periodic damage payload(s)`)
   if (defaultFlatPeriodicHealCount) warnings.push(`${defaultFlatPeriodicHealCount} default flat periodic healing payload(s)`)
   const defaultFlatPeriodicCount = defaultFlatPeriodicDamageCount + defaultFlatPeriodicHealCount
-  return [{ id, name: monster.name, region: regionForLocation(LOCATION_BY_ID[id]), location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps,
+  return [{ id, name: monster.name, region: regionForLocation(LOCATION_BY_ID[id]), location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', order: targetOrder, boss: monster.bestiaryCategory === 'boss', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, defense: profile.defense, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, zoneAffix: locationDefinition?.zoneAffixId ? ELITE_ZONE_AFFIXES[locationDefinition.zoneAffixId]?.name ?? locationDefinition.zoneAffixId : null,
     maxRepeatableDirectCoefficient: maximumDirectCoefficient(repeatable), dotTotalCoefficient: periodicDamageCoefficient, periodicDamageCoefficient, periodicHealPercent,
     repeatableHealPercent, repeatableBarrierPercent, onceOnlyHealPercent, onceOnlyBarrierPercent, repeatableSustainPercent, onceOnlySustainPercent,
     physicalComponentCount, defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]

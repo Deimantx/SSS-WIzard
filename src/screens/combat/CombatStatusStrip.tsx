@@ -8,7 +8,7 @@ import { formatTime } from '../../game/utils'
 import { GameTooltip } from '../../components/ui'
 import { CombatStatusTooltip } from '../../components/combat/CombatStatusTooltip'
 import { useGameStore } from '../../store/gameStore'
-import { getCombatVisualTimelineProgress, getCombatVisualRate } from './performance/combatTimeline'
+import { getCombatVisualTimelineProgress, getCombatVisualRate, sampleCombatVisualTimeline } from './performance/combatTimeline'
 import { subscribeCombatVisualFrame } from './performance/combatVisualClock'
 import { useCombatPerformanceToggle } from './performance/combatPerformanceDiagnostics'
 import { useCombatVisualTimeline } from './CombatActionProgress'
@@ -32,8 +32,13 @@ function ElementalWardChip({ ward }: { ward: ElementalWardPresentation }) {
   const source = ward.sourceId.endsWith('-ward') ? `${ward.sourceId.slice(0, -5).replace(/^./, (letter) => letter.toUpperCase())} Ward` : ward.sourceId.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
   const durationMs = ward.durationMs ?? 20_000
   const remainingMs = <ElementalWardTimer ward={ward} />
-  const displayRemaining = ward.remainingMs === null ? null : formatTime(ward.remainingMs)
+  const displayRemaining = ward.remainingMs === null ? null : <ElementalWardTooltipRemaining ward={ward} />
   return <GameTooltip block accent="elemental" content={<div className="combat-status-tooltip"><header><span className="combat-status-tooltip-category">BUFF · {ward.element.toUpperCase()}</span><h3>{ward.name}</h3></header><div className="combat-status-tooltip-lines"><p>Incoming {ward.element[0].toUpperCase() + ward.element.slice(1)} Damage: -{ward.reductionPercent}%</p>{ward.durationMs !== null && <p>Duration: {formatTime(ward.durationMs)}</p>}{displayRemaining !== null && <p>Remaining: {displayRemaining}</p>}<p>Source: {source}</p></div></div>}><span className="combat-status-chip status-category-buff is-timed" tabIndex={0} aria-label={`${ward.name}, reduces ${ward.element} damage by ${ward.reductionPercent} percent`}><span className="combat-status-icon"><Shield size={13} aria-hidden="true" /><ElementalWardRing ward={ward} durationMs={durationMs} /></span><strong>{ward.name.toUpperCase()}</strong>{remainingMs}</span></GameTooltip>
+}
+
+function ElementalWardTooltipRemaining({ ward }: { ward: ElementalWardPresentation }) {
+  const remaining = useGameStore((state) => ward.expiresAt === null ? null : Math.max(0, ward.expiresAt - state.combat.arcaneCoreRuntime.elapsedMs))
+  return <>{remaining === null ? '∞' : formatTime(remaining)}</>
 }
 
 function ElementalWardTimer({ ward }: { ward: ElementalWardPresentation }) {
@@ -46,8 +51,7 @@ function ElementalWardTimer({ ward }: { ward: ElementalWardPresentation }) {
   const timelineRef = useCombatVisualTimeline(snapshot)
   useEffect(() => subscribeCombatVisualFrame((timestamp) => {
     if (!timelineRef.current || !ref.current) return
-    const progress = getCombatVisualTimelineProgress(timelineRef.current, timestamp)
-    const currentRemaining = Math.max(0, remainingMs - progress * initialDurationMs)
+    const currentRemaining = sampleCombatVisualTimeline(timelineRef.current, timestamp)
     ref.current.textContent = formatTime(currentRemaining)
   }, { minIntervalMs: 100 }), [initialDurationMs, remainingMs, timelineRef])
   return <small ref={ref}>{ward.remainingMs === null ? '∞' : formatTime(remainingMs)}</small>

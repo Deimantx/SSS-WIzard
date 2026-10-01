@@ -12,16 +12,20 @@ import { MONSTERS } from '../../game/content/monsters'
 const FIRST_FRONTIER_OPENING_IDS = ['m1-choose-school', 'm1a-enter-elemental-counter-zone', 'm1b-exploit-elemental-weakness', 'm2-first-blood', 'm2a-elemental-frontier', 'm2b-equip-elemental-ward', 'm2c-test-elemental-ward', 'm2d-defeat-elemental-boss'] as const
 
 export const reconcileLoadedProfileState = (state: GameState, sourceContentVersion?: number): GameState => {
-  if (sourceContentVersion !== undefined && sourceContentVersion >= SAVE_VERSION) return state
   const wardNow = Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs || 0)
   const wards = new Map<string, GameState['combat']['elementalDamageReductions'][number]>()
   for (const ward of state.combat.elementalDamageReductions ?? []) {
+    if (ward.expiresAt !== undefined && ward.expiresAt <= wardNow) continue
     const canonical = ward.sourceId === `${ward.element}-ward`
     const durationMs = ward.durationMs ?? (canonical ? 20_000 : undefined)
     const expiresAt = ward.expiresAt === undefined ? undefined : sourceContentVersion !== undefined && sourceContentVersion < 60 && canonical ? Math.min(ward.expiresAt, wardNow + 20_000) : ward.expiresAt
-    wards.set(`${ward.element}:${ward.sourceId}`, { ...ward, ...(expiresAt === undefined ? {} : { expiresAt }), ...(durationMs === undefined ? {} : { durationMs: canonical && sourceContentVersion !== undefined && sourceContentVersion < 60 ? 20_000 : durationMs }) })
+    const normalized = { ...ward, ...(expiresAt === undefined ? {} : { expiresAt }), ...(durationMs === undefined ? {} : { durationMs: canonical && sourceContentVersion !== undefined && sourceContentVersion < 60 ? 20_000 : durationMs }) }
+    const key = `${ward.element}:${ward.sourceId}`
+    const previous = wards.get(key)
+    if (!previous || (normalized.expiresAt === undefined && previous.expiresAt !== undefined) || (normalized.expiresAt !== undefined && previous.expiresAt !== undefined && normalized.expiresAt > previous.expiresAt)) wards.set(key, normalized)
   }
   state.combat.elementalDamageReductions = state.combat.active ? [...wards.values()].slice(-32) : []
+  if (sourceContentVersion !== undefined && sourceContentVersion >= SAVE_VERSION) return state
   const progress = state.progress
   const chronicle = progress.chronicle
   const hasAnyBoss = Object.values(progress.bossKillsByBoss).some((kills) => kills > 0)
@@ -37,7 +41,7 @@ export const reconcileLoadedProfileState = (state: GameState, sourceContentVersi
   const sigilWarden = (progress.bossKillsByBoss['sigil-warden'] ?? 0) > 0
   const blackGatekeeper = (progress.bossKillsByBoss['black-gatekeeper'] ?? 0) > 0
   const enteredBlackGate = state.combat.dungeonId === 'black-gate' || state.ui.lastEnteredCombatDungeonId === 'black-gate'
-  const enteredBrokenMeridian = state.combat.active && state.combat.dungeonId === 'broken-meridian'
+  const enteredBrokenMeridian = state.combat.dungeonId === 'broken-meridian' || state.ui.lastEnteredCombatDungeonId === 'broken-meridian'
   const shatteredBossIds = ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] as const
   const allShatteredBosses = shatteredBossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) > 0)
   const clearlyProgressed = progress.lifetimeKills > 0 || hasAnyBoss || progress.tutorialStage === 'complete' || forest || bear || edrin

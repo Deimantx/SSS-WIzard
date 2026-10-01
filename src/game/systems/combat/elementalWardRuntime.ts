@@ -38,7 +38,9 @@ export const getElementalWardMultiplier = (state: GameState, element: ElementId 
 
 export const clearExpiredElementalWards = (state: GameState) => {
   const now = state.combat.arcaneCoreRuntime.elapsedMs
-  state.combat.elementalDamageReductions = (state.combat.elementalDamageReductions ?? []).filter((ward) => ward.expiresAt === undefined || ward.expiresAt > now)
+  const wards = state.combat.elementalDamageReductions ?? []
+  if (!wards.some((ward) => ward.expiresAt !== undefined && ward.expiresAt <= now)) return
+  state.combat.elementalDamageReductions = wards.filter((ward) => ward.expiresAt === undefined || ward.expiresAt > now)
 }
 
 export const clearElementalWards = (state: GameState) => { state.combat.elementalDamageReductions = [] }

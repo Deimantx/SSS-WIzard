@@ -89,6 +89,25 @@ describe("Act 0 enemy combat foundation", () => {
     expect(state.combat.enemyActionPatternId).toBe("unbound-opening");
   });
 
+  it("transitions Black Gatekeeper once into Gate Unbound without healing or duplicate phase state", () => {
+    const state = stateWithEnemy("black-gatekeeper")
+    state.combat.dungeonId = "black-gate"
+    state.combat.enemyHp = Math.ceil(state.combat.enemyMaxHp * 0.51)
+    const hpBefore = state.combat.enemyHp
+
+    damageEnemy(state, Math.ceil(state.combat.enemyMaxHp * 0.02), "spell")
+
+    expect(state.combat.enemyActionPatternId).toBe("unbound")
+    expect(state.combat.enemyHp).toBeLessThan(hpBefore)
+    expect(state.combat.enemyStatuses.filter((status) => status.statusId === "gate-unbound")).toHaveLength(1)
+    expect(state.combat.triggeredRuleIds.filter((id) => id.includes("black-gatekeeper-unbound-phase-threshold"))).toHaveLength(1)
+
+    damageEnemy(state, Math.ceil(state.combat.enemyMaxHp * 0.02), "spell")
+    expect(state.combat.enemyActionPatternId).toBe("unbound")
+    expect(state.combat.enemyStatuses.filter((status) => status.statusId === "gate-unbound")).toHaveLength(1)
+    expect(state.combat.triggeredRuleIds.filter((id) => id.includes("black-gatekeeper-unbound-phase-threshold"))).toHaveLength(1)
+  })
+
   it("resolves Edrin's opening Disruption once and never reapplies it after cleanse", () => {
     const state = stateWithEnemy("archmage-edrin-shade");
     state.combat.enemyHp = 3001;

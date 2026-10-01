@@ -1,4 +1,4 @@
-import { COMBAT_LOCATIONS, getCombatLocation, isCombatTargetForLocation, type CombatLocationId, type CombatTargetDifficulty } from '../../content/world-navigation'
+import { COMBAT_LOCATIONS, getCombatEncounterMode, getCombatLocation, isCombatTargetForLocation, type CombatLocationId, type CombatTargetDifficulty } from '../../content/world-navigation'
 import { DUNGEONS } from '../../content/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
@@ -13,6 +13,12 @@ import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelem
 import type { DungeonId, EquipmentPosition, GameState, MonsterId, SchoolId, WorldTierId } from '../../types'
 import { getSelectedSpellPreset } from '../../systems/spells'
 import { createEmptyResonanceState } from '../../systems/resonance/resonanceRuntime'
+import { getCrystalCacheDropChance } from '../../systems/crystals/crystalRuntime'
+import { getPlayerCombatStats } from '../../systems/combat/combatStats'
+import { SPELLS } from '../../content/spells/spells'
+import { ARTIFACTS } from '../../content/artifacts/artifacts'
+import { SIGIL_SETS } from '../../content/sigils/sigilSets'
+import { getCrystalVariantName } from '../../content/crystals/crystals'
 
 export const COMBAT_BALANCE_BENCHMARK_VERSION = 1
 export const COMBAT_BALANCE_BENCHMARK_SEED = COMBAT_RNG_DEFAULT_SEED ^ 0x4B41424C
@@ -47,6 +53,15 @@ export interface CombatFarmingBenchmarkBuildSummary {
   selectedSpellPresetName: string | null
   guardianId: GameState['guardians']['selectedGuardianId']
   guardianName: string | null
+  spellPower: number
+  defense: number
+  critChance: number
+  cooldownRecovery: number
+  worldTier: WorldTierId
+  equippedSpells: string[]
+  artifacts: string[]
+  sigils: string[]
+  crystals: string[]
   maxHealth: number
   maxMana: number
   schoolLevels: Record<SchoolId, number>
@@ -54,6 +69,7 @@ export interface CombatFarmingBenchmarkBuildSummary {
 }
 
 export interface CombatFarmingBenchmarkResult {
+  seed: number
   locationId: CombatLocationId
   targetEnemyId: MonsterId
   worldTier: WorldTierId
@@ -67,6 +83,12 @@ export interface CombatFarmingBenchmarkResult {
   kills: number
   averageKillTimeMs: number | null
   killsPerHour: number
+  lifeEssencePerHour: number
+  artifactEssencePerHour: number
+  sigilDropsPerHour: number
+  crystalCachesPerHour: number
+  expectedCrystalCachesPerHour: number
+  arcanePointsPerHour: number
   resonanceTotal: ResonanceState
   resonancePerHour: ResonanceState
   totalResonancePerHour: number
@@ -132,21 +154,25 @@ export const getCombatFarmingBenchmarkSeed = (targetEnemyId: MonsterId, worldTie
 
 export const normalizeCombatFarmingBenchmarkDuration = (durationMs: number) => Math.min(COMBAT_BALANCE_BENCHMARK_MAX_DURATION_MS, Math.max(COMBAT_BALANCE_BENCHMARK_STEP_MS, Math.round(Number.isFinite(durationMs) ? durationMs : 5 * 60 * 1_000)))
 
-export const getCombatFarmingBenchmarkTargets = (locationId: CombatLocationId): MonsterId[] => {
+export const getCombatFarmingBenchmarkTargets = (locationId: CombatLocationId, includeBoss = false): MonsterId[] => {
   const location = getCombatLocation(locationId)
-  if (!location?.targetMetadata) return []
-  return Object.entries(location.targetMetadata)
-    .filter(([, metadata]) => metadata !== undefined)
-    .sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER))
-    .map(([monsterId]) => monsterId as MonsterId)
-    .filter((monsterId) => isCombatTargetForLocation(location, location.dungeonId ?? null, monsterId))
+  if (!location) return []
+  const dungeon = location.dungeonId ? DUNGEONS[location.dungeonId] : undefined
+  const mode = getCombatEncounterMode(location)
+  const orderedIds = mode === 'targeted'
+    ? Object.entries(location.targetMetadata ?? {}).filter(([, metadata]) => metadata !== undefined).sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER)).map(([monsterId]) => monsterId as MonsterId)
+    : mode === 'sequence' ? [...(dungeon?.encounterSequence ?? dungeon?.monsterPool ?? [])] : []
+  const normalTargets = orderedIds.filter((monsterId) => !isBossMonster(MONSTERS[monsterId]) && (mode === 'sequence' ? Boolean(dungeon?.encounterSequence?.includes(monsterId)) : isCombatTargetForLocation(location, location.dungeonId ?? null, monsterId)))
+  const bossId = includeBoss && location.dungeonId ? DUNGEONS[location.dungeonId]?.boss : undefined
+  return bossId ? [...normalTargets, bossId] : normalTargets
 }
 
 export const getCombatFarmingBenchmarkDifficulty = (locationId: CombatLocationId, targetEnemyId: MonsterId): CombatTargetDifficulty | null => getCombatLocation(locationId)?.targetMetadata?.[targetEnemyId]?.difficulty ?? null
 
-export const buildCombatFarmingBenchmarkBuildSummary = (state: Pick<GameState, 'equipment' | 'spellPresets' | 'guardians' | 'player' | 'schools' | 'arcaneCore'>): CombatFarmingBenchmarkBuildSummary => {
+export const buildCombatFarmingBenchmarkBuildSummary = (state: GameState): CombatFarmingBenchmarkBuildSummary => {
   const selectedPreset = getSelectedSpellPreset(state)
   const guardianId = state.guardians.selectedGuardianId
+  const combatStats = getPlayerCombatStats(state)
   return {
     equipment: EQUIPMENT_SLOTS.map((slot) => {
       const itemId = state.equipment[slot]
@@ -156,6 +182,22 @@ export const buildCombatFarmingBenchmarkBuildSummary = (state: Pick<GameState, '
     selectedSpellPresetName: selectedPreset?.name ?? null,
     guardianId,
     guardianName: guardianId ? GUARDIANS[guardianId]?.name ?? guardianId : null,
+    spellPower: combatStats.spellPower,
+    defense: combatStats.defense,
+    critChance: combatStats.critChance,
+    cooldownRecovery: combatStats.cooldownRecovery,
+    worldTier: state.worldTier.current,
+    equippedSpells: (selectedPreset?.slots ?? []).flatMap((slot) => slot.spellId ? [`${SPELLS[slot.spellId]?.name ?? slot.spellId} R${state.progress.spellRanks[slot.spellId] ?? 0}${slot.autoCast ? ' (Auto)' : ''}`] : []),
+    artifacts: Object.entries(state.artifactProgress).flatMap(([artifactId, progress]) => {
+      const ranks = Object.values(progress.minorRanks).reduce<number>((sum, rank) => sum + (rank ?? 0), 0)
+      const definition = ARTIFACTS[artifactId as keyof typeof ARTIFACTS]
+      return ranks > 0 ? [`${definition ? ITEMS[definition.itemId]?.name ?? artifactId : artifactId} R${ranks}`] : []
+    }),
+    sigils: Object.entries(state.sigils.equipped).flatMap(([slot, instanceId]) => {
+      const sigil = instanceId ? state.sigils.storage[instanceId] : undefined
+      return sigil ? [`${slot}: ${SIGIL_SETS[sigil.setId]?.name ?? sigil.setId} T${sigil.tier} ${sigil.quality}`] : []
+    }),
+    crystals: state.crystals.equippedSlots.flatMap((variantId) => variantId ? [getCrystalVariantName(variantId)] : []),
     maxHealth: state.player.maxHealth,
     maxMana: state.player.maxMana,
     schoolLevels: Object.fromEntries(SCHOOL_IDS.map((schoolId) => [schoolId, state.schools[schoolId].level])) as Record<SchoolId, number>,
@@ -166,6 +208,7 @@ export const buildCombatFarmingBenchmarkBuildSummary = (state: Pick<GameState, '
 const emptyRates = (): ResonanceState => createEmptyResonanceState()
 
 const emptyResult = (input: CombatFarmingBenchmarkInput, difficulty: CombatTargetDifficulty | null, requestedDurationMs: number, invalidReason?: string): CombatFarmingBenchmarkResult => ({
+  seed: getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.worldTier, input.seed),
   locationId: input.locationId,
   targetEnemyId: input.targetEnemyId,
   worldTier: input.worldTier,
@@ -179,6 +222,12 @@ const emptyResult = (input: CombatFarmingBenchmarkInput, difficulty: CombatTarge
   kills: 0,
   averageKillTimeMs: null,
   killsPerHour: 0,
+  lifeEssencePerHour: 0,
+  artifactEssencePerHour: 0,
+  sigilDropsPerHour: 0,
+  crystalCachesPerHour: 0,
+  expectedCrystalCachesPerHour: 0,
+  arcanePointsPerHour: 0,
   resonanceTotal: emptyRates(),
   resonancePerHour: emptyRates(),
   totalResonancePerHour: 0,
@@ -204,9 +253,12 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
   damageTaken = 0
   healingReceived = 0
   barrierAbsorbed = 0
+  sigilDrops = 0
+  loot = new Map<string, number>()
   timeToDeathMs: number | null = null
   invalidReason: string | undefined
   private encounterStartedAtMs: number | null = null
+  targetIsBoss = false
 
   beginRun = (_dungeonId: DungeonId) => undefined
   endRun = (_reason: 'leave' | 'defeat' | 'reset' | 'complete') => undefined
@@ -223,8 +275,8 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
     if (event.sourceId === 'encounter-start') {
       if (!event.targetMonsterId) return
       const monster = MONSTERS[event.targetMonsterId]
-      if (!monster || isBossMonster(monster)) {
-        this.invalidReason = 'Boss encounter entered the normal farming matrix.'
+      if (!monster || isBossMonster(monster) !== this.targetIsBoss) {
+        this.invalidReason = 'Encounter role does not match the selected target role.'
         return
       }
       if (event.targetMonsterId !== this.targetEnemyId) {
@@ -237,8 +289,8 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
 
     if (event.sourceId === 'enemy-defeated') {
       const monster = event.targetMonsterId ? MONSTERS[event.targetMonsterId] : undefined
-      if (!monster || isBossMonster(monster)) {
-        this.invalidReason = 'Boss defeat entered the normal farming matrix.'
+      if (!monster || isBossMonster(monster) !== this.targetIsBoss) {
+        this.invalidReason = 'Defeated target role does not match the selected target role.'
         return
       }
       if (event.targetMonsterId !== this.targetEnemyId) {
@@ -250,6 +302,9 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
       this.encounterStartedAtMs = null
       return
     }
+
+    if (event.category === 'loot' && event.itemId) this.loot.set(event.itemId, (this.loot.get(event.itemId) ?? 0) + Math.max(0, event.amount ?? 0))
+    if (event.category === 'sigil-loot') this.sigilDrops += 1
 
     if (event.sourceId === 'player-defeated') {
       this.timeToDeathMs = this.simulatedTimeMs
@@ -310,16 +365,21 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
   const difficulty = getCombatFarmingBenchmarkDifficulty(input.locationId, input.targetEnemyId)
   const dungeon = location?.dungeonId ? DUNGEONS[location.dungeonId] : undefined
   if (!location || !dungeon) return emptyResult(input, difficulty, durationMs, 'Location is not backed by a combat dungeon.')
-  if (isBossMonster(MONSTERS[input.targetEnemyId])) return emptyResult(input, difficulty, durationMs, 'Boss targets are excluded from the normal farming matrix.')
-  if (!isCombatTargetForLocation(location, dungeon.id, input.targetEnemyId)) return emptyResult(input, difficulty, durationMs, 'Target is not a valid targeted combat target for this location.')
+  const targetIsBoss = isBossMonster(MONSTERS[input.targetEnemyId])
+  if (targetIsBoss && dungeon.boss !== input.targetEnemyId) return emptyResult(input, difficulty, durationMs, 'Boss target is not authored for this location.')
+  const sequenceTarget = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.includes(input.targetEnemyId))
+  if (!targetIsBoss && !isCombatTargetForLocation(location, dungeon.id, input.targetEnemyId) && !sequenceTarget) return emptyResult(input, difficulty, durationMs, 'Target is not a valid combat target for this location.')
 
+  const seed = getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.worldTier, input.seed)
   const state = normalizeBenchmarkClone(input.sourceState, input)
   const collector = new BenchmarkCollector()
   collector.targetEnemyId = input.targetEnemyId
+  collector.targetIsBoss = targetIsBoss
   if (!spawnEnemy(state, input.targetEnemyId, collector)) return emptyResult(input, difficulty, durationMs, 'The selected Spell Preset could not activate for the benchmark.')
 
   const startingHealth = state.player.health
   const startingMana = state.player.mana
+  const startingArcanePoints = state.arcaneCore.totalPointsEarned ?? 0
   let minimumHealth = startingHealth
   let minimumMana = startingMana
   while (collector.simulatedTimeMs < durationMs && state.combat.active && !collector.invalidReason && collector.timeToDeathMs === null) {
@@ -336,6 +396,7 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
   const totalResonancePerHour = RESONANCE_TYPES.reduce((total, type) => total + resonancePerHour[type], 0)
   const invalidReason = collector.invalidReason
   return {
+    seed,
     locationId: input.locationId,
     targetEnemyId: input.targetEnemyId,
     worldTier: input.worldTier,
@@ -349,6 +410,12 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
     kills: collector.kills,
     averageKillTimeMs: collector.killDurationsMs.length ? collector.killDurationsMs.reduce((total, value) => total + value, 0) / collector.killDurationsMs.length : null,
     killsPerHour: hours > 0 ? collector.kills / hours : 0,
+    lifeEssencePerHour: hours > 0 ? (collector.loot.get('life-essence') ?? 0) / hours : 0,
+    artifactEssencePerHour: hours > 0 ? (collector.loot.get('artifact-essence') ?? 0) / hours : 0,
+    sigilDropsPerHour: hours > 0 ? collector.sigilDrops / hours : 0,
+    crystalCachesPerHour: hours > 0 ? (collector.loot.get('tier-1-crystal-cache') ?? 0) / hours : 0,
+    expectedCrystalCachesPerHour: hours > 0 ? (collector.kills / hours) * getCrystalCacheDropChance(state, input.targetEnemyId, input.worldTier) : 0,
+    arcanePointsPerHour: hours > 0 ? Math.max(0, (state.arcaneCore.totalPointsEarned ?? 0) - startingArcanePoints) / hours : 0,
     resonanceTotal: collector.resonance,
     resonancePerHour,
     totalResonancePerHour,

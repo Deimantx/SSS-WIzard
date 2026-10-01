@@ -4,28 +4,16 @@ import { MONSTERS } from '../monsters'
 import { getMonsterPrimaryAffinity } from '../monsters/monsterTypes'
 import { ELEMENT_IDS } from '../elements/elements'
 import { getElementMultiplier } from '../elements/elements'
-import type { CombatContinentDefinition, CombatContinentId, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
+import type { CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatRegionDefinition, CombatRegionId } from './worldNavigationTypes'
 
 const firstFrontierLocationIds: readonly CombatLocationId[] = ['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin', 'whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs']
 const elementalScarLocationIds: readonly CombatLocationId[] = ['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin']
 const shatteredMeridianLocationIds: readonly CombatLocationId[] = ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory', 'broken-meridian']
 const blackSigilReachLocationIds: readonly CombatLocationId[] = ['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate']
 
-export const COMBAT_CONTINENTS: Record<CombatContinentId, CombatContinentDefinition> = {
-  'continent-1': {
-    id: 'continent-1',
-    name: 'Continent I',
-    description: 'The first mapped frontier beyond the tower.',
-    regionIds: ['first-frontier', 'elemental-scar', 'shattered-meridian', 'black-sigil-reach'],
-    order: 1,
-    unlock: { type: 'always' },
-  },
-}
-
 export const COMBAT_REGIONS: Record<CombatRegionId, CombatRegionDefinition> = {
   'first-frontier': {
     id: 'first-frontier',
-    continentId: 'continent-1',
     name: 'First Frontier',
     description: 'The first stretch of wild territory traced from the tower.',
     locationIds: [...firstFrontierLocationIds],
@@ -34,7 +22,6 @@ export const COMBAT_REGIONS: Record<CombatRegionId, CombatRegionDefinition> = {
   },
   'elemental-scar': {
     id: 'elemental-scar',
-    continentId: 'continent-1',
     name: 'Elemental Scar',
     description: 'A wounded elemental corridor where the old frontier gives way to unstable crossings.',
     locationIds: [...elementalScarLocationIds],
@@ -43,7 +30,6 @@ export const COMBAT_REGIONS: Record<CombatRegionId, CombatRegionDefinition> = {
   },
   'shattered-meridian': {
     id: 'shattered-meridian',
-    continentId: 'continent-1',
     name: 'Shattered Meridian',
     description: 'A fractured leyline where roads, ruins, and starlight pull against one another.',
     locationIds: [...shatteredMeridianLocationIds],
@@ -52,7 +38,6 @@ export const COMBAT_REGIONS: Record<CombatRegionId, CombatRegionDefinition> = {
   },
   'black-sigil-reach': {
     id: 'black-sigil-reach',
-    continentId: 'continent-1',
     name: 'Black Sigil Reach',
     description: 'The sealed approach to the dark gate, marked by names and wards that should not endure.',
     locationIds: [...blackSigilReachLocationIds],
@@ -306,7 +291,7 @@ export const getCombatLocationByDungeonId = (dungeonId: DungeonId | null | undef
 
 type NavigationProgress = Pick<GameState['progress'], 'bossKillsByBoss'> & Partial<Pick<GameState['progress'], 'startingSchoolId' | 'chronicle'>>
 
-export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDefinition['unlock'] | CombatRegionDefinition['unlock'] | CombatContinentDefinition['unlock'], progress: NavigationProgress): boolean => {
+export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDefinition['unlock'] | CombatRegionDefinition['unlock'], progress: NavigationProgress): boolean => {
   if (!condition || condition.type === 'always') return true
   if (condition.type === 'boss-kill') return (progress.bossKillsByBoss[condition.bossId] ?? 0) >= (condition.count ?? 1)
   if (condition.type === 'all-boss-kills') return condition.bossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) >= 1)

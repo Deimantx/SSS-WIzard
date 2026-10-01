@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DUNGEON_ORDER, DUNGEONS, isDungeonUnlocked } from '../dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
-import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS, isCombatLocationUnlocked } from './worldNavigation'
+import { COMBAT_LOCATIONS, COMBAT_REGIONS, isCombatLocationUnlocked } from './worldNavigation'
 import { COMBAT_LOCATION_TYPE_METADATA } from './worldNavigationTypes'
 import { MONSTERS } from '../monsters'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../monsters/elementalTutorial'
@@ -10,7 +10,6 @@ import { validateCombatWorldNavigation, type CombatWorldNavigationContent } from
 import { getElementMultiplier } from '../elements/elements'
 
 const validContent = (): CombatWorldNavigationContent => ({
-  continents: { ...COMBAT_CONTINENTS },
   regions: { ...COMBAT_REGIONS },
   locations: { ...COMBAT_LOCATIONS },
 })
@@ -82,9 +81,7 @@ describe('combat world navigation content', () => {
     expect(new Set(Object.values(COMBAT_LOCATIONS).filter((location) => location.dungeonId).map((location) => location.dungeonId))).toEqual(new Set(DUNGEON_ORDER))
   })
 
-  it('keeps continent, region, and location relationships explicit', () => {
-    expect(COMBAT_CONTINENTS['continent-1'].regionIds).toEqual(['first-frontier', 'elemental-scar', 'shattered-meridian', 'black-sigil-reach'])
-    expect(COMBAT_REGIONS['first-frontier'].continentId).toBe('continent-1')
+  it('keeps internal region and location progression order explicit', () => {
     expect(COMBAT_REGIONS['first-frontier'].locationIds).toEqual(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin', 'whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'])
     expect(COMBAT_LOCATIONS['whispering-woods']).toMatchObject({ regionId: 'first-frontier', type: 'combat-zone', dungeonId: 'whispering-woods' })
     expect(COMBAT_LOCATIONS['howling-den']).toMatchObject({ encounterMode: 'targeted', type: 'elite-zone', dungeonId: 'howling-den', zoneAffixId: 'frenzied' })
@@ -175,15 +172,12 @@ describe('combat world navigation content', () => {
 
   it('reports broken parent links, duplicate mappings, and invalid orders', () => {
     const content = validContent()
-    content.continents['duplicate'] = { ...content.continents['continent-1'], id: 'continent-1', order: 0 }
-    content.regions['orphan'] = { id: 'orphan', continentId: 'missing', name: 'Orphan', locationIds: ['missing-location'], order: 1 }
+    content.regions['orphan'] = { id: 'orphan', name: 'Orphan', locationIds: ['missing-location'], order: 1 }
     content.locations['duplicate-location'] = { ...content.locations['whispering-woods'], id: 'duplicate-location', regionId: 'first-frontier', order: 1 }
 
     const errors = validateCombatWorldNavigation(content)
     expect(errors).toEqual(expect.arrayContaining([
-      'continents: orders must be positive integers',
-      'orphan: references missing continent missing',
-      'orphan: must be listed by exactly one continent',
+      'regions: sibling orders must be unique',
       'orphan: references missing location missing-location',
       'duplicate-location: dungeon whispering-woods is already mapped by whispering-woods',
     ]))

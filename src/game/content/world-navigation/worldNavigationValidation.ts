@@ -1,12 +1,11 @@
 import { DUNGEON_ORDER, DUNGEONS, hasBossEncounter } from '../dungeons/dungeons'
 import { MONSTERS, isBossMonster } from '../monsters'
 import { ELITE_ZONE_AFFIXES } from '../elite-affixes'
-import { COMBAT_CONTINENTS, COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
+import { COMBAT_LOCATIONS, COMBAT_REGIONS } from './worldNavigation'
 import { isElementId } from '../elements/elements'
-import type { CombatContinentDefinition, CombatLocationDefinition, CombatRegionDefinition, CombatTargetDifficulty } from './worldNavigationTypes'
+import type { CombatLocationDefinition, CombatRegionDefinition, CombatTargetDifficulty } from './worldNavigationTypes'
 
 export interface CombatWorldNavigationContent {
-  continents: Record<string, CombatContinentDefinition>
   regions: Record<string, CombatRegionDefinition>
   locations: Record<string, CombatLocationDefinition>
 }
@@ -27,34 +26,17 @@ const validateOrders = (label: string, entries: readonly { id: string; order: nu
 
 const TARGET_DIFFICULTIES: readonly CombatTargetDifficulty[] = ['easy', 'standard', 'hard', 'apex']
 
-export function validateCombatWorldNavigation(content: CombatWorldNavigationContent = { continents: {}, regions: {}, locations: {} }): string[] {
+export function validateCombatWorldNavigation(content: CombatWorldNavigationContent = { regions: {}, locations: {} }): string[] {
   const errors: string[] = []
-  const continents = Object.values(content.continents)
   const regions = Object.values(content.regions)
   const locations = Object.values(content.locations)
 
-  if (unique(continents.map((entry) => entry.id)).length !== continents.length) errors.push('continents: IDs must be unique')
   if (unique(regions.map((entry) => entry.id)).length !== regions.length) errors.push('regions: IDs must be unique')
   if (unique(locations.map((entry) => entry.id)).length !== locations.length) errors.push('locations: IDs must be unique')
-  validateOrders('continents', continents, errors)
-
-  const continentRegionReferences = new Map<string, string[]>()
-  continents.forEach((continent) => {
-    continent.regionIds.forEach((regionId) => {
-      const references = continentRegionReferences.get(regionId) ?? []
-      references.push(continent.id)
-      continentRegionReferences.set(regionId, references)
-      if (!content.regions[regionId]) errors.push(`${continent.id}: references missing region ${regionId}`)
-    })
-  })
   regions.forEach((region) => {
-    if (!content.continents[region.continentId]) errors.push(`${region.id}: references missing continent ${region.continentId}`)
-    const parentReferences = continentRegionReferences.get(region.id) ?? []
-    if (parentReferences.length !== 1) errors.push(`${region.id}: must be listed by exactly one continent`)
-    if (parentReferences[0] && parentReferences[0] !== region.continentId) errors.push(`${region.id}: continent parent does not match its listing continent`)
     if (region.locationIds.length === 0 && !region.prototype) errors.push(`${region.id}: authored region must contain at least one location`)
   })
-  validateOrders('regions', regions, errors, (region) => content.regions[region.id]?.continentId ?? '')
+  validateOrders('regions', regions, errors)
 
   const regionLocationReferences = new Map<string, string[]>()
   regions.forEach((region) => {
@@ -120,7 +102,7 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
   return errors
 }
 
-export const WORLD_NAVIGATION_VALIDATION_ERRORS = validateCombatWorldNavigation({ continents: COMBAT_CONTINENTS, regions: COMBAT_REGIONS, locations: COMBAT_LOCATIONS })
+export const WORLD_NAVIGATION_VALIDATION_ERRORS = validateCombatWorldNavigation({ regions: COMBAT_REGIONS, locations: COMBAT_LOCATIONS })
 if (WORLD_NAVIGATION_VALIDATION_ERRORS.length > 0 && import.meta.env.DEV) {
   console.error(`[world-navigation] ${WORLD_NAVIGATION_VALIDATION_ERRORS.join('; ')}`)
 }

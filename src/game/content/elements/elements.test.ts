@@ -18,6 +18,22 @@ describe('element definitions', () => {
     expect(getElementMultiplier(attacking, defending)).toBe(expected)
   })
 
+  it('pins every Combat V2 elemental pair', () => {
+    const matrix = {
+      fire: [1, 0.5, 1, 1.5, 1],
+      water: [1.5, 1, 0.5, 1, 1],
+      air: [1, 1.5, 1, 0.5, 1],
+      earth: [0.5, 1, 1.5, 1, 1],
+      arcane: [1, 1, 1, 1, 1],
+    } as const
+    const elements = ['fire', 'water', 'air', 'earth', 'arcane'] as const
+    for (const attacking of elements) {
+      for (const [columnIndex, defending] of elements.entries()) {
+        expect(getElementMultiplier(attacking, defending)).toBe(matrix[attacking][columnIndex])
+      }
+    }
+  })
+
   it('classifies matchups from the same configured multiplier', () => {
     expect(getElementMatchup('fire', 'earth')).toBe('strong')
     expect(getElementMatchup('fire', 'water')).toBe('resisted')

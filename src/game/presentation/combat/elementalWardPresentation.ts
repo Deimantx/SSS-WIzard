@@ -21,7 +21,9 @@ export const getActiveElementalWardPresentations = (state: Pick<GameState, 'comb
   for (const ward of state.combat.elementalDamageReductions ?? []) {
     if (ward.expiresAt !== undefined && ward.expiresAt <= now) continue
     const existing = strongestByElement.get(ward.element)
-    if (!existing || ward.reduction > existing.reduction || (ward.reduction === existing.reduction && ward.sourceId.localeCompare(existing.sourceId) < 0)) strongestByElement.set(ward.element, ward)
+    const longer = (ward.expiresAt ?? Number.POSITIVE_INFINITY) > (existing?.expiresAt ?? Number.POSITIVE_INFINITY)
+    const sameExpiry = (ward.expiresAt ?? null) === (existing?.expiresAt ?? null)
+    if (!existing || ward.reduction > existing.reduction || (ward.reduction === existing.reduction && (longer || (sameExpiry && ward.sourceId.localeCompare(existing.sourceId) < 0)))) strongestByElement.set(ward.element, ward)
   }
   return [...strongestByElement.values()].map((ward) => ({
     element: ward.element,

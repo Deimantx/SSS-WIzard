@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildBossPowerRatioAudit, buildDifficultyInversionAudit, buildMonsterPowerAudit, buildSequencePowerAudit, getPowerAuditWorldTiers } from './combatPowerAudit'
+import { buildBossPowerRatioAudit, buildDifficultyInversionAudit, buildMonsterPowerAudit, buildSequencePowerAudit, buildThreatKillsToBossAudit, getPowerAuditWorldTiers } from './combatPowerAudit'
 
 describe('combat Power audit reports', () => {
   it('emits deterministic finite rows for targeted and sequence content', () => {
@@ -25,5 +25,14 @@ describe('combat Power audit reports', () => {
     expect(ratios.every((row) => Number.isFinite(row.bossToLastNormalRatio) && row.bossToLastNormalRatio > 1)).toBe(true)
     expect(buildDifficultyInversionAudit(1).some((row) => row.locationId === 'rootscar-hollow')).toBe(false)
     expect(getPowerAuditWorldTiers()).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('reports deterministic kills-to-boss pacing for targeted boss zones across WT1-WT5', () => {
+    const first = buildThreatKillsToBossAudit()
+    expect(first).toEqual(buildThreatKillsToBossAudit())
+    expect(first.length).toBeGreaterThanOrEqual(25)
+    expect(first.every((row) => row.threatRequired > 0 && row.weakestThreatPerKill > 0 && row.killsUsingWeakest >= row.killsUsingMedian && row.killsUsingMedian >= row.killsUsingStrongest)).toBe(true)
+    expect(new Set(first.map((row) => row.worldTier))).toEqual(new Set([1, 2, 3, 4, 5]))
+    expect(first.some((row) => row.locationId === 'whispering-woods' && row.worldTier === 1)).toBe(true)
   })
 })

@@ -16,6 +16,7 @@ import {
   normalizeCrystalState,
   openCrystalCaches,
   isCrystalCacheEligiblePower,
+  getCrystalCacheDropChance,
   resolveCrystalCacheDrop,
   renameCrystalPreset,
   saveCrystalPreset,
@@ -177,6 +178,7 @@ describe("Crystal System V1", () => {
 
   it("only drops caches after unlock and the current power threshold", () => {
     const state = createInitialState();
+    expect(getCrystalCacheDropChance(state, "meridian-splitter", 5)).toBe(0)
     expect(
       resolveCrystalCacheDrop(state, "meridian-splitter", 5, () => 0),
     ).toBe(false);
@@ -196,6 +198,7 @@ describe("Crystal System V1", () => {
     expect(resolveCrystalCacheDrop(state, "graveglass-behemoth", 3, () => 0)).toBe(false);
     expect(state.inventory["tier-1-crystal-cache"] ?? 0).toBe(0);
     state.progress.bossKillsByBoss["meridian-splitter"] = 1;
+    expect(getCrystalCacheDropChance(state, "meridian-splitter", 5)).toBeGreaterThan(0)
     expect(resolveCrystalCacheDrop(state, "graveglass-behemoth", 3, () => 0)).toBe(true);
     expect(state.inventory["tier-1-crystal-cache"]).toBe(1);
   });

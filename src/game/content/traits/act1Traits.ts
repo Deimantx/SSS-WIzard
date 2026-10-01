@@ -1,15 +1,6 @@
-import type { TraitDefinition, TraitId } from '../../systems/combat/combatTypes'
-
-const ACT1_TRAIT_IDS: TraitId[] = [
-  'drowned-acolyte-devotion', 'reliquary-slime-engulf', 'mist-wraith-fade', 'rune-leech-siphon', 'cinder-hound-flameblood', 'flamebound-rekindle', 'rootscar-ancient-regrowth', 'ash-cultist-fan', 'fire-elemental-emberheart', 'lava-eel-molten-hide', 'thorn-maw-venom', 'rootbound-stalker-ambush', 'briar-sprite-bloom', 'moss-carapace-regrowth', 'remnant-marauder-pressure', 'arcane-binder-binding', 'broken-construct-ward', 'rift-archer-precision', 'graveglass-shade-cursed', 'bone-shardling-brittle', 'silent-mourner-fade', 'crypt-guardian-ward', 'volt-wisp-static', 'static-armor-ward', 'gale-scribe-acceleration', 'charged-seeker-twin-arc', 'starbound-eye-gaze', 'astral-husk-weight', 'orbiting-fragment-ward', 'lenskeeper-disruption', 'meridian-warden-ward', 'fractured-channeler-split', 'arc-surge-vulnerability', 'linebreaker-disruption', 'name-eater-silence', 'bound-echo-repetition', 'hollow-liturgist-curse', 'whisper-archivist-erasure', 'sigil-guardian-ward', 'black-seal-parasite-corruption', 'vault-devourer-regrowth', 'inkbound-specter-curse', 'gatebound-remnant-cleave', 'black-rift-stalker-corruption', 'portalbound-acolyte-mute', 'sealbreaker-construct-ward', 'meridian-splitter-severed-phase', 'black-gatekeeper-unbound-phase',
-]
-
-const genericAct1Traits: Record<string, TraitDefinition> = Object.fromEntries(ACT1_TRAIT_IDS.map((id) => [id, {
-  id, name: id.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join(' '), description: "A distinct Act 1 combat trait shaping this creature's behavior.",
-}]))
+import type { TraitDefinition } from '../../systems/combat/combatTypes'
 
 export const ACT1_TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
-  ...genericAct1Traits,
   'drowned-acolyte-devotion': {
     id: 'drowned-acolyte-devotion', name: 'Drowned Devotion', description: 'Receives 10% more Barrier.',
     modifiers: [{ key: 'barrier-received-percent', value: 0.1 }],

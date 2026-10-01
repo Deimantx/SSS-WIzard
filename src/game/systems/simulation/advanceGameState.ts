@@ -29,6 +29,7 @@ import type { DungeonStatisticsObserver } from '../../telemetry/dungeon/dungeonS
 import { sanitizeCombatTimeScale } from '../../../store/actions/debugActions'
 import { advanceGuardianUpkeep, ensureGuardianForCurrentEncounter, getGuardianAttackBoundary, resolveGuardianAttack, suppressGuardianIfOutOfMana } from '../summoning/summoningRuntime'
 import { advanceArcaneCoreRuntimeTime } from '../arcaneCore/arcaneCoreRuntime'
+import { clearExpiredElementalWards } from '../combat/elementalWardRuntime'
 import { recordArcaneCoreCooldownCompletion } from '../arcaneCore/arcaneCoreMechanicRuntime'
 import { recordChronicleEvent } from '../chronicles/chronicleRuntime'
 
@@ -288,6 +289,7 @@ const advanceCombatTimeline = (state: GameState, delta: number, context: Advance
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
     context.onCombatElapsed?.(elapsed)
     advanceArcaneCoreRuntimeTime(state, elapsed)
+    clearExpiredElementalWards(state)
 
     if (!playerBlockedAtSegmentStart && playerRate > 0 && state.combat.pendingPlayerSpellCast) state.combat.pendingPlayerSpellCast.remainingWorkMs = Math.max(0, state.combat.pendingPlayerSpellCast.remainingWorkMs - elapsed * playerRate)
     if (!enemyBlockedAtSegmentStart && state.combat.enemyCurrentStepId && enemyRate > 0) state.combat.enemyActionTimerMs = Math.max(0, state.combat.enemyActionTimerMs - elapsed * enemyRate)
@@ -377,6 +379,7 @@ const advanceCombatDowntimeTimeline = (state: GameState, delta: number, context:
     const elapsed = Math.min(remaining, Math.max(0, untilEvent))
     context.onCombatElapsed?.(elapsed)
     advanceArcaneCoreRuntimeTime(state, elapsed)
+    clearExpiredElementalWards(state)
 
     const pendingStatusExpirations = tickStatuses(state, elapsed, executeCombatEffects, context.uiEvents, ['player'], { deferExpiry: true })
     tickBarriers(state, elapsed, ['player'])

@@ -204,6 +204,11 @@ export interface CrystalCacheOpenResult {
 
 export const isCrystalCacheEligiblePower = (power: number) => Number.isFinite(power) && power >= CRYSTAL_CACHE_POWER_THRESHOLD
 
+export const getCrystalCacheDropChance = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId) => {
+  if (!isCrystalSystemUnlocked(state) || !isCrystalCacheEligiblePower(resolveEnemyPowerRating(enemyId, enemyWorldTier))) return 0
+  return Math.min(1, CRYSTAL_CACHE_DROP_CHANCE * getWorldTierDefinition(enemyWorldTier).crystalCacheDropChanceMultiplier * getGuildProgressionBonuses(state).crystalCacheChanceMultiplier)
+}
+
 export const openCrystalCaches = (state: GameState, requestedQuantity: number, rng: () => number = () => nextCrystalRandom(state)): CrystalCacheOpenResult => {
   const quantity = Math.min(Math.max(0, Math.floor(requestedQuantity)), state.inventory[CRYSTAL_CACHE_ITEM_ID] ?? 0)
   if (!isCrystalSystemUnlocked(state)) return { ok: false, opened: 0, dust: 0, crystals: {}, reason: 'Crystal System is not unlocked.' }
@@ -225,9 +230,8 @@ export const openCrystalCaches = (state: GameState, requestedQuantity: number, r
 }
 
 export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, rng: () => number) => {
-  if (!isCrystalSystemUnlocked(state)) return false
-  if (!isCrystalCacheEligiblePower(resolveEnemyPowerRating(enemyId, enemyWorldTier))) return false
-  const chance = Math.min(1, CRYSTAL_CACHE_DROP_CHANCE * getWorldTierDefinition(enemyWorldTier).crystalCacheDropChanceMultiplier * getGuildProgressionBonuses(state).crystalCacheChanceMultiplier)
+  const chance = getCrystalCacheDropChance(state, enemyId, enemyWorldTier)
+  if (chance <= 0) return false
   if (rng() >= chance) return false
   grantItem(state, CRYSTAL_CACHE_ITEM_ID, 1)
   return true

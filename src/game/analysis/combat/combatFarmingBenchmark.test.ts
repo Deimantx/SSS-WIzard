@@ -35,7 +35,19 @@ describe('combat farming benchmark', () => {
 
     expect(result.valid, result.invalidReason).toBe(true)
     expect(result.startingHealth).toBe(state.player.maxHealth)
-    expect(buildCombatFarmingBenchmarkBuildSummary(state).equipment.find((entry) => entry.slot === 'weapon')?.itemId).toBe('ember-staff')
+    expect(buildCombatFarmingBenchmarkBuildSummary(state)).toMatchObject({
+      worldTier: 1,
+      guardianId: null,
+      equipment: expect.arrayContaining([expect.objectContaining({ slot: 'weapon', itemId: 'ember-staff' })]),
+      equippedSpells: expect.arrayContaining([expect.stringContaining('Fire Bolt')]),
+      spellPower: expect.any(Number),
+      defense: expect.any(Number),
+      critChance: expect.any(Number),
+      cooldownRecovery: expect.any(Number),
+      artifacts: [],
+      sigils: [],
+      crystals: [],
+    })
     expect(state.worldTier).toEqual({ current: 1, highestUnlocked: 1 })
     expect(snapshotGameplay(state)).toEqual(before)
   })
@@ -51,12 +63,26 @@ describe('combat farming benchmark', () => {
     expect(getCombatFarmingBenchmarkTargets('whispering-woods')).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })
 
-  it('does not include Forest Heart and rejects boss targets', () => {
+  it('includes the authored boss as a separate TTK target and rejects bosses from other locations', () => {
     const state = makeFixture()
     expect(getCombatFarmingBenchmarkTargets('whispering-woods')).not.toContain('forest-heart')
-    const result = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'forest-heart', worldTier: 1, durationMs: 5_000 })
-    expect(result.valid).toBe(false)
-    expect(result.invalidReason).toContain('Boss')
+    const targetsWithBoss = getCombatFarmingBenchmarkTargets('whispering-woods', true)
+    expect(targetsWithBoss[targetsWithBoss.length - 1]).toBe('forest-heart')
+    const bossResult = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'forest-heart', worldTier: 1, durationMs: 5_000 })
+    expect(bossResult.valid).toBe(true)
+    expect(bossResult.difficulty).toBeNull()
+    const wrongBoss = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'black-gatekeeper', worldTier: 1, durationMs: 5_000 })
+    expect(wrongBoss.valid).toBe(false)
+    expect(wrongBoss.invalidReason).toContain('Boss')
+  })
+
+  it('benchmarks fixed-Dungeon targets in authored sequence order', () => {
+    const state = makeFixture()
+    const targets = getCombatFarmingBenchmarkTargets('abandoned-catacombs', true)
+    expect(targets.slice(0, 3)).toEqual(['restless-skeleton', 'grave-wraith', 'fallen-acolyte'])
+    expect(targets[targets.length - 1]).toBe('archmage-edrin-shade')
+    const result = runCombatFarmingBenchmark({ sourceState: state, locationId: 'abandoned-catacombs', targetEnemyId: 'restless-skeleton', worldTier: 1, durationMs: 5_000 })
+    expect(result.valid, result.invalidReason).toBe(true)
   })
 
   it('uses the canonical WT2 reward multiplier per completed kill', () => {
@@ -73,6 +99,14 @@ describe('combat farming benchmark', () => {
     expect(wt2.kills).toBeGreaterThan(0)
     expect(wt1.resonanceTotal.air / wt1.kills).toBe(2)
     expect(wt2.resonanceTotal.air / wt2.kills).toBe(5)
+    expect(wt1.lifeEssencePerHour).toBeGreaterThan(0)
+    expect(wt1.artifactEssencePerHour).toBeGreaterThan(0)
+    expect(wt1.sigilDropsPerHour).toBeGreaterThanOrEqual(0)
+    expect(wt1.crystalCachesPerHour).toBeGreaterThanOrEqual(0)
+    expect(wt1.arcanePointsPerHour).toBeGreaterThan(0)
+    expect(wt2.arcanePointsPerHour).toBeGreaterThan(wt1.arcanePointsPerHour)
+    expect(wt2.lifeEssencePerHour).toBeGreaterThan(wt1.lifeEssencePerHour)
+    expect(wt2.artifactEssencePerHour).toBeGreaterThan(wt1.artifactEssencePerHour)
   })
 
   it('stops early when the cloned player dies', () => {

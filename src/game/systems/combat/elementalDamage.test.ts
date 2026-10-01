@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { calculateCombatDamage } from './effectResolver'
+import { calculateCombatDamage, executeCombatEffects } from './effectResolver'
 
 describe('elemental damage resolution', () => {
   it.each([
@@ -28,6 +28,31 @@ describe('elemental damage resolution', () => {
     const result = calculateCombatDamage(state, 10, 'water', { actor: 'player', kind: 'status', sourceId: 'test-dot', tags: ['dot'] }, 'enemy', ['dot'])
     expect(result.affinityMultiplier).toBe(1.5)
     expect(result.matchup).toBe('strong')
+  })
+
+  it('resolves mixed damage components independently through the canonical pipeline', () => {
+    const state = createInitialState()
+    state.combat.active = true
+    state.combat.enemyId = 'fire-elemental'
+    state.combat.enemyHp = state.combat.enemyMaxHp = 1000
+    const events: import('./combatTypes').CombatEvent[] = []
+
+    executeCombatEffects(state, [{
+      type: 'deal-damage',
+      target: 'opponent',
+      components: [
+        { damageType: 'fire', magnitude: { type: 'flat', value: 100 } },
+        { damageType: 'water', magnitude: { type: 'flat', value: 100 } },
+      ],
+      tags: ['spell', 'direct'],
+    }], { actor: 'player', kind: 'spell', sourceId: 'split-test', tags: ['spell', 'direct'] }, 0, { push: (event) => events.push(event) })
+
+    const hit = events.find((event) => event.target === 'enemy' && event.damageComponents?.length === 2)
+    expect(hit?.damageComponents?.map(({ damageType, affinityMultiplier }) => [damageType, affinityMultiplier])).toEqual([
+      ['fire', 1],
+      ['water', 1.5],
+    ])
+    expect(hit?.amount).toBeGreaterThan(200)
   })
 
   it('safely resolves non-finite input damage to a finite non-negative result', () => {

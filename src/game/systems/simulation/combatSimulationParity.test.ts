@@ -2,10 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { ITEMS } from '../../content/items/items'
 import { createInitialState } from '../../../store/initialState'
 import type { GameState, ItemDefinition, ItemId } from '../../types'
-import { executeCombatEffects } from '../combat/effectResolver'
+import { damageEnemy, executeCombatEffects } from '../combat/effectResolver'
 import { clearCurrentEnemyAction, forceResolveEnemyAction, startEnemyAction } from '../combat/actionRuntime'
 import { spawnEnemy } from '../combat/combatRuntime'
 import { applyStatus } from '../combat/statusRuntime'
+import { applyElementalWard } from '../combat/elementalWardRuntime'
 import { advanceGameState } from './advanceGameState'
 import { SIMULATION_QUANTUM_MS } from './simulationConstants'
 import { createCombatTestState } from '../combat/testCombatState'
@@ -45,6 +46,7 @@ const snapshot = (state: GameState) => ({
     enemyBarrierRemainingMs: state.combat.enemyBarrierRemainingMs,
     playerBarrier: state.combat.playerBarrier,
     playerBarrierRemainingMs: state.combat.playerBarrierRemainingMs,
+    elementalDamageReductions: state.combat.elementalDamageReductions,
     enemyActionPatternId: state.combat.enemyActionPatternId,
     enemyNextActionIndex: state.combat.enemyNextActionIndex,
     enemyCurrentStepId: state.combat.enemyCurrentStepId,
@@ -65,7 +67,19 @@ const snapshot = (state: GameState) => ({
     playerStatuses: comparableStatuses(state, 'player'),
     enemyStatuses: comparableStatuses(state, 'enemy'),
     combatRngState: state.combat.combatRngState,
+    threatCleared: state.combat.threatCleared,
+    dungeonSequenceIndex: state.combat.dungeonSequenceIndex,
+    guardian: state.combat.guardian,
   },
+  inventory: state.inventory,
+  resonance: state.resonance,
+  worldTier: state.worldTier,
+  progression: {
+    lifetimeKillsByMonster: state.progress.lifetimeKillsByMonster,
+    bossKillsByBoss: state.progress.bossKillsByBoss,
+    chronicle: state.progress.chronicle,
+  },
+  arcaneCore: state.arcaneCore,
 })
 
 const advanceFine = (state: GameState, durationMs: number) => {
@@ -75,6 +89,79 @@ const advanceFine = (state: GameState, durationMs: number) => {
 }
 
 describe('canonical simulation quantum parity', () => {
+  it.each([
+    ['stonewake-hollow', 'stonewake-gravel-wisp', 'tutorial elemental zone'],
+    ['whispering-woods', 'forest-wisp', 'targeted normal farm'],
+    ['howling-den', 'cavefang-wolf', 'Elite Zone'],
+    ['fractured-approach', 'rift-wolf', 'Elemental Scar status encounter'],
+    ['graveglass-hollow', 'graveglass-shade', 'Shattered target zone'],
+    ['hall-of-unbound-names', 'name-eater', 'Black Sigil target zone'],
+    ['abandoned-catacombs', 'restless-skeleton', 'fixed Dungeon'],
+    ['broken-meridian', 'meridian-splitter', 'boss phase transition'],
+    ['black-gate', 'black-gatekeeper', 'Black Gate boss'],
+  ] as const)('keeps %s (%s) deterministic between live and banked simulation', (dungeonId, enemyId, label) => {
+    const fine = createCombatTestState()
+    fine.combat.active = true
+    fine.combat.dungeonId = dungeonId
+    fine.combat.targetEnemyId = enemyId
+    fine.debug.freezePlayerActions = true
+    fine.player.maxHealth = 100_000
+    fine.player.health = 100_000
+    expect(spawnEnemy(fine, enemyId)).toBe(true)
+    fine.combat.enemyMaxHp = Math.max(fine.combat.enemyMaxHp, 100_000)
+    fine.combat.enemyHp = fine.combat.enemyMaxHp
+    if (label === 'Elemental Scar status encounter') {
+      const source = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'parity-rift-status', sourceMonsterId: enemyId, tags: ['special' as const, 'arcane' as const] }
+      applyStatus(fine, 'player', 'arcane-disruption', source, { durationMs: 4_000 })
+    }
+    if (label === 'Black Sigil target zone') applyElementalWard(fine, { element: 'arcane', reduction: 0.15, sourceId: 'parity-sigil-ward', durationMs: 3_000 })
+    if (label === 'boss phase transition') fine.combat.enemyHp = Math.ceil(fine.combat.enemyMaxHp * 0.51)
+
+    const coarse = cloneState(fine)
+    if (label === 'boss phase transition') {
+      const thresholdHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'fire' as const, magnitude: { type: 'flat' as const, value: Math.ceil(fine.combat.enemyMaxHp * 0.02) } }], tags: ['direct' as const] }
+      const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'phase-parity-hit', tags: ['spell' as const, 'direct' as const] }
+      executeCombatEffects(fine, [thresholdHit], source)
+      executeCombatEffects(coarse, [thresholdHit], source)
+    }
+    advanceFine(fine, 10_000)
+    for (let elapsed = 0; elapsed < 10_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+  })
+
+  it.each([
+    ['whispering-woods', 'forest-heart'],
+    ['abandoned-catacombs', 'archmage-edrin-shade'],
+    ['broken-meridian', 'meridian-splitter'],
+    ['black-gate', 'black-gatekeeper'],
+  ] as const)('keeps %s/%s phase threshold state identical for live and banked callers', (dungeonId, enemyId) => {
+    const fine = createCombatTestState()
+    fine.combat.active = true
+    fine.combat.dungeonId = dungeonId
+    fine.debug.freezePlayerActions = true
+    fine.player.maxHealth = fine.player.health = 100_000
+    expect(spawnEnemy(fine, enemyId)).toBe(true)
+    fine.combat.enemyHp = Math.ceil(fine.combat.enemyMaxHp * 0.51)
+    const coarse = cloneState(fine)
+    damageEnemy(fine, Math.ceil(fine.combat.enemyMaxHp * 0.02), 'spell')
+    damageEnemy(coarse, Math.ceil(coarse.combat.enemyMaxHp * 0.02), 'spell')
+    advanceFine(fine, 8_000)
+    for (let elapsed = 0; elapsed < 8_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+  })
+
+  it('expires and cleans finite Wards at the same boundary in live and banked combat', () => {
+    const fine = combatFixture()
+    fine.debug.freezeEnemyActions = true
+    applyElementalWard(fine, { element: 'fire', reduction: 0.15, sourceId: 'parity-ward', durationMs: 2_500 })
+    const coarse = cloneState(fine)
+    advanceFine(fine, 5_000)
+    for (let elapsed = 0; elapsed < 5_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+    expect(fine.combat.elementalDamageReductions).toEqual([])
+  })
+
   it('keeps Auto-Cast, Basic Attacks, and shared Mana order identical for fine and coarse callers', () => {
     const fine = combatFixture()
     fine.progress.spellRanks['fire-bolt'] = 1

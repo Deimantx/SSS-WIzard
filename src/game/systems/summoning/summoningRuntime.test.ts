@@ -58,6 +58,22 @@ describe('summoning runtime', () => {
     expect(getCombatModifiers(state, 'player', 'damage-over-time-percent')).toBe(0)
   })
 
+  it.each([
+    ['thornling', 'earth', 1.5],
+    ['fire-elemental', 'fire', 1],
+    ['archmage-edrin-shade', 'arcane', 1],
+  ] as const)('resolves Fire Guardian damage against %s through canonical affinity', (enemyId, affinity, multiplier) => {
+    const state = unlockedState()
+    spawnEnemy(state, enemyId)
+    state.combat.guardian.attackTimerMs = 0
+    const events: import('../combat/combatTypes').CombatEvent[] = []
+
+    resolveGuardianAttack(state, { push: (event) => events.push(event) })
+
+    const hit = events.find((event) => event.sourceId === 'fire-guardian' && event.category === 'damage')
+    expect(hit?.damageComponents?.[0]).toMatchObject({ attackingElement: 'fire', targetAffinity: affinity, affinityMultiplier: multiplier })
+  })
+
   it('keeps the encounter snapshot when selection changes and uses the new choice next time', () => {
     const state = unlockedState()
     spawnEnemy(state, 'forest-wisp')

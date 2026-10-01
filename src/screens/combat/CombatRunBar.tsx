@@ -1,6 +1,6 @@
 import { Crown, LogOut } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../game/content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../game/content/monsters'
 import { COMBAT_LOCATION_TYPE_METADATA, getCombatLocationById } from '../../game/content/combat-locations'
 import { useGameStore } from '../../store/gameStore'
@@ -17,7 +17,7 @@ export function CombatRunBar({ selectedCombatLocationId, onRequestLeave }: { sel
     sequenceIndex: state.combat.sequenceIndex,
   })))
   const locationId = combat.active ? combat.locationId ?? selectedCombatLocationId : selectedCombatLocationId
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   const location = getCombatLocationById(locationId)
   const targeted = location?.encounterMode === 'targeted'
   const sequence = location?.encounterMode === 'sequence' && dungeon.encounterSequence ? dungeon.encounterSequence : null

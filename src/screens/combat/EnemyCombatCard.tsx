@@ -1,7 +1,7 @@
 import { BookOpen, Crosshair, Heart, Package, Shield } from 'lucide-react'
 import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent, type Ref } from 'react'
 import type { CombatLocationId, MonsterId } from '../../game/types'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../game/content/combat-locations/worldNavigation'
 import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationById } from '../../game/content/combat-locations'
 import { getMonsterTraits } from '../../game/systems/combat/traitRuntime'
@@ -57,7 +57,7 @@ export function EnemyCombatCard({ selectedCombatLocationId, selectedMonsterId, c
   const activeZoneAffix = useGameStore((state) => getActiveEliteZoneAffix(state))
 
   if (!enemy) {
-    const dungeon = DUNGEONS[resolveEnemyPreviewCombatLocationId({ combatActive, combatLocationId, selectedCombatLocationId })]
+    const dungeon = COMBAT_LOCATIONS[resolveEnemyPreviewCombatLocationId({ combatActive, combatLocationId, selectedCombatLocationId })]
     const threatRequired = resolveBossThreatRequirement(dungeon.id, useGameStore.getState().worldTier.current)
     const sequence = getCombatEncounterMode(getCombatLocationById(dungeon.id)) === 'sequence' ? dungeon.encounterSequence : null
     const selectedPreview = selectedMonsterId && (dungeon.monsterPool.includes(selectedMonsterId) || (hasBossEncounter(dungeon) && dungeon.boss === selectedMonsterId)) ? MONSTERS[selectedMonsterId] : null
@@ -71,7 +71,7 @@ export function EnemyCombatCard({ selectedCombatLocationId, selectedMonsterId, c
   const openEnemyMenu = (event: MouseEvent<HTMLElement>) => {
     if (!monsterDungeon) return
     event.preventDefault(); event.stopPropagation()
-    openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: enemy.name, meta: `${boss ? 'BOSS' : 'ENEMY'} · ${DUNGEONS[monsterDungeon.locationId].name}` }, sections: [{ id: 'enemy', actions: [{ id: 'bestiary', label: 'Open Bestiary', icon: BookOpen, onSelect: () => { setNavigationIntent({ combatMonsterId: enemy.id, combatLocationId: monsterDungeon.locationId }); useGameStore.getState().setScreen('hunters-order') } }, { id: 'drops', label: 'View Drops', icon: Package, onSelect: () => onOpenContext?.(event.currentTarget, 'loot') }, { id: 'location', label: 'Open Location', icon: Crosshair, onSelect: () => { setNavigationIntent({ combatLocationId: monsterDungeon.locationId, combatMonsterId: null }); useGameStore.getState().setScreen('combat') } }] }] })
+    openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: enemy.name, meta: `${boss ? 'BOSS' : 'ENEMY'} · ${COMBAT_LOCATIONS[monsterDungeon.locationId].name}` }, sections: [{ id: 'enemy', actions: [{ id: 'bestiary', label: 'Open Bestiary', icon: BookOpen, onSelect: () => { setNavigationIntent({ combatMonsterId: enemy.id, combatLocationId: monsterDungeon.locationId }); useGameStore.getState().setScreen('hunters-order') } }, { id: 'drops', label: 'View Drops', icon: Package, onSelect: () => onOpenContext?.(event.currentTarget, 'loot') }, { id: 'location', label: 'Open Location', icon: Crosshair, onSelect: () => { setNavigationIntent({ combatLocationId: monsterDungeon.locationId, combatMonsterId: null }); useGameStore.getState().setScreen('combat') } }] }] })
   }
   return <section ref={cardRef} className={`combat-actor-card combat-enemy-card${boss ? ' is-boss' : ''}${transitionState === 'exiting' ? ' combat-enemy-transition-exit' : transitionState === 'entering' ? ' combat-enemy-transition-enter' : ''}`} style={{ '--enemy-accent': enemy.color } as CSSProperties} onContextMenu={openEnemyMenu}>
     <header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">{boss ? 'BOSS' : 'ENEMY'}</span><h2>{enemy.name}</h2></div><div className="combat-actor-head-status">{worldTier && <GameTooltip content={<TooltipContent title={worldTier.name} description={`Health ×${worldTier.enemyHealthMultiplier}; damage ×${worldTier.enemyDamageMultiplier}; defense ×${worldTier.enemyDefenseMultiplier}; Resonance rewards ×${worldTier.resonanceRewardMultiplier}; material loot ×${worldTier.itemLootQuantityMultiplier}.`} />}><span className="combat-enemy-tier-badge" tabIndex={0}>WT{worldTier.id}</span></GameTooltip>}{activeZoneAffix && !boss && <GameTooltip content={<TooltipContent title={`Zone Affix · ${activeZoneAffix.name}`} description={activeZoneAffix.description} />}><span className="combat-enemy-zone-affix-badge" tabIndex={0}>ZONE AFFIX · {activeZoneAffix.name.toUpperCase()}</span></GameTooltip>}<Status tone={boss ? 'warning' : 'active'}>{boss ? 'Boss fight' : 'Engaged'}</Status></div></header>

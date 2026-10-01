@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../content/monsters'
 import { getCombatFlowPresentation, type CombatFlowRuntimeInput } from './combatFlowPresentation'
 
 const enemy = MONSTERS['grove-sentinel']
-const dungeon = DUNGEONS['whispering-woods']
+const dungeon = COMBAT_LOCATIONS['whispering-woods']
 const pattern = enemy.actionPatterns.default
 
 const input = (changes: Partial<CombatFlowRuntimeInput> = {}): CombatFlowRuntimeInput => ({
@@ -91,12 +91,12 @@ describe('getCombatFlowPresentation', () => {
   })
 
   it('keeps sequence runs in encounter delay even if stale Threat reaches the Boss threshold', () => {
-    const sequenceDungeon = DUNGEONS['broken-meridian']
+    const sequenceDungeon = COMBAT_LOCATIONS['broken-meridian']
     expect(getCombatFlowPresentation(input({ dungeon: sequenceDungeon, locationId: sequenceDungeon.id, selectedCombatLocationId: sequenceDungeon.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
   })
 
   it('never presents boss-ready mode for the bossless Gloamridge Hunting Ground', () => {
-    const huntingGround = DUNGEONS['hunters-ground']
+    const huntingGround = COMBAT_LOCATIONS['hunters-ground']
     expect(getCombatFlowPresentation(input({ dungeon: huntingGround, locationId: huntingGround.id, selectedCombatLocationId: huntingGround.id, enemyId: null, enemy: null, threatCleared: Number.MAX_SAFE_INTEGER })).mode).toBe('encounter-delay')
   })
 

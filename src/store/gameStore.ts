@@ -7,16 +7,11 @@ import { immer } from "zustand/middleware/immer";
 import { isScreenNavigationAllowed } from "../app/navigation";
 import { BALANCE } from "../game/core/balance/balance";
 import {
-  DUNGEONS,
-  DUNGEON_ORDER,
-  getDungeonUnlockRequirement,
-  hasBossEncounter,
-  isDungeonUnlocked,
-} from "../game/content/combat-locations/dungeons/dungeons";
-import {
   COMBAT_LOCATIONS,
   getCombatEncounterMode,
   getCombatLocationById,
+  getCombatLocationUnlockRequirement,
+  hasBossEncounter,
   isCombatTargetForLocation,
   isCombatLocationUnlocked,
   type CombatLocationId,
@@ -440,7 +435,7 @@ const offlineBankAnalyticsObservers: OfflineBankSimulationObservers = {
 };
 const combatLogUiSink = combatEventSink;
 const combatLootObserver: CombatLootObserver = (state, enemyId, drops, sigils = []) => {
-  const dungeon = DUNGEONS[state.combat.locationId ?? "whispering-woods"];
+  const dungeon = COMBAT_LOCATIONS[state.combat.locationId ?? "whispering-woods"];
   const monster = MONSTERS[enemyId];
   enqueueCombatLootReveal({
     sourceLabel: dungeon?.name ?? "Combat",
@@ -491,7 +486,7 @@ const initializeDungeonRun = (
   resetCombatState: boolean,
   targetEnemyId: MonsterId | null = null,
 ) => {
-  const dungeon = DUNGEONS[locationId];
+  const dungeon = COMBAT_LOCATIONS[locationId];
   if (resetCombatState) state.combat = createInitialState().combat;
   clearCombatLogUi();
   clearCombatDefeat();
@@ -2013,7 +2008,7 @@ export const useGameStore = create<GameStore>()(
       return result;
     },
     enterDungeon: (locationId = "whispering-woods") => {
-      const dungeon = DUNGEONS[locationId];
+      const dungeon = COMBAT_LOCATIONS[locationId];
       const currentState = get();
       if (!dungeon) return;
       const location = getCombatLocationById(locationId)
@@ -2022,11 +2017,11 @@ export const useGameStore = create<GameStore>()(
         set((state) => { pushNotification(state, `${location.name} is locked. ${requirement}.`, "warning"); return state })
         return
       }
-      if (!isDungeonUnlocked(dungeon, currentState.progress)) {
+      if (!isCombatLocationUnlocked(dungeon, currentState.progress)) {
         set((state) => {
           pushNotification(
             state,
-            `${getDungeonUnlockRequirement(dungeon) ?? "Requirement"} to unlock ${dungeon.name}.`,
+            `${getCombatLocationUnlockRequirement(dungeon) ?? "Requirement"} to unlock ${dungeon.name}.`,
             "warning",
           );
           return state;
@@ -2066,7 +2061,7 @@ export const useGameStore = create<GameStore>()(
     huntCombatTarget: (locationId, targetEnemyId) => {
       const location = COMBAT_LOCATIONS[locationId];
       const resolvedLocationId = location?.id;
-      const dungeon = resolvedLocationId ? DUNGEONS[resolvedLocationId] : null;
+      const dungeon = resolvedLocationId ? COMBAT_LOCATIONS[resolvedLocationId] : null;
       const currentState = get();
       if (
         !location ||
@@ -2084,11 +2079,11 @@ export const useGameStore = create<GameStore>()(
         });
         return false;
       }
-      if (!isDungeonUnlocked(dungeon, currentState.progress)) {
+      if (!isCombatLocationUnlocked(dungeon, currentState.progress)) {
         set((state) => {
           pushNotification(
             state,
-            `${getDungeonUnlockRequirement(dungeon) ?? "Requirement"} to unlock ${dungeon.name}.`,
+            `${getCombatLocationUnlockRequirement(dungeon) ?? "Requirement"} to unlock ${dungeon.name}.`,
             "warning",
           );
           return state;
@@ -2166,7 +2161,7 @@ export const useGameStore = create<GameStore>()(
       let changed = false;
       set((state) => {
         const locationId = state.combat.locationId;
-        const dungeon = locationId ? DUNGEONS[locationId] : null;
+        const dungeon = locationId ? COMBAT_LOCATIONS[locationId] : null;
         const location = locationId
           ? getCombatLocationById(locationId)
           : null;
@@ -2211,7 +2206,7 @@ export const useGameStore = create<GameStore>()(
           getCombatEncounterMode(
             getCombatLocationById(state.combat.locationId),
           ) === "sequence";
-        const dungeon = state.combat.locationId ? DUNGEONS[state.combat.locationId] : null;
+        const dungeon = state.combat.locationId ? COMBAT_LOCATIONS[state.combat.locationId] : null;
         state.combat = {
           ...createInitialState().combat,
           locationId: state.combat.locationId,
@@ -2229,7 +2224,7 @@ export const useGameStore = create<GameStore>()(
     engageBoss: (bossId) =>
       set((state) => {
         const dungeon = state.combat.locationId
-          ? DUNGEONS[state.combat.locationId]
+          ? COMBAT_LOCATIONS[state.combat.locationId]
           : null;
         const boss = MONSTERS[bossId];
         if (!state.combat.active || !dungeon) {
@@ -2241,7 +2236,7 @@ export const useGameStore = create<GameStore>()(
           "sequence"
         )
           return state;
-        if (!isDungeonUnlocked(dungeon, state.progress)) {
+        if (!isCombatLocationUnlocked(dungeon, state.progress)) {
           pushNotification(state, `${dungeon.name} is locked.`, "warning");
           return state;
         }
@@ -2290,13 +2285,13 @@ export const useGameStore = create<GameStore>()(
       }),
     toggleAutoHunt: (locationId = "whispering-woods") =>
       set((state) => {
-        const dungeon = DUNGEONS[locationId];
+        const dungeon = COMBAT_LOCATIONS[locationId];
         const location = getCombatLocationById(locationId);
         if (
           !dungeon ||
           !hasBossEncounter(dungeon) ||
           getCombatEncounterMode(location) !== "targeted" ||
-          !isDungeonUnlocked(dungeon, state.progress)
+          !isCombatLocationUnlocked(dungeon, state.progress)
         )
           return state;
         if (!isAutoHuntUnlocked(state.progress)) {
@@ -2411,7 +2406,7 @@ export const useGameStore = create<GameStore>()(
         spawnEnemy(state, enemyId, combatLogUiSink);
         pushNotification(
           state,
-          `${MONSTERS[enemyId].name} spawned by Developer Tools in ${DUNGEONS[contextCombatLocationId].name}`,
+          `${MONSTERS[enemyId].name} spawned by Developer Tools in ${COMBAT_LOCATIONS[contextCombatLocationId].name}`,
           "warning",
         );
         return state;

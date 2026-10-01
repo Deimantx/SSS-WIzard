@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { isDungeonCompleted } from '../../content/combat-locations/dungeons/dungeons'
+import { isCombatLocationCompleted } from '../../content/combat-locations/worldNavigation'
 import { isSummoningUnlocked } from '../summoning/summoningSelectors'
 import { finishEnemy, spawnEnemy } from './combatRuntime'
 import { createCombatTestState } from './testCombatState'
@@ -22,7 +22,7 @@ describe('Corrupted Elemental Gatekeeper completion', () => {
     })
 
     expect(state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper']).toBe(1)
-    expect(isDungeonCompleted('fractured-approach', state.progress)).toBe(true)
+    expect(isCombatLocationCompleted('fractured-approach', state.progress)).toBe(true)
     expect(isSummoningUnlocked(state)).toBe(true)
     expect(state.notifications.map((notification) => notification.text)).toEqual(expect.arrayContaining([
       'Wizard Tower: Summoning unlocked.',

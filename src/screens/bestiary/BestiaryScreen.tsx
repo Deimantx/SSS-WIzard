@@ -4,7 +4,7 @@ import { ScreenGrid } from '../../components/layout/ScreenGrid'
 import { Button, GameTooltip } from '../../components/ui'
 import { useGameStore } from '../../store/gameStore'
 import type { CombatLocationId, MonsterId } from '../../game/types'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../game/content/combat-locations/worldNavigation'
 import { getBestiaryEntriesByCategory, getBestiarySearchText, getBestiaryMetadataFilterOptions, matchesBestiaryMetadataFilter, type BestiaryCategoryFilter, type BestiaryMetadataFilter } from '../../game/systems/bestiary/bestiarySelectors'
 import { BestiaryIndex } from './BestiaryIndex'
 import { BestiaryInspector } from './BestiaryInspector'
@@ -26,8 +26,8 @@ export function BestiaryScreen() {
   const [selected, setSelected] = useState<MonsterId | null>(() => navigationIntent.combatMonsterId)
   const attention = useProfileAttention(getActiveProfileId())
   const scopeIds = useMemo(() => {
-    if (!scopedCombatLocationId || !DUNGEONS[scopedCombatLocationId]) return null
-    const dungeon = DUNGEONS[scopedCombatLocationId]
+    if (!scopedCombatLocationId || !COMBAT_LOCATIONS[scopedCombatLocationId]) return null
+    const dungeon = COMBAT_LOCATIONS[scopedCombatLocationId]
     return new Set<MonsterId>([...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])])
   }, [scopedCombatLocationId])
   const visibleIds = useMemo(() => getBestiaryEntriesByCategory(category).filter((monster) => {
@@ -38,8 +38,8 @@ export function BestiaryScreen() {
   useEffect(() => {
     const locationId = navigationIntent.combatLocationId
     const requestedMonsterId = navigationIntent.combatMonsterId
-    if (locationId && DUNGEONS[locationId]) {
-      const dungeon = DUNGEONS[locationId]
+    if (locationId && COMBAT_LOCATIONS[locationId]) {
+      const dungeon = COMBAT_LOCATIONS[locationId]
       const validMonsterIds = new Set<MonsterId>([...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])])
       setScopedCombatLocationId(locationId)
       setSelected(requestedMonsterId && validMonsterIds.has(requestedMonsterId) ? requestedMonsterId : null)
@@ -59,5 +59,5 @@ export function BestiaryScreen() {
 
   const index = <BestiaryIndex progress={progress} scopeIds={scopeIds ?? undefined} search={search} category={category} metadataFilter={metadataFilter} metadataFilterOptions={metadataFilterOptions} onMetadataFilter={setMetadataFilter} onSearch={setSearch} onCategory={setCategory} selected={selected} newEntries={new Set(attention.unseenMonsters)} onSelect={(monsterId) => { clearAttention(getActiveProfileId(), 'monster', monsterId); setSelected(monsterId) }} />
   const inspector = <InspectorTransition identity={selected} accent={selected ? MONSTERS[selected]?.color : undefined} fill><BestiaryInspector monsterId={selected} progress={progress} /></InspectorTransition>
-  return <div className="screen-content bestiary-screen"><div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedCombatLocationId && DUNGEONS[scopedCombatLocationId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {DUNGEONS[scopedCombatLocationId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedCombatLocationId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div><ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
+  return <div className="screen-content bestiary-screen"><div className="screen-header"><div><div className="eyebrow">FIELD ARCHIVE · BESTIARY</div><h1>Know what waits beyond the tower.</h1><p>Encounter a creature once to record its statistics, traits, attack patterns and loot table permanently.</p>{scopedCombatLocationId && COMBAT_LOCATIONS[scopedCombatLocationId] && <div className="bestiary-area-scope"><MapPin size={13} aria-hidden="true" /><strong>AREA: {COMBAT_LOCATIONS[scopedCombatLocationId].name.toUpperCase()}</strong><GameTooltip content="Remove the current area filter and show all discovered creatures."><Button variant="ghost" ariaLabel="Clear Bestiary area scope" onClick={() => setScopedCombatLocationId(null)}><X size={13} aria-hidden="true" /> CLEAR</Button></GameTooltip></div>}</div></div><ScreenGrid screen="bestiary" panels={[{ id: 'bestiary-summary', content: <BestiarySummary progress={progress} /> }, { id: 'bestiary-index', content: index }, { id: 'bestiary-inspector', content: inspector }]} /></div>
 }

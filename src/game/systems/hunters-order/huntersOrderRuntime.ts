@@ -1,5 +1,5 @@
 import { BALANCE } from '../../core/balance/balance'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import type { ResonanceType } from '../../content/resonance/resonance'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS, HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/first-frontier/gloamridge'
 import { HUNTER_RANKS } from '../../content/hunters-order/hunterRanks'
@@ -62,7 +62,7 @@ export const doesMonsterMatchHunterContract = (contract: HunterContractState, mo
     case 'boss': return contract.targetSpec.monsterId === monsterId && isBossMonster(MONSTERS[monsterId])
     case 'family': return metadata.family === contract.targetSpec.familyId
     case 'alignment': return metadata.alignment === contract.targetSpec.alignmentId
-    case 'region': return locationId === contract.targetSpec.locationId && (DUNGEONS[locationId]?.monsterPool.includes(monsterId) === true || DUNGEONS[locationId]?.boss === monsterId)
+    case 'region': return locationId === contract.targetSpec.locationId && (COMBAT_LOCATIONS[locationId]?.monsterPool.includes(monsterId) === true || COMBAT_LOCATIONS[locationId]?.boss === monsterId)
   }
 }
 
@@ -136,7 +136,7 @@ export const canHuntMonster = (state: Pick<GameState, 'progress'>, monsterId: Mo
 /** Canonical set of creatures whose kills can advance this assignment in the supplied location. */
 export const getEligibleHunterContractMembers = (state: Pick<GameState, 'progress'>, contract: HunterContractState, locationId: CombatLocationId): MonsterId[] => {
   if (locationId !== (contract.huntingGroundId ?? 'hunters-ground')) return []
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon) return []
   const roster = [...dungeon.monsterPool, ...(dungeon.boss ? [dungeon.boss] : [])]
   const blocked = new Set(orderFor(state).blockedTargets)
@@ -147,7 +147,7 @@ export const getEligibleHunterContractMembers = (state: Pick<GameState, 'progres
 
 const matchesSpec = (spec: HunterContractTarget, monsterId: MonsterId, groundId: CombatLocationId) => doesMonsterMatchHunterContract({ id: 'candidate', huntingGroundId: groundId, targetSpec: spec, target: 1, progress: 0, tier: 'routine', reputationReward: 0, marksReward: 0 }, monsterId, groundId)
 const eligibleMembers = (spec: HunterContractTarget, groundId: CombatLocationId) => {
-  const dungeon = DUNGEONS[groundId]
+  const dungeon = COMBAT_LOCATIONS[groundId]
   return [...(dungeon?.monsterPool ?? []), ...(dungeon?.boss ? [dungeon.boss] : [])].filter((id) => matchesSpec(spec, id, groundId) && (spec.type === 'boss' ? isBossMonster(MONSTERS[id]) : !isBossMonster(MONSTERS[id]))) as MonsterId[]
 }
 const specKey = (spec: HunterContractTarget, groundId: CombatLocationId) => `${groundId}:${spec.type}:${'monsterId' in spec ? spec.monsterId : 'familyId' in spec ? spec.familyId : 'alignmentId' in spec ? spec.alignmentId : spec.locationId}`
@@ -159,7 +159,7 @@ const makeTargetSpecs = (state: Pick<GameState, 'progress'>): GroundTargetSpec[]
   const candidates: GroundTargetSpec[] = []
   const index = rankIndex(state)
   for (const ground of HUNTER_GROUNDS.filter((entry) => entry.enabled && HUNTER_STANDINGS.findIndex((standing) => standing.id === getHunterStanding(order.reputation).id) >= HUNTER_STANDINGS.findIndex((standing) => standing.id === entry.minimumStandingId))) {
-    const dungeon = DUNGEONS[ground.id]
+    const dungeon = COMBAT_LOCATIONS[ground.id]
     const targets = [...(dungeon?.monsterPool ?? []), ...(dungeon?.boss ? [dungeon.boss] : [])].filter((id) => isHunterMonsterRankEligible(state, id))
     const specs: HunterContractTarget[] = targets.filter((id) => !blocked.has(id)).map((monsterId) => ({ type: 'monster', monsterId }))
     const families = [...new Set(targets.filter((id) => !blocked.has(id)).map((id) => MONSTERS[id].hunter?.family).filter((value): value is string => Boolean(value)))]
@@ -339,7 +339,7 @@ export const getHunterContractTargetLabel = (contract: HunterContractState) => {
   if ('monsterId' in spec) return MONSTERS[spec.monsterId]?.name ?? 'Unknown target'
   if (spec.type === 'family') return `${spec.familyId} family`
   if (spec.type === 'alignment') return `${spec.alignmentId} alignment`
-  return DUNGEONS[spec.locationId]?.name ?? 'Unknown region'
+  return COMBAT_LOCATIONS[spec.locationId]?.name ?? 'Unknown region'
 }
 
 export const getHunterBlockSlotCount = (state: Pick<GameState, 'progress'>) => BALANCE.huntersOrder.baseBlockSlots + (orderFor(state).purchasedUpgrades['extended-trails'] ?? 0)

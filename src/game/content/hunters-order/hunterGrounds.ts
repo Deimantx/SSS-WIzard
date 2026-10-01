@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../combat-locations/worldNavigation'
 import type { CombatLocationId } from '../../types'
 import type { HunterStandingDefinition } from './hunterRanks'
 
@@ -14,7 +14,7 @@ export interface HunterGroundDefinition {
 export const DEFAULT_HUNTER_GROUND_ID: CombatLocationId = 'hunters-ground'
 
 export const HUNTER_GROUNDS: readonly HunterGroundDefinition[] = [
-  { id: 'hunters-ground', name: DUNGEONS['hunters-ground'].name, minimumStandingId: 'tracker-1', boardWeight: 1, enabled: true },
+  { id: 'hunters-ground', name: COMBAT_LOCATIONS['hunters-ground'].name, minimumStandingId: 'tracker-1', boardWeight: 1, enabled: true },
 ]
 
 export const getHunterGround = (id: CombatLocationId | string | null | undefined) => HUNTER_GROUNDS.find((ground) => ground.id === id) ?? null

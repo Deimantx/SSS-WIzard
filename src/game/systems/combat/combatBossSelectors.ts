@@ -1,4 +1,4 @@
-import { isDungeonUnlocked, type DungeonDefinition } from '../../content/combat-locations/dungeons/dungeons'
+import { isCombatLocationUnlocked, type CombatLocationRuntimeView } from '../../content/combat-locations/worldNavigation'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { resolveBossThreatRequirement } from './combatThreat'
 import type { CombatLocationId, GameState, WorldTierId } from '../../types'
@@ -20,12 +20,12 @@ export function isAutoHuntEnabledForDungeon(state: DungeonProgressState, locatio
   return isAutoHuntUnlocked(state.progress) && Boolean(state.progress.autoHuntBossByLocation[locationId])
 }
 
-export function canManuallyEngageDungeonBoss(state: ManualBossState, dungeon: DungeonDefinition) {
+export function canManuallyEngageDungeonBoss(state: ManualBossState, dungeon: CombatLocationRuntimeView) {
   const worldTier = typeof state.worldTier === 'number' ? state.worldTier : state.worldTier?.current ?? 1
   return Boolean(
     state.combat.active &&
     state.combat.locationId === dungeon.id &&
-    isDungeonUnlocked(dungeon, state.progress) &&
+    isCombatLocationUnlocked(dungeon, state.progress) &&
     state.combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) &&
     !isBossCurrentlyActive(state) &&
     !state.combat.pendingBossId &&

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEON_ORDER, DUNGEONS, isDungeonUnlocked } from '../combat-locations/dungeons/dungeons'
 import { createInitialState } from '../../../store/initialState'
-import { COMBAT_LOCATIONS, COMBAT_REGIONS, isCombatLocationUnlocked } from './worldNavigation'
+import { COMBAT_LOCATION_ORDER, COMBAT_LOCATIONS, COMBAT_REGIONS, isCombatLocationUnlocked } from './worldNavigation'
 import { COMBAT_LOCATION_TYPE_METADATA } from './worldNavigationTypes'
 import { MONSTERS } from '../monsters'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../monsters/elementalTutorial'
@@ -22,6 +21,26 @@ describe('combat world navigation content', () => {
     expect(COMBAT_LOCATION_IDS.every((locationId) => COMBAT_REGIONS[COMBAT_LOCATIONS[locationId].regionId].locationIds.includes(locationId))).toBe(true)
     expect(isCombatLocationId('broken-meridian')).toBe(true)
     expect(isCombatLocationId('not-a-location')).toBe(false)
+  })
+
+  it('authors complete canonical records for every Combat Location ID', () => {
+    expect(Object.keys(COMBAT_LOCATIONS).sort()).toEqual([...COMBAT_LOCATION_IDS].sort())
+    for (const id of COMBAT_LOCATION_IDS) {
+      const location = COMBAT_LOCATIONS[id]
+      expect(location.id).toBe(id)
+      expect(COMBAT_REGION_IDS).toContain(location.regionId)
+      expect(location.name.trim()).not.toBe('')
+      expect(location.type).toMatch(/^(combat-zone|elite-zone|hunting-ground|dungeon)$/)
+      expect(Number.isInteger(location.order)).toBe(true)
+      expect(location.encounterDelayMs).toBeGreaterThanOrEqual(0)
+      expect(location.monsterPool.length).toBeGreaterThan(0)
+      expect(location.monsterPool.every((monsterId) => Boolean(MONSTERS[monsterId]))).toBe(true)
+      expect(location.bossId === null || Boolean(MONSTERS[location.bossId])).toBe(true)
+      expect(location.threatRequired === null || location.threatRequired >= 0).toBe(true)
+      if (location.encounterMode === 'sequence') expect(location.sequence?.length).toBeGreaterThan(0)
+      if (location.encounterMode === 'targeted') expect(Object.keys(location.targetMetadata ?? {}).length).toBeGreaterThan(0)
+      if (location.type === 'elite-zone' && location.encounterMode === 'targeted') expect(location.zoneAffixId).toBeTruthy()
+    }
   })
 
   it('authors four pure elemental tutorial zones with five correctly powered encounters each', () => {
@@ -87,7 +106,7 @@ describe('combat world navigation content', () => {
   })
   it('validates the authored registry and preserves every gameplay dungeon', () => {
     expect(validateCombatWorldNavigation(validContent())).toEqual([])
-    expect(new Set(Object.values(COMBAT_LOCATIONS).filter((location) => location.id).map((location) => location.id))).toEqual(new Set(DUNGEON_ORDER))
+    expect(new Set(Object.values(COMBAT_LOCATIONS).filter((location) => location.id).map((location) => location.id))).toEqual(new Set(COMBAT_LOCATION_ORDER))
   })
 
   it('keeps internal region and location progression order explicit', () => {
@@ -128,7 +147,7 @@ describe('combat world navigation content', () => {
     for (const locationId of ['graveglass-hollow', 'stormvault-gallery', 'starfallen-observatory'] as const) {
       const location = COMBAT_LOCATIONS[locationId]
       expect(Object.values(location.targetMetadata ?? {}).map((metadata) => metadata.order)).toEqual([1, 2, 3, 4, 5, 6, 7])
-      expect(DUNGEONS[locationId].threatRequired).toBe(30000)
+      expect(COMBAT_LOCATIONS[locationId].threatRequired).toBe(30000)
     }
     expect(COMBAT_LOCATIONS['broken-meridian']).toMatchObject({ encounterMode: 'sequence', firstClearUnlockPreview: [
       { id: 'black-sigil-reach', label: 'Black Sigil Reach' },
@@ -159,8 +178,8 @@ describe('combat world navigation content', () => {
     for (const locationId of ['hall-of-unbound-names', 'vault-of-the-black-sigil'] as const) {
       const location = COMBAT_LOCATIONS[locationId]
       expect(Object.keys(location.targetMetadata ?? {})).toHaveLength(7)
-      expect(Object.keys(location.targetMetadata ?? {})).not.toContain(DUNGEONS[location.id!].boss)
-      expect(DUNGEONS[location.id!].threatRequired).toBe(40000)
+      expect(Object.keys(location.targetMetadata ?? {})).not.toContain(COMBAT_LOCATIONS[location.id!].boss)
+      expect(COMBAT_LOCATIONS[location.id!].threatRequired).toBe(40000)
     }
     for (const locationId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
       const location = COMBAT_LOCATIONS[locationId]
@@ -176,7 +195,7 @@ describe('combat world navigation content', () => {
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'hunting-ground')).toHaveLength(1)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'elite-zone')).toHaveLength(5)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'dungeon')).toHaveLength(5)
-    expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'special-zone' || location.type === 'tower')).toHaveLength(0)
+    expect(Object.values(COMBAT_LOCATIONS).every((location) => ['combat-zone', 'elite-zone', 'hunting-ground', 'dungeon'].includes(location.type))).toBe(true)
   })
 
   it('reports broken parent links, duplicate mappings, and invalid orders', () => {
@@ -202,12 +221,14 @@ describe('combat world navigation content', () => {
     expect(validateCombatWorldNavigation(invalidNonElite)).toContain('whispering-woods: Zone Affix is only valid on targeted Elite Zones')
   })
 
-  it('keeps the Black Gate locked until both final Elite bosses are defeated', () => {
+  it('keeps the Black Gate locked until its region and both final Elite bosses are unlocked', () => {
     const state = createInitialState()
-    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(false)
+    expect(isCombatLocationUnlocked(COMBAT_LOCATIONS['black-gate'], state.progress)).toBe(false)
     state.progress.bossKillsByBoss['unspoken-prelate'] = 1
-    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(false)
+    expect(isCombatLocationUnlocked(COMBAT_LOCATIONS['black-gate'], state.progress)).toBe(false)
     state.progress.bossKillsByBoss['sigil-warden'] = 1
-    expect(isDungeonUnlocked(DUNGEONS['black-gate'], state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked(COMBAT_LOCATIONS['black-gate'], state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    expect(isCombatLocationUnlocked(COMBAT_LOCATIONS['black-gate'], state.progress)).toBe(true)
   })
 })

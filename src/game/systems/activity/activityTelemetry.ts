@@ -1,4 +1,4 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
 import { isRecipeUnlocked, TRANSMUTATION_RECIPES as RECIPES, TRANSMUTATION_RECIPE_ORDER as RECIPE_ORDER } from '../../content/recipes/recipes'
@@ -17,7 +17,7 @@ const hasAcolyte = (job: { acolyteAssigned?: boolean } | undefined) => Boolean(j
 
 export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const activities: ActivityTelemetry[] = []
-  const dungeon = DUNGEONS[state.combat.locationId ?? 'whispering-woods']
+  const dungeon = COMBAT_LOCATIONS[state.combat.locationId ?? 'whispering-woods']
   const location = getCombatLocationById(state.combat.locationId)
   const encounterMode = getCombatEncounterMode(location)
   const sequence = encounterMode === 'sequence'

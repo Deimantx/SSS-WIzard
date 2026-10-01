@@ -11,7 +11,7 @@ import { BestiarySequence } from '../bestiary/BestiarySequence'
 import { BestiarySigilDrops } from '../bestiary/BestiarySigilDrops'
 import { BestiaryStats } from '../bestiary/BestiaryStats'
 import { BestiaryTraits } from '../bestiary/BestiaryTraits'
-import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 import { HUNTER_GROUNDS } from '../../game/content/hunters-order/hunterGrounds'
 import { HUNTER_STANDINGS } from '../../game/content/hunters-order/hunterRanks'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters/first-frontier/gloamridge'
@@ -66,7 +66,7 @@ export function HunterBestiaryTab() {
   const navigationIntent = useNavigationIntent()
   const attention = useProfileAttention(getActiveProfileId())
   const contract = getHunterContractCombatPresentation(state)
-  const activeGroundName = contract.contract ? DUNGEONS[contract.contract.huntingGroundId ?? 'hunters-ground']?.name ?? 'Hunting Ground' : 'Hunting Ground'
+  const activeGroundName = contract.contract ? COMBAT_LOCATIONS[contract.contract.huntingGroundId ?? 'hunters-ground']?.name ?? 'Hunting Ground' : 'Hunting Ground'
   const completion = getBestiaryCompletion(state)
   const knownQuarry = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => progress.discoveredMonsters.includes(id)).length
   const clearFilters = () => { setPrimary('all'); setFamily(null); setAlignment(null); setTier(null); setRegion(null); setSearch('') }
@@ -160,7 +160,7 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
   const isHunter = Boolean(monster?.hunter?.exclusive)
   const masterDossierAvailable = Boolean(!discovered && monster?.hunter?.exclusive && getHunterUpgradeRank(state, 'master-dossier') > 0 && isHunterMonsterRankEligible(state, monster.id))
   const groundId = (monster?.hunter?.huntingGroundId ?? 'hunters-ground') as CombatLocationId
-  const groundName = DUNGEONS[groundId]?.name ?? 'Hunting Ground'
+  const groundName = COMBAT_LOCATIONS[groundId]?.name ?? 'Hunting Ground'
   const huntInGround = () => {
     if (!monster || !selectedId || !monster.hunter?.exclusive || !authorized) return
     methods.rememberHunterQuarry(selectedId, groundId)
@@ -183,7 +183,7 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
 
   return <Card className="hunter-quarry-dossier" title="QUARRY DOSSIER">
     <div className="hunter-dossier-mobile-back"><Button variant="ghost" onClick={onBack}>BACK TO QUARRY INDEX</Button></div>
-    {!selectedId ? <div className="hunter-dossier-empty"><Compass size={30} /><strong>SELECT A QUARRY</strong><span>Choose a creature to review its field record.</span></div> : masterDossierAvailable && monster ? <section className="hunter-master-dossier"><div className="hunter-dossier-kicker">MASTER DOSSIER · LIMITED INTELLIGENCE</div><h2>{monster.name}</h2><p>This Order dossier reveals contract identity metadata. Combat capabilities and rewards remain sealed until encounter.</p><dl><div><dt>HUNTING GROUND</dt><dd>{DUNGEONS[groundId]?.name ?? 'Unknown ground'}</dd></div><div><dt>FAMILY</dt><dd>{monster.hunter?.family}</dd></div><div><dt>ALIGNMENT</dt><dd>{monster.hunter?.alignment}</dd></div><div><dt>CONTRACT TIER</dt><dd>{monster.hunter?.contractTier}</dd></div><div><dt>MINIMUM STANDING</dt><dd>{HUNTER_STANDINGS.find((standing) => standing.rankId === monster.hunter?.minimumRank)?.name ?? 'Tracker I'}</dd></div></dl><Status tone="neutral">ENCOUNTER TO UNSEAL FULL DOSSIER</Status></section> : !monster || !discovered ? <div className="hunter-dossier-empty"><span className="hunter-unknown-glyph">?</span><strong>UNKNOWN QUARRY</strong><span>{monster ? getMonsterLocationEntries(monster.id)[0]?.name ?? 'Uncharted region' : 'The dossier is unavailable.'} · Encounter this creature to reveal combat and reward details.</span></div> : <>
+    {!selectedId ? <div className="hunter-dossier-empty"><Compass size={30} /><strong>SELECT A QUARRY</strong><span>Choose a creature to review its field record.</span></div> : masterDossierAvailable && monster ? <section className="hunter-master-dossier"><div className="hunter-dossier-kicker">MASTER DOSSIER · LIMITED INTELLIGENCE</div><h2>{monster.name}</h2><p>This Order dossier reveals contract identity metadata. Combat capabilities and rewards remain sealed until encounter.</p><dl><div><dt>HUNTING GROUND</dt><dd>{COMBAT_LOCATIONS[groundId]?.name ?? 'Unknown ground'}</dd></div><div><dt>FAMILY</dt><dd>{monster.hunter?.family}</dd></div><div><dt>ALIGNMENT</dt><dd>{monster.hunter?.alignment}</dd></div><div><dt>CONTRACT TIER</dt><dd>{monster.hunter?.contractTier}</dd></div><div><dt>MINIMUM STANDING</dt><dd>{HUNTER_STANDINGS.find((standing) => standing.rankId === monster.hunter?.minimumRank)?.name ?? 'Tracker I'}</dd></div></dl><Status tone="neutral">ENCOUNTER TO UNSEAL FULL DOSSIER</Status></section> : !monster || !discovered ? <div className="hunter-dossier-empty"><span className="hunter-unknown-glyph">?</span><strong>UNKNOWN QUARRY</strong><span>{monster ? getMonsterLocationEntries(monster.id)[0]?.name ?? 'Uncharted region' : 'The dossier is unavailable.'} · Encounter this creature to reveal combat and reward details.</span></div> : <>
       <header className="hunter-dossier-hero">
         <MonsterPortrait monster={monster} boss={isBossMonster(monster)} />
         <div className="hunter-dossier-identity"><span className="hunter-dossier-kicker">{monster.hunter?.exclusive ? `${monster.hunter.contractTier.toUpperCase()} QUARRY` : monster.bestiaryCategory.toUpperCase()}</span><h2>{monster.name}</h2><p>{monster.subtitle}</p>

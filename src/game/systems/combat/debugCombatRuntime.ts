@@ -1,4 +1,4 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { getCombatEncounterMode, getCombatLocationById, isCombatTargetForLocation } from '../../content/combat-locations'
 import type { CombatLocationId, GameState, ItemId, MonsterId } from '../../types'
@@ -43,7 +43,7 @@ export const fastResolveNormalEnemiesForDebug = (
   stopAtBossReady = true,
   context: DebugCombatRuntimeContext = {},
 ): FastResolveResult => {
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon) return { resolved: 0, bossReady: false }
   if (!hasBossEncounter(dungeon)) {
     ensureDungeon(state, locationId)
@@ -76,7 +76,7 @@ export const fastResolveNormalEnemiesForDebug = (
 }
 
 const fastResolveBosslessNormalEnemies = (state: GameState, requested: number, locationId: CombatLocationId, context: DebugCombatRuntimeContext) => {
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   const count = Math.min(1000, Math.max(0, Number.isFinite(requested) ? Math.floor(requested) : 0))
   let resolved = 0
   while (resolved < count && state.combat.active) {
@@ -90,7 +90,7 @@ const fastResolveBosslessNormalEnemies = (state: GameState, requested: number, l
 }
 
 export const clearToBossForDebug = (state: GameState, locationId: CombatLocationId, context: DebugCombatRuntimeContext = {}) => {
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon || !hasBossEncounter(dungeon)) return { resolved: 0, bossReady: false }
   if (getCombatEncounterMode(getCombatLocationById(locationId)) === 'sequence') return fastResolveNormalEnemiesForDebug(state, dungeon.encounterSequence?.length ?? 0, locationId, false, context)
   const requirement = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
@@ -99,7 +99,7 @@ export const clearToBossForDebug = (state: GameState, locationId: CombatLocation
 }
 
 export const jumpToBossForDebug = (state: GameState, locationId: CombatLocationId, context: DebugCombatRuntimeContext = {}) => {
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon || !hasBossEncounter(dungeon)) return false
   ensureDungeon(state, locationId)
   despawnEnemyForDebug(state)
@@ -111,7 +111,7 @@ export const jumpToBossForDebug = (state: GameState, locationId: CombatLocationI
 }
 
 export const restartBossForDebug = (state: GameState, context: DebugCombatRuntimeContext = {}) => {
-  const dungeon = DUNGEONS[state.combat.locationId ?? 'whispering-woods']
+  const dungeon = COMBAT_LOCATIONS[state.combat.locationId ?? 'whispering-woods']
   if (!dungeon || !hasBossEncounter(dungeon)) return false
   const bossId = state.combat.enemyId && isBossMonster(MONSTERS[state.combat.enemyId]) ? state.combat.enemyId : dungeon.boss
   ensureDungeon(state, dungeon.id)

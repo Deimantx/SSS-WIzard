@@ -1,4 +1,4 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { getCombatEncounterMode, getCombatLocationById, usesPowerBasedThreat } from '../../content/combat-locations'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { getActiveEncounterWorldTier, getWorldTierDefinition } from '../world-tier/worldTierRuntime'
@@ -11,7 +11,7 @@ export const LEGACY_POWER_THREAT_REQUIREMENTS: Partial<Record<CombatLocationId, 
 }
 
 export const resolveBossThreatRequirement = (locationId: CombatLocationId, worldTier: WorldTierId) => {
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon || !hasBossEncounter(dungeon)) return 0
   const location = getCombatLocationById(locationId)
   const multiplier = usesPowerBasedThreat(location)
@@ -23,7 +23,7 @@ export const resolveBossThreatRequirement = (locationId: CombatLocationId, world
 export const resolveThreatGainForKill = (state: GameState, enemyId: MonsterId, encounterWorldTier: WorldTierId = getActiveEncounterWorldTier(state)) => {
   const locationId = state.combat.locationId
   if (!locationId) return 0
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon || !hasBossEncounter(dungeon)) return 0
   const location = getCombatLocationById(locationId)
   if (getCombatEncounterMode(location) === 'sequence') return 0

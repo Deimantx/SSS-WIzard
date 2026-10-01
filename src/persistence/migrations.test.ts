@@ -3,7 +3,7 @@ import { migrateSave } from './migrations'
 import { serializeGameState } from './profileSaveManager'
 import { validateStoredSave } from './saveIntegrity'
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
-import { DUNGEONS, DUNGEON_ORDER, isDungeonUnlocked, isTutorialCompleted } from '../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER, isCombatLocationUnlocked, isTutorialCompleted } from '../game/content/combat-locations/worldNavigation'
 import { MAX_ACTION_WORK_MS } from '../game/core/balance/combatTiming'
 import { getSchoolTotalXpForLevel } from '../game/core/balance/schoolXpCurve'
 import { SUMMONING_UNLOCK_BOSS_ID } from '../game/content/guardians/guardians'
@@ -243,7 +243,7 @@ describe('save navigation migration', () => {
     expect(migrated.progress.permanentManaBonuses).toEqual({ 'forest-heart': 10, 'guild-apprentice': 10 })
     expect(migrated.progress.lifetimeKillsByMonster).toEqual({ 'forest-wisp': 12, thornling: 3 })
     expect(migrated.progress.bossKillsByBoss).toEqual({ 'grove-sentinel': 2, 'forest-heart': 1 })
-    expect(migrated.progress.autoHuntBossByLocation).toEqual(Object.fromEntries(DUNGEON_ORDER.map((locationId) => [locationId, locationId === 'whispering-woods'])))
+    expect(migrated.progress.autoHuntBossByLocation).toEqual(Object.fromEntries(COMBAT_LOCATION_ORDER.map((locationId) => [locationId, locationId === 'whispering-woods'])))
     expect(migrated.combat.triggeredRuleIds).toContain('enemy:trait:grove-sentinel-ancient-growth:grove-sentinel-ancient-growth-threshold')
     expect(migrated.combat).not.toHaveProperty('enemySpecialUsed')
     expect(migrated.inventory).not.toHaveProperty('removed-item')
@@ -261,8 +261,8 @@ describe('save navigation migration', () => {
     expect(migrated.progress.bossKillsByBoss['forest-heart']).toBe(1)
     expect(migrated.progress.bossKillsByBoss['corrupted-greatbear']).toBeUndefined()
     expect(migrated.progress.bossKillsByBoss['archmage-edrin-shade']).toBeUndefined()
-    expect(isDungeonUnlocked(DUNGEONS['howling-den'], migrated.progress)).toBe(true)
-    expect(isDungeonUnlocked(DUNGEONS['abandoned-catacombs'], migrated.progress)).toBe(false)
+    expect(isCombatLocationUnlocked(COMBAT_LOCATIONS['howling-den'], migrated.progress)).toBe(true)
+    expect(isCombatLocationUnlocked(COMBAT_LOCATIONS['abandoned-catacombs'], migrated.progress)).toBe(false)
     expect(isTutorialCompleted(migrated.progress)).toBe(false)
 
     const rerun = migrateSave(migrated)

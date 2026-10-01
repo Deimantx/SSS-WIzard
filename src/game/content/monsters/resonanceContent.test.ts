@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../combat-locations/worldNavigation'
 import { RESONANCE_TYPES } from '../resonance/resonance'
 import { MONSTERS } from './index'
 
 describe('Whispering Woods Phase 1 Resonance authoring', () => {
   it('authors a valid non-empty profile for every normal-pool enemy and its boss', () => {
-    const dungeon = DUNGEONS['whispering-woods']
+    const dungeon = COMBAT_LOCATIONS['whispering-woods']
     ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
       expect(profile, `${monsterId} should have a Phase 1 profile`).toBeTruthy()
@@ -25,7 +25,7 @@ describe('Elemental Scar Resonance authoring', () => {
     ['ashen-watch', 'fire'],
     ['rootscar-hollow', 'earth'],
   ] as const)('authors only the %s profile for every target and its boss', (locationId, resonanceType) => {
-    const dungeon = DUNGEONS[locationId]
+    const dungeon = COMBAT_LOCATIONS[locationId]
     ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
       expect(profile, `${monsterId} should have an Elemental Scar profile`).toBeTruthy()
@@ -36,7 +36,7 @@ describe('Elemental Scar Resonance authoring', () => {
 
   it('keeps sequence normal monsters Resonance-free while rewarding their bosses', () => {
     for (const locationId of ['fractured-approach', 'crossroads-of-ruin'] as const) {
-      const dungeon = DUNGEONS[locationId]
+      const dungeon = COMBAT_LOCATIONS[locationId]
       ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? [])].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toBeUndefined())
     }
     expect(MONSTERS['corrupted-elemental-gatekeeper'].resonanceYield).toEqual({ fire: 50, water: 50, earth: 50, air: 50 })
@@ -68,7 +68,7 @@ describe('Shattered Meridian Resonance authoring', () => {
     ['stormvault-gallery', { air: 30 }],
     ['starfallen-observatory', { air: 24, fire: 16 }],
   ] as const)('authors the requested resonance progression for %s', (locationId, firstProfile) => {
-    const dungeon = DUNGEONS[locationId]
+    const dungeon = COMBAT_LOCATIONS[locationId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(firstProfile)
     ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
@@ -82,7 +82,7 @@ describe('Shattered Meridian Resonance authoring', () => {
   })
 
   it('keeps Broken Meridian sequence encounters Resonance-free except for the boss', () => {
-    const dungeon = DUNGEONS['broken-meridian']
+    const dungeon = COMBAT_LOCATIONS['broken-meridian']
     expect(dungeon.encounterSequence).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'])
     ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? [])].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toBeUndefined())
     expect(MONSTERS[dungeon.boss!].resonanceYield).toEqual({ fire: 100, water: 100, earth: 100, air: 100 })
@@ -94,7 +94,7 @@ describe('Black Sigil Reach Resonance authoring', () => {
     ['hall-of-unbound-names', { air: 36, water: 24 }, { air: 100, water: 100 }],
     ['vault-of-the-black-sigil', { earth: 24, fire: 46 }, { earth: 110, fire: 110 }],
   ] as const)('authors the requested mixed profile progression for %s', (locationId, firstProfile, bossProfile) => {
-    const dungeon = DUNGEONS[locationId]
+    const dungeon = COMBAT_LOCATIONS[locationId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(firstProfile)
     expect(MONSTERS[dungeon.boss!].resonanceYield).toEqual(bossProfile)
     ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {

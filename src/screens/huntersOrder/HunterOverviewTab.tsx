@@ -1,7 +1,7 @@
 import { useGameStore } from '../../store/gameStore'
 import { Button, Card, GameTooltip } from '../../components/ui'
 import { BookOpen, Map, ScrollText, Shield, Trophy } from 'lucide-react'
-import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 import { HUNTER_GROUNDS } from '../../game/content/hunters-order/hunterGrounds'
 import { HUNTER_STANDINGS } from '../../game/content/hunters-order/hunterRanks'
 import { MONSTERS } from '../../game/content/monsters'
@@ -68,7 +68,7 @@ export function HunterOverviewGroundsPanel({ state }: { state: GameState }) {
   return <section className="hunter-overview-grounds" aria-label="Hunting Grounds">
     <header><div className="hunter-overview-kicker"><Map size={15} /> HUNTING GROUNDS</div><span>{enabledGrounds.length} ACTIVE</span></header>
     <div className="hunter-ground-card-grid">{enabledGrounds.map((ground) => {
-      const dungeon = DUNGEONS[ground.id]
+      const dungeon = COMBAT_LOCATIONS[ground.id]
       const required = HUNTER_STANDINGS.find((standing) => standing.id === ground.minimumStandingId)!
       const locked = header.reputation < required.reputation
       const quarry = [...dungeon.monsterPool, ...(dungeon.boss ? [dungeon.boss] : [])].filter((id) => MONSTERS[id]?.hunter?.exclusive)

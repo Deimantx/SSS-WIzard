@@ -10,9 +10,7 @@ export type CombatLocationType =
   | 'combat-zone'
   | 'elite-zone'
   | 'hunting-ground'
-  | 'special-zone'
   | 'dungeon'
-  | 'tower'
 
 export type CombatZoneType = Extract<CombatLocationType, 'combat-zone' | 'elite-zone' | 'hunting-ground' | 'dungeon'>
 
@@ -51,8 +49,6 @@ export interface CombatLocationDefinition {
   type: CombatLocationType
   /** Authored when a location is consistently aligned to one element. */
   primaryElement?: ElementId
-  /** Data-derived affinities represented by this location's canonical roster. */
-  elementsPresent?: ElementId[]
   order: number
   monsterPool: readonly MonsterId[]
   bossId: MonsterId | null
@@ -68,11 +64,19 @@ export interface CombatLocationDefinition {
   prototype?: boolean
 }
 
+/** Temporary read-model projection for systems migrated from the old encounter table. */
+export interface CombatLocationRuntimeView extends CombatLocationDefinition {
+  boss: MonsterId | null
+  threatRequired: number | null
+  encounterSequence?: readonly MonsterId[]
+  ui?: { description?: string }
+  elementsPresent: ElementId[]
+}
+export type BossCombatLocationRuntimeView = CombatLocationRuntimeView & { boss: MonsterId; threatRequired: number }
+
 export const COMBAT_LOCATION_TYPE_METADATA: Record<CombatLocationType, { label: string; actionLabel: string }> = {
   'combat-zone': { label: 'COMBAT ZONE', actionLabel: 'ENTER ZONE' },
   'elite-zone': { label: 'ELITE ZONE', actionLabel: 'ENTER ELITE ZONE' },
   'hunting-ground': { label: 'HUNTING GROUND', actionLabel: 'ENTER HUNTING GROUND' },
-  'special-zone': { label: 'SPECIAL ZONE', actionLabel: 'ENTER SPECIAL ZONE' },
   dungeon: { label: 'DUNGEON', actionLabel: 'ENTER DUNGEON' },
-  tower: { label: 'TOWER', actionLabel: 'ENTER TOWER' },
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { getCombatLocationById, isCombatTargetForLocation } from '../../content/combat-locations'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
@@ -258,7 +258,7 @@ describe('Whispering Woods targeted farming', () => {
   it('abandons a boss without boss progression and preserves Threat before spawning the target', () => {
     const state = prepare()
     state.combat.targetEnemyId = 'tempest-stag'
-    state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
+    state.combat.threatCleared = COMBAT_LOCATIONS['whispering-woods'].threatRequired!
     spawnEnemy(state, 'forest-heart')
     const bossKillsBefore = state.progress.bossKillsByBoss['forest-heart'] ?? 0
     const firstBossKillBefore = state.progress.firstBossKill
@@ -269,7 +269,7 @@ describe('Whispering Woods targeted farming', () => {
     const next = useGameStore.getState()
     expect(next.combat.enemyId).toBe('stone-root')
     expect(next.combat.inBossFight).toBe(false)
-    expect(next.combat.threatCleared).toBe(DUNGEONS['whispering-woods'].threatRequired)
+    expect(next.combat.threatCleared).toBe(COMBAT_LOCATIONS['whispering-woods'].threatRequired)
     expect(next.progress.bossKillsByBoss['forest-heart'] ?? 0).toBe(bossKillsBefore)
     expect(next.progress.firstBossKill).toBe(firstBossKillBefore)
     expect(next.resonance).toEqual(resonanceBefore)

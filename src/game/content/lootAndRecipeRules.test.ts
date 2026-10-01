@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { getItemDropSources } from './contentRelations'
 import { ARTIFACTS, isArtifactId } from './artifacts/artifacts'
-import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './combat-locations/dungeons/dungeons'
-import { ARTIFACT_EQUIPMENT_IDS } from './equipment/equipmentSets'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER, hasBossEncounter } from './combat-locations/worldNavigation'
+import { ARTIFACT_ITEM_ORDER } from './artifacts/artifacts'
 import { ITEMS } from './items/items'
 import { MONSTERS, validateMonsterDefinitions } from './monsters'
 import { ARTIFICING_RECIPES } from './recipes/artificingRecipes'
@@ -19,16 +19,16 @@ describe('dungeon loot and equipment ownership', () => {
   })
 
   it('keeps every current monster on the authored non-currency loot path', () => {
-    DUNGEON_ORDER.forEach((locationId) => {
-      const dungeon = DUNGEONS[locationId]
+    COMBAT_LOCATION_ORDER.forEach((locationId) => {
+      const dungeon = COMBAT_LOCATIONS[locationId]
       dungeon.monsterPool.forEach((monsterId) => expect(MONSTERS[monsterId].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true))
       if (hasBossEncounter(dungeon)) expect(MONSTERS[dungeon.boss].loot.every((entry) => entry.itemId !== 'life-essence' && entry.itemId !== 'artifact-essence')).toBe(true)
     })
   })
 
   it('removes dungeon Equipment pools while keeping Artifact crafting one-to-one', () => {
-    expect(ARTIFACT_EQUIPMENT_IDS).toHaveLength(12)
-    expect(Object.keys(ARTIFICING_RECIPES)).toEqual(expect.arrayContaining([...ARTIFACT_EQUIPMENT_IDS]))
+    expect(ARTIFACT_ITEM_ORDER).toHaveLength(12)
+    expect(Object.keys(ARTIFICING_RECIPES)).toEqual(expect.arrayContaining([...ARTIFACT_ITEM_ORDER]))
     expect(Object.values(ARTIFACTS).every((artifact) => ARTIFICING_RECIPES[artifact.id].output.itemId === artifact.id)).toBe(true)
     expect(validateRecipeDefinitions()).toEqual([])
     expect(RECIPES['windthread-wand']).toBeDefined()

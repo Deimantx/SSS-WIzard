@@ -1,4 +1,5 @@
-import { validateDungeonDefinitions } from './combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_REGIONS } from './combat-locations/worldNavigation'
+import { validateCombatWorldNavigation } from './combat-locations/worldNavigationValidation'
 import { validateItemDefinitions } from './items/items'
 import { validateRecipeDefinitions } from './recipes/recipes'
 import { validateMonsterDefinitions } from './monsters'
@@ -23,7 +24,7 @@ export const validateGameContent = () => {
     ...validateTraitDefinitions(),
     ...validateMonsterDefinitions(),
     ...validateItemDefinitions(),
-    ...validateDungeonDefinitions(),
+    ...validateCombatWorldNavigation({ regions: COMBAT_REGIONS, locations: COMBAT_LOCATIONS }),
     ...validateRecipeDefinitions(),
     ...validateEquipmentSetDefinitions(),
     ...validateArtifactDefinitions(ITEMS),

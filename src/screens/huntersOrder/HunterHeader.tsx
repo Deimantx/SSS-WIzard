@@ -2,7 +2,7 @@ import { Compass, Crown, Eye, Footprints, Map, Medal, Shield, Target } from 'luc
 import { Button, Card, GameTooltip } from '../../components/ui'
 import { getHunterHeaderPresentation } from '../../game/presentation/huntersOrder/hunterPresentation'
 import { getHunterContractTargetLabel } from '../../game/systems/hunters-order/huntersOrderRuntime'
-import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 import { useGameStore } from '../../store/gameStore'
 import { openHunterContractInCombat } from '../../ui/navigation/hunterContractNavigation'
 import type { GameState } from '../../game/types'
@@ -14,7 +14,7 @@ export function HunterHeader({ state, onNavigate }: { state: GameState; onNaviga
   const data = getHunterHeaderPresentation(state)
   const RankIcon = rankIcons[data.currentRank.id as keyof typeof rankIcons] ?? Target
   const active = data.activeContract
-  const groundName = active ? DUNGEONS[active.huntingGroundId ?? 'hunters-ground']?.name ?? 'Hunting Ground' : ''
+  const groundName = active ? COMBAT_LOCATIONS[active.huntingGroundId ?? 'hunters-ground']?.name ?? 'Hunting Ground' : ''
   const setScreen = useGameStore.getState().setScreen
   return <Card className="hunter-command-header hunter-command-header-v3">
     <div className="hunter-header-v3-main">

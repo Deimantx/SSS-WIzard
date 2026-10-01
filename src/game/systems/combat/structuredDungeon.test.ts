@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { fastResolveNormalEnemiesForDebug } from './debugCombatRuntime'
 import { resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from './combatRuntime'
@@ -71,7 +71,7 @@ describe('structured dungeon encounters', () => {
   it('uses the Broken Meridian unlock prerequisites and keeps it as a sequence dungeon', () => {
     const state = prepare()
     state.combat.locationId = 'broken-meridian'
-    expect(DUNGEONS['broken-meridian'].unlock).toEqual({ type: 'all-boss-kills', bossIds: ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] })
+    expect(COMBAT_LOCATIONS['broken-meridian'].unlock).toEqual({ type: 'all-boss-kills', bossIds: ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] })
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('meridian-warden')
     expect(state.combat.threatCleared).toBe(0)
@@ -165,7 +165,7 @@ describe('structured dungeon encounters', () => {
     expect(offline.combat.threatCleared).toBe(0)
 
     const fast = prepare()
-    const result = fastResolveNormalEnemiesForDebug(fast, DUNGEONS['abandoned-catacombs'].encounterSequence?.length ?? 0, 'abandoned-catacombs', false)
+    const result = fastResolveNormalEnemiesForDebug(fast, COMBAT_LOCATIONS['abandoned-catacombs'].encounterSequence?.length ?? 0, 'abandoned-catacombs', false)
     expect(result.resolved).toBe(3)
     expect(fast.progress.lifetimeKillsByMonster['restless-skeleton']).toBe(1)
     expect(fast.progress.lifetimeKillsByMonster['grave-wraith']).toBe(1)

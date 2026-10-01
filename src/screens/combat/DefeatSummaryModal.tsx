@@ -1,6 +1,6 @@
 import { ShieldAlert } from 'lucide-react'
 import { ModalPortal, Button } from '../../components/ui'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../game/content/combat-locations/worldNavigation'
 import { getCombatEncounterMode, getCombatLocationById } from '../../game/content/combat-locations'
 import { MONSTERS, isBossMonster } from '../../game/content/monsters'
 import { formatCompactDuration, formatNumber } from '../../game/utils'
@@ -12,7 +12,7 @@ export function DefeatSummaryModal() {
   const snapshot = useCombatDefeatStore((state) => state.snapshot)
   const leaveDungeon = useGameStore((state) => state.leaveDungeon)
   if (!snapshot) return null
-  const dungeon = snapshot.locationId ? DUNGEONS[snapshot.locationId] : undefined
+  const dungeon = snapshot.locationId ? COMBAT_LOCATIONS[snapshot.locationId] : undefined
   const enemy = snapshot.enemyId ? MONSTERS[snapshot.enemyId] : undefined
   const returnToTower = () => { leaveDungeon(); clearCombatDefeat() }
   const newestTimestampMs = snapshot.events.reduce((latest, entry) => Math.max(latest, entry.timestampMs), snapshot.defeatedAtMs)

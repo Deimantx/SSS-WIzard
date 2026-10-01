@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { getCrystalVariantName } from '../../content/crystals/crystals'
 import { ITEMS } from '../../content/items/items'
 import { MONSTERS } from '../../content/monsters'
@@ -23,7 +23,7 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'lifetime-kills': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'}`
     case 'boss-kill': return `Defeat ${MONSTERS[condition.bossId]?.name ?? formatReadableId(condition.bossId)}`
     case 'all-boss-kills': return condition.bossIds.includes('graveglass-behemoth') && condition.bossIds.includes('storm-archivist') && condition.bossIds.includes('fallen-astromancer') ? 'Break the three Shattered Meridian anchors' : `Defeat ${condition.bossIds.map((id) => MONSTERS[id]?.name ?? formatReadableId(id)).join(', ')}`
-    case 'dungeon-entered': return `Enter ${DUNGEONS[condition.locationId]?.name ?? formatReadableId(condition.locationId)}`
+    case 'dungeon-entered': return `Enter ${COMBAT_LOCATIONS[condition.locationId]?.name ?? formatReadableId(condition.locationId)}`
     case 'auto-cast-enabled': return 'Enable Auto-Cast for one Spell'
     case 'channeling-acolytes': return `Assign ${condition.count} Acolyte${condition.count === 1 ? '' : 's'} to Channeling`
     case 'chronicle-event': return formatReadableId(condition.eventId)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { usesPowerBasedThreat, getCombatLocationById } from '../../content/combat-locations'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { createInitialState } from '../../../store/initialState'
@@ -21,7 +21,7 @@ describe('Power-based Boss Threat', () => {
   it('resolves prototype requirements for every World Tier and leaves legacy dungeons static', () => {
     expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement('whispering-woods', tier as 1 | 2 | 3 | 4 | 5))).toEqual([5000, 10000, 15000, 20000, 25000])
     expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement('howling-den', tier as 1 | 2 | 3 | 4 | 5))).toEqual([10000, 20000, 30000, 40000, 50000])
-    expect(resolveBossThreatRequirement('fractured-approach', 5)).toBe(DUNGEONS['fractured-approach'].threatRequired)
+    expect(resolveBossThreatRequirement('fractured-approach', 5)).toBe(COMBAT_LOCATIONS['fractured-approach'].threatRequired)
     for (const locationId of ['flooded-reliquary', 'ashen-watch', 'rootscar-hollow'] as const) {
       expect([1, 2, 3, 4, 5].map((tier) => resolveBossThreatRequirement(locationId, tier as 1 | 2 | 3 | 4 | 5))).toEqual([20000, 40000, 60000, 80000, 100000])
     }

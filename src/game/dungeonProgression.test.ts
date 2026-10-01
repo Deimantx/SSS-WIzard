@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS, isDungeonCompleted, isTutorialCompleted } from './content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, isCombatLocationCompleted, isTutorialCompleted } from './content/combat-locations/worldNavigation'
 import { createInitialState } from '../store/initialState'
 import { finishEnemy, spawnEnemy } from './systems/combat/combatRuntime'
 import { promoteGuildAction } from '../store/actions/guildActions'
@@ -18,13 +18,13 @@ const resetCombatGame = () => {
 describe('dungeon progression helpers', () => {
   it('uses boss records for dungeon and tutorial completion', () => {
     const state = createCombatTestState()
-    expect(isDungeonCompleted('whispering-woods', state.progress)).toBe(false)
+    expect(isCombatLocationCompleted('whispering-woods', state.progress)).toBe(false)
     expect(isTutorialCompleted(state.progress)).toBe(false)
 
     state.progress.firstMainBossKill = true
     expect(isTutorialCompleted(state.progress)).toBe(false)
     state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
-    expect(isDungeonCompleted('abandoned-catacombs', state.progress)).toBe(true)
+    expect(isCombatLocationCompleted('abandoned-catacombs', state.progress)).toBe(true)
     expect(isTutorialCompleted(state.progress)).toBe(true)
   })
 
@@ -33,7 +33,7 @@ describe('dungeon progression helpers', () => {
     game.setBossKills('forest-heart', 1)
     game.enterTargetedCombat('howling-den', 'cavefang-wolf')
     game.spawnDebugEnemy('cavefang-wolf')
-    game.setThreat(DUNGEONS['howling-den'].threatRequired!)
+    game.setThreat(COMBAT_LOCATIONS['howling-den'].threatRequired!)
     game.setPlayerBarrier(37)
     useGameStore.setState((state) => ({ combat: { ...state.combat, spellCooldowns: { ...state.combat.spellCooldowns, 'fire-bolt': 123 } } }))
     const before = useGameStore.getState()
@@ -68,7 +68,7 @@ describe('dungeon progression helpers', () => {
     game.setBossKills('forest-heart', 1)
     game.enterTargetedCombat('howling-den', 'cavefang-wolf')
     game.toggleAutoHunt('howling-den')
-    game.setThreat(DUNGEONS['howling-den'].threatRequired! - 1)
+    game.setThreat(COMBAT_LOCATIONS['howling-den'].threatRequired! - 1)
     game.spawnDebugEnemy('cavefang-wolf')
     game.killCurrentEnemy()
     expect(useGameStore.getState().combat.pendingBossId).toBe('corrupted-greatbear')
@@ -77,7 +77,7 @@ describe('dungeon progression helpers', () => {
     expect(useGameStore.getState().combat.pendingBossId).toBe('corrupted-greatbear')
     expect(useGameStore.getState().combat.enemyId).toBeNull()
 
-    for (let index = 0; index < DUNGEONS['howling-den'].encounterDelayMs / 1000; index += 1) game.tick(1000)
+    for (let index = 0; index < COMBAT_LOCATIONS['howling-den'].encounterDelayMs / 1000; index += 1) game.tick(1000)
     const nextEnemy = useGameStore.getState().combat.enemyId
     expect(nextEnemy).toBe('corrupted-greatbear')
     expect(useGameStore.getState().combat.inBossFight).toBe(true)
@@ -104,7 +104,7 @@ describe('dungeon progression helpers', () => {
     expect(after.combat.inBossFight).toBe(false)
     expect(after.combat.enemyId).toBeTruthy()
     expect(after.ui.lastEnteredCombatLocationId).toBe('howling-den')
-    expect(DUNGEONS['howling-den'].monsterPool).toContain(after.combat.enemyId)
+    expect(COMBAT_LOCATIONS['howling-den'].monsterPool).toContain(after.combat.enemyId)
     expect(after.inventory).toEqual(beforeInventory)
     expect(after.progress.lifetimeKills).toBe(beforeKills)
     expect(after.progress.lifetimeKillsByMonster['grove-sentinel'] ?? 0).toBe(beforeMonsterKills)

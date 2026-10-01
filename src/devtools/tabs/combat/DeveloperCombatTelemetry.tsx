@@ -1,6 +1,6 @@
 import { Button, Card } from '../../../components/ui'
 import { useMemo } from 'react'
-import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../../game/content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../../game/content/monsters'
 import { getCombatMetricSnapshot } from '../../../game/telemetry/combat/combatTelemetrySelectors'
 import { useCombatTelemetryStore } from '../../../game/telemetry/combat/combatTelemetryStore'
@@ -42,8 +42,8 @@ export function DeveloperCombatTelemetry({ copy }: { copy: DeveloperCopy }) {
   const enemyDamage = getCombatMetricSnapshot(run, 'enemy', 'damage')
   const playerTaken = getCombatMetricSnapshot(run, 'player', 'taken')
   const playerHealing = getCombatMetricSnapshot(run, 'player', 'healing')
-  const dungeon = DUNGEONS[combat.locationId ?? 'whispering-woods']
-  const copyState = () => copy('Combat state', { combat, player: { health: player.health, maxHealth: player.maxHealth, mana: player.mana, maxMana: player.maxMana }, debugCombatOverrides: { playerImmortal: debug.playerImmortal, enemyImmortal: debug.enemyImmortal, infiniteMana: debug.infiniteMana, ignoreSpellCooldowns: debug.ignoreSpellCooldowns, disableAutoCast: debug.disableAutoCast, freezePlayerActions: debug.freezePlayerActions, freezeEnemyActions: debug.freezeEnemyActions, combatPaused: debug.combatPaused, combatTimeScale: debug.combatTimeScale }, currentEnemyDefinition: combat.enemyId ? MONSTERS[combat.enemyId] : null, currentDungeonDefinition: dungeon })
+  const dungeon = COMBAT_LOCATIONS[combat.locationId ?? 'whispering-woods']
+  const copyState = () => copy('Combat state', { combat, player: { health: player.health, maxHealth: player.maxHealth, mana: player.mana, maxMana: player.maxMana }, debugCombatOverrides: { playerImmortal: debug.playerImmortal, enemyImmortal: debug.enemyImmortal, infiniteMana: debug.infiniteMana, ignoreSpellCooldowns: debug.ignoreSpellCooldowns, disableAutoCast: debug.disableAutoCast, freezePlayerActions: debug.freezePlayerActions, freezeEnemyActions: debug.freezeEnemyActions, combatPaused: debug.combatPaused, combatTimeScale: debug.combatTimeScale }, currentEnemyDefinition: combat.enemyId ? MONSTERS[combat.enemyId] : null, currentCombatLocationRuntimeView: dungeon })
   const copyTelemetry = () => { const current = useCombatTelemetryStore.getState(); return copy('Telemetry', { run: current.run, lastRun: current.lastRun, encounter: current.encounter }) }
   return <div className="developer-tab-grid">
     <Card title="Combat measurement"><div className="developer-summary-grid"><Summary label="Run engaged" value={seconds(run?.engagedMs ?? 0)} /><Summary label="Encounter engaged" value={seconds(encounter?.engagedMs ?? 0)} /><Summary label="Player damage" value={metricValue(playerDamage.total)} /><Summary label="Player DPS" value={metricValue(playerDamage.rate)} /><Summary label="Enemy damage" value={metricValue(enemyDamage.total)} /><Summary label="Incoming DPS" value={metricValue(playerTaken.rate)} /><Summary label="Player healing" value={metricValue(playerHealing.total)} /><Summary label="Player HPS" value={metricValue(playerHealing.rate)} /><Summary label="Barrier granted" value={metricValue(run?.player.barrierGranted ?? 0)} /><Summary label="Barrier absorbed" value={metricValue(run?.player.barrierAbsorbed ?? 0)} /></div></Card>

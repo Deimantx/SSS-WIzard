@@ -10,7 +10,7 @@ import type {
   RecipeUnlockCondition,
 } from '../../types'
 import type { CombatActionDefinition, CombatTriggerRule, TraitDefinition } from '../../systems/combat/combatTypes'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../content/monsters'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 
@@ -46,7 +46,7 @@ export const formatDuration = (milliseconds: number | null | undefined) => {
 
 const statusName = (statusId: string) => STATUS_DEFINITIONS[statusId as keyof typeof STATUS_DEFINITIONS]?.name ?? readableId(statusId)
 const monsterName = (monsterId: string) => MONSTERS[monsterId as keyof typeof MONSTERS]?.name ?? readableId(monsterId)
-const locationName = (locationId: string) => DUNGEONS[locationId as keyof typeof DUNGEONS]?.name ?? readableId(locationId)
+const locationName = (locationId: string) => COMBAT_LOCATIONS[locationId as keyof typeof COMBAT_LOCATIONS]?.name ?? readableId(locationId)
 const targetName = (target: 'self' | 'opponent', statusHolder = false) => statusHolder
   ? target === 'self' ? 'the status holder' : 'the opponent of the status holder'
   : target === 'self' ? 'the caster' : 'the opponent'

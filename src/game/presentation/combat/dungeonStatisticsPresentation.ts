@@ -1,4 +1,4 @@
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { ITEMS } from '../../content/items/items'
 import { RESONANCE_METADATA, RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceType } from '../../content/resonance/resonance'
 import { formatCompactDuration } from '../../utils'
@@ -71,7 +71,7 @@ export function getDungeonStatisticsAggregatePresentation(session: DungeonStatis
     : []
   const totalDrops = selectTotalLootQuantity(session)
   return {
-    locationName: session ? DUNGEONS[session.locationId].name : null,
+    locationName: session ? COMBAT_LOCATIONS[session.locationId].name : null,
     fullRuns: session?.completedRuns ?? 0,
     averageRunTime: formatStatisticsTime(session && session.completedRuns > 0 ? session.completedRunDurationTotalMs / session.completedRuns : null),
     bestRunTime: formatStatisticsTime(session?.bestRunMs ?? null),

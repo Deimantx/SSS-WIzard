@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
 import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterStanding, getHunterContractBoardSlotCount, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, debugRegenerateHunterContractBoard, getEligibleHunterContractMembers, getMinimumContractTierForMonster, toggleHunterContractPin, getHunterContractTargetReduction, getHunterHarvestBonuses } from './huntersOrderRuntime'
@@ -18,8 +18,8 @@ describe('Hunter Order hardened runtime', () => {
   it('uses the extended authored Gloamridge roster and rank thresholds', () => {
     expect(HUNTER_RANKS.map(({ reputation }) => reputation)).toEqual([0, 1250, 4000, 9000, 17500, 32500])
     expect(HUNTER_REGULAR_MONSTER_IDS).toHaveLength(7)
-    expect(DUNGEONS['hunters-ground'].monsterPool).toHaveLength(7)
-    expect(DUNGEONS['hunters-ground'].monsterPool).toEqual(expect.arrayContaining([...HUNTER_REGULAR_MONSTER_IDS]))
+    expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toHaveLength(7)
+    expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toEqual(expect.arrayContaining([...HUNTER_REGULAR_MONSTER_IDS]))
     for (const id of ['veilwing-harrier', 'cinderback-mauler', 'gloomroot-hexer'] as const) {
       expect(MONSTERS[id]).toMatchObject({ bestiaryCategory: 'monster', hunter: { exclusive: true, contractRequired: true, huntingGroundId: 'hunters-ground' } })
       expect(MONSTERS[id]?.actions && Object.keys(MONSTERS[id]!.actions).length).toBeGreaterThan(0)
@@ -147,7 +147,7 @@ describe('Hunter Order hardened runtime', () => {
     expect(spawnNextEnemy(state)).toBe(false)
     expect(state.combat.enemyId).toBeNull()
     expect(state.combat.pendingBossId).toBeNull()
-    expect(DUNGEONS['hunters-ground'].boss).toBeNull()
+    expect(COMBAT_LOCATIONS['hunters-ground'].boss).toBeNull()
   })
 
   it('keeps block capacity, protects active eligibility, and permits unblocking', () => {

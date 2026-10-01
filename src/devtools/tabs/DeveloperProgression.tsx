@@ -12,7 +12,7 @@ import { HUNTER_RANKS, HUNTER_STANDINGS } from '../../game/content/hunters-order
 import { HUNTER_UPGRADES } from '../../game/content/hunters-order/hunterUpgrades'
 import { HUNTER_GROUNDS } from '../../game/content/hunters-order/hunterGrounds'
 import { getHunterContractTargetLabel } from '../../game/systems/hunters-order/huntersOrderRuntime'
-import { DUNGEONS, DUNGEON_ORDER, isDungeonCompleted, isDungeonUnlocked, isTutorialCompleted } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER, isCombatLocationCompleted, isCombatLocationUnlocked, isTutorialCompleted } from '../../game/content/combat-locations/worldNavigation'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTER_IDS, isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { SCHOOLS } from '../../game/content/schools/schools'
@@ -59,9 +59,9 @@ export function DeveloperProgression() {
   ]
 
   return <div className="developer-tab-grid">
-    <Card title="DUNGEONS · Progression dashboard">
+    <Card title="COMBAT_LOCATIONS · Progression dashboard">
       <div className="developer-summary-grid">
-        {DUNGEON_ORDER.map((id) => <Summary key={id} label={DUNGEONS[id].name} value={isDungeonUnlocked(DUNGEONS[id], progress) ? isDungeonCompleted(id, progress) ? 'Complete' : 'Unlocked' : 'Locked'} />)}
+        {COMBAT_LOCATION_ORDER.map((id) => <Summary key={id} label={COMBAT_LOCATIONS[id].name} value={isCombatLocationUnlocked(COMBAT_LOCATIONS[id], progress) ? isCombatLocationCompleted(id, progress) ? 'Complete' : 'Unlocked' : 'Locked'} />)}
         <Summary label="Tutorial" value={isTutorialCompleted(progress) ? 'Complete' : 'Incomplete'} />
         <Summary label="Normal kills" value={progress.lifetimeKills} />
         <Summary label="Boss kills" value={Object.values(progress.bossKillsByBoss).reduce((sum, value) => sum + (value ?? 0), 0)} />

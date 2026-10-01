@@ -8,8 +8,7 @@ import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import type { TraitId } from './combatTypes'
 import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
-import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
-import { DUNGEONS, isDungeonUnlocked } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 const elementalScarSources = import.meta.glob('../../content/monsters/regions/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const tutorialSource = import.meta.glob('../../content/monsters/elementalTutorial.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
@@ -253,14 +252,14 @@ describe('Combat V2 authored content audit', () => {
       if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Regional Progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
     }
 
-    const hall = DUNGEONS['hall-of-unbound-names']
-    const vault = DUNGEONS['vault-of-the-black-sigil']
-    const gate = DUNGEONS['black-gate']
+    const hall = COMBAT_LOCATIONS['hall-of-unbound-names']
+    const vault = COMBAT_LOCATIONS['vault-of-the-black-sigil']
+    const gate = COMBAT_LOCATIONS['black-gate']
     expect([hall.threatRequired, vault.threatRequired]).toEqual([40000, 40000])
     expect(hall.unlock).toEqual({ type: 'boss-kill', bossId: 'meridian-splitter' })
     expect(vault.unlock).toEqual({ type: 'boss-kill', bossId: 'meridian-splitter' })
-    expect(isDungeonUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 0 } } as never)).toBe(false)
-    expect(isDungeonUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 1 } } as never)).toBe(true)
+    expect(isCombatLocationUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 0 } } as never)).toBe(false)
+    expect(isCombatLocationUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 1, 'meridian-splitter': 1 } } as never)).toBe(true)
     expect(gate).toMatchObject({ threatRequired: 0, encounterSequence: ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'] })
     expect(COMBAT_LOCATIONS['hall-of-unbound-names']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'vicious' })
     expect(COMBAT_LOCATIONS['vault-of-the-black-sigil']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'armored' })

@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { Card } from '../../../components/ui'
 import { COMBAT_LOCATIONS, getCombatLocationById, type CombatLocationId, type CombatZoneType } from '../../../game/content/combat-locations'
-import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
 import { buildCombatWorldNavigationViewModel, getInitialCombatLocationId } from '../../../game/presentation/combat/combatWorldNavigationReadModel'
 import type { CombatLocationViewModel } from '../../../game/presentation/combat/combatWorldNavigationTypes'
 import type { MonsterId } from '../../../game/types'
@@ -46,7 +45,7 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
     const locationId = navigationIntent.combatLocationId
     if (!locationId) return
     const location = getCombatLocationById(locationId)
-    const dungeon = DUNGEONS[locationId]
+    const dungeon = COMBAT_LOCATIONS[locationId]
     if (location && dungeon) {
       setSelectedElement(null)
       setSelectedType(location.type as CombatZoneType)

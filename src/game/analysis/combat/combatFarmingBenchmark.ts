@@ -1,5 +1,4 @@
 import { COMBAT_LOCATIONS, getCombatEncounterMode, getCombatLocation, isCombatTargetForLocation, type CombatLocationId, type CombatTargetDifficulty } from '../../content/combat-locations'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
 import { ITEMS } from '../../content/items/items'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { GUARDIANS } from '../../content/guardians/guardians'
@@ -249,14 +248,14 @@ export const normalizeCombatFarmingBenchmarkDuration = (durationMs: number) => M
 export const getCombatFarmingBenchmarkTargets = (locationId: CombatLocationId, includeBoss = false): MonsterId[] => {
   const location = getCombatLocation(locationId)
   if (!location) return []
-  const dungeon = location.id ? DUNGEONS[location.id] : undefined
+  const dungeon = location.id ? COMBAT_LOCATIONS[location.id] : undefined
   const mode = getCombatEncounterMode(location)
   if (mode === 'sequence') return []
   const orderedIds = mode === 'targeted'
     ? Object.entries(location.targetMetadata ?? {}).filter(([, metadata]) => metadata !== undefined).sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER)).map(([monsterId]) => monsterId as MonsterId)
     : []
   const normalTargets = orderedIds.filter((monsterId) => !isBossMonster(MONSTERS[monsterId]) && isCombatTargetForLocation(location, location.id ?? null, monsterId))
-  const bossId = includeBoss && location.id ? DUNGEONS[location.id]?.boss : undefined
+  const bossId = includeBoss && location.id ? COMBAT_LOCATIONS[location.id]?.boss : undefined
   return bossId ? [...normalTargets, bossId] : normalTargets
 }
 
@@ -491,7 +490,7 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
 
 export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput): CombatBossCycleBenchmarkResult | null => {
   const location = getCombatLocation(input.locationId)
-  const dungeon = location?.id ? DUNGEONS[location.id] : undefined
+  const dungeon = location?.id ? COMBAT_LOCATIONS[location.id] : undefined
   const cyclesRequested = Math.max(1, Math.min(20, Math.floor(input.cycles)))
   const bossId = dungeon?.boss
   if (!location || !dungeon || getCombatEncounterMode(location) !== 'targeted' || !bossId || isBossMonster(MONSTERS[input.targetEnemyId]) || !isCombatTargetForLocation(location, dungeon.id, input.targetEnemyId)) return null
@@ -536,7 +535,7 @@ export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput
 
 export const runCombatDungeonRunBenchmark = (input: CombatDungeonRunBenchmarkInput): CombatDungeonRunBenchmarkResult | null => {
   const location = getCombatLocation(input.locationId)
-  const dungeon = location?.id ? DUNGEONS[location.id] : undefined
+  const dungeon = location?.id ? COMBAT_LOCATIONS[location.id] : undefined
   if (!location || !dungeon || getCombatEncounterMode(location) !== 'sequence' || !dungeon.encounterSequence?.length) return null
   const sequence = [...dungeon.encounterSequence, ...(dungeon.boss ? [dungeon.boss] : [])]
   const durationMs = normalizeCombatFarmingBenchmarkDuration(input.maxDurationMs)
@@ -622,7 +621,7 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
   const durationMs = normalizeCombatFarmingBenchmarkDuration(input.durationMs)
   const location = getCombatLocation(input.locationId)
   const difficulty = getCombatFarmingBenchmarkDifficulty(input.locationId, input.targetEnemyId)
-  const dungeon = location?.id ? DUNGEONS[location.id] : undefined
+  const dungeon = location?.id ? COMBAT_LOCATIONS[location.id] : undefined
   if (!location || !dungeon) return emptyResult(input, difficulty, durationMs, 'Location is not backed by a combat dungeon.')
   const targetIsBoss = isBossMonster(MONSTERS[input.targetEnemyId])
   const mode = getCombatBenchmarkMode(input.locationId, input.targetEnemyId)

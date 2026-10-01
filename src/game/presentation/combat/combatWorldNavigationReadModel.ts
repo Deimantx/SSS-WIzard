@@ -1,6 +1,5 @@
-import { DUNGEONS, getDungeonUnlockRequirement, hasBossEncounter, isDungeonCompleted } from '../../content/combat-locations/dungeons/dungeons'
 import { MONSTERS } from '../../content/monsters'
-import { COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationById, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/combat-locations'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationById, getCombatLocationUnlockRequirement, hasBossEncounter, isCombatLocationCompleted, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/combat-locations'
 import { getEliteZoneAffix } from '../../content/elite-affixes'
 import { buildCombatBossHuntPresentation } from './combatBossHuntPresentation'
 import type { CombatNavigationUnlockCondition, CombatLocationDefinition, CombatLocationId, CombatTargetDifficulty, CombatZoneType } from '../../content/combat-locations'
@@ -33,12 +32,12 @@ const getLocationState = (locationId: CombatLocationId, progress: GameState['pro
   if (!location) return 'prototype'
   if (!isLocationUnlocked(locationId, progress)) return 'locked'
   if (!location.id || location.prototype) return 'prototype'
-  const dungeon = DUNGEONS[location.id]
+  const dungeon = COMBAT_LOCATIONS[location.id]
   const active = Boolean(combat.active && combat.locationId === dungeon.id)
   const encounterMode = getCombatEncounterMode(location)
   if (encounterMode === 'targeted' && hasBossEncounter(dungeon) && active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
   if (active) return 'active'
-  if (isDungeonCompleted(dungeon.id, progress)) return 'completed'
+  if (isCombatLocationCompleted(dungeon.id, progress)) return 'completed'
   return 'available'
 }
 
@@ -53,7 +52,7 @@ const buildTarget = (monsterId: MonsterId, difficulty: CombatTargetDifficulty, o
   return { monsterId, name: MONSTERS[monsterId]?.name ?? monsterId, known: progress.discoveredMonsters.includes(monsterId), difficulty, order, powerRating: resolveEnemyPowerRating(monsterId, worldTier), worldTier }
 }
 
-const buildSequence = (dungeon: typeof DUNGEONS[CombatLocationId], progress: GameState['progress'], combat: CombatState, worldTier: GameState['worldTier']['current']) => {
+const buildSequence = (dungeon: typeof COMBAT_LOCATIONS[CombatLocationId], progress: GameState['progress'], combat: CombatState, worldTier: GameState['worldTier']['current']) => {
   if (!dungeon.encounterSequence || !hasBossEncounter(dungeon)) return null
   const encounterIds = [...dungeon.encounterSequence, dungeon.boss]
   const activeIndex = combat.active && combat.locationId === dungeon.id && Number.isInteger(combat.sequenceIndex) && combat.sequenceIndex! >= 0 && combat.sequenceIndex! < encounterIds.length ? combat.sequenceIndex : null
@@ -68,17 +67,17 @@ const buildSequence = (dungeon: typeof DUNGEONS[CombatLocationId], progress: Gam
 const buildLocation = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState, worldTier: WorldTierState = { current: 1, highestUnlocked: 1 }): CombatLocationViewModel => {
   const definition = COMBAT_LOCATIONS[locationId]
   const state = getLocationState(locationId, progress, combat, worldTier.current)
-  const dungeon = definition?.id ? DUNGEONS[definition.id] : null
+  const dungeon = definition?.id ? COMBAT_LOCATIONS[definition.id] : null
   const zoneAffix = getEliteZoneAffix(definition?.zoneAffixId)
-  const unlockText = state === 'locked' ? (dungeon ? getDungeonUnlockRequirement(dungeon) : null) ?? getConditionText(definition?.unlock) ?? getConditionText(COMBAT_REGIONS[definition?.regionId ?? '']?.unlock) : null
+  const unlockText = state === 'locked' ? (dungeon ? getCombatLocationUnlockRequirement(dungeon) : null) ?? getConditionText(definition?.unlock) ?? getConditionText(COMBAT_REGIONS[definition?.regionId ?? '']?.unlock) : null
   if (!definition || !dungeon) {
     return {
       id: locationId,
       name: definition?.name ?? 'Unknown Location',
-      type: definition?.type ?? 'special-zone',
+      type: definition?.type ?? 'combat-zone',
       primaryElement: definition?.primaryElement ?? null,
       elementsPresent: definition?.elementsPresent ?? [],
-      typeLabel: COMBAT_LOCATION_TYPE_METADATA[definition?.type ?? 'special-zone'].label,
+      typeLabel: COMBAT_LOCATION_TYPE_METADATA[definition?.type ?? 'combat-zone'].label,
       state,
       statusLabel: getStateLabel(state),
       unlockText,
@@ -126,7 +125,7 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     targeting: contentVisible && encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,
     sequence: contentVisible && encounterMode === 'sequence' ? buildSequence(dungeon, progress, combat, currentWorldTier) : null,
     firstClearUnlockPreview: definition.firstClearUnlockPreview ?? [],
-    firstClearCompleted: isDungeonCompleted(dungeon.id, progress),
+    firstClearCompleted: isCombatLocationCompleted(dungeon.id, progress),
   }
 }
 

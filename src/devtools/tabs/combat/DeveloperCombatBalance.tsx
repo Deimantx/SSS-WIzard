@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react'
 import { Button, Card, GameTooltip, Progress, SearchInput, SelectMenu, Status } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
 import { isBossMonster, MONSTERS } from '../../../game/content/monsters'
-import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
 import { RESONANCE_TYPES } from '../../../game/content/resonance/resonance'
 import {
   buildCombatFarmingBenchmarkBuildSummary,

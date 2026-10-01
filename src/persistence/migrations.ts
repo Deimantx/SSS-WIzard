@@ -1,7 +1,7 @@
 import { createInitialState, SAVE_VERSION } from '../store/initialState'
 import { COMBAT_RNG_DEFAULT_SEED } from '../game/core/balance/combatRng'
 import { MANA_PILLAR_IDS } from '../game/content/channeling/manaPillars'
-import { DUNGEONS, DUNGEON_ORDER } from '../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER } from '../game/content/combat-locations/worldNavigation'
 import { getCombatEncounterMode, getCombatLocationById, isCombatTargetForLocation } from '../game/content/combat-locations'
 import { GUILD_REQUESTS } from '../game/content/guild/guildRequests'
 import { reconcileChronicleProgress } from '../game/systems/chronicles/chronicleRuntime'
@@ -102,7 +102,7 @@ const normalizeSigils = (migrated: GameState, raw: Record<string, any>) => {
 }
 
 const normalizeLastEnteredCombatLocationId = (value: unknown): CombatLocationId | undefined => {
-  return typeof value === 'string' && DUNGEON_ORDER.includes(value as CombatLocationId) ? value as CombatLocationId : undefined
+  return typeof value === 'string' && COMBAT_LOCATION_ORDER.includes(value as CombatLocationId) ? value as CombatLocationId : undefined
 }
 
 const merge = <T extends Record<string, any>>(base: T, value: unknown): T => {
@@ -122,7 +122,7 @@ const safeLevel = (value: unknown) => typeof value === 'number' && Number.isFini
 const itemIds = Object.keys(ITEMS)
 const monsterIds = Object.keys(MONSTERS)
 const bossIds = [...monsterIds, SUMMONING_UNLOCK_BOSS_ID]
-const locationIds = Object.keys(DUNGEONS)
+const locationIds = Object.keys(COMBAT_LOCATIONS)
 const requestIds = [...Object.keys(GUILD_REQUESTS), 'arcane-supply', 'clear-the-woods', 'sentinel-breaker']
 const spellIds = Object.keys(SPELLS) as CanonicalSpellId[]
 const normalizeSpellId = (value: unknown): CanonicalSpellId | undefined => {
@@ -336,7 +336,7 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     if (rawTarget?.type === 'family' && hunterIds.some((id) => MONSTERS[id]?.hunter?.family === rawTarget.familyId)) return { type: 'family', familyId: String(rawTarget.familyId).slice(0, 80) } as const
     if (rawTarget?.type === 'alignment' && hunterIds.some((id) => MONSTERS[id]?.hunter?.alignment === rawTarget.alignmentId)) return { type: 'alignment', alignmentId: String(rawTarget.alignmentId).slice(0, 80) } as const
     const targetLocationId = rawTarget?.locationId ?? rawTarget?.['dungeonId']
-    if (rawTarget?.type === 'region' && DUNGEON_ORDER.some((id) => id === targetLocationId) && hunterIds.some((id) => DUNGEONS[targetLocationId as CombatLocationId]?.monsterPool.includes(id))) return { type: 'region', locationId: targetLocationId as CombatLocationId } as const
+    if (rawTarget?.type === 'region' && COMBAT_LOCATION_ORDER.some((id) => id === targetLocationId) && hunterIds.some((id) => COMBAT_LOCATIONS[targetLocationId as CombatLocationId]?.monsterPool.includes(id))) return { type: 'region', locationId: targetLocationId as CombatLocationId } as const
     const legacyMonster = hunterIds.find((id) => id === value.targetMonsterId)
     return legacyMonster ? { type: 'monster', monsterId: legacyMonster } as const : null
   }
@@ -676,7 +676,7 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
 
   const activeEnemyId = typeof migrated.combat.enemyId === 'string' && MONSTERS[migrated.combat.enemyId] ? migrated.combat.enemyId : null
   const sequenceCombatLocationId = typeof migrated.combat.locationId === 'string' ? migrated.combat.locationId as CombatLocationId : null
-  const sequenceDungeon = sequenceCombatLocationId ? DUNGEONS[sequenceCombatLocationId] : undefined
+  const sequenceDungeon = sequenceCombatLocationId ? COMBAT_LOCATIONS[sequenceCombatLocationId] : undefined
   const isSequenceDungeon = Boolean(sequenceDungeon && getCombatEncounterMode(getCombatLocationById(sequenceCombatLocationId)) === 'sequence' && sequenceDungeon.encounterSequence?.length)
   if (migrated.combat.active && isSequenceDungeon && sequenceDungeon?.encounterSequence) {
     const sequence = sequenceDungeon.encounterSequence
@@ -865,7 +865,7 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
   if (activeTargetedLocation && migrated.combat.locationId) {
     const rawTarget = typeof rawCombat.targetEnemyId === 'string' ? rawCombat.targetEnemyId as MonsterId : null
     const rawEnemy = migrated.combat.enemyId
-    const firstTarget = DUNGEONS[migrated.combat.locationId].monsterPool.find((monsterId) => isCombatTargetForLocation(activeTargetedLocation, migrated.combat.locationId, monsterId)) ?? null
+    const firstTarget = COMBAT_LOCATIONS[migrated.combat.locationId].monsterPool.find((monsterId) => isCombatTargetForLocation(activeTargetedLocation, migrated.combat.locationId, monsterId)) ?? null
     const activeEnemyIsBoss = Boolean(rawEnemy && MONSTERS[rawEnemy] && isBossMonster(MONSTERS[rawEnemy]))
     const candidate = !activeEnemyIsBoss && isCombatTargetForLocation(activeTargetedLocation, migrated.combat.locationId, rawTarget)
       ? rawTarget

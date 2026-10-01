@@ -1,4 +1,4 @@
-import type { DungeonDefinition } from '../../content/combat-locations/dungeons/dungeons'
+import type { CombatLocationRuntimeView } from '../../content/combat-locations/worldNavigation'
 import type { MonsterDefinition } from '../../content/monsters'
 import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPresentation, type CombatEffectPresentation } from './combatActionPresentation'
 import { classifyEnemyActionPatternIcon, type EnemyPatternIconKind } from './enemyPatternIconPresentation'
@@ -9,7 +9,7 @@ import { SPELLS } from '../../content/spells'
 import type { PendingPlayerSpellCast } from '../../types'
 import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
-import { hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { getCombatEncounterMode, getCombatLocationById } from '../../content/combat-locations'
 
 export type CombatFlowMode = 'tower' | 'boss-ready' | 'encounter-delay' | 'combat'
@@ -32,7 +32,7 @@ export interface CombatFlowTimeline {
 export interface CombatFlowPresentation {
   mode: CombatFlowMode
   locationId: CombatLocationId
-  dungeon: DungeonDefinition
+  dungeon: CombatLocationRuntimeView
   threatRequired: number
   enemy: MonsterDefinition | null
   playerTimeline: CombatFlowTimeline | null
@@ -52,7 +52,7 @@ export interface CombatFlowRuntimeInput {
   locationId: CombatLocationId | null
   selectedCombatLocationId: CombatLocationId
   enemyId: MonsterId | null
-  dungeon: DungeonDefinition
+  dungeon: CombatLocationRuntimeView
   enemy: MonsterDefinition | null
   threatCleared: number
   worldTier?: WorldTierId

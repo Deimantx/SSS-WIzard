@@ -1,4 +1,4 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { MONSTERS, isBossMonster, type MonsterDefinition } from '../../content/monsters'
 import type { BestiaryCategory, CombatLocationId, GameState, MonsterId } from '../../types'
 import { completionPercent } from '../archive/archiveSelectors'
@@ -28,7 +28,7 @@ export const getBestiaryMetadataFilterOptions = (): BestiaryMetadataFilterOption
   ]
   const hunterEntries = getBestiaryEntries().filter((monster) => monster.hunter)
   const unique = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b))
-  unique(getBestiaryEntries().flatMap((monster) => getMonsterLocationEntries(monster.id).map((location) => location.id))).forEach((id) => options.push({ value: `region:${id}`, label: `Region · ${DUNGEONS[id as keyof typeof DUNGEONS]?.name ?? id}` }))
+  unique(getBestiaryEntries().flatMap((monster) => getMonsterLocationEntries(monster.id).map((location) => location.id))).forEach((id) => options.push({ value: `region:${id}`, label: `Region · ${COMBAT_LOCATIONS[id as keyof typeof COMBAT_LOCATIONS]?.name ?? id}` }))
   unique(hunterEntries.map((monster) => monster.hunter!.family)).forEach((family) => options.push({ value: `family:${family}`, label: `Family · ${family}` }))
   unique(hunterEntries.map((monster) => monster.hunter!.alignment)).forEach((alignment) => options.push({ value: `alignment:${alignment}`, label: `Alignment · ${alignment}` }))
   unique(hunterEntries.map((monster) => monster.hunter!.contractTier)).forEach((tier) => options.push({ value: `tier:${tier}`, label: `Contract Tier · ${tier}` }))
@@ -62,7 +62,7 @@ export const getMonsterDefeatCount = (state: Pick<GameState, 'progress'>, monste
 
 export const formatDefeats = (count: number) => `${count.toLocaleString()} ${count === 1 ? 'defeat' : 'defeats'}`
 
-export const getMonsterLocationEntries = (monsterId: MonsterId) => Object.values(DUNGEONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || (hasBossEncounter(dungeon) && dungeon.boss === monsterId)).map((dungeon) => ({ id: dungeon.id, name: dungeon.name }))
+export const getMonsterLocationEntries = (monsterId: MonsterId) => Object.values(COMBAT_LOCATIONS).filter((dungeon) => dungeon.monsterPool.includes(monsterId) || (hasBossEncounter(dungeon) && dungeon.boss === monsterId)).map((dungeon) => ({ id: dungeon.id, name: dungeon.name }))
 export const getMonsterLocations = (monsterId: MonsterId) => getMonsterLocationEntries(monsterId).map((dungeon) => dungeon.name)
 
 export const getBestiaryCompletion = (state: Pick<GameState, 'progress'>) => {

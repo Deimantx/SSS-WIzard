@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState, SAVE_VERSION } from '../../../store/initialState'
 import { createCombatTestState } from './testCombatState'
 import { MONSTERS } from '../../content/monsters'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { getCombatFlowPresentation } from '../../presentation/combat/combatFlowPresentation'
 import { advanceGameState } from '../simulation/advanceGameState'
 import { executeCombatEffects } from './effectResolver'
@@ -172,7 +172,7 @@ describe('classic real-time combat action timing', () => {
         active: state.combat.active,
         locationId: state.combat.locationId,
         selectedCombatLocationId: 'whispering-woods',
-        dungeon: DUNGEONS['whispering-woods'],
+        dungeon: COMBAT_LOCATIONS['whispering-woods'],
         enemy: monster,
         enemyId: state.combat.enemyId,
         threatCleared: state.combat.threatCleared,

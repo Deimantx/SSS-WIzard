@@ -1,7 +1,7 @@
 import { Crown, Heart, Shield, ShieldAlert, Sparkles, Swords, TimerReset } from 'lucide-react'
 import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { DUNGEONS, hasBossEncounter } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../game/content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationById } from '../../game/content/combat-locations'
 import { type CombatEffectPresentation } from '../../game/presentation/combat'
@@ -38,7 +38,7 @@ export function CombatFlowPanel({ selectedCombatLocationId }: { selectedCombatLo
     worldTier: state.worldTier.current,
   })))
   const enemy = useGameStore((state) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] ?? null : null)
-  const dungeon = DUNGEONS[combat.active ? combat.locationId ?? selectedCombatLocationId : selectedCombatLocationId]
+  const dungeon = COMBAT_LOCATIONS[combat.active ? combat.locationId ?? selectedCombatLocationId : selectedCombatLocationId]
   const sequence = getCombatEncounterMode(getCombatLocationById(dungeon.id)) === 'sequence' && dungeon.encounterSequence ? dungeon.encounterSequence : null
   const pattern = useGameStore((state) => state.combat.enemyId ? getEnemyActionPattern(state) : undefined)
   const currentStep = useGameStore((state) => state.combat.enemyId ? getCurrentEnemyActionStep(state) : undefined)
@@ -86,13 +86,13 @@ export function CombatFlowPanel({ selectedCombatLocationId }: { selectedCombatLo
   </section>
 }
 
-function EncounterDelayTimeline({ locationId, locationName, encounterDelayMs, threatCleared, threatRequired, bossApproaching, sequence, sequenceIndex }: { locationId: CombatLocationId; locationName: string; encounterDelayMs: number; threatCleared: number; threatRequired: number; bossApproaching: boolean; sequence: import('../../game/types').MonsterId[] | null; sequenceIndex: number | null }) {
+function EncounterDelayTimeline({ locationId, locationName, encounterDelayMs, threatCleared, threatRequired, bossApproaching, sequence, sequenceIndex }: { locationId: CombatLocationId; locationName: string; encounterDelayMs: number; threatCleared: number; threatRequired: number; bossApproaching: boolean; sequence: readonly import('../../game/types').MonsterId[] | null; sequenceIndex: number | null }) {
   const timing = useGameStore(useShallow((state) => ({ remainingWorkMs: state.combat.encounterTimerMs, paused: state.debug.combatPaused, timeScale: state.debug.combatTimeScale })))
   const rate = getCombatVisualRate(1, timing.paused, timing.timeScale)
   const snapshot = { cycleId: locationId, baseWorkMs: encounterDelayMs, remainingWorkMs: timing.remainingWorkMs, rate, blocked: timing.paused }
   const timelineRef = useCombatVisualTimeline(snapshot)
   const nextIndex = sequence ? Math.min(sequence.length, Math.max(0, sequenceIndex ?? 0)) : null
-  const nextMonsterId = sequence && nextIndex !== null ? nextIndex < sequence.length ? sequence[nextIndex] : DUNGEONS[locationId].boss : null
+  const nextMonsterId = sequence && nextIndex !== null ? nextIndex < sequence.length ? sequence[nextIndex] : COMBAT_LOCATIONS[locationId].boss : null
   const nextMonsterName = nextMonsterId ? MONSTERS[nextMonsterId]?.name : null
   return <section className={`combat-flow-panel is-encounter-delay${bossApproaching ? ' is-boss-approaching' : ''}${sequence ? ' is-sequence-delay' : ''}`}><CombatGuardianIndicator /><div className="combat-flow-delay-head"><div className="combat-flow-delay-label"><TimerReset size={13} aria-hidden="true" /> NEXT ENCOUNTER</div><span className="combat-flow-state-mark">INCOMING</span></div><CombatTimelineReadout timelineRef={timelineRef} mode="remaining" className="combat-flow-delay" fallback={formatTime(timing.remainingWorkMs)} /><CombatActionProgress {...snapshot} timelineRef={timelineRef} /><div className="combat-flow-delay-context"><span>{sequence && nextIndex !== null ? `DUNGEON RUN · ${nextIndex + 1} / ${sequence.length + 1}` : `Searching the ${locationName}...`}</span>{sequence && nextMonsterName ? <span>NEXT · {nextMonsterName}</span> : <span>THREAT {formatNumber(threatCleared)} / {formatNumber(threatRequired)}</span>}{!sequence && bossApproaching && <strong>BOSS APPROACHING</strong>}</div></section>
 }

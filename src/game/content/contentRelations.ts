@@ -1,4 +1,4 @@
-import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter } from './combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER, hasBossEncounter } from './combat-locations/worldNavigation'
 import { ITEMS } from './items/items'
 import { MONSTERS, MONSTER_IDS } from './monsters'
 import { isArtificingRecipe, RECIPES, RECIPE_ORDER } from './recipes/recipes'
@@ -45,8 +45,8 @@ export interface ItemDropSource {
 }
 
 /** Exact authored loot entries that can produce an item. */
-export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => DUNGEON_ORDER.flatMap((locationId) => {
-  const dungeon = DUNGEONS[locationId]
+export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => COMBAT_LOCATION_ORDER.flatMap((locationId) => {
+  const dungeon = COMBAT_LOCATIONS[locationId]
   const monsterIds = [...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])]
   return monsterIds.flatMap((monsterId) => {
     const monster = MONSTERS[monsterId]
@@ -82,8 +82,8 @@ export const getItemRecipeUses = (itemId: ItemId) => RECIPE_ORDER.flatMap((recip
 
 /** Every authored dungeon association for a monster, including its boss role. */
 export const getMonsterCombatLocation = (monsterId: MonsterId): MonsterLocationInfo | null => {
-  for (const locationId of DUNGEON_ORDER) {
-    const dungeon = DUNGEONS[locationId]
+  for (const locationId of COMBAT_LOCATION_ORDER) {
+    const dungeon = COMBAT_LOCATIONS[locationId]
     if (hasBossEncounter(dungeon) && dungeon.boss === monsterId) return { monsterId, locationId, locationName: dungeon.name, role: 'boss' }
     if (dungeon.monsterPool.includes(monsterId)) return { monsterId, locationId, locationName: dungeon.name, role: 'normal' }
   }

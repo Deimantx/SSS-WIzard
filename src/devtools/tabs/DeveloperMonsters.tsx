@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, FilterBar, Status, type FilterOption } from '../../components/ui'
-import { DUNGEONS, DUNGEON_ORDER } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER } from '../../game/content/combat-locations/worldNavigation'
 import { getMonsterCombatLocation } from '../../game/content/contentRelations'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTERS, MONSTER_IDS, isBossMonster } from '../../game/content/monsters'
@@ -17,7 +17,7 @@ import { resolvePowerScaledCurrencyRewardRange } from '../../game/systems/loot/p
 
 type MonsterFilter = 'all' | 'normal' | 'boss' | CombatLocationId
 const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
-const FILTERS: readonly FilterOption<MonsterFilter>[] = [{ value: 'all', label: 'ALL' }, { value: 'normal', label: 'NORMAL' }, { value: 'boss', label: 'BOSSES' }, ...DUNGEON_ORDER.map((id) => ({ value: id, label: DUNGEONS[id].name.toUpperCase() }))]
+const FILTERS: readonly FilterOption<MonsterFilter>[] = [{ value: 'all', label: 'ALL' }, { value: 'normal', label: 'NORMAL' }, { value: 'boss', label: 'BOSSES' }, ...COMBAT_LOCATION_ORDER.map((id) => ({ value: id, label: COMBAT_LOCATIONS[id].name.toUpperCase() }))]
 
 export function DeveloperMonsters() {
   const combat = useGameStore((state) => state.combat)

@@ -1,6 +1,6 @@
-import { hasBossEncounter, type BossDungeonDefinition } from '../../content/combat-locations/dungeons/dungeons'
+import { hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../content/monsters'
-import type { CombatLocationType } from '../../content/combat-locations'
+import type { BossCombatLocationRuntimeView, CombatLocationType } from '../../content/combat-locations'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isAutoHuntUnlocked, isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 import type { GameState, MonsterId, WorldTierId } from '../../types'
@@ -25,7 +25,7 @@ export interface CombatBossHuntPresentation {
 export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, locationType, worldTier }: {
   combat: Pick<GameState['combat'], 'active' | 'locationId' | 'enemyId' | 'inBossFight' | 'pendingBossId' | 'threatCleared'>
   progress: Pick<GameState['progress'], 'autoHuntBossUnlocked' | 'bossKillsByBoss' | 'firstBossKill' | 'autoHuntBossByLocation'>
-  dungeon: BossDungeonDefinition
+  dungeon: BossCombatLocationRuntimeView
   locationType: CombatLocationType
   worldTier?: WorldTierId
 }): CombatBossHuntPresentation => {

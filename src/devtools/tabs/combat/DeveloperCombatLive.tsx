@@ -1,5 +1,5 @@
 import { Button, Card, Progress, SelectMenu, Status, Toggle as SharedToggle } from '../../../components/ui'
-import { DUNGEONS } from '../../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../../game/content/combat-locations/worldNavigation'
 import { MONSTERS, isBossMonster } from '../../../game/content/monsters'
 import { getCombatLocationById } from '../../../game/content/combat-locations'
 import { formatDuration, formatReadableId } from '../../../game/presentation/content/balanceFormatters'
@@ -20,7 +20,7 @@ export function DeveloperCombatLive() {
   const player = useGameStore((state) => state.player)
   const debug = useGameStore((state) => state.debug)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  const dungeon = DUNGEONS[combat.locationId ?? 'whispering-woods']
+  const dungeon = COMBAT_LOCATIONS[combat.locationId ?? 'whispering-woods']
   const worldTier = useGameStore((state) => state.worldTier.current)
   const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier)
   const location = getCombatLocationById(combat.locationId)

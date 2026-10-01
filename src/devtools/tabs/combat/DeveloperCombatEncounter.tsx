@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, GameTooltip, SelectMenu, Status, Toggle } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
-import { DUNGEONS, DUNGEON_ORDER, hasBossEncounter, isDungeonUnlocked } from '../../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER, hasBossEncounter, isCombatLocationUnlocked } from '../../../game/content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationById } from '../../../game/content/combat-locations'
 import type { CombatLocationId } from '../../../game/types'
@@ -24,10 +24,10 @@ export function DeveloperCombatEncounter() {
   const fastResolve = useGameStore((state) => state.fastResolveDebugEnemies)
   const clearToBoss = useGameStore((state) => state.clearDebugThreatToBoss)
   const jumpBoss = useGameStore((state) => state.jumpDebugToBoss)
-  const dungeon = DUNGEONS[selectedCombatLocationId]
+  const dungeon = COMBAT_LOCATIONS[selectedCombatLocationId]
   const worldTier = useGameStore((state) => state.worldTier.current)
   const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier)
-  const unlocked = isDungeonUnlocked(dungeon, progress)
+  const unlocked = isCombatLocationUnlocked(dungeon, progress)
   const sequenceMode = getCombatEncounterMode(getCombatLocationById(selectedCombatLocationId)) === 'sequence'
   const sequenceTotal = (dungeon.encounterSequence?.length ?? 0) + 1
   const bossId = hasBossEncounter(dungeon) ? dungeon.boss : null
@@ -39,7 +39,7 @@ export function DeveloperCombatEncounter() {
 
   return <div className="developer-tab-grid">
     <Card title={sequenceMode ? 'Sequence run setup' : 'Location setup'}>
-      <div className="developer-number-field"><span>Selected Location</span><SelectMenu options={DUNGEON_ORDER.map((id) => ({ value: id, label: DUNGEONS[id].name }))} ariaLabel="Location to enter" value={selectedCombatLocationId} onChange={setSelectedCombatLocationId} /></div>
+      <div className="developer-number-field"><span>Selected Location</span><SelectMenu options={COMBAT_LOCATION_ORDER.map((id) => ({ value: id, label: COMBAT_LOCATIONS[id].name }))} ariaLabel="Location to enter" value={selectedCombatLocationId} onChange={setSelectedCombatLocationId} /></div>
       <div className="developer-summary-grid"><Summary label="Unlock" value={unlocked ? 'Unlocked' : 'Locked (debug actions still allowed)'} />{sequenceMode ? <Summary label="Run" value={sequenceStep ? `Step ${sequenceStep} / ${sequenceTotal}` : `${sequenceTotal} fixed steps`} /> : hasBossEncounter(dungeon) ? <Summary label="Threat" value={`${formatNumber(combat.threatCleared)} / ${formatNumber(threatRequired)}`} /> : <Summary label="Combat model" value="Bossless location" />}<Summary label={sequenceMode ? 'Final Boss' : 'Boss'} value={bossId ? MONSTERS[bossId].name : 'None'} /><Summary label={sequenceMode ? 'Steps' : 'Normal pool'} value={sequenceMode ? sequenceTotal : dungeon.monsterPool.length} /></div>
       <div className="button-row"><Button onClick={() => enter(selectedCombatLocationId)}>Enter selected location</Button><Button variant="secondary" onClick={leave}>Leave {sequenceMode ? 'Run' : 'Location'}</Button><Button variant="danger" onClick={kill} disabled={!combat.enemyId}>Kill Current · Normal Resolution</Button><Button variant="ghost" onClick={despawn} disabled={!combat.enemyId}>Despawn Current · No Rewards</Button></div>
       <p className="developer-debug-note"><Status tone="warning">PROGRESSION</Status> Kill and Fast Resolve use normal reward/progression resolution and change the current profile state.</p>

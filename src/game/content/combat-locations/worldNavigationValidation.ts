@@ -48,9 +48,6 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
   })
   locations.forEach((location) => {
     if (location.primaryElement !== undefined && !isElementId(location.primaryElement)) errors.push(`${location.id}: references an unknown primary element`)
-    if (location.elementsPresent !== undefined && (!Array.isArray(location.elementsPresent) || location.elementsPresent.some((element) => !isElementId(element)))) errors.push(`${location.id}: references an unknown element`)
-    if (location.elementsPresent && new Set(location.elementsPresent).size !== location.elementsPresent.length) errors.push(`${location.id}: element list contains duplicates`)
-    if (location.primaryElement && location.elementsPresent && !location.elementsPresent.includes(location.primaryElement)) errors.push(`${location.id}: primary element is missing from its element list`)
     if (!content.regions[location.regionId]) errors.push(`${location.id}: references missing region ${location.regionId}`)
     const parentReferences = regionLocationReferences.get(location.id) ?? []
     if (parentReferences.length !== 1) errors.push(`${location.id}: must be listed by exactly one region`)

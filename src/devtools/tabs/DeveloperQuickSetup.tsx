@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Status } from '../../components/ui'
 import { getMonsterCombatLocation } from '../../game/content/contentRelations'
-import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 import { MONSTERS, MONSTER_IDS, isBossMonster } from '../../game/content/monsters'
 import { RECIPES, RECIPE_ORDER, isTransmutationRecipeId } from '../../game/content/recipes/recipes'
 import { formatReadableId } from '../../game/presentation/content/balanceFormatters'
@@ -134,6 +134,6 @@ export function DeveloperQuickSetup() {
       <div className="button-row"><Button onClick={() => selectedEnemy && state.spawnDebugEnemy(selectedEnemy, selectedDungeon?.locationId)} disabled={selectedEnemy === null}>Spawn Enemy</Button><Button variant="danger" onClick={state.killCurrentEnemy}>Kill Current Enemy</Button><Button variant="secondary" onClick={() => state.setEnemyHealthPercent(10)}>Set HP to 10%</Button><Button variant="secondary" onClick={() => state.setEnemyHealthPercent(50)}>Set HP to 50%</Button><Button variant="ghost" onClick={state.clearEnemyStatuses}>Clear Enemy Statuses</Button><Button variant="secondary" onClick={() => state.jumpDebugToBoss(selectedDungeon?.locationId)} disabled={selectedEnemy === null || !selectedDungeon}>Jump to Boss</Button></div>
       {state.combat.enemyId && <Status tone="warning">Active enemy: {MONSTERS[state.combat.enemyId]?.name ?? state.combat.enemyId}</Status>}
     </Card>
-    <Card title="Current test context"><div className="developer-summary-grid"><div className="developer-summary"><span>Dungeon</span><strong>{state.combat.locationId ? DUNGEONS[state.combat.locationId].name : 'No dungeon'}</strong></div><div className="developer-summary"><span>Enemy</span><strong>{state.combat.enemyId ? MONSTERS[state.combat.enemyId]?.name : 'None'}</strong></div><div className="developer-summary"><span>Fire School</span><strong>Level {state.schools.fire.level}</strong></div><div className="developer-summary"><span>Water School</span><strong>{SCHOOLS.water.name} · Level {state.schools.water.level}</strong></div></div></Card>
+    <Card title="Current test context"><div className="developer-summary-grid"><div className="developer-summary"><span>Dungeon</span><strong>{state.combat.locationId ? COMBAT_LOCATIONS[state.combat.locationId].name : 'No dungeon'}</strong></div><div className="developer-summary"><span>Enemy</span><strong>{state.combat.enemyId ? MONSTERS[state.combat.enemyId]?.name : 'None'}</strong></div><div className="developer-summary"><span>Fire School</span><strong>Level {state.schools.fire.level}</strong></div><div className="developer-summary"><span>Water School</span><strong>{SCHOOLS.water.name} · Level {state.schools.water.level}</strong></div></div></Card>
   </div>
 }

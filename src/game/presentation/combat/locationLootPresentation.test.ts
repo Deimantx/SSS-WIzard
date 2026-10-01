@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { createInitialState } from '../../../store/initialState'
 import { buildLocationLootPresentation, getLocationLootAvailabilityLabel } from './locationLootPresentation'
 
-const discoveredProgress = (locationId: keyof typeof DUNGEONS, includeBoss = true) => {
+const discoveredProgress = (locationId: keyof typeof COMBAT_LOCATIONS, includeBoss = true) => {
   const state = createInitialState()
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   state.progress.discoveredMonsters = [...dungeon.monsterPool, ...(includeBoss && hasBossEncounter(dungeon) ? [dungeon.boss] : [])]
   return state.progress
 }

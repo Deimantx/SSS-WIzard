@@ -3,7 +3,7 @@ import { migrateSchema2LocationFields } from '../legacy/schema2LocationMigration
 import { PERSISTED_COMBAT_FIELDS_V3, PERSISTED_UI_FIELDS, type PersistedGameStateV3 } from './persistedGameState'
 import { ITEMS } from '../../game/content/items/items'
 import { MONSTERS } from '../../game/content/monsters'
-import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { isCombatLocationId } from '../../game/content/combat-locations/combatLocationIds'
 import { HUNTER_RANKS } from '../../game/content/hunters-order/hunterRanks'
 import { HUNTER_UPGRADES } from '../../game/content/hunters-order/hunterUpgrades'
 import { GUILD_SKILL_NODES } from '../../game/content/guild/guildSkills'
@@ -35,7 +35,7 @@ const isNonNegativeNumber = (value: unknown): value is number => typeof value ==
 const isHunterTarget = (value: unknown) => {
   if (!isRecord(value) || typeof value.type !== 'string') return false
   if (value.type === 'monster' || value.type === 'boss') return typeof value.monsterId === 'string' && Object.prototype.hasOwnProperty.call(MONSTERS, value.monsterId)
-  if (value.type === 'region') return typeof value.locationId === 'string' && Object.prototype.hasOwnProperty.call(DUNGEONS, value.locationId)
+  if (value.type === 'region') return isCombatLocationId(value.locationId)
   if (value.type === 'family' || value.type === 'alignment') {
     const field = `${value.type}Id`
     const target = value[field]
@@ -45,7 +45,7 @@ const isHunterTarget = (value: unknown) => {
 }
 const isHunterContract = (value: unknown) => isRecord(value)
   && typeof value.id === 'string' && value.id.length > 0
-  && (value.huntingGroundId === undefined || typeof value.huntingGroundId === 'string' && Object.prototype.hasOwnProperty.call(DUNGEONS, value.huntingGroundId))
+  && (value.huntingGroundId === undefined || isCombatLocationId(value.huntingGroundId))
   && isHunterTarget(value.targetSpec)
   && isNonNegativeNumber(value.target) && value.target > 0
   && isNonNegativeNumber(value.progress) && value.progress <= value.target
@@ -90,7 +90,7 @@ export const validatePersistedGameStateV3 = (value: unknown): value is Persisted
   if (value.contentVersion !== undefined && (!Number.isInteger(value.contentVersion) || (value.contentVersion as number) < 0)) return false
   if (value.ui !== undefined && (!isRecord(value.ui)
     || Object.keys(value.ui).some((key) => !PERSISTED_UI_FIELDS.includes(key as typeof PERSISTED_UI_FIELDS[number]))
-    || (value.ui.lastEnteredCombatLocationId !== undefined && (typeof value.ui.lastEnteredCombatLocationId !== 'string' || !Object.prototype.hasOwnProperty.call(DUNGEONS, value.ui.lastEnteredCombatLocationId))))) return false
+    || (value.ui.lastEnteredCombatLocationId !== undefined && !isCombatLocationId(value.ui.lastEnteredCombatLocationId)))) return false
   const inventory = value.inventory as Record<string, unknown>
   if (Object.entries(inventory).some(([id, quantity]) => !Object.prototype.hasOwnProperty.call(ITEMS, id) || typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 0)) return false
   const protectedItems = value.protectedItems as Record<string, unknown>
@@ -110,8 +110,8 @@ export const validatePersistedGameStateV3 = (value: unknown): value is Persisted
   if (!Array.isArray(hunters.availableContracts) || !hunters.availableContracts.every(isHunterContract)) return false
   if (hunters.pinnedContractIds !== undefined && (!Array.isArray(hunters.pinnedContractIds) || hunters.pinnedContractIds.some((id) => typeof id !== 'string'))) return false
   if (hunters.preferredContractType !== undefined && hunters.preferredContractType !== null && !['monster', 'family', 'alignment', 'region'].includes(String(hunters.preferredContractType))) return false
-  if (hunters.preferredHuntingGroundId !== undefined && hunters.preferredHuntingGroundId !== null && (typeof hunters.preferredHuntingGroundId !== 'string' || !Object.prototype.hasOwnProperty.call(DUNGEONS, hunters.preferredHuntingGroundId))) return false
-  if (hunters.lastSelectedQuarryByGround !== undefined && (!isRecord(hunters.lastSelectedQuarryByGround) || Object.entries(hunters.lastSelectedQuarryByGround).some(([ground, monster]) => !Object.prototype.hasOwnProperty.call(DUNGEONS, ground) || typeof monster !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, monster as string)))) return false
+  if (hunters.preferredHuntingGroundId !== undefined && hunters.preferredHuntingGroundId !== null && !isCombatLocationId(hunters.preferredHuntingGroundId)) return false
+  if (hunters.lastSelectedQuarryByGround !== undefined && (!isRecord(hunters.lastSelectedQuarryByGround) || Object.entries(hunters.lastSelectedQuarryByGround).some(([ground, monster]) => !isCombatLocationId(ground) || typeof monster !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, monster as string)))) return false
   if (!Array.isArray(hunters.blockedTargets) || hunters.blockedTargets.some((id) => typeof id !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, id))) return false
   if (!isRecord(hunters.purchasedUpgrades) || Object.entries(hunters.purchasedUpgrades).some(([id, rank]) => !HUNTER_UPGRADES.some((entry) => entry.id === id) || !Number.isInteger(rank) || (rank as number) < 0)) return false
   if (!isRecord(hunters.monsterHunterStats) || Object.entries(hunters.monsterHunterStats).some(([id, stats]) => !Object.prototype.hasOwnProperty.call(MONSTERS, id) || !isRecord(stats) || !['contractKills', 'contractsCompleted', 'marksEarned'].every((key) => isNonNegativeNumber(stats[key])))) return false
@@ -131,7 +131,7 @@ export const validatePersistedGameStateV3 = (value: unknown): value is Persisted
   const combatEnemy = (combat as Record<string, unknown>).enemyId
   const combatTarget = (combat as Record<string, unknown>).targetEnemyId
   const combatTier = (combat as Record<string, unknown>).enemyWorldTier
-  if (combatDungeon !== null && (typeof combatDungeon !== 'string' || !Object.prototype.hasOwnProperty.call(DUNGEONS, combatDungeon))) return false
+  if (combatDungeon !== null && !isCombatLocationId(combatDungeon)) return false
   for (const id of [combatEnemy, combatTarget]) if (id !== null && (typeof id !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, id))) return false
   if (combatTier !== null && !WORLD_TIER_IDS.includes(combatTier as typeof WORLD_TIER_IDS[number])) return false
   if (typeof (combat as Record<string, unknown>).combatRngState !== 'number' || !Number.isFinite((combat as Record<string, unknown>).combatRngState)) return false

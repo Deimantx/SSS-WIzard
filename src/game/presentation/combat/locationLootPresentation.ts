@@ -1,4 +1,4 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
 import { resolvePowerScaledCurrencyRewardRange } from '../../systems/loot/powerScaledCurrencyRewards'
@@ -68,7 +68,7 @@ const aggregateLoot = (monsterIds: readonly MonsterId[], worldTier: WorldTierId,
 }
 
 export function buildLocationLootPresentation(locationId: CombatLocationId, progress: Pick<GameState, 'progress'>['progress'], worldTier: WorldTierId = 1): LocationLootGroups {
-  const dungeon = DUNGEONS[locationId]
+  const dungeon = COMBAT_LOCATIONS[locationId]
   const discovered = new Set(progress.discoveredMonsters)
   const discoveredNormalIds = dungeon.monsterPool.filter((monsterId) => discovered.has(monsterId))
   const bossId = hasBossEncounter(dungeon) ? dungeon.boss : null

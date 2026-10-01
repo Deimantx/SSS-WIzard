@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
 
 const installActiveReadyRun = () => {
   const state = createInitialState()
+  state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
   state.combat.active = true
   state.combat.locationId = 'whispering-woods'
   state.combat.targetEnemyId = 'forest-wisp'
-  state.combat.threatCleared = DUNGEONS['whispering-woods'].threatRequired!
+  state.combat.threatCleared = COMBAT_LOCATIONS['whispering-woods'].threatRequired!
   state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
   state.progress.autoHuntBossUnlocked = true
   useGameStore.setState(state)
@@ -82,7 +83,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
 
     useGameStore.getState().toggleAutoHunt('hunters-ground')
 
-    expect(DUNGEONS['hunters-ground'].boss).toBeNull()
+    expect(COMBAT_LOCATIONS['hunters-ground'].boss).toBeNull()
     expect(useGameStore.getState().combat.pendingBossId).toBeNull()
   })
 })

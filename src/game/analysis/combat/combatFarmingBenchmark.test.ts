@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { buildCombatFarmingBenchmarkBuildSummary, runCombatFarmingBenchmark, getCombatFarmingBenchmarkTargets, runCombatFarmingBenchmarkMatrix, getCombatBenchmarkMode, getCombatBenchmarkWorldTiers, runCombatDungeonRunBenchmark, runCombatBossCycleBenchmark } from './combatFarmingBenchmark'
 import type { GameState } from '../../types'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 
 const makeFixture = () => {
   const state = createInitialState()
@@ -107,7 +107,7 @@ describe('combat farming benchmark', () => {
     state.player.health = 100_000
     expect(getCombatBenchmarkMode(locationId)).toBe('dungeon-run')
     const result = runCombatDungeonRunBenchmark({ sourceState: state, locationId, worldTier: 1, maxDurationMs: 60 * 1_000 })
-    expect(DUNGEONS[locationId].encounterSequence?.length).toBeGreaterThan(0)
+    expect(COMBAT_LOCATIONS[locationId].encounterSequence?.length).toBeGreaterThan(0)
     expect(result).not.toBeNull()
     expect(result?.sequence[result.sequence.length - 1]).toBeDefined()
     expect(result?.completed).toBe(true)

@@ -5,7 +5,7 @@ import { SIGIL_SETS, SIGIL_SET_IDS } from '../../game/content/sigils/sigilSets'
 import { SIGIL_TIERS } from '../../game/content/sigils/sigilTiers'
 import { SIGIL_TRAITS, SIGIL_TRAIT_IDS } from '../../game/content/sigils/sigilTraits'
 import type { GameState, SigilSetId } from '../../game/types'
-import { DUNGEONS } from '../../game/content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 import { getSigilRegionSetPool } from '../../game/content/sigils/sigilDropPools'
 import { useGameStore } from '../../store/gameStore'
 import { setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
@@ -20,7 +20,7 @@ export function SigilCollectionArchive({ state, deepLinkedSetId = null }: { stat
   const discoveredSets = SIGIL_SET_IDS.filter((setId) => discovery.discoveredSets[setId]).length
   const discoveredTraits = Object.keys(discovery.discoveredTraits).length
   const selectedSet = selectedSetId ? SIGIL_SETS[selectedSetId] : null
-  const sourceLocations = selectedSetId ? Object.values(DUNGEONS).filter((dungeon) => getSigilRegionSetPool(dungeon.id).includes(selectedSetId)) : []
+  const sourceLocations = selectedSetId ? Object.values(COMBAT_LOCATIONS).filter((dungeon) => getSigilRegionSetPool(dungeon.id).includes(selectedSetId)) : []
   const openEquipment = () => {
     setNavigationIntent({ openSigilVault: true, equipmentSigilInstanceId: null, equipmentSigilSlot: null })
     useGameStore.getState().setScreen('equipment')

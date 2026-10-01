@@ -2,7 +2,7 @@ import { HUNTER_RANKS, HUNTER_STANDINGS } from '../../content/hunters-order/hunt
 import { HUNTER_UPGRADES } from '../../content/hunters-order/hunterUpgrades'
 import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../content/monsters/first-frontier/gloamridge'
 import { MONSTERS } from '../../content/monsters'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { getEligibleHunterContractMembers, getHunterRankProgress, getHunterStandingProgress, getHunterUpgradePurchaseStatus } from '../../systems/hunters-order/huntersOrderRuntime'
 import type { GameState, HunterContractState, HunterRankId, HunterUpgradeId } from '../../types'
 import { getHunterUpgradeEffectBreakdown } from './hunterUpgradeEffectBreakdown'
@@ -38,5 +38,5 @@ export const getHunterContractPresentation = (state: Pick<GameState, 'progress'>
   const objective = type === 'monster' || type === 'boss' ? MONSTERS[contract.targetSpec.monsterId]?.name ?? 'Quarry' : type === 'family' ? `${contract.targetSpec.familyId} Family` : type === 'alignment' ? `${contract.targetSpec.alignmentId} Quarry` : 'Ground Patrol'
   const groundId = contract.huntingGroundId ?? 'hunters-ground'
   const eligibleMonsterIds = getEligibleHunterContractMembers(state, contract, groundId)
-  return { action, objective: type === 'region' ? DUNGEONS[groundId]?.name ?? objective : objective, groundId, groundName: DUNGEONS[groundId]?.name ?? groundId, eligibleMonsterIds, quarryCount: eligibleMonsterIds.length, progress: Math.min(contract.target, contract.progress), remaining: Math.max(0, contract.target - contract.progress), progressPercent: contract.target > 0 ? Math.min(100, contract.progress / contract.target * 100) : 0 }
+  return { action, objective: type === 'region' ? COMBAT_LOCATIONS[groundId]?.name ?? objective : objective, groundId, groundName: COMBAT_LOCATIONS[groundId]?.name ?? groundId, eligibleMonsterIds, quarryCount: eligibleMonsterIds.length, progress: Math.min(contract.target, contract.progress), remaining: Math.max(0, contract.target - contract.progress), progressPercent: contract.target > 0 ? Math.min(100, contract.progress / contract.target * 100) : 0 }
 }

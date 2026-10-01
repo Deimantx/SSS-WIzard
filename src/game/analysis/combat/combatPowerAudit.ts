@@ -1,5 +1,4 @@
-import { DUNGEONS, hasBossEncounter } from '../../content/combat-locations/dungeons/dungeons'
-import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/combat-locations'
+import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, hasBossEncounter, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/combat-locations'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
@@ -69,7 +68,7 @@ const WORLD_TIERS: readonly WorldTierId[] = [1, 2, 3, 4, 5]
 const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): MonsterPowerAuditRow[] => {
   const location = COMBAT_LOCATIONS[locationId]
   if (!location?.id) return []
-  const dungeon = DUNGEONS[location.id]
+  const dungeon = COMBAT_LOCATIONS[location.id]
   if (!dungeon) return []
   const mode = getCombatEncounterMode(location)
   const region = COMBAT_REGIONS[location.regionId]
@@ -107,7 +106,7 @@ export const buildBossPowerRatioAudit = (worldTier: WorldTierId = 1): BossPowerR
   return [...new Set(sequenceRows.map((row) => row.locationId))].flatMap((locationId) => {
     const location = COMBAT_LOCATIONS[locationId]
     const resolvedLocationId = location?.id
-    const dungeon = resolvedLocationId ? DUNGEONS[resolvedLocationId] : null
+    const dungeon = resolvedLocationId ? COMBAT_LOCATIONS[resolvedLocationId] : null
     const rows = sequenceRows.filter((row) => row.locationId === locationId)
     const normalRows = rows.filter((row) => row.role === 'normal')
     const lastNormal = normalRows[normalRows.length - 1]
@@ -134,7 +133,7 @@ export const getPowerAuditWorldTiers = () => WORLD_TIERS
 export const buildThreatKillsToBossAudit = (): ThreatKillsToBossAuditRow[] => {
   const baseline = new Map<CombatLocationId, number>()
   const rows: ThreatKillsToBossAuditRow[] = []
-  Object.values(COMBAT_LOCATIONS).filter((location) => location.id && getCombatEncounterMode(location) === 'targeted' && hasBossEncounter(DUNGEONS[location.id])).forEach((location) => {
+  Object.values(COMBAT_LOCATIONS).filter((location) => location.id && getCombatEncounterMode(location) === 'targeted' && hasBossEncounter(COMBAT_LOCATIONS[location.id])).forEach((location) => {
     const locationId = location.id!
     const targets = Object.entries(location.targetMetadata ?? {})
       .sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER))

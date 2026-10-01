@@ -1,5 +1,5 @@
 import { MONSTERS } from '../../content/monsters'
-import { DUNGEONS } from '../../content/combat-locations/dungeons/dungeons'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { doesMonsterMatchHunterContract, getEligibleHunterContractMembers, getHunterContractTargetLabel } from '../../systems/hunters-order/huntersOrderRuntime'
 import type { CombatLocationId, GameState, HunterContractState, MonsterId } from '../../types'
 
@@ -35,7 +35,7 @@ export function getHunterContractCombatPresentation(state: Pick<GameState, 'prog
     active: Boolean(contract),
     contract,
     huntingGroundId: contract?.huntingGroundId ?? null,
-    huntingGroundName: contract ? DUNGEONS[groundId]?.name ?? 'Hunting Ground' : null,
+    huntingGroundName: contract ? COMBAT_LOCATIONS[groundId]?.name ?? 'Hunting Ground' : null,
     groundAuthorized: !contract || state.combat.locationId === groundId,
     label: contract ? getHunterContractTargetLabel(contract) : 'None',
     archetypeLabel: contract ? contract.targetSpec.type === 'monster' ? 'HUNT' : contract.targetSpec.type === 'family' ? 'CULL' : contract.targetSpec.type === 'alignment' ? 'PURSUE' : 'PATROL' : null,

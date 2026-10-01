@@ -69,7 +69,7 @@ import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRu
 
 const MAX_EFFECT_DEPTH = 20;
 const finiteDamage = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
-const ELEMENTAL_TUTORIAL_DUNGEONS = new Set(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin']);
+const ELEMENTAL_TUTORIAL_COMBAT_LOCATIONS = new Set(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin']);
 
 /** Resolves legacy enemy-authored Physical damage into one effective combat identity. */
 export const resolveEffectiveDamageType = (authoredDamageType: DamageType, source: CombatSource): DamageType => {
@@ -607,7 +607,7 @@ const applyDamage = (
     state.progress.chronicle.eventFlags['first-elemental-ward-mitigation'] = true;
     reconcileChronicleProgress(state)
   }
-  if (target === 'enemy' && dealt > 0 && state.combat.locationId && ELEMENTAL_TUTORIAL_DUNGEONS.has(state.combat.locationId)
+  if (target === 'enemy' && dealt > 0 && state.combat.locationId && ELEMENTAL_TUTORIAL_COMBAT_LOCATIONS.has(state.combat.locationId)
     && breakdowns.some((breakdown) => breakdown.matchup === 'strong' && breakdown.finalDamage > 0) && !state.progress.chronicle.eventFlags['first-elemental-weakness-hit']) {
     state.progress.chronicle.eventFlags['first-elemental-weakness-hit'] = true;
     reconcileChronicleProgress(state)

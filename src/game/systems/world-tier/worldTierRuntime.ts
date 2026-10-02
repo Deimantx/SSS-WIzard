@@ -1,7 +1,6 @@
 import { MONSTERS } from '../../content/monsters'
 import { DEFAULT_ENEMY_DEFENSE } from '../../core/balance/combatStats'
 import type { GameState, MonsterId } from '../../types'
-import { normalizeResonanceState, multiplyResonanceBundle } from '../../content/resonance/resonance'
 import { DEFAULT_WORLD_TIER_STATE, WORLD_TIER_IDS, WORLD_TIERS, WORLD_TIER_UNLOCK_BOSS_BY_TIER, type WorldTierDefinition, type WorldTierId, type WorldTierState } from '../../content/world-tier/worldTiers'
 
 const finitePositive = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback
@@ -21,19 +20,6 @@ export const createInitialWorldTierState = (): WorldTierState => ({ ...DEFAULT_W
 export const getWorldTierDefinition = (tier: unknown): WorldTierDefinition => WORLD_TIERS[isWorldTierId(tier) ? tier : 1]
 export const isWorldTierUnlocked = (state: Pick<GameState, 'worldTier'>, tier: unknown): tier is WorldTierId => isWorldTierId(tier) && tier <= state.worldTier.highestUnlocked
 export const getCurrentWorldTierDefinition = (state: Pick<GameState, 'worldTier'>) => getWorldTierDefinition(state.worldTier.current)
-
-/** Resolves a successful authored material drop quantity for an encounter tier. */
-export const resolveWorldTierLootQuantity = (baseQuantity: number, tier: WorldTierId): number => {
-  const base = Number.isFinite(baseQuantity) ? Math.max(0, Math.floor(baseQuantity)) : 0
-  return Math.max(0, Math.round(base * getWorldTierDefinition(tier).itemLootQuantityMultiplier))
-}
-
-/** Resolves the final Arcane Point reward from the authored base reward and encounter tier. */
-export const resolveWorldTierArcanePointReward = (basePoints: number, tier: WorldTierId): number => {
-  const base = Number.isFinite(basePoints) ? Math.max(0, Math.floor(basePoints)) : 0
-  if (base <= 0) return 0
-  return Math.max(1, Math.round(base * getWorldTierDefinition(tier).arcanePointRewardMultiplier))
-}
 
 export const unlockWorldTier = (state: Pick<GameState, 'worldTier'>, tier: WorldTierId): boolean => {
   if (!isWorldTierId(tier) || tier <= state.worldTier.highestUnlocked) return false
@@ -77,9 +63,6 @@ export interface ResolvedWorldTierEnemyProfile {
   baseDefense: number
   defense: number
   damageMultiplier: number
-  baseResonanceYield: ReturnType<typeof normalizeResonanceState>
-  resonanceRewardMultiplier: number
-  resonanceYield: ReturnType<typeof normalizeResonanceState>
 }
 
 export const resolveWorldTierEnemyProfile = (enemyId: MonsterId, tier: unknown = 1): ResolvedWorldTierEnemyProfile => {
@@ -91,8 +74,6 @@ export const resolveWorldTierEnemyProfile = (enemyId: MonsterId, tier: unknown =
   const healthMultiplier = finitePositive(definition.enemyHealthMultiplier, 1)
   const damageMultiplier = finitePositive(definition.enemyDamageMultiplier, 1)
   const defenseMultiplier = finitePositive(definition.enemyDefenseMultiplier, 1)
-  const resonanceRewardMultiplier = finitePositive(definition.resonanceRewardMultiplier, 1)
-  const baseResonanceYield = normalizeResonanceState(monster?.resonanceYield)
   return {
     enemyId,
     worldTier: definition.id,
@@ -103,9 +84,6 @@ export const resolveWorldTierEnemyProfile = (enemyId: MonsterId, tier: unknown =
     baseDefense,
     defense: Math.max(0, baseDefense * defenseMultiplier),
     damageMultiplier,
-    baseResonanceYield,
-    resonanceRewardMultiplier,
-    resonanceYield: normalizeResonanceState(multiplyResonanceBundle(baseResonanceYield, resonanceRewardMultiplier)),
   }
 }
 

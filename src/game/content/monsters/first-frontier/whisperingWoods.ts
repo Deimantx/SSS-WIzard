@@ -1,484 +1,1251 @@
-import type { MonsterId } from "../../../types";
-import {
-  action,
-  applyStatus,
-  basic,
-  consumeBarrier,
-  delayCurrentAction,
-  detonateStatus,
-  scaledBarrier,
-  scaledDirectDamage,
-  scaledDot,
-  scaledHeal,
-  sourceCurrentBarrierPercent,
-  applyCombatV2Profile,
-  type MonsterDefinition,
-} from "../monsterTypes";
+import type { MonsterId } from '../../../types'
+import type { MonsterDefinition } from '../monsterTypes'
 
 export const WHISPERING_WOODS_MONSTERS = {
   "forest-wisp": {
-    id: "forest-wisp",
-    bestiaryCategory: "monster",
-    name: "Forest Wisp",
-    subtitle: "A curious lantern of the undergrowth",
-    maxHealth: 200,
-    basicAttackDamage: 10,
-    basicAttackTimeMs: 2800,
-    defense: 8,
-    color: "#aa9aff",
-    ui: { portraitIcon: "wisp" },
-    traitIds: ["forest-wisp-flicker"],
-    actions: {
+    "id": "forest-wisp",
+    "bestiaryCategory": "monster",
+    "name": "Forest Wisp",
+    "subtitle": "A curious lantern of the undergrowth",
+    "maxHealth": 200,
+    "basicAttackDamage": 12.272727272727272,
+    "basicAttackTimeMs": 2800,
+    "defense": 8,
+    "color": "#aa9aff",
+    "ui": {
+      "portraitIcon": "wisp"
+    },
+    "traitIds": [
+      "forest-wisp-flicker"
+    ],
+    "actions": {
       "arc-spark": {
-        id: "arc-spark",
-        name: "Arc Spark",
-        actionTimeMs: 2000,
-        description: "A bright Arcane spark lashes the target.",
-        effects: [scaledDirectDamage("arcane", 2.2)],
-        tags: ["special", "magic", "arcane", "direct"],
-      },
-      flicker: {
-        id: "flicker",
-        name: "Flicker",
-        actionTimeMs: 1200,
-        description:
-          "The Wisp flickers forward, accelerating its action cadence.",
-        effects: [applyStatus("haste", "self", 16000)],
-        tags: ["special", "buff", "air"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          basic("basic-2"),
-          action("arc-spark-step", "arc-spark"),
-          basic("basic-3"),
-          action("flicker-step", "flicker"),
-          basic("basic-4"),
+        "id": "arc-spark",
+        "name": "Arc Spark",
+        "actionTimeMs": 2000,
+        "description": "A bright Arcane spark lashes the target.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 2.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
         ],
+        "tags": [
+          "special",
+          "magic",
+          "arcane",
+          "direct"
+        ]
       },
+      "flicker": {
+        "id": "flicker",
+        "name": "Flicker",
+        "actionTimeMs": 1200,
+        "description": "The Wisp flickers forward, accelerating its action cadence.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 16000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff",
+          "air"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { air: 10 },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "arc-spark-step",
+            "type": "action",
+            "actionId": "arc-spark"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "flicker-step",
+            "type": "action",
+            "actionId": "flicker"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "air": 10
+    },
+    "primaryAffinity": "air",
+    "basicAttackElement": "air"
   },
-  thornling: {
-    id: "thornling",
-    bestiaryCategory: "monster",
-    name: "Thornling",
-    subtitle: "A knot of spite and briars",
-    maxHealth: 240,
-    basicAttackDamage: 12,
-    basicAttackTimeMs: 2500,
-    defense: 12,
-    color: "#cb7899",
-    ui: { portraitIcon: "plant" },
-    traitIds: ["thornling-barkskin"],
-    actions: {
+  "thornling": {
+    "id": "thornling",
+    "bestiaryCategory": "monster",
+    "name": "Thornling",
+    "subtitle": "A knot of spite and briars",
+    "maxHealth": 240,
+    "basicAttackDamage": 11.57852564102564,
+    "basicAttackTimeMs": 2500,
+    "defense": 12,
+    "color": "#cb7899",
+    "ui": {
+      "portraitIcon": "plant"
+    },
+    "traitIds": [
+      "thornling-barkskin"
+    ],
+    "actions": {
       "thorn-lash": {
-        id: "thorn-lash",
-        name: "Thorn Lash",
-        actionTimeMs: 1800,
-        description:
-          "A thorned lash cuts the target and leaves a lingering Thorn Wound.",
-        effects: [
-          scaledDirectDamage("physical", 1.2),
-          scaledDot("thorn-wound", "physical", 1.2, 6000),
+        "id": "thorn-lash",
+        "name": "Thorn Lash",
+        "actionTimeMs": 1800,
+        "description": "A thorned lash cuts the target and leaves a lingering Thorn Wound.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "thorn-wound",
+            "durationMs": 6000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "earth",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.39999999999999997
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "earth"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "earth"
+            ]
+          }
         ],
-        tags: ["special", "physical", "melee", "debuff"],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "earth"
+        ]
       },
       "spore-burst": {
-        id: "spore-burst",
-        name: "Spore Burst",
-        actionTimeMs: 2200,
-        description:
-          "A burst of barbed spores tears open existing Thorn Wounds.",
-        effects: [
-          scaledDirectDamage("physical", 0.65),
-          detonateStatus("thorn-wound", 0.5),
+        "id": "spore-burst",
+        "name": "Spore Burst",
+        "actionTimeMs": 2200,
+        "description": "A burst of barbed spores tears open existing Thorn Wounds.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.65
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "detonate-status",
+            "target": "opponent",
+            "statusId": "thorn-wound",
+            "multiplier": 0.5,
+            "consume": false
+          }
         ],
-        tags: ["special", "physical", "debuff"],
-      },
+        "tags": [
+          "special",
+          "debuff",
+          "earth"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          action("thorn-lash-step-1", "thorn-lash"),
-          basic("basic-2"),
-          basic("basic-3"),
-          action("spore-burst-step", "spore-burst"),
-          basic("basic-4"),
-          action("thorn-lash-step-2", "thorn-lash"),
-        ],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "thorn-lash-step-1",
+            "type": "action",
+            "actionId": "thorn-lash"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "spore-burst-step",
+            "type": "action",
+            "actionId": "spore-burst"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "thorn-lash-step-2",
+            "type": "action",
+            "actionId": "thorn-lash"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { earth: 12 },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "earth": 12
+    },
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth"
   },
   "dewbound-sprite": {
-    id: "dewbound-sprite",
-    bestiaryCategory: "monster",
-    name: "Dewbound Sprite",
-    subtitle: "A cool mote of rainwater that refuses to fade",
-    maxHealth: 260,
-    basicAttackDamage: 13,
-    basicAttackTimeMs: 2700,
-    defense: 10,
-    color: "#77c9d7",
-    ui: { portraitIcon: "wisp" },
-    traitIds: [],
-    actions: {
+    "id": "dewbound-sprite",
+    "bestiaryCategory": "monster",
+    "name": "Dewbound Sprite",
+    "subtitle": "A cool mote of rainwater that refuses to fade",
+    "maxHealth": 260,
+    "basicAttackDamage": 14.51166253101737,
+    "basicAttackTimeMs": 2700,
+    "defense": 10,
+    "color": "#77c9d7",
+    "ui": {
+      "portraitIcon": "wisp"
+    },
+    "traitIds": [],
+    "actions": {
       "mist-lance": {
-        id: "mist-lance",
-        name: "Mist Lance",
-        actionTimeMs: 2100,
-        description: "A concentrated lance of mist chills the Wizard.",
-        effects: [scaledDirectDamage("water", 1.2), applyStatus("chilled", "opponent", 5000)],
-        tags: ["special", "water", "direct", "debuff"],
+        "id": "mist-lance",
+        "name": "Mist Lance",
+        "actionTimeMs": 2100,
+        "description": "A concentrated lance of mist chills the Wizard.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "water",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "chilled",
+            "durationMs": 5000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "water",
+          "direct",
+          "debuff"
+        ]
       },
       "healing-dew": {
-        id: "healing-dew",
-        name: "Healing Dew",
-        actionTimeMs: 2400,
-        description: "The Sprite gathers dew and restores its vitality.",
-        effects: [scaledHeal(0.08)],
-        tags: ["special", "heal"],
-      },
+        "id": "healing-dew",
+        "name": "Healing Dew",
+        "actionTimeMs": 2400,
+        "description": "The Sprite gathers dew and restores its vitality.",
+        "effects": [
+          {
+            "type": "heal",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.08
+            },
+            "tags": [
+              "heal",
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "heal"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [basic("basic-1"), action("mist-lance-step-1", "mist-lance"), basic("basic-2"), basic("basic-3"), action("healing-dew-step", "healing-dew"), basic("basic-4"), action("mist-lance-step-2", "mist-lance")],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "mist-lance-step-1",
+            "type": "action",
+            "actionId": "mist-lance"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "healing-dew-step",
+            "type": "action",
+            "actionId": "healing-dew"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "mist-lance-step-2",
+            "type": "action",
+            "actionId": "mist-lance"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { water: 18 },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "water": 18
+    },
+    "primaryAffinity": "water",
+    "basicAttackElement": "water"
   },
   "cinder-moth": {
-    id: "cinder-moth",
-    bestiaryCategory: "monster",
-    name: "Cinder Moth",
-    subtitle: "A smoldering wingbeat wrapped in ash",
-    maxHealth: 250,
-    basicAttackDamage: 14,
-    basicAttackTimeMs: 2400,
-    defense: 9,
-    color: "#e19a5d",
-    ui: { portraitIcon: "plant" },
-    traitIds: [],
-    actions: {
+    "id": "cinder-moth",
+    "bestiaryCategory": "monster",
+    "name": "Cinder Moth",
+    "subtitle": "A smoldering wingbeat wrapped in ash",
+    "maxHealth": 250,
+    "basicAttackDamage": 16.441165048543688,
+    "basicAttackTimeMs": 2400,
+    "defense": 9,
+    "color": "#e19a5d",
+    "ui": {
+      "portraitIcon": "plant"
+    },
+    "traitIds": [],
+    "actions": {
       "ember-dust": {
-        id: "ember-dust",
-        name: "Ember Dust",
-        actionTimeMs: 1900,
-        description: "Scorching dust clings to the Wizard and burns over time.",
-        effects: [scaledDot("burning", "fire", 1.0, 5000)],
-        tags: ["special", "fire", "debuff"],
+        "id": "ember-dust",
+        "name": "Ember Dust",
+        "actionTimeMs": 1900,
+        "description": "Scorching dust clings to the Wizard and burns over time.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "burning",
+            "durationMs": 5000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.2
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "debuff"
+        ]
       },
       "flame-flutter": {
-        id: "flame-flutter",
-        name: "Flame Flutter",
-        actionTimeMs: 1800,
-        description: "The Moth beats its wings faster through a veil of flame.",
-        effects: [applyStatus("haste", "self", 6000)],
-        tags: ["special", "fire", "buff"],
+        "id": "flame-flutter",
+        "name": "Flame Flutter",
+        "actionTimeMs": 1800,
+        "description": "The Moth beats its wings faster through a veil of flame.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 6000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "buff"
+        ]
       },
       "cinder-dive": {
-        id: "cinder-dive",
-        name: "Cinder Dive",
-        actionTimeMs: 2100,
-        description: "The Moth dives through the Wizard in a burst of cinders.",
-        effects: [scaledDirectDamage("fire", 1.3)],
-        tags: ["special", "fire", "direct"],
-      },
+        "id": "cinder-dive",
+        "name": "Cinder Dive",
+        "actionTimeMs": 2100,
+        "description": "The Moth dives through the Wizard in a burst of cinders.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.3
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "direct"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [basic("basic-1"), action("ember-dust-step", "ember-dust"), basic("basic-2"), action("flame-flutter-step", "flame-flutter"), action("cinder-dive-step", "cinder-dive"), basic("basic-3")],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "ember-dust-step",
+            "type": "action",
+            "actionId": "ember-dust"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "flame-flutter-step",
+            "type": "action",
+            "actionId": "flame-flutter"
+          },
+          {
+            "id": "cinder-dive-step",
+            "type": "action",
+            "actionId": "cinder-dive"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { fire: 20 },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "fire": 20
+    },
+    "primaryAffinity": "fire",
+    "basicAttackElement": "fire"
   },
   "stone-root": {
-    id: "stone-root",
-    bestiaryCategory: "monster",
-    name: "Stone Root",
-    subtitle: "The forest floor given a heartbeat",
-    maxHealth: 280,
-    basicAttackDamage: 12,
-    basicAttackTimeMs: 3200,
-    defense: 12,
-    color: "#b28f79",
-    ui: { portraitIcon: "stone" },
-    traitIds: ["stone-rooted-shell"],
-    actions: {
+    "id": "stone-root",
+    "bestiaryCategory": "monster",
+    "name": "Stone Root",
+    "subtitle": "The forest floor given a heartbeat",
+    "maxHealth": 280,
+    "basicAttackDamage": 23.252747252747255,
+    "basicAttackTimeMs": 3200,
+    "defense": 12,
+    "color": "#b28f79",
+    "ui": {
+      "portraitIcon": "stone"
+    },
+    "traitIds": [
+      "stone-rooted-shell"
+    ],
+    "actions": {
       "root-slam": {
-        id: "root-slam",
-        name: "Root Slam",
-        actionTimeMs: 2500,
-        description:
-          "A crushing root strike disrupts the Wizard's current Spell cast.",
-        effects: [scaledDirectDamage("physical", 1.5), delayCurrentAction(600)],
-        tags: ["special", "physical", "control"],
+        "id": "root-slam",
+        "name": "Root Slam",
+        "actionTimeMs": 2500,
+        "description": "A crushing root strike disrupts the Wizard's current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 600
+          }
+        ],
+        "tags": [
+          "special",
+          "control",
+          "earth"
+        ]
       },
       "stone-shell": {
-        id: "stone-shell",
-        name: "Stone Shell",
-        actionTimeMs: 2400,
-        description:
-          "Stone plates lock together into a temporary protective Barrier.",
-        effects: [scaledBarrier(0.12)],
-        tags: ["special", "barrier", "earth"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          basic("basic-2"),
-          action("root-slam-step", "root-slam"),
-          basic("basic-3"),
-          action("stone-shell-step", "stone-shell"),
-          basic("basic-4"),
+        "id": "stone-shell",
+        "name": "Stone Shell",
+        "actionTimeMs": 2400,
+        "description": "Stone plates lock together into a temporary protective Barrier.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.12
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
         ],
-      },
+        "tags": [
+          "special",
+          "barrier",
+          "earth"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { earth: 20 },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "root-slam-step",
+            "type": "action",
+            "actionId": "root-slam"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "stone-shell-step",
+            "type": "action",
+            "actionId": "stone-shell"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "earth": 20
+    },
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth"
   },
   "grove-sentinel": {
-    id: "grove-sentinel",
-    bestiaryCategory: "monster",
-    name: "Grove Sentinel",
-    subtitle: "An ancient guardian of the inner grove",
-    maxHealth: 320,
-    basicAttackDamage: 14,
-    basicAttackTimeMs: 2600,
-    defense: 20,
-    color: "#d39b59",
-    ui: { portraitIcon: "guardian" },
-    traitIds: ["grove-sentinel-ancient-growth"],
-    actions: {
+    "id": "grove-sentinel",
+    "bestiaryCategory": "monster",
+    "name": "Grove Sentinel",
+    "subtitle": "An ancient guardian of the inner grove",
+    "maxHealth": 320,
+    "basicAttackDamage": 20.596875000000004,
+    "basicAttackTimeMs": 2600,
+    "defense": 20,
+    "color": "#d39b59",
+    "ui": {
+      "portraitIcon": "guardian"
+    },
+    "traitIds": [
+      "grove-sentinel-ancient-growth"
+    ],
+    "actions": {
       "root-crush": {
-        id: "root-crush",
-        name: "Root Crush",
-        actionTimeMs: 2000,
-        description: "The guardian brings its roots down with crushing force.",
-        effects: [scaledDirectDamage("physical", 1.35)],
-        tags: ["special", "physical", "direct"],
+        "id": "root-crush",
+        "name": "Root Crush",
+        "actionTimeMs": 2000,
+        "description": "The guardian brings its roots down with crushing force.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.35
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "direct",
+          "earth"
+        ]
       },
       "verdant-guard": {
-        id: "verdant-guard",
-        name: "Verdant Guard",
-        actionTimeMs: 2500,
-        description:
-          "The guardian gathers living energy into a protective Barrier.",
-        effects: [scaledBarrier(1 / 6)],
-        tags: ["special", "barrier"],
+        "id": "verdant-guard",
+        "name": "Verdant Guard",
+        "actionTimeMs": 2500,
+        "description": "The guardian gathers living energy into a protective Barrier.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.16666666666666666
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "barrier"
+        ]
       },
       "shield-burst": {
-        id: "shield-burst",
-        name: "Shield Burst",
-        actionTimeMs: 2200,
-        description:
-          "Deals Earth damage plus damage equal to 50% of the Sentinel's remaining Barrier, then consumes that Barrier.",
-        effects: [
-          scaledDirectDamage("earth", 0.75),
+        "id": "shield-burst",
+        "name": "Shield Burst",
+        "actionTimeMs": 2200,
+        "description": "Deals Earth damage plus damage equal to 50% of the Sentinel's remaining Barrier, then consumes that Barrier.",
+        "effects": [
           {
-            type: "deal-damage",
-            target: "opponent",
-            components: [{ damageType: "earth", magnitude: sourceCurrentBarrierPercent(0.5) }],
-            tags: ["direct"],
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.75
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
           },
-          consumeBarrier(),
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-current-barrier-percent",
+                  "value": 0.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "consume-barrier",
+            "target": "self",
+            "mode": "all"
+          }
         ],
-        tags: ["special", "earth", "barrier", "direct"],
+        "tags": [
+          "special",
+          "earth",
+          "barrier",
+          "direct"
+        ]
       },
-      rejuvenate: {
-        id: "rejuvenate",
-        name: "Rejuvenate",
-        actionTimeMs: 2600,
-        description:
-          "The Sentinel draws vitality from the grove and restores Health.",
-        effects: [scaledHeal(0.08)],
-        tags: ["special", "heal"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          action("verdant-guard-step", "verdant-guard"),
-          basic("basic-2"),
-          action("root-crush-step-1", "root-crush"),
-          basic("basic-3"),
-          action("shield-burst-step", "shield-burst"),
-          basic("basic-4"),
-          action("rejuvenate-step", "rejuvenate"),
+      "rejuvenate": {
+        "id": "rejuvenate",
+        "name": "Rejuvenate",
+        "actionTimeMs": 2600,
+        "description": "The Sentinel draws vitality from the grove and restores Health.",
+        "effects": [
+          {
+            "type": "heal",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.08
+            },
+            "tags": [
+              "heal",
+              "direct"
+            ]
+          }
         ],
-      },
+        "tags": [
+          "special",
+          "heal"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { earth: 45 },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "verdant-guard-step",
+            "type": "action",
+            "actionId": "verdant-guard"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "root-crush-step-1",
+            "type": "action",
+            "actionId": "root-crush"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "shield-burst-step",
+            "type": "action",
+            "actionId": "shield-burst"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "rejuvenate-step",
+            "type": "action",
+            "actionId": "rejuvenate"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "earth": 45
+    },
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth"
   },
   "tempest-stag": {
-    id: "tempest-stag",
-    bestiaryCategory: "monster",
-    name: "Tempest Stag",
-    subtitle: "A storm-crowned antlered force of the high grove",
-    maxHealth: 460,
-    basicAttackDamage: 20,
-    basicAttackTimeMs: 2250,
-    defense: 18,
-    color: "#8bb8e8",
-    ui: { portraitIcon: "guardian" },
-    traitIds: [],
-    actions: {
+    "id": "tempest-stag",
+    "bestiaryCategory": "monster",
+    "name": "Tempest Stag",
+    "subtitle": "A storm-crowned antlered force of the high grove",
+    "maxHealth": 460,
+    "basicAttackDamage": 16.61197703035275,
+    "basicAttackTimeMs": 2250,
+    "defense": 18,
+    "color": "#8bb8e8",
+    "ui": {
+      "portraitIcon": "guardian"
+    },
+    "traitIds": [],
+    "actions": {
       "static-antlers": {
-        id: "static-antlers",
-        name: "Static Antlers",
-        actionTimeMs: 2000,
-        description: "Lightning forks from the antlers and leaves Shock behind.",
-        effects: [scaledDirectDamage("air", 1.1), applyStatus("shock", "opponent", undefined, 2)],
-        tags: ["special", "air", "direct", "debuff"],
+        "id": "static-antlers",
+        "name": "Static Antlers",
+        "actionTimeMs": 2000,
+        "description": "Lightning forks from the antlers and leaves Shock behind.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "shock",
+            "stacks": 2,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "air",
+          "direct",
+          "debuff"
+        ]
       },
       "gale-charge": {
-        id: "gale-charge",
-        name: "Gale Charge",
-        actionTimeMs: 1900,
-        description: "A rushing gale delays the Wizard's current action.",
-        effects: [scaledDirectDamage("air", 1.15), delayCurrentAction(500)],
-        tags: ["special", "air", "direct", "control"],
+        "id": "gale-charge",
+        "name": "Gale Charge",
+        "actionTimeMs": 1900,
+        "description": "A rushing gale delays the Wizard's current action.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.15
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 500
+          }
+        ],
+        "tags": [
+          "special",
+          "air",
+          "direct",
+          "control"
+        ]
       },
       "storm-rush": {
-        id: "storm-rush",
-        name: "Storm Rush",
-        actionTimeMs: 2100,
-        description: "The Stag crashes through the arena in a storm-charged rush.",
-        effects: [scaledDirectDamage("air", 1.45)],
-        tags: ["special", "air", "direct"],
-      },
+        "id": "storm-rush",
+        "name": "Storm Rush",
+        "actionTimeMs": 2100,
+        "description": "The Stag crashes through the arena in a storm-charged rush.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.45
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "air",
+          "direct"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [action("static-antlers-step-1", "static-antlers"), basic("basic-1"), action("gale-charge-step", "gale-charge"), basic("basic-2"), action("static-antlers-step-2", "static-antlers"), action("storm-rush-step", "storm-rush"), basic("basic-3")],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "static-antlers-step-1",
+            "type": "action",
+            "actionId": "static-antlers"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "gale-charge-step",
+            "type": "action",
+            "actionId": "gale-charge"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "static-antlers-step-2",
+            "type": "action",
+            "actionId": "static-antlers"
+          },
+          {
+            "id": "storm-rush-step",
+            "type": "action",
+            "actionId": "storm-rush"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { air: 50, earth: 15 },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "air": 50,
+      "earth": 15
+    },
+    "primaryAffinity": "air",
+    "basicAttackElement": "air"
   },
   "forest-heart": {
-    id: "forest-heart",
-    bestiaryCategory: "boss",
-    name: "Forest Heart",
-    subtitle: "The pulse beneath the roots",
-    maxHealth: 900,
-    basicAttackDamage: 30,
-    basicAttackTimeMs: 2400,
-    defense: 30,
-    color: "#e06c8b",
-    ui: {
-      portraitIcon: "boss",
-      bestiary: {
-        roleTags: ["Sustain", "Healing", "Barrier", "Control", "2 Phases"],
-        phaseLabels: { default: "Default", overgrown: "Overgrown" },
-        phaseOrder: ["default", "overgrown"],
-      },
+    "id": "forest-heart",
+    "bestiaryCategory": "boss",
+    "name": "Forest Heart",
+    "subtitle": "The pulse beneath the roots",
+    "maxHealth": 900,
+    "basicAttackDamage": 17.515151515151516,
+    "basicAttackTimeMs": 2400,
+    "defense": 30,
+    "color": "#e06c8b",
+    "ui": {
+      "portraitIcon": "boss",
+      "bestiary": {
+        "roleTags": [
+          "Sustain",
+          "Healing",
+          "Barrier",
+          "Control",
+          "2 Phases"
+        ],
+        "phaseLabels": {
+          "default": "Default",
+          "overgrown": "Overgrown"
+        },
+        "phaseOrder": [
+          "default",
+          "overgrown"
+        ]
+      }
     },
-    traitIds: ["forest-heart-living-core"],
-    actions: {
+    "traitIds": [
+      "forest-heart-living-core"
+    ],
+    "actions": {
       "heart-pulse": {
-        id: "heart-pulse",
-        name: "Heart Pulse",
-        actionTimeMs: 2000,
-        description:
-          "The Forest Heart releases a crushing pulse through the roots.",
-        effects: [scaledDirectDamage("physical", 1.2)],
-        tags: ["special", "physical", "direct"],
+        "id": "heart-pulse",
+        "name": "Heart Pulse",
+        "actionTimeMs": 2000,
+        "description": "The Forest Heart releases a crushing pulse through the roots.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "direct",
+          "earth"
+        ]
       },
       "root-prison": {
-        id: "root-prison",
-        name: "Root Prison",
-        actionTimeMs: 2000,
-        description:
-          "Living roots crush the Wizard and disrupt the current Spell cast.",
-        effects: [scaledDirectDamage("physical", 0.8), delayCurrentAction(900)],
-        tags: ["special", "physical", "control"],
-      },
-      overgrowth: {
-        id: "overgrowth",
-        name: "Overgrowth",
-        actionTimeMs: 2800,
-        description:
-          "The Heart thickens its living shell behind a heavy living Barrier.",
-        effects: [scaledBarrier(0.14)],
-        tags: ["special", "barrier"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          basic("basic-2"),
-          action("heart-pulse-step", "heart-pulse"),
-          basic("basic-3"),
-          action("root-prison-step", "root-prison"),
-          basic("basic-4"),
-          basic("basic-5"),
+        "id": "root-prison",
+        "name": "Root Prison",
+        "actionTimeMs": 2000,
+        "description": "Living roots crush the Wizard and disrupt the current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.8
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 900
+          }
         ],
+        "tags": [
+          "special",
+          "control",
+          "earth"
+        ]
       },
-      overgrown: {
-        id: "overgrown",
-        steps: [
-          action("heart-pulse-step-1", "heart-pulse"),
-          action("root-prison-step-1", "root-prison"),
-          basic("basic-1"),
-          action("overgrowth-step", "overgrowth"),
-          action("heart-pulse-step-2", "heart-pulse"),
-          action("root-prison-step-2", "root-prison"),
-          basic("basic-2"),
+      "overgrowth": {
+        "id": "overgrowth",
+        "name": "Overgrowth",
+        "actionTimeMs": 2800,
+        "description": "The Heart thickens its living shell behind a heavy living Barrier.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.14
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
         ],
-      },
+        "tags": [
+          "special",
+          "barrier"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-    resonanceYield: { earth: 80 },
-  },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "heart-pulse-step",
+            "type": "action",
+            "actionId": "heart-pulse"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "root-prison-step",
+            "type": "action",
+            "actionId": "root-prison"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "basic-5",
+            "type": "basic"
+          }
+        ]
+      },
+      "overgrown": {
+        "id": "overgrown",
+        "steps": [
+          {
+            "id": "heart-pulse-step-1",
+            "type": "action",
+            "actionId": "heart-pulse"
+          },
+          {
+            "id": "root-prison-step-1",
+            "type": "action",
+            "actionId": "root-prison"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "overgrowth-step",
+            "type": "action",
+            "actionId": "overgrowth"
+          },
+          {
+            "id": "heart-pulse-step-2",
+            "type": "action",
+            "actionId": "heart-pulse"
+          },
+          {
+            "id": "root-prison-step-2",
+            "type": "action",
+            "actionId": "root-prison"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "resonanceYield": {
+      "earth": 80
+    },
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth"
+  }
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;
 
-const whisperingPowerProfiles = {
-  'forest-wisp': [300, 'air'], thornling: [340, 'earth'], 'dewbound-sprite': [380, 'water'],
-  'cinder-moth': [420, 'fire'], 'stone-root': [460, 'earth'], 'grove-sentinel': [520, 'earth'],
-  'tempest-stag': [600, 'air'], 'forest-heart': [850, 'earth'],
-} as const;
-for (const [id, [power, affinity]] of Object.entries(whisperingPowerProfiles) as Array<[keyof typeof whisperingPowerProfiles, readonly [number, import('../../elements/elements').ElementId]]>) {
-  const monster = WHISPERING_WOODS_MONSTERS[id]
-  if (monster) (WHISPERING_WOODS_MONSTERS as Partial<Record<MonsterId, MonsterDefinition>>)[id] = applyCombatV2Profile(monster, affinity, power)
-}
-
 export const WHISPERING_WOODS_MONSTER_IDS = [
-  "forest-wisp",
-  "thornling",
-  "dewbound-sprite",
-  "cinder-moth",
-  "stone-root",
-  "grove-sentinel",
-  "tempest-stag",
-  "forest-heart",
+  'forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth',
+  'stone-root', 'grove-sentinel', 'tempest-stag', 'forest-heart',
 ] as const satisfies readonly MonsterId[];

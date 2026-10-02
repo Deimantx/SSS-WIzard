@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'stormvault-gallery', id: 'volt-wisp', combatV2: true, primaryAffinity: 'air', basicAttackElement: 'air', targetPower: 5600, name: 'Volt Wisp', subtitle: 'A spark trapped between two storm records', hp: 2188, damage: 96, defense: 28, time: 2300, resonanceYield: { air: 30 }, resistances: { air: 0.2 }, icon: { portraitIcon: 'wisp' }, specials: [{ id: 'volt-spark', name: 'Volt Spark', damage: [{ type: 'air', coefficient: 1.1 }], status: { id: 'shock', stacks: 1 } }, { id: 'static-charge', name: 'Static Charge', status: { id: 'haste', target: 'self' } }] },

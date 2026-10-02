@@ -96,6 +96,22 @@ const snapshotPeriodicEffects = (state: GameState, holder: CombatActor, source: 
   })
 }
 
+const sourceElementForPeriodicStatus = (source: CombatSource) => {
+  const provenance = getRootCombatSourceProvenance(source)
+  const monsterId = source.sourceMonsterId ?? provenance.originMonsterId ?? provenance.sourceMonsterId
+  if (source.actor === 'enemy' && monsterId && MONSTERS[monsterId]) return MONSTERS[monsterId].primaryAffinity
+  return provenance.school ?? source.school ?? 'arcane'
+}
+
+const sourceElementPeriodicEffect = (source: CombatSource, amount: number): CombatEffect => {
+  const damageType = sourceElementForPeriodicStatus(source)
+  return {
+    type: 'deal-damage', target: 'self',
+    components: [{ damageType, magnitude: { type: 'flat', value: amount } }],
+    tags: ['dot', damageType],
+  }
+}
+
 const snapshotModifierOverrides = (statusId: StatusId, overrides: Partial<Record<ModifierKey, number>> | undefined) => {
   if (!overrides) return undefined
   if (!hasValidStatusModifierOverrides(statusId, overrides, statusValidationContext)) return undefined
@@ -158,7 +174,11 @@ export const applyStatus = (state: GameState, actor: CombatActor, statusId: Stat
   if (duration !== null && duration <= 0) return null
   const requestedStacks = Math.max(1, Math.floor(Number.isFinite(options.stacks ?? 1) ? options.stacks ?? 1 : 1))
   const nextTickMs = definition.periodic ? definition.periodic.intervalMs : undefined
-  const authoredPeriodicEffects = options.periodicEffects ?? definition.periodic?.effects
+  const sourceElementDamage = definition.periodic?.sourceElementDamage
+  const defaultPeriodicEffects = sourceElementDamage === undefined
+    ? definition.periodic?.effects
+    : [...(definition.periodic?.effects ?? []), sourceElementPeriodicEffect(source, sourceElementDamage)]
+  const authoredPeriodicEffects = options.periodicEffects ?? defaultPeriodicEffects
   const hasPeriodicEffects = options.periodicEffects !== undefined || authoredPeriodicEffects !== undefined
   const periodicEffects = hasPeriodicEffects ? snapshotPeriodicEffects(state, actor, source, authoredPeriodicEffects) : undefined
   const modifierOverrides = snapshotModifierOverrides(statusId, options.modifierOverrides)

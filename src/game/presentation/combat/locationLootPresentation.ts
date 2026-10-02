@@ -1,7 +1,8 @@
 import { COMBAT_LOCATIONS, hasBossEncounter } from '../../content/combat-locations/worldNavigation'
 import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
-import { resolvePowerScaledCurrencyRewardRange } from '../../systems/loot/powerScaledCurrencyRewards'
+import { resolveCombatCurrencyRewardRange } from '../../systems/loot/combatCurrencyRewards'
+import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../systems/loot/universalLootRuntime'
 import type { CombatLocationId, GameState, ItemId, MonsterId, WorldTierId } from '../../types'
 
 export interface LocationLootEntry {
@@ -35,9 +36,14 @@ const percentage = (chance: number) => `${Number((Math.max(0, chance) * 100).toF
 const aggregateLoot = (monsterIds: readonly MonsterId[], worldTier: WorldTierId, signatureItemId?: ItemId): LocationLootEntry[] => {
   const entries = new Map<ItemId, AggregateEntry>()
   monsterIds.forEach((monsterId) => {
-    const lifeEssence = resolvePowerScaledCurrencyRewardRange(monsterId, 'life-essence', worldTier)
-    const artifactEssence = resolvePowerScaledCurrencyRewardRange(monsterId, 'artifact-essence', worldTier)
-    const drops = [...MONSTERS[monsterId].loot, { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 }, { itemId: 'artifact-essence' as const, min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 }]
+    const lifeEssence = resolveCombatCurrencyRewardRange(monsterId, 'life-essence', worldTier)
+    const artifactEssence = resolveCombatCurrencyRewardRange(monsterId, 'artifact-essence', worldTier)
+    const context = resolveCombatLootContext(monsterId, worldTier)
+    const drops = [
+      ...MONSTERS[monsterId].loot.map((drop) => ({ itemId: drop.itemId, min: resolveAuthoredLootDropQuantity(drop, drop.quantity.min, context), max: resolveAuthoredLootDropQuantity(drop, drop.quantity.max, context), chance: resolveAuthoredLootDropChance(drop, context) })),
+      { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 },
+      { itemId: 'artifact-essence' as const, min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 },
+    ]
     drops.forEach((drop) => {
       const entry = entries.get(drop.itemId) ?? {
         itemId: drop.itemId,

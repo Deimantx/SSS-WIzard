@@ -526,7 +526,10 @@ export const getArcaneCoreCastModifiers = (state: GameState, context: ArcaneCore
   const hasBarrier = Boolean(spell?.effects.some((effect) => effect.type === 'gain-barrier'))
   const hasNegativeStatus = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && effect.target === 'opponent'))
   const hasControlStatus = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && effect.target === 'opponent' && ['chilled', 'frozen', 'tremored', 'stunned', 'entangled', 'silenced'].includes(effect.statusId)))
-  const hasDamageOverTime = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && effect.periodicEffects?.some((periodic) => periodic.type === 'deal-damage')))
+  const hasDamageOverTime = Boolean(spell?.effects.some((effect) => effect.type === 'apply-status' && (
+    effect.periodicEffects?.some((periodic) => periodic.type === 'deal-damage')
+    || (effect.periodicEffects === undefined && ((STATUS_DEFINITIONS[effect.statusId]?.periodic?.effects?.some((periodic) => periodic.type === 'deal-damage')) || STATUS_DEFINITIONS[effect.statusId]?.periodic?.sourceElementDamage !== undefined))
+  )))
   const hasDirectDamage = Boolean(spell?.effects.some((effect) => effect.type === 'deal-damage' && (effect.tags ?? []).includes('direct')))
   const enemyStatuses = state.combat.enemyStatuses
   const negativeStatusCount = enemyStatuses.filter((status) => status.statusId !== 'haste' && status.statusId !== 'quickening' && status.statusId !== 'gust' && status.statusId !== 'tailwind' && status.statusId !== 'regeneration' && status.statusId !== 'fortified' && status.statusId !== 'purified').length

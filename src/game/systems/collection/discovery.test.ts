@@ -5,7 +5,7 @@ import { completeTransmutationCycle } from '../transmutation/transmutationEngine
 import { discoverMonster } from './discovery'
 import { grantItem } from '../inventory/itemAcquisition'
 import { TRANSMUTATION_RECIPES } from '../../content/recipes/transmutationRecipes'
-import { resolvePowerScaledCurrencyRewardRange } from '../loot/powerScaledCurrencyRewards'
+import { resolveCombatCurrencyRewardRange } from '../loot/combatCurrencyRewards'
 
 describe('archive discovery', () => {
   it('records a monster on encounter and remains idempotent', () => {
@@ -19,8 +19,8 @@ describe('archive discovery', () => {
     const state = createInitialState()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     resolveMonsterLoot(state, 'forest-wisp')
-    expect(state.inventory['artifact-essence']).toBe(resolvePowerScaledCurrencyRewardRange('forest-wisp', 'artifact-essence', 1).finalMin)
-    expect(state.inventory['life-essence']).toBe(resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 1).finalMin)
+    expect(state.inventory['artifact-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'artifact-essence', 1).finalMin)
+    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1).finalMin)
     expect(state.progress.discoveredItems).toEqual(expect.arrayContaining(['artifact-essence', 'life-essence']))
     vi.restoreAllMocks()
   })

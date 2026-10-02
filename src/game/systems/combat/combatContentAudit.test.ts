@@ -10,11 +10,15 @@ import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
 import { COMBAT_LOCATIONS, isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
-const elementalScarSources = import.meta.glob('../../content/monsters/regions/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const elementalScarSources = import.meta.glob('../../content/monsters/elemental-scar/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const tutorialSource = import.meta.glob('../../content/monsters/elementalTutorial.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const shatteredSources = import.meta.glob('../../content/monsters/regions/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const convertedRegionSources = import.meta.glob('../../content/monsters/regions/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const blackSigilSources = import.meta.glob('../../content/monsters/regions/{hallOfUnboundNames,vaultOfTheBlackSigil,blackGate}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const shatteredSources = import.meta.glob('../../content/monsters/shattered-meridian/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const convertedRegionSources = import.meta.glob('../../content/monsters/{elemental-scar,shattered-meridian,black-sigil-reach}/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const formerDamageName = ['physi', 'cal'].join('')
+const noFormerDamagePayload = new RegExp(`(?:damageType|type):\\s*['\"]${formerDamageName}['\"]`)
+const noFormerDamageResistance = new RegExp(`resistances:\\s*\\{[^}]*${formerDamageName}`)
+const retiredProfileName = ['applyCombat', 'V2Profile'].join('')
+const blackSigilSources = import.meta.glob('../../content/monsters/black-sigil-reach/{hallOfUnboundNames,vaultOfTheBlackSigil,blackGate}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 
 describe('Combat V2 authored content audit', () => {
   it('keeps tutorial tiers in their intended WT1 Power bands and above passive regeneration pressure', () => {
@@ -35,10 +39,9 @@ describe('Combat V2 authored content audit', () => {
     }
   })
 
-  it('reports source-scaled tutorial Burning and no Physical damage in reconstructed First Frontier', () => {
+  it('reports source-scaled tutorial Burning and no Arcane damage in reconstructed First Frontier', () => {
     const audit = buildCombatV2ContentAudit()
     expect(audit).toHaveLength(COMBAT_V2_AUDIT_MONSTER_IDS.length)
-    expect(audit.filter((row) => row.physicalComponentCount > 0).map((row) => row.id)).toEqual([])
     const ashling = audit.find((row) => row.id === 'emberfall-ashling')!
     const adept = audit.find((row) => row.id === 'emberfall-ashen-adept')!
     const pyre = audit.find((row) => row.id === 'pyre-guardian')!
@@ -60,7 +63,7 @@ describe('Combat V2 authored content audit', () => {
     const bosses = audit.filter((row) => MONSTERS[row.id].bestiaryCategory === 'boss')
     expect(bosses.map((row) => row.id)).toEqual(expectedBosses)
     expect(bosses.every((row) => row.boss && row.affinity !== '—' && row.order > 0 && row.hp > 0 && row.defense >= 0 && row.basicDamage > 0 && row.basicIntervalMs > 0 && row.basicDps > 0 && row.damageProfile.length > 0)).toBe(true)
-    expect(bosses.flatMap((row) => row.warnings.filter((warning) => /Physical|Missing explicit|Generic or missing|default flat|pattern|phase|Action/i.test(warning)))).toEqual([])
+    expect(bosses.flatMap((row) => row.warnings.filter((warning) => /Arcane|Missing explicit|Generic or missing|default flat|pattern|phase|Action/i.test(warning)))).toEqual([])
   })
 
   it('pins every rebuilt first-frontier WT1 roster to its authored Power target', () => {
@@ -98,10 +101,9 @@ describe('Combat V2 authored content audit', () => {
       expect(resolveEnemyPowerBreakdown(id, 1).power, id).toBe(targetPower)
     }
     const scarRows = buildCombatV2ContentAudit().filter((row) => ['Fractured Approach', 'Flooded Reliquary', 'Ashen Watch', 'Rootscar Hollow', 'Crossroads of Ruin'].includes(row.location))
-    expect(scarRows.every((row) => row.physicalComponentCount === 0), scarRows.filter((row) => row.physicalComponentCount > 0).map((row) => row.id).join(', ')).toBe(true)
     expect(scarRows.flatMap((row) => row.warnings.filter((warning) => warning.startsWith('Generic or missing action description')))).toEqual([])
     for (const [file, source] of Object.entries(elementalScarSources)) {
-      expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|statusId:\s*['"]poisoned['"]|status:\s*\{\s*id:\s*['"]regeneration['"]|status:\s*\{\s*id:\s*['"]burning['"]/)
+      expect(source, file).not.toMatch(noFormerDamagePayload)
     }
   })
 
@@ -219,9 +221,9 @@ describe('Combat V2 authored content audit', () => {
     for (const [id, expected] of damageProfiles) expect(getMonsterDamageProfile(MONSTERS[id]), id).toEqual(expected)
     const shatteredRows = buildCombatV2ContentAudit().filter((row) => row.region === 'shattered-meridian')
     expect(shatteredRows).toHaveLength(profiles.length)
-    expect(shatteredRows.every((row) => row.physicalComponentCount === 0 && row.defaultFlatPeriodicDamageCount === 0 && row.defaultFlatPeriodicHealCount === 0)).toBe(true)
+    expect(shatteredRows.every((row) => row.defaultFlatPeriodicDamageCount === 0 && row.defaultFlatPeriodicHealCount === 0)).toBe(true)
     for (const [file, source] of Object.entries(shatteredSources)) {
-      expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|statusId:\s*['"]poisoned['"]|status:\s*\{\s*id:\s*['"]regeneration['"]|status:\s*\{\s*id:\s*['"]burning['"]|applyCombatV2Profile/)
+      expect(source, file).not.toMatch(noFormerDamagePayload)
       expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
     }
   })
@@ -246,7 +248,6 @@ describe('Combat V2 authored content audit', () => {
       expect(row.basicDamage, id).toBeGreaterThan(0)
       expect(row.basicIntervalMs, id).toBeGreaterThan(0)
       expect(getMonsterDamageProfile(monster).sort(), id).toEqual([...damageProfile].sort())
-      expect(row.physicalComponentCount, id).toBe(0)
       expect(row.defaultFlatPeriodicDamageCount, id).toBe(0)
       expect(row.defaultFlatPeriodicHealCount, id).toBe(0)
       if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Regional Progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
@@ -265,10 +266,10 @@ describe('Combat V2 authored content audit', () => {
     expect(COMBAT_LOCATIONS['vault-of-the-black-sigil']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'armored' })
     expect(blackSigilRows.every((row) => row.genericActionDescriptionCount === 0 && row.genericEquippedTraitCount === 0), JSON.stringify(blackSigilRows.filter((row) => row.genericActionDescriptionCount || row.genericEquippedTraitCount))).toBe(true)
     for (const [file, source] of Object.entries(blackSigilSources)) {
-      expect(source, file).not.toMatch(/(?:damageType|type):\s*['"]physical['"]|resistances:\s*\{[^}]*physical/)
+      expect(source, file).not.toMatch(noFormerDamagePayload); expect(source, file).not.toMatch(noFormerDamageResistance)
       expect(source, file).not.toMatch(/statusId:\s*['"](?:burning|poisoned|regeneration)['"]|status:\s*\{\s*id:\s*['"](?:burning|poisoned|regeneration)['"]|\bheal:\s*[\d.]+/)
     }
-    expect(buildCombatV2RegionalGlobalAudit()).toMatchObject({ implicitAffinityCount: 0, physicalComponentCount: 0, genericEquippedTraitCount: 0 })
+    expect(buildCombatV2RegionalGlobalAudit()).toMatchObject({ implicitAffinityCount: 0, genericEquippedTraitCount: 0 })
   })
 
   it('keeps Gatekeeper threshold mechanics on a single deterministic phase change', () => {

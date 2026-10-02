@@ -15,8 +15,8 @@ export const PLAYER_STAT_FIELD_REGISTRY: readonly PlayerStatPresetField[] = [
   modifier('healing-done-percent', 'Healing Done', 'Sustain / Control'), modifier('healing-received-percent', 'Healing Received', 'Sustain / Control'),
   modifier('barrier-power-percent', 'Barrier Power', 'Sustain / Control'), modifier('barrier-received-flat', 'Barrier Received Flat', 'Sustain / Control', 'flat'), modifier('barrier-received-percent', 'Barrier Received %', 'Sustain / Control'),
   modifier('status-duration-dealt-percent', 'Status Duration Dealt', 'Sustain / Control'), modifier('status-duration-received-percent', 'Status Duration Received', 'Sustain / Control'), modifier('control-duration-received-percent', 'Control Duration Received', 'Sustain / Control'),
-  ...(['physical', 'arcane', 'fire', 'water', 'earth', 'air'] as const).map((element) => ({ id: `spell-${element}`, label: `${element[0].toUpperCase()}${element.slice(1)} Spell Damage %`, path: `spellDamageByType.${element}`, kind: 'percent' as const, group: 'Elemental' as const, element })),
-  ...(['physical', 'arcane', 'fire', 'water', 'earth', 'air'] as const).map((element) => ({ id: `resistance-${element}`, label: `${element[0].toUpperCase()}${element.slice(1)} Resistance %`, path: `resistanceByType.${element}`, kind: 'percent' as const, group: 'Elemental' as const, element })),
+  ...(['arcane', 'fire', 'water', 'earth', 'air'] as const).map((element) => ({ id: `spell-${element}`, label: `${element[0].toUpperCase()}${element.slice(1)} Spell Damage %`, path: `spellDamageByType.${element}`, kind: 'percent' as const, group: 'Elemental' as const, element })),
+  ...(['arcane', 'fire', 'water', 'earth', 'air'] as const).map((element) => ({ id: `resistance-${element}`, label: `${element[0].toUpperCase()}${element.slice(1)} Resistance %`, path: `resistanceByType.${element}`, kind: 'percent' as const, group: 'Elemental' as const, element })),
 ]
 
 export const PLAYER_STAT_PRESET_GROUPS = ['Core', 'Offensive', 'Defensive', 'Sustain / Control', 'Elemental'] as const

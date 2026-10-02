@@ -89,15 +89,22 @@ export const buildCombatStatusDetailPresentation = (statusId: StatusId, options:
   }
   const durationMs = options.durationMs === undefined ? definition.defaultDurationMs : options.durationMs
   const periodicEffects = options.periodicEffects ?? definition.periodic?.effects
+  const sourceElementDamage = definition.periodic?.sourceElementDamage
   const intervalMs = definition.periodic?.intervalMs ?? 0
   const tickCount = durationMs !== null && durationMs !== undefined && intervalMs > 0 ? Math.floor(Math.max(0, durationMs) / intervalMs) : 0
-  const periodic = periodicEffects?.length && intervalMs > 0
+  const periodic = ((periodicEffects?.length ?? 0) > 0 || sourceElementDamage !== undefined) && intervalMs > 0
     ? {
         intervalMs,
         intervalLabel: formatCombatStatusDuration(intervalMs),
         tickCount,
-        effects: periodicEffects.map(formatPeriodicEffect),
-        totalEffects: periodicEffects.map((effect) => formatPeriodicTotal(effect, tickCount)).filter((value): value is string => Boolean(value)),
+        effects: [
+          ...(periodicEffects ?? []).map(formatPeriodicEffect),
+          ...(sourceElementDamage === undefined ? [] : [`${formatStatusMagnitude({ type: 'flat', value: sourceElementDamage })} source-element damage per tick`]),
+        ],
+        totalEffects: [
+          ...(periodicEffects ?? []).map((effect) => formatPeriodicTotal(effect, tickCount)).filter((value): value is string => Boolean(value)),
+          ...(sourceElementDamage === undefined || tickCount < 1 ? [] : [`${formatStatusMagnitude({ type: 'flat', value: sourceElementDamage * tickCount })} source-element damage over the full duration`]),
+        ],
       }
     : undefined
   return {

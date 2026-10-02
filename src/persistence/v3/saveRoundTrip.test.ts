@@ -24,7 +24,7 @@ describe('current Save System', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(3)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(62)
+    expect(SAVE_VERSION).toBe(63)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -70,6 +70,22 @@ describe('current Save System', () => {
     expect(loaded.progress.autoHuntBossByLocation['black-gate']).toBe(true)
     expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'region', locationId: 'hunters-ground' })
     expect(loaded.ui.lastEnteredCombatLocationId).toBe('black-gate')
+  })
+
+  it('keeps a v62 active encounter World Tier snapshot and computes loot tier only at runtime', () => {
+    const state = createInitialState()
+    state.worldTier = { current: 2, highestUnlocked: 5 }
+    state.combat.active = true
+    state.combat.enemyId = 'forest-wisp'
+    state.combat.enemyWorldTier = 5
+    state.combat.enemyHp = 123
+    const v62 = serializeGameState(state, 1236) as unknown as Record<string, any>
+    v62.contentVersion = 62
+    const parsed = parsePersistedGameStateV3(JSON.stringify(v62))
+    const loaded = loadPersistedGameStateV3(parsed)
+    expect(loaded.combat).toMatchObject({ active: true, enemyId: 'forest-wisp', enemyWorldTier: 5, enemyHp: 123 })
+    expect(loaded.worldTier).toEqual({ current: 2, highestUnlocked: 5 })
+    expect(JSON.stringify(v62)).not.toContain('lootTier')
   })
 
   it('persists only the last-entered Combat Location from UI state', () => {
@@ -363,7 +379,7 @@ describe('current Save System', () => {
     ])
     const savedAgain = serializeGameState(migrated, 608)
     expect(savedAgain.schemaVersion).toBe(3)
-    expect(savedAgain.contentVersion).toBe(62)
+    expect(savedAgain.contentVersion).toBe(63)
     expect(loadProfileGameFromRaw(JSON.stringify(savedAgain)).combat.elementalDamageReductions).toEqual(migrated.combat.elementalDamageReductions)
     savedAgain.combat.arcaneCoreRuntime.elapsedMs = 30_000
     const loadedWithStaleRuntimeWard = loadProfileGameFromRaw(JSON.stringify(savedAgain))

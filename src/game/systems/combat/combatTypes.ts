@@ -3,8 +3,7 @@ import type { ResonanceRewardEventPayload } from '../resonance/resonanceRuntime'
 import type { WorldTierId } from '../../types'
 import type { ElementId } from '../../content/elements/elements'
 
-/** `physical` remains only for staged legacy-content compatibility. */
-export type DamageType = ElementId | 'physical'
+export type DamageType = ElementId
 
 export type TraitId =
   | 'forest-wisp-flicker'
@@ -547,7 +546,7 @@ export interface StatusDefinition {
   /** Whether a larger or smaller effective modifier value is stronger. */
   potencyDirection?: 'higher' | 'lower'
   modifiers?: CombatModifier[]
-  periodic?: { intervalMs: number; effects: CombatEffect[] }
+  periodic?: { intervalMs: number; effects?: CombatEffect[]; sourceElementDamage?: number }
   triggers?: CombatTriggerRule[]
   preventsAction?: boolean
   preventsSpellCast?: boolean

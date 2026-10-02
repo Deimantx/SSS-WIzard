@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { MonsterId } from '../../types'
 import { MONSTERS } from './index'
 import { makeCombatMonster, type CombatMonsterSpec } from './combatMonsterAuthoring'
-import { FRACTURED_APPROACH_MONSTERS } from './regions/elemental-scar/fracturedApproach'
+import { FRACTURED_APPROACH_MONSTERS } from './elemental-scar/fracturedApproach'
 
-const fracturedApproachSource = import.meta.glob('./regions/elemental-scar/fracturedApproach.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const fracturedApproachSource = import.meta.glob('./elemental-scar/fracturedApproach.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const retiredProfileName = ['applyCombat', 'V2Profile'].join('')
 
 describe('Regional Progression monster factory authoring types', () => {
   it('requires explicit identity and target Power for Combat V2 specs', () => {
@@ -24,6 +25,6 @@ describe('Regional Progression monster factory authoring types', () => {
       expect(monster.basicAttackElement, id).toBe(monster.primaryAffinity)
       expect(monster.actionPatterns.default.steps.length, id).toBeGreaterThan(0)
     }
-    expect(Object.values(fracturedApproachSource)[0]).not.toMatch(/applyCombatV2Profile/)
+    expect(Object.values(fracturedApproachSource)[0]).not.toContain(retiredProfileName)
   })
 })

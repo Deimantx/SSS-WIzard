@@ -5,8 +5,12 @@ describe('Developer Tools V4 registry', () => {
   it('contains unique IDs and routes every tool to one workspace', () => {
     const ids = DEVELOPER_TOOL_REGISTRY.map((tool) => tool.id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(DEVELOPER_TOOL_REGISTRY).toHaveLength(31)
+    expect(DEVELOPER_TOOL_REGISTRY).toHaveLength(32)
     for (const workspace of DEVELOPER_WORKSPACE_REGISTRY) expect(getDeveloperWorkspaceTools(workspace.id).length).toBeGreaterThan(0)
+  })
+
+  it('registers the universal loot tier audit in the Combat workspace', () => {
+    expect(getDeveloperToolDefinition('universal-loot-tiers')).toMatchObject({ workspace: 'combat', label: 'Universal Loot Tiers' })
   })
 
   it('returns an explicit miss for an unknown tool', () => {

@@ -1191,7 +1191,7 @@ export const useGameStore = create<GameStore>()(
       if (preset === 'fast-caster') { stats.modifiers['cooldown-recovery-percent'] = 1; stats.modifiers['spell-cast-time-percent'] = -0.5; }
       if (preset === 'tank') {
         stats.maxHealthFlat = 500; stats.modifiers['defense-flat'] = 200;
-        for (const type of ['physical', 'arcane', 'fire', 'water', 'earth', 'air'] as const) stats.resistanceByType[type] = 0.25;
+        for (const type of ['arcane', 'fire', 'water', 'earth', 'air'] as const) stats.resistanceByType[type] = 0.25;
       }
       if (preset === 'dot-status') { stats.modifiers['damage-over-time-percent'] = 1; stats.modifiers['status-duration-dealt-percent'] = 1; }
       if (preset === 'healer-barrier') { stats.modifiers['healing-done-percent'] = 1; stats.modifiers['healing-received-percent'] = 1; stats.modifiers['barrier-power-percent'] = 1; stats.modifiers['barrier-received-percent'] = 1; }

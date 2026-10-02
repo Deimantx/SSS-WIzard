@@ -55,7 +55,7 @@ describe('EnemyContextWindow', () => {
     expect([...combatGroup!.querySelectorAll('.enemy-stat-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Max Health', 'Basic Attack Damage', 'Basic Attack Speed', 'Crit Chance', 'Crit Damage'])
     expect([...defenceGroup!.querySelectorAll('.enemy-defence-row')].map((row) => row.querySelector('span')?.textContent)).toEqual(['Defense', 'Damage Reduction'])
     expect([...defenceGroup!.querySelectorAll('.enemy-resistance-row')]).toHaveLength(0)
-    expect(defenceGroup!.textContent).not.toContain('Physical')
+    expect(defenceGroup!.textContent).not.toContain('Arcane')
     expect(defenceGroup!.textContent).not.toContain('Arcane')
   })
 

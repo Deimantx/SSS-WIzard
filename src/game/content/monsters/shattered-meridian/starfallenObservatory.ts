@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'starfallen-observatory', id: 'starbound-eye', combatV2: true, primaryAffinity: 'arcane', basicAttackElement: 'arcane', targetPower: 5800, name: 'Starbound Eye', subtitle: 'A watching star that never learned mercy', hp: 2625, damage: 100, defense: 38, time: 2300, resonanceYield: { air: 24, fire: 16 }, resistances: { arcane: 0.2 }, icon: { portraitIcon: 'wisp' }, specials: [{ id: 'star-gaze', name: 'Star Gaze', damage: [{ type: 'arcane', coefficient: 1.35 }], status: { id: 'arcane-disruption' } }, { id: 'orbit', name: 'Orbit', status: { id: 'spectral-fade', target: 'self' } }] },

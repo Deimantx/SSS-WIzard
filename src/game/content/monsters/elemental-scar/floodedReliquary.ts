@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'flooded-reliquary', id: 'drowned-acolyte', combatV2: true, primaryAffinity: 'water', basicAttackElement: 'water', targetPower: 3000, name: 'Drowned Acolyte', subtitle: 'A waterlogged priest still chanting beneath the tide', hp: 1875, damage: 72, defense: 34, time: 2500, resonanceYield: { water: 24 }, trait: 'drowned-acolyte-devotion', icon: { portraitIcon: 'mage' }, specials: [{ id: 'drowning-bolt', name: 'Drowning Bolt', damage: [{ type: 'water', coefficient: 1.4 }], status: { id: 'chilled' } }, { id: 'devotion', name: 'Drowned Devotion', status: { id: 'fortified', target: 'self' } }] },

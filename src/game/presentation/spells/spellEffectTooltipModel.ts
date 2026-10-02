@@ -223,6 +223,14 @@ export function buildSpellEffectTooltipModel(state: SpellPresentationState, spel
       appendPreviewModifiers(rows, preview.modifiers)
       appendConditionalModifiers(rows, preview.conditionalModifiers)
     })
+    const sourceElementDamage = effect.periodicEffects === undefined ? status?.periodic?.sourceElementDamage : undefined
+    if (sourceElementDamage !== undefined) {
+      const intervalMs = status?.periodic?.intervalMs ?? 0
+      const totalTicks = intervalMs > 0 ? Math.floor(durationPreview.effective / intervalMs) : 0
+      rows.push({ label: 'Damage Per Tick', value: `${formatValue(sourceElementDamage)} ${capitalize(spell.school)} damage (source element)`, semantic: 'school' })
+      rows.push({ label: 'Total Damage', value: `${formatValue(sourceElementDamage * totalTicks)} ${capitalize(spell.school)} damage`, semantic: 'school' })
+      if (intervalMs > 0) rows.push({ label: 'Tick Interval', value: formatTime(intervalMs), semantic: 'time' })
+    }
     if (periodicDamageComponents.length === 1) rows.push({ label: 'Damage Type', value: `${capitalize(periodicDamageComponents[0].component.damageType)} Damage`, semantic: 'school' })
     else if (periodicDamageComponents.length > 1) rows.push({ label: 'Damage Types', value: periodicDamageComponents.map(({ component }) => `${capitalize(component.damageType)} Damage`).join(' + '), semantic: 'school' })
     const intervalMs = status?.periodic?.intervalMs ?? 0

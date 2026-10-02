@@ -18,6 +18,7 @@ import { ELEMENT_IDS, isElementId, type ElementId } from "../elements/elements";
 import { DEFENSE_K, MAX_DEFENSE_REDUCTION } from "../../core/balance/combatStats";
 import { STATUS_DEFINITIONS } from "../statuses/statuses";
 import { TRAIT_DEFINITIONS } from "../traits/traits";
+import type { MonsterLootDropDefinition } from '../loot/lootCategoryTypes'
 
 export type MonsterPortraitIcon =
   | "wisp"
@@ -37,10 +38,10 @@ export interface MonsterDefinition {
   bestiaryCategory: BestiaryCategory;
   name: string;
   subtitle: string;
-  /** Primary defensive affinity. Legacy entries resolve from authored Resonance yield until content migration. */
-  primaryAffinity?: ElementId;
-  /** Explicit element used by the normal Basic Attack; legacy entries default to primaryAffinity. */
-  basicAttackElement?: ElementId;
+  /** Primary defensive affinity. Independent from reward Resonance. */
+  primaryAffinity: ElementId;
+  /** Element used by the normal Basic Attack. */
+  basicAttackElement: ElementId;
   maxHealth: number;
   basicAttackDamage: number;
   /** Base amount of time required for one Basic Attack Pattern step. */
@@ -66,26 +67,18 @@ export interface MonsterDefinition {
   damageImmunities?: DamageType[];
   statusImmunities?: StatusId[];
   statusTagImmunities?: CombatTag[];
-  loot: { itemId: ItemId; min: number; max: number; chance: number }[];
+  loot: MonsterLootDropDefinition[];
   hunter?: { family: string; alignment: string; contractTier: 'routine' | 'special' | 'prestigious'; minimumRank?: import('../../types').HunterRankId; exclusive: boolean; contractRequired: boolean; huntingGroundId?: string }
-  /** Optional during Phase 1 while the rest of the authored roster is converted. */
+  /** Reward data only; it does not determine Combat affinity or damage elements. */
   resonanceYield?: ResonanceYield;
   actions: Record<string, CombatActionDefinition>;
   actionPatterns: Record<string, ActionPattern>;
   defaultActionPatternId: string;
 }
 
-/** Stable compatibility mapping for legacy authored monsters without an affinity field. */
-export const getMonsterPrimaryAffinity = (monster: Pick<MonsterDefinition, 'primaryAffinity' | 'resonanceYield'>): ElementId => {
-  if (monster.primaryAffinity) return monster.primaryAffinity
-  const yielded = (Object.entries(monster.resonanceYield ?? {}) as Array<[string, number]>)
-    .filter((entry): entry is [ElementId, number] => isElementId(entry[0]) && Number.isFinite(entry[1]) && entry[1] > 0)
-  yielded.sort(([leftId, left], [rightId, right]) => right - left || leftId.localeCompare(rightId))
-  return yielded[0]?.[0] ?? 'arcane'
-}
+export const getMonsterPrimaryAffinity = (monster: Pick<MonsterDefinition, 'primaryAffinity'>): ElementId => monster.primaryAffinity
 
-export const getMonsterBasicAttackElement = (monster: Pick<MonsterDefinition, 'primaryAffinity' | 'basicAttackElement' | 'resonanceYield'>): ElementId =>
-  monster.basicAttackElement ?? getMonsterPrimaryAffinity(monster)
+export const getMonsterBasicAttackElement = (monster: Pick<MonsterDefinition, 'basicAttackElement'>): ElementId => monster.basicAttackElement
 
 export const getMonsterDamageProfile = (monster: MonsterDefinition): ElementId[] => {
   const used = new Set<ElementId>([getMonsterBasicAttackElement(monster)])
@@ -117,28 +110,6 @@ export const deriveBasicDamageForTargetPower = ({ maxHealth, defense, basicAttac
   const defenseReduction = Math.min(MAX_DEFENSE_REDUCTION, defenseRating / (defenseRating + DEFENSE_K))
   const effectiveHealth = health / Math.max(0.01, 1 - defenseReduction)
   return (target / 10) ** 2 * attackSeconds / effectiveHealth
-}
-
-/** Applies authored Combat V2 identity and derives Basic damage from a target Power. */
-export const applyCombatV2Profile = (monster: MonsterDefinition, primaryAffinity: ElementId, targetPower: number, legacyPhysicalElement: ElementId = primaryAffinity): MonsterDefinition => {
-  const authored = structuredClone(monster)
-  const convert = (value: unknown): void => {
-    if (!value || typeof value !== 'object') return
-    if (Array.isArray(value)) { value.forEach(convert); return }
-    const record = value as Record<string, unknown>
-    if (record.damageType === 'physical') record.damageType = legacyPhysicalElement
-    if (Array.isArray(record.tags) && record.tags.includes('physical')) record.tags = [...new Set([...record.tags.filter((tag) => tag !== 'physical'), legacyPhysicalElement])]
-    if (record.resistances && typeof record.resistances === 'object' && 'physical' in record.resistances) {
-      const resistances = record.resistances as Record<string, unknown>
-      delete resistances.physical
-    }
-    Object.values(record).forEach(convert)
-  }
-  convert(authored)
-  // Preserve authored durability and cadence; tune only the normal hit to land
-  // in the requested Power band under the canonical effective-health formula.
-  const basicAttackDamage = deriveBasicDamageForTargetPower({ maxHealth: authored.maxHealth, defense: authored.defense ?? 0, basicAttackTimeMs: authored.basicAttackTimeMs, targetPower })
-  return { ...authored, primaryAffinity, basicAttackElement: primaryAffinity, basicAttackDamage }
 }
 
 export const basic = (id: string): ActionStep => ({ id, type: "basic" });

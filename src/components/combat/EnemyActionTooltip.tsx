@@ -4,9 +4,9 @@ import { TooltipContent } from '../ui/tooltip/Tooltip'
 import { formatTime } from '../../game/utils'
 import { CombatEffectChip } from './CombatEffectChip'
 
-export function buildBasicAttackPresentation(basicDamage: number, actionTimeMs = 0): CombatActionPresentation {
-  const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: basicDamage } }] }
-  return { id: 'basic-attack', name: 'Basic Attack', description: 'A physical attack using the enemy\'s authored base damage.', actionTimeMs, effects: [formatCombatEffect(effect, { actor: 'enemy', kind: 'basic-attack' })] }
+export function buildBasicAttackPresentation(basicDamage: number, actionTimeMs = 0, element: import('../../game/content/elements/elements').ElementId = 'arcane'): CombatActionPresentation {
+  const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: element, magnitude: { type: 'flat', value: basicDamage } }] }
+  return { id: 'basic-attack', name: 'Basic Attack', description: `${element[0].toUpperCase()}${element.slice(1)} damage using the enemy's authored base damage.`, actionTimeMs, effects: [formatCombatEffect(effect, { actor: 'enemy', kind: 'basic-attack' })] }
 }
 
 /** Full authored action explanation shared by live combat and Bestiary previews. */

@@ -61,8 +61,10 @@ export interface BestiaryResonanceEntryPresentation {
 
 export interface BestiaryResonancePresentation {
   worldTier: WorldTierId
-  worldTierRewardMultiplier: number
-  globalRewardMultiplier: number
+  effectivePower: number
+  lootTier: number
+  lootQuantityMultiplier: number
+  bossQuantityMultiplier: number
   rewardMultiplier: number
   entries: BestiaryResonanceEntryPresentation[]
 }
@@ -71,8 +73,10 @@ export const getBestiaryResonancePresentation = (monster: MonsterDefinition, wor
   const reward = resolveEnemyResonanceReward(monster.id, worldTier)
   return {
     worldTier: reward.worldTier,
-    worldTierRewardMultiplier: reward.worldTierRewardMultiplier,
-    globalRewardMultiplier: reward.globalRewardMultiplier,
+    effectivePower: reward.effectivePower,
+    lootTier: reward.lootTier,
+    lootQuantityMultiplier: reward.lootQuantityMultiplier,
+    bossQuantityMultiplier: reward.bossQuantityMultiplier,
     rewardMultiplier: reward.rewardMultiplier,
     entries: RESONANCE_TYPES.flatMap((type) => {
       const finalAmount = reward.finalYield[type] ?? 0
@@ -235,7 +239,6 @@ export const getBestiaryBossSummaryTags = (monster: MonsterDefinition) => {
   if (authored.length > 0) return authored
   const tags = new Set<string>()
   const actions = Object.values(monster.actions)
-  if (actions.some((action) => action.tags?.includes('physical'))) tags.add('Physical')
   if (actions.some((action) => action.tags?.includes('magic') || action.tags?.includes('arcane'))) tags.add('Magic')
   if (actions.some((action) => action.effects.some((effect) => effect.type === 'heal' || effect.type === 'gain-barrier'))) tags.add('Sustain')
   if (actions.some((action) => action.effects.some((effect) => effect.type === 'modify-action-timer' || effect.type === 'apply-status' && STATUS_DEFINITIONS[effect.statusId]?.tags.includes('control')))) tags.add('Control')

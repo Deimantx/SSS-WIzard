@@ -16,7 +16,7 @@ import { createDefaultDebugOverrides } from './actions/debugActions'
 
 // Combat Action System V3 stores authored base work plus remaining work for
 // dynamic-rate action progression.
-export const SAVE_VERSION = 62
+export const SAVE_VERSION = 63
 
 export const createInitialSigilState = createEmptySigilState
 

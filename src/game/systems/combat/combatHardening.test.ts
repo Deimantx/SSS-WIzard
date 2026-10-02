@@ -257,7 +257,7 @@ describe('equipment combat providers', () => {
     state.equipment.weapon = testItemId
     const events: CombatEvent[] = []
     const sink = { push: (event: CombatEvent) => events.push(event) }
-    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
+    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 1 } }] }
     executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, sink)
     expect(events.filter((event) => event.category === 'damage')).toHaveLength(2)
     executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, sink)
@@ -271,7 +271,7 @@ describe('equipment combat providers', () => {
     state.equipment.weapon = testItemId
     state.equipment.head = secondItemId
     const events: CombatEvent[] = []
-    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
+    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 1 } }] }
     executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'root' }, undefined, { push: (event) => events.push(event) })
     const damageEvents = events.filter((event) => event.category === 'damage')
     expect(damageEvents).toHaveLength(3)
@@ -294,7 +294,7 @@ describe('equipment combat providers', () => {
     state.combat.combatRngState = failedSeed
     const events: CombatEvent[] = []
     const resolution = createCombatResolutionContext()
-    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }
+    const root: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 1 } }] }
     const expectedRng = { combatRngState: failedSeed }
     nextCombatRandom(expectedRng)
     executeCombatEffects(state, [root], { actor: 'player', kind: 'system', sourceId: 'chance-root' }, undefined, { push: (event) => events.push(event) }, resolution)
@@ -315,7 +315,7 @@ describe('equipment combat providers', () => {
     state.equipment.weapon = testItemId
     state.equipment.head = testItemId
     const resolution = createCombatResolutionContext()
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 1 } }] }], { actor: 'player', kind: 'system', sourceId: 'weapon-root' }, undefined, undefined, resolution)
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 1 } }] }], { actor: 'player', kind: 'system', sourceId: 'weapon-root' }, undefined, undefined, resolution)
     expect(resolution.attemptedRuleKeys).toEqual(new Set([
       getRuleRuntimeKey('player', 'equipment', testItemId, 'weapon-attempt', 'weapon'),
       getRuleRuntimeKey('player', 'equipment', testItemId, 'weapon-attempt', 'head'),
@@ -327,19 +327,19 @@ describe('equipment combat providers', () => {
     const originalResistances = MONSTERS['forest-wisp'].resistances
     ITEMS[testItemId] = { ...testItem, combat: { modifiers: [{ key: 'crit-chance', value: -1 }] } }
     MONSTERS['forest-wisp'].defense = 0
-    MONSTERS['forest-wisp'].resistances = { physical: 0.2, arcane: 0.5 }
+    MONSTERS['forest-wisp'].resistances = { fire: 0.2, arcane: 0.5 }
     try {
       const state = stateWithEnemy()
       state.equipment.weapon = testItemId
       const events: CombatEvent[] = []
-      const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
+      const effect: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
       const initialRng = state.combat.combatRngState
       executeCombatEffects(state, [effect], { actor: 'player', kind: 'spell', sourceId: 'split-hit', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
       const damageEvents = events.filter((event) => event.healthDamage !== undefined)
       expect(damageEvents).toHaveLength(1)
-      expect(damageEvents[0]).toMatchObject({ damageTypes: ['physical', 'arcane'], critical: false, blocked: false, healthDamage: 13 })
+      expect(damageEvents[0]).toMatchObject({ damageTypes: ['fire', 'arcane'], critical: false, blocked: false, healthDamage: 13 })
       expect(damageEvents[0].damageComponents?.map((component) => component.amount)).toEqual([8, 5])
-      expect(damageEvents[0].damageComponents?.map((component) => component.damageType)).toEqual(['physical', 'arcane'])
+      expect(damageEvents[0].damageComponents?.map((component) => component.damageType)).toEqual(['fire', 'arcane'])
       expect(state.combat.combatRngState).not.toBe(initialRng)
     } finally {
       MONSTERS['forest-wisp'].defense = originalDefense
@@ -353,14 +353,14 @@ describe('equipment combat providers', () => {
     const originalBlockChance = MONSTERS['forest-wisp'].blockChance
     ITEMS[testItemId] = { ...testItem, combat: { modifiers: [{ key: 'crit-chance', value: 1 }] } }
     MONSTERS['forest-wisp'].defense = 0
-    MONSTERS['forest-wisp'].resistances = { physical: 0, arcane: 0 }
+    MONSTERS['forest-wisp'].resistances = { arcane: 0 }
     MONSTERS['forest-wisp'].blockChance = 0
     try {
       const state = stateWithEnemy()
       state.equipment.weapon = testItemId
       state.combat.combatRngState = 0
       const events: CombatEvent[] = []
-      const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
+      const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }
       executeCombatEffects(state, [hit], { actor: 'player', kind: 'spell', sourceId: 'split-hit', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
       expect(events.filter((event) => event.healthDamage !== undefined)).toHaveLength(1)
       expect(events.find((event) => event.healthDamage !== undefined)).toMatchObject({ critical: true, blocked: false, healthDamage: 30 })
@@ -370,7 +370,7 @@ describe('equipment combat providers', () => {
       multiState.combat.combatRngState = 0
       const multiEvents: CombatEvent[] = []
       executeCombatEffects(multiState, [
-        { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
+        { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
         { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
       ], { actor: 'player', kind: 'spell', sourceId: 'true-multi-hit', tags: ['spell', 'direct'] }, undefined, { push: (event) => multiEvents.push(event) })
       expect(multiEvents.filter((event) => event.healthDamage !== undefined)).toHaveLength(2)
@@ -388,18 +388,18 @@ describe('equipment combat providers', () => {
     const originalBlockChance = MONSTERS['forest-wisp'].blockChance
     ITEMS[testItemId] = { ...testItem, combat: { modifiers: [{ key: 'crit-chance', value: -1 }] } }
     MONSTERS['forest-wisp'].defense = 0
-    MONSTERS['forest-wisp'].resistances = { physical: 0, arcane: 0 }
+    MONSTERS['forest-wisp'].resistances = { arcane: 0 }
     MONSTERS['forest-wisp'].blockChance = 1
     try {
       const state = stateWithEnemy()
       state.equipment.weapon = testItemId
       const events: CombatEvent[] = []
-      executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'spell', sourceId: 'blocked-split', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
+      executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }, { damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'spell', sourceId: 'blocked-split', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
       const damageEvents = events.filter((event) => event.healthDamage !== undefined)
       expect(damageEvents).toHaveLength(1)
       const event = damageEvents[0]
       const componentBlocked = (event.damageComponents ?? []).reduce((total, component, index) => total + (index === 0 ? 10 : 10) - component.amount - component.barrierAbsorbed, 0)
-      expect(event).toMatchObject({ blocked: true, damageComponents: expect.arrayContaining([expect.objectContaining({ damageType: 'physical' }), expect.objectContaining({ damageType: 'arcane' })]) })
+      expect(event).toMatchObject({ blocked: true, damageComponents: expect.arrayContaining([expect.objectContaining({ damageType: 'arcane' }), expect.objectContaining({ damageType: 'arcane' })]) })
       expect(event.blockedAmount).toBeCloseTo(componentBlocked)
       expect(event.blockedAmount).toBeGreaterThan(0)
     } finally {
@@ -416,7 +416,7 @@ describe('equipment combat providers', () => {
     state.combat.enemyMaxHp = 5
     state.combat.enemyHp = 5
     const events: CombatEvent[] = []
-    const lethal: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 100 } }] }
+    const lethal: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 100 } }] }
     const sink = { push: (event: CombatEvent) => events.push(event) }
 
     executeCombatEffects(state, [lethal], { actor: 'player', kind: 'system', sourceId: 'lethal-root' }, undefined, sink)
@@ -451,7 +451,7 @@ describe('equipment combat providers', () => {
     state.combat.enemyBarrier = 25
     const beforeRng = state.combat.combatRngState
     const events: CombatEvent[] = []
-    const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 100 } }], tags: ['spell', 'direct'] }
+    const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 100 } }], tags: ['spell', 'direct'] }
     executeCombatEffects(state, [hit], source, undefined, { push: (event) => events.push(event) })
     expect(state.combat.combatRngState).toBe(beforeRng)
     expect(state.combat.enemyHp).toBe(0)
@@ -509,32 +509,32 @@ describe('equipment combat providers', () => {
 
   it('does not let a lethal reactive heal resurrect the player, but keeps nonlethal healing working', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'reactive-heal', event: 'on-damage-taken', effects: [{ type: 'heal', target: 'self', magnitude: { type: 'flat', value: 20 } }] }] } }
-    const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'reactive-hit', tags: ['physical' as const] }
+    const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'reactive-hit', tags: ['arcane' as const] }
     const lethal = stateWithEnemy()
     lethal.equipment.weapon = testItemId
     lethal.player.maxHealth = 100
     lethal.player.health = 20
-    executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 30 } }] }], incoming)
     expect(lethal.player.health).toBe(0)
 
     const nonlethal = stateWithEnemy()
     nonlethal.equipment.weapon = testItemId
     nonlethal.player.maxHealth = 100
     nonlethal.player.health = 100
-    executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 30 } }] }], incoming)
     expect(nonlethal.player.health).toBe(90)
   })
 
   it('does not let a dead Player retaliate, while a surviving Player still can', () => {
     ITEMS[testItemId] = { ...testItem, combat: { rules: [{ id: 'retaliation', event: 'on-damage-taken', effects: [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 50 } }] }] }] } }
-    const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'retaliation-test', tags: ['physical' as const] }
+    const incoming = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'retaliation-test', tags: ['arcane' as const] }
     const lethal = stateWithEnemy()
     lethal.equipment.weapon = testItemId
     lethal.player.maxHealth = 100
     lethal.player.health = 20
     lethal.combat.enemyMaxHp = 100
     lethal.combat.enemyHp = 100
-    executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    executeCombatEffects(lethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 30 } }] }], incoming)
     expect(lethal.player.health).toBe(0)
     expect(lethal.combat.enemyHp).toBe(100)
 
@@ -544,7 +544,7 @@ describe('equipment combat providers', () => {
     nonlethal.player.health = 100
     nonlethal.combat.enemyMaxHp = 100
     nonlethal.combat.enemyHp = 100
-    executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 30 } }] }], incoming)
+    executeCombatEffects(nonlethal, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 30 } }] }], incoming)
     expect(nonlethal.player.health).toBe(70)
     expect(nonlethal.combat.enemyHp).toBeLessThan(100)
   })
@@ -561,7 +561,7 @@ describe('equipment combat providers', () => {
     state.combat.enemyBarrier = 0
     const initialPattern = state.combat.enemyActionPatternId
     const initialLogLength = state.combat.log.length
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 200 } }] }], { actor: 'player', kind: 'spell', sourceId: 'lethal-threshold', tags: ['spell'] })
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 200 } }] }], { actor: 'player', kind: 'spell', sourceId: 'lethal-threshold', tags: ['spell'] })
     expect(state.combat.enemyHp).toBe(0)
     expect(state.combat.enemyBarrier).toBe(0)
     expect(state.combat.enemyActionPatternId).toBe(initialPattern)
@@ -576,7 +576,7 @@ describe('equipment combat providers', () => {
     state.combat.enemyMaxHp = 5
     const events: CombatEvent[] = []
     executeCombatEffects(state, [
-      { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
+      { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] },
       { type: 'apply-status', target: 'opponent', statusId: 'burning', statusSourceKey: 'post-lethal-burning' },
       { type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 20 } },
     ], { actor: 'player', kind: 'spell', sourceId: 'post-lethal-chain', tags: ['spell', 'direct'] }, undefined, { push: (event) => events.push(event) })
@@ -601,7 +601,7 @@ describe('equipment combat providers', () => {
       nextCombatRandom(expectedRng)
       const events: CombatEvent[] = []
       const sink = { push: (event: CombatEvent) => { events.push(event); combatTelemetrySink.push(event) } }
-      const hits: CombatEffect[] = [1, 2, 3].map(() => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }))
+      const hits: CombatEffect[] = [1, 2, 3].map(() => ({ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }))
       executeCombatEffects(state, hits, { actor: 'player', kind: 'spell', sourceId: 'three-hit-spell', tags: ['spell', 'direct'] }, undefined, sink)
       const damageEvents = events.filter((event) => event.sourceKind === 'spell' && event.category === 'spell')
       expect(damageEvents).toHaveLength(1)

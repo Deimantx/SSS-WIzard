@@ -609,7 +609,32 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
       const instanceKey = typeof entry.instanceKey === 'string' && entry.instanceKey.trim()
         ? entry.instanceKey
         : definition.applicationPolicy === 'per-source' ? getStatusApplicationSourceKey(source) : `single:${statusId}`
-      const periodicEffects = normalizePersistedPeriodicEffects(entry.periodicEffects, statusId, statusValidationContext)
+      // Old active DoTs stored a placeholder element. Preserve their source meaning at the save boundary:
+      // use the saved enemy's authored affinity, then the saved school, then Arcane for provenance-free saves.
+      const legacyPeriodicElement = source.actor === 'enemy' && source.sourceMonsterId && MONSTERS[source.sourceMonsterId]
+        ? MONSTERS[source.sourceMonsterId].primaryAffinity
+        : source.originSchool ?? source.school ?? 'arcane'
+      const rawPeriodicEffects = Array.isArray(entry.periodicEffects)
+        ? entry.periodicEffects.map((effect) => {
+          if (!isRecord(effect)) return effect
+          const migrated = { ...effect }
+          if (migrated.damageType === 'physical') migrated.damageType = legacyPeriodicElement
+          if (Array.isArray(migrated.components)) migrated.components = migrated.components.map((component) => {
+            if (!isRecord(component) || component.damageType !== 'physical') return component
+            return { ...component, damageType: legacyPeriodicElement }
+          })
+          if (Array.isArray(migrated.tags) && migrated.tags.includes('physical')) migrated.tags = [...new Set([...migrated.tags.filter((tag) => tag !== 'physical'), legacyPeriodicElement])]
+          return migrated
+        })
+        : entry.periodicEffects
+      const normalizedPeriodicEffects = normalizePersistedPeriodicEffects(rawPeriodicEffects, statusId, statusValidationContext)
+      const sourceElementTemplateDamage = definition.periodic?.sourceElementDamage
+      const periodicEffects = normalizedPeriodicEffects ?? (sourceElementTemplateDamage === undefined ? undefined : [{
+        type: 'deal-damage' as const,
+        target: 'self' as const,
+        components: [{ damageType: legacyPeriodicElement, magnitude: { type: 'flat' as const, value: sourceElementTemplateDamage } }],
+        tags: ['dot' as const, legacyPeriodicElement],
+      }])
       const modifierOverrides = isRecord(entry.modifierOverrides) && hasValidStatusModifierOverrides(statusId, entry.modifierOverrides, statusValidationContext)
         ? Object.fromEntries(Object.entries(entry.modifierOverrides))
         : undefined
@@ -836,7 +861,7 @@ const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>
   Object.values(MONSTERS).forEach((monster) => {
     const defeats = Math.max(migrated.progress.lifetimeKillsByMonster[monster.id] ?? 0, migrated.progress.bossKillsByBoss[monster.id] ?? 0)
     if (defeats < 1) return
-    monster.loot.filter((drop) => drop.chance === 1).forEach((drop) => discovered.add(drop.itemId))
+    monster.loot.filter((drop) => drop.baseChance === 1).forEach((drop) => discovered.add(drop.itemId))
   })
   migrated.progress.discoveredItems = itemIds.filter((itemId) => discovered.has(itemId as ItemId)) as ItemId[]
 }

@@ -71,23 +71,10 @@ const MAX_EFFECT_DEPTH = 20;
 const finiteDamage = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 const ELEMENTAL_TUTORIAL_COMBAT_LOCATIONS = new Set(['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin']);
 
-/** Resolves legacy enemy-authored Physical damage into one effective combat identity. */
-export const resolveEffectiveDamageType = (authoredDamageType: DamageType, source: CombatSource): DamageType => {
-  if (authoredDamageType !== 'physical' || source.actor !== 'enemy') return authoredDamageType;
-  const root = getRootCombatSourceProvenance(source);
-  const monsterId = source.sourceMonsterId ?? root.originMonsterId ?? root.sourceMonsterId;
-  const monster = monsterId ? MONSTERS[monsterId] : undefined;
-  return monster ? getMonsterPrimaryAffinity(monster) : authoredDamageType;
-};
-
-const resolveDamageTags = (tags: CombatTag[], authoredDamageType: DamageType, effectiveDamageType: DamageType): CombatTag[] =>
-  authoredDamageType === 'physical' && authoredDamageType !== effectiveDamageType
-    ? [...new Set([...tags.filter((tag) => tag !== 'physical'), effectiveDamageType])]
-    : tags;
+const resolveDamageTags = (tags: CombatTag[]): CombatTag[] => tags;
 
 export const resolveEffectiveDamageTags = (authoredTags: CombatTag[], effectiveDamageTypes: readonly DamageType[]): CombatTag[] => {
-  const tags = authoredTags.filter((tag) => tag !== 'physical' || effectiveDamageTypes.includes('physical'))
-  return [...new Set([...tags, ...effectiveDamageTypes.filter((type) => type !== 'physical')])]
+  return [...new Set([...authoredTags, ...effectiveDamageTypes])]
 }
 
 const targetActor = (
@@ -253,8 +240,8 @@ const calculateCombatDamageWithRolls = (
   rolls: DamageRolls = {},
   includeBarrier = true,
 ): DamageBreakdown => {
-  const effectiveDamageType = resolveEffectiveDamageType(damageType, source);
-  const effectiveTags = resolveDamageTags(tags, damageType, effectiveDamageType);
+  const effectiveDamageType = damageType;
+  const effectiveTags = resolveDamageTags(tags);
   const enemyDamageMultiplier = source.actor === 'enemy' ? getActiveEncounterWorldTierDefinition(state).enemyDamageMultiplier : 1
   const scaledRaw = raw * enemyDamageMultiplier
   const amount = Number.isFinite(scaledRaw) ? Math.max(0, scaledRaw) : 0;
@@ -437,7 +424,7 @@ const applyDamage = (
   if (!isCombatActorAlive(state, target)) return 0;
   const effectiveComponents = components.map((component) => ({
     ...component,
-    damageType: resolveEffectiveDamageType(component.damageType, source),
+    damageType: component.damageType,
   }));
   const rolls: DamageRolls = {};
   if (isDirectHit(tags)) {
@@ -458,7 +445,7 @@ const applyDamage = (
       component.damageType,
       source,
       target,
-      resolveDamageTags(tags, components[index]?.damageType ?? component.damageType, component.damageType),
+        resolveDamageTags(tags),
       rolls,
       false,
     ),

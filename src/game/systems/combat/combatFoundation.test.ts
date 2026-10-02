@@ -423,10 +423,10 @@ describe('post-implementation combat audit regressions', () => {
     try {
       const melee = stateWithEnemy()
       applyStatus(melee, 'player', 'quickening', playerSpell)
-      executeCombatEffects(melee, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'melee', tags: ['weapon', 'melee'] })
+      executeCombatEffects(melee, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'melee', tags: ['weapon', 'melee'] })
       const ranged = stateWithEnemy()
       applyStatus(ranged, 'player', 'quickening', playerSpell)
-      executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
+      executeCombatEffects(ranged, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 10 } }], tags: ['direct'] }], { actor: 'player', kind: 'weapon', sourceId: 'ranged', tags: ['weapon', 'ranged'] })
       expect(melee.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * 1.5 * (1 - getDefenseReductionFromRating(8)))
       expect(ranged.combat.enemyHp).toBeCloseTo(200 - 10 * 1.5 * (1 - getDefenseReductionFromRating(8)))
     } finally {

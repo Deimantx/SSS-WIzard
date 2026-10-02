@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { combatV2: true, locationId: 'hall-of-unbound-names', id: 'name-eater', name: 'Name-Eater', subtitle: 'A mouth in the archive that consumes identity', hp: 4000, damage: 122, defense: 52, targetPower: 9800, primaryAffinity: 'arcane', basicAttackElement: 'arcane', resonanceYield: { air: 36, water: 24 }, specials: [{ id: 'consume-name', name: 'Consume Name', damage: [{ type: 'arcane', coefficient: 1.25 }], status: { id: 'silenced' } }, { id: 'hunger', name: 'Hunger', status: { id: 'cursed' } }] },

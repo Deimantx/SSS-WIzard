@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { action, basic, type MonsterDefinition } from '../../monsterTypes'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
+import type { MonsterId } from '../../../types'
+import { action, basic, type MonsterDefinition } from '../monsterTypes'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
 
 const specs: CombatMonsterSpec[] = [
   {

@@ -198,6 +198,24 @@ describe('canonical simulation quantum parity', () => {
     expect(snapshot(coarse)).toEqual(snapshot(fine))
   })
 
+  it('keeps source-element periodic damage identical for live and banked callers', () => {
+    const fine = createCombatTestState()
+    fine.combat.active = true
+    fine.combat.locationId = 'abandoned-catacombs'
+    fine.player.maxHealth = fine.player.health = 100_000
+    expect(spawnEnemy(fine, 'thornling')).toBe(true)
+    const source = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'source-element-parity', sourceMonsterId: 'thornling' as const, tags: ['special' as const, 'earth' as const] }
+    const applied = applyStatus(fine, 'player', 'bleeding', source, { durationMs: 8_000 })
+    expect(applied?.periodicEffects?.[0]).toMatchObject({ components: [{ damageType: 'earth' }] })
+    const coarse = cloneState(fine)
+
+    advanceFine(fine, 8_000)
+    for (let elapsed = 0; elapsed < 8_000; elapsed += 1_000) advanceGameState(coarse, 1_000, { mode: 'banked' })
+
+    expect(snapshot(coarse)).toEqual(snapshot(fine))
+    expect(fine.player.health).toBeLessThan(100_000)
+  })
+
   it('keeps source-scaled direct damage at a non-quantum action boundary identical for fine and coarse callers', () => {
     const makeFixture = () => {
       const state = createCombatTestState()
@@ -454,8 +472,8 @@ describe('canonical simulation quantum parity', () => {
     try {
       const fine = makeFixture()
       const coarse = cloneState(fine)
-      const playerHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['direct' as const] }
-      const enemyHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['direct' as const] }
+      const playerHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'arcane' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['direct' as const] }
+      const enemyHit = { type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'arcane' as const, magnitude: { type: 'flat' as const, value: 1 } }], tags: ['direct' as const] }
       executeCombatEffects(fine, [enemyHit], { actor: 'enemy', kind: 'basic-attack', sourceId: 'parity-enemy-hit' })
       executeCombatEffects(fine, [playerHit], { actor: 'player', kind: 'spell', sourceId: 'parity-player-hit', tags: ['spell', 'direct'] })
       executeCombatEffects(coarse, [enemyHit], { actor: 'enemy', kind: 'basic-attack', sourceId: 'parity-enemy-hit' })
@@ -485,7 +503,7 @@ describe('canonical simulation quantum parity', () => {
     }
     const fine = makeFixture()
     const coarse = cloneState(fine)
-    const hits = [1, 2, 3].map(() => ({ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'physical' as const, magnitude: { type: 'flat' as const, value: 10 } }], tags: ['direct' as const] }))
+    const hits = [1, 2, 3].map(() => ({ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: 'arcane' as const, magnitude: { type: 'flat' as const, value: 10 } }], tags: ['direct' as const] }))
     const source = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'parity-three-hit', tags: ['spell' as const, 'direct' as const] }
 
     executeCombatEffects(fine, hits, source)

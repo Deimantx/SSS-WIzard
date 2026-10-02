@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { combatV2: true, locationId: 'vault-of-the-black-sigil', id: 'sigil-guardian', name: 'Sigil Guardian', subtitle: 'A vault sentinel covered in self-renewing wards', hp: 3500, damage: 120, defense: 78, targetPower: 11100, primaryAffinity: 'earth', basicAttackElement: 'earth', resonanceYield: { earth: 44, fire: 20 }, specials: [{ id: 'sigil-ward', name: 'Sigil Ward', barrier: .1 }, { id: 'guardian-crush', name: 'Guardian Crush', damage: [{ type: 'earth', coefficient: 1.5 }] }] },

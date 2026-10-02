@@ -61,7 +61,6 @@ const PERCENT_MODIFIERS = new Set<ModifierKey>([
 ])
 
 const DAMAGE_TYPE_LABELS: Record<DamageType, string> = {
-  physical: 'Physical',
   arcane: 'Arcane',
   fire: 'Fire',
   water: 'Water',

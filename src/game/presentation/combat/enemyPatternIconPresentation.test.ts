@@ -23,7 +23,7 @@ describe("classifyEnemyActionPatternIcon", () => {
   it("classifies universal effect categories without content IDs", () => {
     expect(
       classifyEnemyActionPatternIcon(
-        action([flatDirectDamage("physical", 10)]),
+        action([flatDirectDamage("arcane", 10)]),
       ),
     ).toBe("direct-damage");
     expect(
@@ -63,7 +63,7 @@ describe("classifyEnemyActionPatternIcon", () => {
     ).toBe("heal");
     expect(
       classifyEnemyActionPatternIcon(
-        action([flatDirectDamage("physical", 10), delayCurrentAction(500)]),
+        action([flatDirectDamage("arcane", 10), delayCurrentAction(500)]),
       ),
     ).toBe("direct-damage");
     expect(

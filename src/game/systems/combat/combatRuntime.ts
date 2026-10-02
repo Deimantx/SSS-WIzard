@@ -23,9 +23,10 @@ import { activateSelectedSpellPresetForBattle, clearCombatSpellRuntime, getComba
 import { resetArcaneCoreEncounterRuntime } from '../arcane-core/arcaneCoreRuntime'
 import { grantEnemyResonanceReward } from '../resonance/resonanceRuntime'
 import { formatResonanceBundle } from '../../presentation/resonance/resonancePresentation'
-import { getWorldTierDefinition, resolveWorldTierArcanePointReward, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
+import { getWorldTierDefinition, resolveWorldTierEnemyProfile, unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
 import { resolveBossThreatRequirement, resolveThreatGainForKill } from './combatThreat'
 import { resolveCrystalCacheDrop } from '../crystals/crystalRuntime'
+import { resolveCombatLootContext, resolveLootQuantity } from '../loot/universalLootRuntime'
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { reconcileChronicleProgress } from '../chronicles/chronicleRuntime'
 import { ensureGuildCommissionChoices } from '../guild/guildCommissions'
@@ -243,28 +244,34 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const enemyId = state.combat.enemyId
   if (!enemyId) return
   const monster = MONSTERS[enemyId]
+  const encounterWorldTier = state.combat.enemyWorldTier ?? getWorldTierDefinition(state.worldTier.current).id
+  const hunterBonuses = getHunterHarvestBonuses(state, enemyId, state.combat.locationId)
+  const guildBonuses = getGuildProgressionBonuses(state)
+  const lootContext = {
+    ...resolveCombatLootContext(enemyId, encounterWorldTier, state.combat.locationId),
+    guildBonuses,
+    hunterBonuses,
+  }
   const undiscoveredItems = new Set(state.progress.discoveredItems)
   const resolvedDrops: CombatLootDrop[] = []
   const resolvedSigils: SigilLootResolution[] = []
-  const hunterBonuses = getHunterHarvestBonuses(state, enemyId, state.combat.locationId)
   const drops = resolveMonsterLoot(state, enemyId, (itemId, quantity) => { onItemAcquired?.(itemId, quantity); report?.recordLoot(itemId, quantity); resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) }); uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'loot-drop', itemId, amount: quantity }) }, () => nextCombatRandom(state), (sigilLoot) => {
     resolvedSigils.push(sigilLoot)
     report?.recordSigil(sigilLoot)
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'sigil-loot', sourceId: 'sigil-loot', amount: 1, sigilLoot })
     pushNotification(state, `Sigil found: T${sigilLoot.tier} ${sigilLoot.quality} ${sigilLoot.setId}`, 'success', { key: 'sigil-loot', cooldownMs: 900 })
-  }, hunterBonuses)
-  const encounterWorldTier = state.combat.enemyWorldTier ?? getWorldTierDefinition(state.worldTier.current).id
-  if (resolveCrystalCacheDrop(state, enemyId, encounterWorldTier, () => nextCombatRandom(state))) {
+  }, hunterBonuses, lootContext)
+  const crystalCacheQuantity = resolveCrystalCacheDrop(state, enemyId, encounterWorldTier, () => nextCombatRandom(state), lootContext)
+  if (crystalCacheQuantity > 0) {
     const itemId: ItemId = 'tier-1-crystal-cache'
-    const quantity = 1
+    const quantity = crystalCacheQuantity
     onItemAcquired?.(itemId, quantity)
     report?.recordLoot(itemId, quantity)
     resolvedDrops.push({ itemId, quantity, isNewDiscovery: !undiscoveredItems.has(itemId) })
     uiEvents?.push({ source: { kind: 'system' }, sourceKind: 'system', locationId: state.combat.locationId ?? undefined, target: 'enemy', targetMonsterId: enemyId, category: 'loot', sourceId: 'crystal-cache-drop', itemId, amount: quantity })
   }
   if (resolvedDrops.length || resolvedSigils.length) onLootResolved?.(state, enemyId, resolvedDrops, resolvedSigils)
-  const guildBonuses = getGuildProgressionBonuses(state)
-  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier, guildBonuses.combatResonanceMultiplier * hunterBonuses.resonanceMultiplier)
+  const resonanceReward = grantEnemyResonanceReward(state.resonance, enemyId, encounterWorldTier, guildBonuses.combatResonanceMultiplier * hunterBonuses.resonanceMultiplier, lootContext)
   const resonanceGained = resonanceReward.grantedYield
   report?.recordResonance(resonanceGained)
   const resonanceText = formatResonanceBundle(resonanceGained)
@@ -289,14 +296,14 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
   const location = getCombatLocationById(dungeon.id)
   const sequenceDungeon = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.length)
   const arcaneReward = getArcaneCoreReward(state.combat.locationId)
-  const bossDefeated = isBossMonster(monster)
+  const bossDefeated = lootContext.isBoss
   const tutorialCombatLocationId = state.combat.locationId
   if (tutorialCombatLocationId && ELEMENTAL_TUTORIAL_COMBAT_LOCATIONS.has(tutorialCombatLocationId)) {
     if (bossDefeated) state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     else state.progress.chronicle.eventFlags['elemental-tutorial-zones-opened'] = true
   }
   const baseArcanePoints = arcaneReward ? (bossDefeated ? arcaneReward.bossKillPoints : arcaneReward.normalKillPoints) : 0
-  const arcanePoints = Math.max(0, Math.round(resolveWorldTierArcanePointReward(baseArcanePoints, encounterWorldTier) * guildBonuses.combatArcanePointMultiplier))
+  const arcanePoints = baseArcanePoints > 0 ? resolveLootQuantity(baseArcanePoints, lootContext, guildBonuses.combatArcanePointMultiplier) : 0
   if (arcanePoints > 0) {
     const pointsResult = grantArcanePoints(state.arcaneCore, arcanePoints)
     state.arcaneCore = pointsResult.state

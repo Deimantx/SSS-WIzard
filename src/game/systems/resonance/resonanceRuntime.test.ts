@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MONSTERS } from '../../content/monsters'
 import { RESONANCE_TYPES } from '../../content/resonance/resonance'
 import { createEmptyResonanceState, grantResonance, grantResonanceBundle, normalizeResonanceState, resolveEnemyResonanceReward, sanitizeResonanceAmount, setResonance } from './resonanceRuntime'
+import { resolveCombatLootContext } from '../loot/universalLootRuntime'
 
 describe('Resonance runtime', () => {
   it('creates exactly the four Phase 1 balances', () => {
@@ -28,24 +29,32 @@ describe('Resonance runtime', () => {
     expect(state).toEqual({ fire: 5, water: 0, earth: 0, air: 7 })
   })
 
-  it('resolves authored and missing enemy profiles through the WT1 seam', () => {
-    expect(resolveEnemyResonanceReward('forest-wisp')).toMatchObject({ enemyId: 'forest-wisp', worldTier: 1, worldTierRewardMultiplier: 1, globalRewardMultiplier: 0.2, rewardMultiplier: 0.2, baseYield: { air: 10 }, finalYield: { air: 2 } })
-    expect(resolveEnemyResonanceReward('cavefang-wolf')).toMatchObject({ worldTier: 1, rewardMultiplier: 0.2, finalYield: {} })
+  it('resolves authored bundles with the universal Power-driven tier context', () => {
+    const wisp = resolveEnemyResonanceReward('forest-wisp')
+    expect(wisp).toMatchObject({ enemyId: 'forest-wisp', worldTier: 1, lootQuantityMultiplier: 1.15, bossQuantityMultiplier: 1, rewardMultiplier: 1.15, baseYield: { air: 10 }, finalYield: { air: 12 } })
+    expect(wisp.lootTier).toBe(resolveCombatLootContext('forest-wisp', 1).lootTier.tier)
+    const unprofiled = resolveEnemyResonanceReward('cavefang-wolf')
+    expect(unprofiled).toMatchObject({ worldTier: 1, finalYield: {} })
+    expect(unprofiled.rewardMultiplier).toBe(resolveCombatLootContext('cavefang-wolf', 1).lootTier.quantityMultiplier)
   })
 
-  it('combines World Tier and global scaling before sanitizing quantities', () => {
+  it('scales the authored bundle from effective encounter Power and boss status', () => {
     const wt1 = resolveEnemyResonanceReward('forest-wisp', 1)
     const wt5 = resolveEnemyResonanceReward('forest-wisp', 5)
-    expect(wt1.rewardMultiplier).toBe(0.2)
-    expect(wt5.rewardMultiplier).toBe(1.8)
-    expect(wt5.finalYield).toEqual({ air: 18 })
+    expect(wt1.rewardMultiplier).toBe(resolveCombatLootContext('forest-wisp', 1).lootTier.quantityMultiplier)
+    expect(wt5.rewardMultiplier).toBe(resolveCombatLootContext('forest-wisp', 5).lootTier.quantityMultiplier)
+    expect(wt5.finalYield.air).toBe(Math.round(10 * wt5.rewardMultiplier))
+    const boss = resolveEnemyResonanceReward('forest-heart', 1)
+    expect(boss.bossQuantityMultiplier).toBe(5)
+    expect(Object.values(boss.finalYield).some((value) => value > 0)).toBe(true)
   })
 
   it('preserves small yields when combined scaling resolves to exactly one', () => {
     const original = MONSTERS['forest-wisp'].resonanceYield
     MONSTERS['forest-wisp'].resonanceYield = { air: 7 }
     try {
-      expect(resolveEnemyResonanceReward('forest-wisp', 5).finalYield).toEqual({ air: 12 })
+      const resolved = resolveEnemyResonanceReward('forest-wisp', 5)
+      expect(resolved.finalYield).toEqual({ air: Math.round(7 * resolved.rewardMultiplier) })
     } finally {
       MONSTERS['forest-wisp'].resonanceYield = original
     }

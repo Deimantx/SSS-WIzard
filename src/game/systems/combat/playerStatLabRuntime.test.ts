@@ -116,30 +116,33 @@ describe('Player Stat Lab runtime coverage', () => {
     expect(getDefense(state, 'player')).toBeCloseTo((BALANCE.player.baseDefense + 20) * 1.5)
     expect(getCombatModifiers(state, 'player', 'damage-taken-percent')).toBeCloseTo(-0.2)
 
-    const types = ['physical', 'arcane', 'fire', 'water', 'earth', 'air'] as const
+    const types = ['arcane', 'fire', 'water', 'earth', 'air'] as const
     types.forEach((type, index) => {
       state.debug.playerStats.resistanceByType[type] = (index + 1) / 100
       expect(getResistance(state, 'player', type)).toBeCloseTo((index + 1) / 100)
     })
-    expect(getResistance(state, 'player', 'fire')).not.toBe(getResistance(state, 'player', 'physical'))
+    expect(getResistance(state, 'player', 'fire')).not.toBe(getResistance(state, 'player', 'arcane'))
 
     const baseIncoming = createCombatTestState()
+    const baseArcaneIncoming = createCombatTestState()
     const fireResistIncoming = createCombatTestState()
-    const physicalResistIncoming = createCombatTestState()
+    const arcaneResistIncoming = createCombatTestState()
     fireResistIncoming.debug.playerStats.resistanceByType.fire = 0.25
-    physicalResistIncoming.debug.playerStats.resistanceByType.physical = 0.25
-    const incoming = (target: 'physical' | 'fire') => [{ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: target, magnitude: { type: 'flat' as const, value: 20 } }] }]
-    ;[baseIncoming, fireResistIncoming, physicalResistIncoming].forEach((target) => { target.combat.active = true; target.combat.locationId = 'whispering-woods'; spawnEnemy(target, 'forest-wisp') })
+    arcaneResistIncoming.debug.playerStats.resistanceByType.arcane = 0.25
+    const incoming = (target: 'arcane' | 'fire') => [{ type: 'deal-damage' as const, target: 'opponent' as const, components: [{ damageType: target, magnitude: { type: 'flat' as const, value: 20 } }] }]
+    ;[baseIncoming, baseArcaneIncoming, fireResistIncoming, arcaneResistIncoming].forEach((target) => { target.combat.active = true; target.combat.locationId = 'whispering-woods'; spawnEnemy(target, 'forest-wisp') })
     const sourceFor = (target: ReturnType<typeof createCombatTestState>): CombatSource => ({ actor: 'enemy', kind: 'action', sourceId: 'lab-incoming', sourceMonsterId: target.combat.enemyId ?? undefined, sourceInstanceKey: target.combat.enemyInstanceKey ?? undefined, school: 'fire', tags: ['special'] })
     const beforeFire = fireResistIncoming.player.health
-    const beforePhysical = physicalResistIncoming.player.health
+    const beforeArcane = arcaneResistIncoming.player.health
+    const beforeArcaneBase = baseArcaneIncoming.player.health
     executeCombatEffects(baseIncoming, incoming('fire'), sourceFor(baseIncoming))
     const baseFireLoss = baseIncoming.player.maxHealth - baseIncoming.player.health
     executeCombatEffects(fireResistIncoming, incoming('fire'), sourceFor(fireResistIncoming))
-    executeCombatEffects(baseIncoming, incoming('physical'), sourceFor(baseIncoming))
-    executeCombatEffects(physicalResistIncoming, incoming('fire'), sourceFor(physicalResistIncoming))
+    executeCombatEffects(baseArcaneIncoming, incoming('arcane'), sourceFor(baseArcaneIncoming))
+    executeCombatEffects(arcaneResistIncoming, incoming('arcane'), sourceFor(arcaneResistIncoming))
+    const baseArcaneLoss = beforeArcaneBase - baseArcaneIncoming.player.health
     expect(beforeFire - fireResistIncoming.player.health).toBeLessThan(baseFireLoss)
-    expect(beforePhysical - physicalResistIncoming.player.health).toBeCloseTo(baseFireLoss)
+    expect(beforeArcane - arcaneResistIncoming.player.health).toBeLessThan(baseArcaneLoss)
 
     const takenBaseline = createCombatTestState()
     const takenReduced = createCombatTestState()

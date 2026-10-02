@@ -5,7 +5,7 @@ import { getCombatModifiers, getResistance } from '../game/systems/combat/modifi
 import { createDefaultPlayerStatOverrides } from '../store/actions/debugActions'
 import { recalculateDerivedStats } from '../game/engine'
 
-export const PLAYER_STAT_LAB_DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
+export const PLAYER_STAT_LAB_DAMAGE_TYPES: readonly DamageType[] = ['arcane', 'fire', 'water', 'earth', 'air']
 
 export const getDeveloperPlayerStatLab = (state: GameState) => {
   const buildState = { ...state, player: { ...state.player }, debug: { ...state.debug, playerStats: createDefaultPlayerStatOverrides() } }

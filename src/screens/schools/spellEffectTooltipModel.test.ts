@@ -92,4 +92,17 @@ describe('spell effect tooltip models', () => {
       SPELLS.ignite.effects[1] = original
     }
   })
+
+  it('previews reusable source-element periodic damage from the applying Spell school', () => {
+    const original = SPELLS.ignite.effects[1]
+    SPELLS.ignite.effects[1] = { type: 'apply-status', target: 'opponent', statusId: 'poisoned', durationMs: 8_000 }
+    try {
+      const model = buildSpellEffectTooltipModel(createInitialState(), 'ignite', 1)
+      expect(row(model, 'Damage Per Tick')?.value).toBe('5 Fire damage (source element)')
+      expect(row(model, 'Total Damage')?.value).toBe('20 Fire damage')
+      expect(row(model, 'Tick Interval')?.value).toBe('2.0s')
+    } finally {
+      SPELLS.ignite.effects[1] = original
+    }
+  })
 })

@@ -1,7 +1,7 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import { action, basic } from '../../monsterTypes'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import { action, basic } from '../monsterTypes'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { combatV2: true, locationId: 'black-gate', id: 'gatebound-remnant', name: 'Gatebound Remnant', subtitle: 'A fragment of a guardian still defending the threshold', hp: 6000, damage: 140, defense: 78, targetPower: 14000, primaryAffinity: 'earth', basicAttackElement: 'earth', specials: [{ id: 'gate-cleave', name: 'Gate Cleave', damage: [{ type: 'earth', coefficient: 1.6 }] }, { id: 'threshold-stance', name: 'Threshold Stance', status: { id: 'fortified', target: 'self' } }] },

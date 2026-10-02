@@ -52,7 +52,7 @@ export function EnemyPatternTrack({
     const action = step.type === 'action' ? monster?.actions[step.actionId] : undefined
     const presentation = action
       ? buildCombatActionPresentation(action, { actor: 'enemy', kind: 'action', sourceMonsterId: monster?.id }, { monster: monster ?? undefined })
-      : buildBasicAttackPresentation(monster?.basicAttackDamage ?? 0, monster?.basicAttackTimeMs ?? 0)
+      : buildBasicAttackPresentation(monster?.basicAttackDamage ?? 0, monster?.basicAttackTimeMs ?? 0, monster?.basicAttackElement)
     return { step, action, presentation, kind: classifyEnemyPatternStep(step, action) }
   }), [monster, patternId, steps])
 

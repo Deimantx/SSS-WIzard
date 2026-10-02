@@ -39,7 +39,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = Object.fromEntries(
   }),
 ) as Record<ItemId, ItemDefinition>
 
-const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
+const DAMAGE_TYPES: readonly DamageType[] = ['arcane', 'fire', 'water', 'earth', 'air']
 const EQUIPMENT_NUMERIC_FIELDS: readonly (keyof EquipmentStats)[] = ['spellPower', 'maxHealth', 'healthRegen', 'maxMana', 'manaRegen', 'defense', 'critChance', 'critDamage', 'cooldownRecoveryPct', 'healingDonePct', 'barrierPowerPct', 'damageOverTimePct', 'statusDurationPct', 'manaCostReductionPct']
 const validateEquipmentStats = (itemId: string, stats: EquipmentStats | undefined, errors: string[]) => {
   if (stats === undefined) return

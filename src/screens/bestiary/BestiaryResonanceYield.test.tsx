@@ -4,7 +4,7 @@ import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import type { WorldTierId } from '../../game/types'
-import { resolvePowerScaledCurrencyRewardRange } from '../../game/systems/loot/powerScaledCurrencyRewards'
+import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combatCurrencyRewards'
 import { formatDropQuantity } from '../../game/systems/bestiary/bestiarySelectors'
 import { BestiaryInspector } from './BestiaryInspector'
 
@@ -35,16 +35,16 @@ describe('BestiaryResonanceYield', () => {
 
   it('shows guaranteed dynamic Essence ranges and updates them with World Tier', () => {
     renderInspector('forest-wisp', 1)
-    const wt1Life = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 1)
-    const wt1Artifact = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'artifact-essence', 1)
+    const wt1Life = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1)
+    const wt1Artifact = resolveCombatCurrencyRewardRange('forest-wisp', 'artifact-essence', 1)
     const wt1Loot = document.querySelector('.bestiary-loot-list') as HTMLElement
     expect(wt1Loot.textContent).toContain(formatDropQuantity(wt1Life.finalMin, wt1Life.finalMax))
     expect(wt1Loot.textContent).toContain(formatDropQuantity(wt1Artifact.finalMin, wt1Artifact.finalMax))
     expect(wt1Loot.textContent).toContain('GUARANTEED')
 
     act(() => { useGameStore.getState().setWorldTier(2) })
-    const wt2Life = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 2)
-    const wt2Artifact = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'artifact-essence', 2)
+    const wt2Life = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 2)
+    const wt2Artifact = resolveCombatCurrencyRewardRange('forest-wisp', 'artifact-essence', 2)
     const wt2Loot = document.querySelector('.bestiary-loot-list') as HTMLElement
     expect(wt2Loot.textContent).toContain(formatDropQuantity(wt2Life.finalMin, wt2Life.finalMax))
     expect(wt2Loot.textContent).toContain(formatDropQuantity(wt2Artifact.finalMin, wt2Artifact.finalMax))

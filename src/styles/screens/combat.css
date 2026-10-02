@@ -1125,7 +1125,6 @@
 .damage-earth { color: var(--semantic-damage-earth); }
 .damage-air { color: var(--semantic-damage-air); }
 .damage-arcane { color: var(--semantic-damage-arcane); }
-.damage-physical { color: var(--semantic-damage-physical); }
 /* Responsive */
 @container (max-width: 940px) {
   .combat-stage-grid {
@@ -1360,7 +1359,6 @@
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
-.enemy-resistance-row span.damage-physical { color: var(--semantic-damage-physical); }
 .enemy-resistance-row span.damage-arcane { color: var(--semantic-damage-arcane); }
 .enemy-resistance-row span.damage-fire { color: var(--semantic-damage-fire); }
 .enemy-resistance-row span.damage-water { color: var(--semantic-damage-water); }
@@ -1470,7 +1468,7 @@
   border-left: 2px solid transparent;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
-.enemy-intel-action.effect-tone-damage { border-left-color: var(--semantic-damage-physical); }
+.enemy-intel-action.effect-tone-damage { border-left-color: var(--semantic-damage-arcane); }
 .enemy-intel-action.effect-tone-heal { border-left-color: var(--ui-success); }
 .enemy-intel-action.effect-tone-barrier { border-left-color: var(--semantic-barrier); }
 .enemy-intel-action.effect-tone-control { border-left-color: var(--semantic-control); }
@@ -1534,7 +1532,7 @@
 }
 .enemy-intel-action-effect strong { color: var(--ui-text-soft); font-weight: 600; }
 .enemy-intel-action-effect small { flex-basis: 100%; color: var(--ui-text-muted); font-size: 8px; }
-.enemy-intel-action-effect.effect-tone-damage { color: var(--semantic-damage-physical); }
+.enemy-intel-action-effect.effect-tone-damage { color: var(--semantic-damage-arcane); }
 .enemy-intel-action-effect.effect-tone-damage.damage-fire { color: var(--semantic-damage-fire); }
 .enemy-intel-action-effect.effect-tone-damage.damage-water { color: var(--semantic-damage-water); }
 .enemy-intel-action-effect.effect-tone-damage.damage-earth { color: var(--semantic-damage-earth); }
@@ -1643,7 +1641,6 @@
 .combat-log-message strong { display: block; overflow: hidden; color: var(--ui-text-soft); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .combat-log-result { overflow: hidden; color: var(--ui-text-soft); font: var(--text-micro) var(--font-mono); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .combat-log-empty { display: grid; min-height: 100px; place-items: center; color: var(--ui-text-muted); font-size: 10px; }
-.log-damage-physical .combat-log-result { color: var(--semantic-damage-physical); }
 .log-damage-arcane .combat-log-result { color: var(--semantic-damage-arcane); }
 .log-damage-fire .combat-log-result { color: var(--semantic-damage-fire); }
 .log-damage-water .combat-log-result { color: var(--semantic-damage-water); }

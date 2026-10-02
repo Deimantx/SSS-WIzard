@@ -277,26 +277,26 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   "thorn-wound": {
     id: "thorn-wound",
     name: "Thorn Wound",
-    description: "Thorns deal physical damage over time.",
+    description: "Takes damage over time using the applying source's element.",
     classification: "debuff",
     tags: ["debuff", "dot"],
     defaultDurationMs: 6000,
     applicationPolicy: "per-source",
     stacking: { mode: "refresh" },
-    periodic: { intervalMs: 2000, effects: [damage("physical", 3)] },
+    periodic: { intervalMs: 2000, effects: [], sourceElementDamage: 3 },
     cleanseable: true,
     dispellable: false,
   },
   bleeding: {
     id: "bleeding",
     name: "Bleeding",
-    description: "Takes Physical damage over time.",
+    description: "Takes damage over time using the applying source's element.",
     classification: "debuff",
-    tags: ["debuff", "dot", "physical"],
+    tags: ["debuff", "dot"],
     defaultDurationMs: 8000,
     applicationPolicy: "per-source",
     stacking: { mode: "refresh" },
-    periodic: { intervalMs: 2000, effects: [damage("physical", 4)] },
+    periodic: { intervalMs: 2000, effects: [], sourceElementDamage: 4 },
     cleanseable: true,
     dispellable: false,
   },
@@ -438,13 +438,13 @@ export const STATUS_DEFINITIONS: Record<StatusId, StatusDefinition> = {
   poisoned: {
     id: "poisoned",
     name: "Poisoned",
-    description: "Takes Physical damage over time.",
+    description: "Takes damage over time using the applying source's element.",
     classification: "debuff",
-    tags: ["debuff", "dot", "physical"],
+    tags: ["debuff", "dot"],
     defaultDurationMs: 8000,
     applicationPolicy: "per-source",
     stacking: { mode: "refresh" },
-    periodic: { intervalMs: 2000, effects: [damage("physical", 5)] },
+    periodic: { intervalMs: 2000, effects: [], sourceElementDamage: 5 },
     cleanseable: true,
     dispellable: false,
   },
@@ -625,6 +625,8 @@ export const validateStatusDefinitions = () => {
       errors.push(`${definition.id}: periodic interval must be positive`);
     if (definition.periodic && !Number.isFinite(definition.periodic.intervalMs))
       errors.push(`${definition.id}: periodic interval must be finite`);
+    if (definition.periodic?.sourceElementDamage !== undefined && (!Number.isFinite(definition.periodic.sourceElementDamage) || definition.periodic.sourceElementDamage < 0))
+      errors.push(`${definition.id}: source-element periodic damage must be finite and non-negative`);
     if (
       definition.applicationPolicy !== undefined &&
       definition.applicationPolicy !== "single" &&

@@ -92,7 +92,7 @@ export function presentCombatLogEntry(entry: CombatLogEntry, newestTimestampMs =
     if (entry.blocked) result += ' · BLOCK'
     if (entry.barrierAbsorbed) result += ` · ${formatNumber(entry.barrierAbsorbed)} absorbed`
     if (entry.barrierAbsorbed && entry.healthDamage !== undefined && entry.healthDamage !== resolvedDamage) result += ` · ${formatNumber(entry.healthDamage)} HP`
-    semanticClass = `log-damage-${entry.damageType ?? 'physical'}`
+    semanticClass = `log-damage-${entry.damageType ?? 'arcane'}`
   } else if (entry.category === 'heal') {
     result = `+${formatNumber(entry.amount ?? 0)} HP`
     semanticClass = 'log-heal'

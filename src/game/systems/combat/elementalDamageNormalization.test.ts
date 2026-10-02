@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { executeCombatEffects, resolveEffectiveDamageTags, resolveEffectiveDamageType } from './effectResolver'
+import { executeCombatEffects, resolveEffectiveDamageTags } from './effectResolver'
 import { applyElementalWard } from './elementalWardRuntime'
 import type { CombatEvent, CombatEffect } from './combatTypes'
 
 describe('effective elemental damage normalization', () => {
   it('normalizes event tags without mutating semantic tags or root provenance', () => {
-    expect(resolveEffectiveDamageTags(['special', 'direct', 'melee', 'physical'], ['fire'])).toEqual(['special', 'direct', 'melee', 'fire'])
+    expect(resolveEffectiveDamageTags(['special', 'direct', 'melee', 'arcane'], ['fire'])).toEqual(['special', 'direct', 'melee', 'arcane', 'fire'])
     expect(resolveEffectiveDamageTags(['magic', 'direct'], ['arcane'])).toEqual(['magic', 'direct', 'arcane'])
-    expect(resolveEffectiveDamageTags(['special', 'physical', 'melee'], ['fire', 'arcane'])).toEqual(['special', 'melee', 'fire', 'arcane'])
-    expect(resolveEffectiveDamageTags(['dot', 'physical'], ['water'])).toEqual(['dot', 'water'])
-    expect(resolveEffectiveDamageTags(['direct', 'physical'], ['physical', 'fire'])).toEqual(['direct', 'physical', 'fire'])
+    expect(resolveEffectiveDamageTags(['special', 'arcane', 'melee'], ['fire', 'arcane'])).toEqual(['special', 'arcane', 'melee', 'fire'])
+    expect(resolveEffectiveDamageTags(['dot', 'arcane'], ['water'])).toEqual(['dot', 'arcane', 'water'])
+    expect(resolveEffectiveDamageTags(['direct', 'arcane'], ['arcane', 'fire'])).toEqual(['direct', 'arcane', 'fire'])
   })
 
-  it('normalizes a legacy enemy Physical hit to the source monster element in metadata and Ward math', () => {
+  it('keeps explicitly authored enemy elements in metadata and Ward math', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.locationId = 'emberfall-basin'
@@ -23,11 +23,10 @@ describe('effective elemental damage normalization', () => {
     state.player.health = 1000
     state.player.maxHealth = 1000
     state.combat.arcaneCoreRuntime.elapsedMs = 1000
-    expect(resolveEffectiveDamageType('physical', { actor: 'enemy', kind: 'action', sourceId: 'legacy-hit', sourceMonsterId: 'emberfall-flame-hound' })).toBe('fire')
     applyElementalWard(state, { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', durationMs: 22_000 })
     const events: CombatEvent[] = []
-    const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 100 } }], tags: ['direct', 'physical'] }
-    executeCombatEffects(state, [hit], { actor: 'enemy', kind: 'action', sourceId: 'legacy-hit', sourceMonsterId: 'emberfall-flame-hound', tags: ['direct', 'physical'] }, undefined, { push: (event) => events.push(event) })
+    const hit: CombatEffect = { type: 'deal-damage', target: 'opponent', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }], tags: ['direct', 'fire'] }
+    executeCombatEffects(state, [hit], { actor: 'enemy', kind: 'action', sourceId: 'authored-fire-hit', sourceMonsterId: 'emberfall-flame-hound', tags: ['direct', 'fire'] }, undefined, { push: (event) => events.push(event) })
     const event = events.find((entry) => entry.damageComponents)
     expect(event?.damageTypes).toEqual(['fire'])
     expect(event?.damageComponents?.[0]).toMatchObject({ damageType: 'fire', wardMultiplier: 0.85, wardPrevented: expect.any(Number) })

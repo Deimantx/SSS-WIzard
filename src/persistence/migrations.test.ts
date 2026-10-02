@@ -702,6 +702,20 @@ describe('save navigation migration', () => {
     expect(migrated.combat.playerStatuses[0].periodicEffects?.[0]).toEqual({ type: 'deal-damage', target: 'self', components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 5 } }] })
   })
 
+  it('migrates a suspended source-affinity periodic payload using saved Monster provenance', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({ ...initial, saveVersion: SAVE_VERSION, combat: {
+      ...initial.combat,
+      active: true,
+      locationId: 'whispering-woods',
+      enemyId: 'forest-wisp',
+      playerStatuses: [{ statusId: 'bleeding', holder: 'player', instanceKey: 'enemy:action:thorn-lash', source: { actor: 'enemy', kind: 'action', sourceId: 'thorn-lash', sourceMonsterId: 'thornling' }, remainingMs: 4_000, initialDurationMs: 8_000, stacks: 1, nextTickMs: 1_000, periodicEffects: [{ type: 'deal-damage', target: 'self', damageType: 'physical', magnitude: { type: 'flat', value: 4 }, tags: ['dot', 'physical'] }] }],
+    } } as any)
+    expect(migrated.combat.playerStatuses[0].periodicEffects?.[0]).toEqual({
+      type: 'deal-damage', target: 'self', components: [{ damageType: 'earth', magnitude: { type: 'flat', value: 4 } }], tags: ['dot', 'earth'],
+    })
+  })
+
   it('keeps durable progression while rebuilding a legacy V17 combat save', () => {
     const initial = createInitialState()
     const migrated = migrateSave({

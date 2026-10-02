@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { action, basic, type MonsterDefinition } from '../../monsterTypes'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
+import type { MonsterId } from '../../../types'
+import { action, basic, type MonsterDefinition } from '../monsterTypes'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'broken-meridian', id: 'meridian-warden', combatV2: true, primaryAffinity: 'earth', basicAttackElement: 'earth', targetPower: 8000, name: 'Meridian Warden', subtitle: 'A guardian holding four broken currents apart', hp: 3625, damage: 112, defense: 70, time: 2300, specials: [{ id: 'meridian-ward', name: 'Meridian Ward', barrier: 0.09 }, { id: 'current-strike', name: 'Current Strike', description: 'The Warden strikes with Earth and Arcane force for 1.5× Basic damage in total.', damage: [{ type: 'earth', coefficient: 0.9 }, { type: 'arcane', coefficient: 0.6 }] }] },

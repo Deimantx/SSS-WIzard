@@ -11,7 +11,7 @@ describe('FullCombatLogDrawer', () => {
 
   it('reuses the log font preference and filters by source', async () => {
     const user = userEvent.setup()
-    combatLogUiSink.push({ source: { kind: 'enemy', monsterId: 'forest-wisp' }, target: 'player', category: 'damage', damageType: 'physical', amount: 5, timestampMs: 1 })
+    combatLogUiSink.push({ source: { kind: 'enemy', monsterId: 'forest-wisp' }, target: 'player', category: 'damage', damageType: 'arcane', amount: 5, timestampMs: 1 })
     combatLogUiSink.push({ source: { kind: 'player' }, target: 'enemy', targetMonsterId: 'forest-wisp', category: 'damage', damageType: 'fire', amount: 8, timestampMs: 2 })
     render(<TooltipProvider><FullCombatLogDrawer onClose={() => undefined} /></TooltipProvider>)
 
@@ -20,7 +20,7 @@ describe('FullCombatLogDrawer', () => {
     await user.click(screen.getByRole('option', { name: 'Extra Large' }))
 
     expect(document.querySelector('.full-combat-log-drawer')?.classList.contains('combat-log-size-xlarge')).toBe(true)
-    expect(screen.getByText('5 PHYSICAL DAMAGE')).toBeTruthy()
+    expect(screen.getByText('5 ARCANE DAMAGE')).toBeTruthy()
     expect(screen.queryByText('8 FIRE DAMAGE')).toBeNull()
   })
 

@@ -29,16 +29,16 @@ describe('World Tier combat scaling', () => {
   it('applies WT2 enemy outgoing damage exactly once in the shared pipeline', () => {
     const state = activeState()
     const source = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'test', sourceMonsterId: 'forest-wisp' as const }
-    const base = calculateCombatDamage(state, 10, 'physical', source, 'player', ['dot'])
+    const base = calculateCombatDamage(state, 10, 'arcane', source, 'player', ['dot'])
     state.worldTier = { current: 2, highestUnlocked: 2 }
     state.combat.enemyWorldTier = 2
-    const scaled = calculateCombatDamage(state, 10, 'physical', source, 'player', ['dot'])
+    const scaled = calculateCombatDamage(state, 10, 'arcane', source, 'player', ['dot'])
     expect(base.raw).toBe(10)
     expect(scaled.raw).toBe(14)
     expect(scaled.raw / base.raw).toBe(1.4)
 
     const playerSource = { actor: 'player' as const, kind: 'spell' as const, sourceId: 'fire-bolt' }
-    expect(calculateCombatDamage(state, 10, 'physical', playerSource, 'enemy', ['dot']).raw).toBe(10)
+    expect(calculateCombatDamage(state, 10, 'arcane', playerSource, 'enemy', ['dot']).raw).toBe(10)
   })
 
   it('keeps source-basic authored magnitude unscaled until the shared damage pipeline', () => {
@@ -48,6 +48,6 @@ describe('World Tier combat scaling', () => {
     const source = { actor: 'enemy' as const, kind: 'action' as const, sourceId: 'test', sourceMonsterId: 'forest-wisp' as const }
     const authored = resolveMagnitude(state, { type: 'source-basic-damage-percent', value: 1 }, source, 'player')
     expect(authored).toBe(MONSTERS['forest-wisp'].basicAttackDamage)
-    expect(calculateCombatDamage(state, authored, 'physical', source, 'player', ['dot']).raw).toBe(MONSTERS['forest-wisp'].basicAttackDamage * 1.4)
+    expect(calculateCombatDamage(state, authored, 'arcane', source, 'player', ['dot']).raw).toBe(MONSTERS['forest-wisp'].basicAttackDamage * 1.4)
   })
 })

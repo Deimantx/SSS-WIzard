@@ -31,4 +31,9 @@ describe('combat action presentation', () => {
     expect(thorn.effects[1].totalBasePreview).toContain('Earth')
     expect(resolveMonsterBaseMagnitudePreview(MONSTERS['forest-heart'], { type: 'target-max-health-percent', value: 0.5 })).toBeNull()
   })
+
+  it('previews reusable source-element periodic status damage using the Monster element', () => {
+    const presentation = formatCombatEffect({ type: 'apply-status', target: 'opponent', statusId: 'poisoned' }, { actor: 'enemy', kind: 'action', sourceMonsterId: 'thornling' }, { monster: MONSTERS.thornling })
+    expect(presentation).toMatchObject({ value: '5 Earth / 2.0s (source element)', damageType: 'earth' })
+  })
 })

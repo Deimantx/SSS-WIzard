@@ -64,7 +64,7 @@ export interface CombatLocationDefinition {
   prototype?: boolean
 }
 
-/** Temporary read-model projection for systems migrated from the old encounter table. */
+/** Compatibility read model for consumers that still need encounter-table aliases. */
 export interface CombatLocationRuntimeView extends CombatLocationDefinition {
   boss: MonsterId | null
   threatRequired: number | null

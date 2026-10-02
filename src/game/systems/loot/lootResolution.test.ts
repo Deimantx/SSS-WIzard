@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { MONSTERS } from '../../content/monsters'
-import { resolvePowerScaledCurrencyRewardRange } from './powerScaledCurrencyRewards'
+import { resolveCombatCurrencyRewardRange } from './combatCurrencyRewards'
 import { resolveMonsterLoot } from './lootResolution'
 import { getHunterHarvestBonuses } from '../hunters-order/huntersOrderRuntime'
+import { resolveCombatLootContext, resolveLootChance } from './universalLootRuntime'
 
 describe('monster loot resolution', () => {
   it('grants universal Life Essence through the normal item acquisition path', () => {
@@ -11,7 +12,7 @@ describe('monster loot resolution', () => {
     const drops: Array<[string, number]> = []
     resolveMonsterLoot(state, 'forest-wisp', (itemId, quantity) => drops.push([itemId, quantity]), () => 0)
     expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
-    expect(state.inventory['life-essence']).toBe(resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 1).finalMin)
+    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1).finalMin)
     expect(drops.filter(([itemId]) => itemId === 'artifact-essence')).toHaveLength(1)
     expect(drops.filter(([itemId]) => itemId === 'life-essence')).toHaveLength(1)
     expect(Object.keys(state.inventory).some((itemId) => (state.inventory[itemId as keyof typeof state.inventory] ?? 0) > 0 && ['ember-staff', 'wispweave-robe', 'wispveil-hood'].includes(itemId))).toBe(false)
@@ -23,9 +24,9 @@ describe('monster loot resolution', () => {
     wt5.worldTier = { current: 5, highestUnlocked: 5 }
     resolveMonsterLoot(wt1, 'forest-wisp', undefined, () => 0)
     resolveMonsterLoot(wt5, 'forest-wisp', undefined, () => 0)
-    const base = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 1)
-    const wt5Range = resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 5)
-    expect(wt1.inventory['life-essence']).toBe(base.baseMin)
+    const base = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1)
+    const wt5Range = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 5)
+    expect(wt1.inventory['life-essence']).toBe(base.finalMin)
     expect(wt5.inventory['life-essence']).toBe(wt5Range.finalMin)
   })
 
@@ -34,7 +35,7 @@ describe('monster loot resolution', () => {
     state.worldTier = { current: 1, highestUnlocked: 4 }
     state.combat.enemyWorldTier = 4
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0)
-    expect(state.inventory['life-essence']).toBe(resolvePowerScaledCurrencyRewardRange('forest-wisp', 'life-essence', 4).finalMin)
+    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 4).finalMin)
   })
 
   it('applies Hunter material and Sigil chance upgrades as relative multipliers only for authorized quarry', () => {
@@ -48,16 +49,26 @@ describe('monster loot resolution', () => {
     boosted.progress.huntersOrder.purchasedUpgrades['fragment-rights'] = 3
     boosted.progress.huntersOrder.purchasedUpgrades['sigil-claim'] = 3
     const drops: string[] = []
-    resolveMonsterLoot(base, 'ashen-tracker', (itemId) => drops.push(itemId), () => 0.18, undefined, getHunterHarvestBonuses(base, 'ashen-tracker', 'hunters-ground'))
+    const baseHunter = getHunterHarvestBonuses(base, 'ashen-tracker', 'hunters-ground')
+    const boostedHunter = getHunterHarvestBonuses(boosted, 'ashen-tracker', 'hunters-ground')
+    const context = resolveCombatLootContext('ashen-tracker', 1)
+    const material = MONSTERS['ashen-tracker'].loot.find((drop) => drop.itemId === 'fire-fragment')!
+    const baseMaterialChance = resolveLootChance(material.baseChance, context, baseHunter.itemDropMultiplier)
+    const boostedMaterialChance = resolveLootChance(material.baseChance, context, boostedHunter.itemDropMultiplier)
+    const materialRoll = (baseMaterialChance + boostedMaterialChance) / 2
+    resolveMonsterLoot(base, 'ashen-tracker', (itemId) => drops.push(itemId), () => materialRoll, undefined, baseHunter)
     expect(drops).not.toContain('fire-fragment')
     drops.length = 0
-    resolveMonsterLoot(boosted, 'ashen-tracker', (itemId) => drops.push(itemId), () => 0.18, undefined, getHunterHarvestBonuses(boosted, 'ashen-tracker', 'hunters-ground'))
+    resolveMonsterLoot(boosted, 'ashen-tracker', (itemId) => drops.push(itemId), () => materialRoll, undefined, boostedHunter)
     expect(drops).toContain('fire-fragment')
 
     let baseSigil = false
     let boostedSigil = false
-    resolveMonsterLoot(base, 'ashen-tracker', undefined, () => 0.041, () => { baseSigil = true }, getHunterHarvestBonuses(base, 'ashen-tracker', 'hunters-ground'))
-    resolveMonsterLoot(boosted, 'ashen-tracker', undefined, () => 0.041, () => { boostedSigil = true }, getHunterHarvestBonuses(boosted, 'ashen-tracker', 'hunters-ground'))
+    const baseSigilChance = context.lootTier.sigilDropChance * baseHunter.sigilDropMultiplier
+    const boostedSigilChance = context.lootTier.sigilDropChance * boostedHunter.sigilDropMultiplier
+    const sigilRoll = (baseSigilChance + boostedSigilChance) / 2
+    resolveMonsterLoot(base, 'ashen-tracker', undefined, () => sigilRoll, () => { baseSigil = true }, baseHunter)
+    resolveMonsterLoot(boosted, 'ashen-tracker', undefined, () => sigilRoll, () => { boostedSigil = true }, boostedHunter)
     expect(baseSigil).toBe(false)
     expect(boostedSigil).toBe(true)
   })
@@ -65,6 +76,7 @@ describe('monster loot resolution', () => {
   it('keeps every monster on the generic material-only authored loot path', () => {
     Object.values(MONSTERS).forEach((monster) => {
       expect(monster.loot.some((drop) => drop.itemId === 'life-essence' || drop.itemId === 'artifact-essence')).toBe(false)
+      expect(monster.loot.every((drop) => drop.category === 'material')).toBe(true)
       const state = createInitialState()
       resolveMonsterLoot(state, monster.id, undefined, () => 0)
       expect(state.inventory['life-essence']).toBeGreaterThan(0)
@@ -93,5 +105,22 @@ describe('monster loot resolution', () => {
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0, (drop) => { result = drop })
     expect(result).toMatchObject({ tier: 1, autoSalvaged: false })
     expect(result?.instanceId).toMatch(/^sigil:/)
+  })
+
+  it('generates five independent Sigil instances on a natural boss drop', () => {
+    const state = createInitialState()
+    state.sigils.lifetimeDrops = 1
+    const results: Array<{ instanceId: string; slot: number }> = []
+    resolveMonsterLoot(state, 'forest-heart', undefined, () => 0, (drop) => results.push(drop))
+    expect(results).toHaveLength(5)
+    expect(new Set(results.map((drop) => drop.instanceId)).size).toBe(5)
+  })
+
+  it('keeps first-drop pity to exactly one Sigil on a boss', () => {
+    const state = createInitialState()
+    state.sigils.firstDropPityKills = 4
+    const results: string[] = []
+    resolveMonsterLoot(state, 'forest-heart', undefined, () => .99, (drop) => results.push(drop.instanceId))
+    expect(results).toHaveLength(1)
   })
 })

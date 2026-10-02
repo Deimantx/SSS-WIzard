@@ -6,8 +6,8 @@ const populatedScope = () => {
   const scope = createCombatTelemetryScope('run-1', 1, 'whispering-woods', 'grove-sentinel')
   scope.engagedMs = 30_000
   consumeCombatEvent(scope, { source: { kind: 'player' }, sourceKind: 'spell', spellId: 'fire-bolt', category: 'spell', target: 'enemy', targetMonsterId: 'grove-sentinel', sourceId: 'fire-bolt', amount: 120, healthDamage: 120, barrierAbsorbed: 0, damageType: 'fire' })
-  consumeCombatEvent(scope, { source: { kind: 'player' }, sourceKind: 'basic-attack', category: 'basic-attack', target: 'enemy', targetMonsterId: 'grove-sentinel', sourceId: 'weapon-basic', amount: 30, healthDamage: 20, barrierAbsorbed: 10, damageType: 'physical' })
-  consumeCombatEvent(scope, { source: { kind: 'enemy', monsterId: 'grove-sentinel' }, sourceKind: 'action', actionId: 'root-crush', category: 'enemy-action', target: 'player', amount: 50, healthDamage: 40, barrierAbsorbed: 10, damageType: 'physical' })
+  consumeCombatEvent(scope, { source: { kind: 'player' }, sourceKind: 'basic-attack', category: 'basic-attack', target: 'enemy', targetMonsterId: 'grove-sentinel', sourceId: 'weapon-basic', amount: 30, healthDamage: 20, barrierAbsorbed: 10, damageType: 'arcane' })
+  consumeCombatEvent(scope, { source: { kind: 'enemy', monsterId: 'grove-sentinel' }, sourceKind: 'action', actionId: 'root-crush', category: 'enemy-action', target: 'player', amount: 50, healthDamage: 40, barrierAbsorbed: 10, damageType: 'arcane' })
   consumeCombatEvent(scope, { source: { kind: 'player' }, sourceKind: 'spell', spellId: 'flow-mend', category: 'heal', target: 'player', sourceId: 'flow-mend', amount: 40, attemptedAmount: 60, effectiveAmount: 40, overheal: 20 })
   return scope
 }

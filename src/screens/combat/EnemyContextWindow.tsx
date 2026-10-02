@@ -12,7 +12,8 @@ import { Button, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
 import { MonsterPortrait } from './MonsterPortrait'
 import { getEnemyCombatStats } from '../../game/systems/combat/combatStats'
-import { resolvePowerScaledCurrencyRewardRange } from '../../game/systems/loot/powerScaledCurrencyRewards'
+import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combatCurrencyRewards'
+import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../game/systems/loot/universalLootRuntime'
 import { CombatEffectChip } from '../../components/combat/CombatEffectChip'
 import { EnemyCombatStatList } from '../../components/combat/EnemyCombatStatList'
 import { EnemyResistanceStatList } from '../../components/combat/EnemyResistanceStatList'
@@ -167,10 +168,15 @@ export function EnemyLootContent({ selectedCombatLocationId }: { selectedCombatL
 }
 
 function LootTiles({ monster, inventory, worldTier }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>>; worldTier: 1 | 2 | 3 | 4 | 5 }) {
-  const lifeEssence = resolvePowerScaledCurrencyRewardRange(monster.id, 'life-essence', worldTier)
-  const artifactEssence = resolvePowerScaledCurrencyRewardRange(monster.id, 'artifact-essence', worldTier)
-  const drops = [...monster.loot, { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 }, { itemId: 'artifact-essence' as const, min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 }]
-  return <div className="enemy-loot-grid">{drops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} tooltipNote={drop.itemId === 'life-essence' ? `WT1 Enemy Power ${lifeEssence.wt1Power}; current WT${lifeEssence.worldTier} dynamic reward.` : drop.itemId === 'artifact-essence' ? `WT1 Enemy Power ${artifactEssence.wt1Power}; current WT${artifactEssence.worldTier} dynamic reward.` : undefined} />)}</div>
+  const lifeEssence = resolveCombatCurrencyRewardRange(monster.id, 'life-essence', worldTier)
+  const artifactEssence = resolveCombatCurrencyRewardRange(monster.id, 'artifact-essence', worldTier)
+  const context = resolveCombatLootContext(monster.id, worldTier)
+  const drops = [
+    ...monster.loot.map((drop) => ({ itemId: drop.itemId, min: resolveAuthoredLootDropQuantity(drop, drop.quantity.min, context), max: resolveAuthoredLootDropQuantity(drop, drop.quantity.max, context), chance: resolveAuthoredLootDropChance(drop, context) })),
+    { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 },
+    { itemId: 'artifact-essence' as const, min: artifactEssence.finalMin, max: artifactEssence.finalMax, chance: 1 },
+  ]
+  return <div className="enemy-loot-grid">{drops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} sourceName={monster.name} inventory={inventory} tooltipNote={`Encounter Power ${context.effectivePower.toLocaleString()} resolves to Loot Tier ${context.lootTier.tier}.`} />)}</div>
 }
 
 function pretty(value: string) { return value.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }

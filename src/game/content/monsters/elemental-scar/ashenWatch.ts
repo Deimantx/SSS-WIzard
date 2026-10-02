@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'ashen-watch', id: 'cinder-hound', combatV2: true, primaryAffinity: 'fire', basicAttackElement: 'fire', targetPower: 3050, name: 'Cinder Hound', subtitle: 'A hunting beast with a furnace under its ribs', hp: 1438, damage: 78, defense: 28, resistances: { fire: .2, water: -.15 }, resonanceYield: { fire: 24 }, icon: { portraitIcon: 'wolf' }, specials: [{ id: 'cinder-bite', name: 'Cinder Bite', damage: [{ type: 'fire', coefficient: .8 }, { type: 'fire', coefficient: .7 }], dot: { statusId: 'burning', damageType: 'fire', coefficient: 0.9, durationMs: 5000 } }, { id: 'ember-trail', name: 'Ember Trail', status: { id: 'haste', target: 'self' } }] },

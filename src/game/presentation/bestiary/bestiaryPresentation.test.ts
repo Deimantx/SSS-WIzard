@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS } from '../../content/monsters'
+import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
 import { buildBestiaryBossPhases, getBestiaryBossSummaryTags, getBestiaryResonancePresentation, getBestiaryResonanceSearchText, getBestiaryTraitPresentations } from './bestiaryPresentation'
 import { buildCombatStatusDetailPresentation } from '../combat'
 
@@ -28,12 +29,13 @@ describe('Bestiary combat presentation', () => {
     expect(getBestiaryBossSummaryTags(MONSTERS['archmage-edrin-shade'])).toContain('Soft Enrage')
   })
 
-  it('presents current World Tier resonance in canonical order and omits zero values', () => {
+  it('presents current Power-derived loot tier resonance in canonical order and omits zero values', () => {
     const presentation = getBestiaryResonancePresentation(MONSTERS['graveglass-shade'], 2)
-    expect(presentation).toMatchObject({ worldTier: 2, worldTierRewardMultiplier: 2.5, globalRewardMultiplier: 0.2, rewardMultiplier: 0.5 })
+    const expected = resolveEnemyResonanceReward('graveglass-shade', 2)
+    expect(presentation).toMatchObject({ worldTier: 2, lootTier: expected.lootTier, lootQuantityMultiplier: expected.lootQuantityMultiplier, bossQuantityMultiplier: expected.bossQuantityMultiplier, rewardMultiplier: expected.rewardMultiplier })
     expect(presentation.entries.map((entry) => [entry.label, entry.baseAmount, entry.finalAmount])).toEqual([
-      ['Water Resonance', 24, 12],
-      ['Earth Resonance', 12, 6],
+      ['Water Resonance', expected.baseYield.water, expected.finalYield.water],
+      ['Earth Resonance', expected.baseYield.earth, expected.finalYield.earth],
     ])
   })
 

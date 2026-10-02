@@ -26,6 +26,15 @@ const combatState = () => {
 }
 
 describe('regional progression status runtime', () => {
+  it('snapshots application-element damage for reusable periodic statuses', () => {
+    const state = combatState()
+    const enemyApplied = applyStatus(state, 'player', 'bleeding', enemySource)
+    const playerApplied = applyStatus(state, 'enemy', 'poisoned', playerSource)
+
+    expect(enemyApplied?.periodicEffects?.[0]).toMatchObject({ components: [{ damageType: 'air', magnitude: { type: 'flat', value: 4 } }] })
+    expect(playerApplied?.periodicEffects?.[0]).toMatchObject({ components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 5 } }] })
+  })
+
   it('slows both enemy action lanes with Entangled', () => {
     const state = combatState()
     applyStatus(state, 'enemy', 'entangled', playerSource)
@@ -57,7 +66,7 @@ describe('regional progression status runtime', () => {
     const state = combatState()
     applyStatus(state, 'enemy', 'fragile', playerSource)
     expect(getDefense(state, 'enemy')).toBe(0)
-    expect(calculateCombatDamage(state, 100, 'physical', playerSource, 'enemy').resolvedBeforeBarrier).toBeCloseTo(108)
+    expect(calculateCombatDamage(state, 100, 'arcane', playerSource, 'enemy').resolvedBeforeBarrier).toBeCloseTo(108)
   })
 
   it('blocks manual and Auto-Cast spell eligibility without blocking Basic Attacks', () => {

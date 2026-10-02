@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'graveglass-hollow', id: 'graveglass-shade', combatV2: true, primaryAffinity: 'water', basicAttackElement: 'water', targetPower: 5700, name: 'Graveglass Shade', subtitle: 'A reflection that learned how to curse the living', hp: 3125, damage: 98, defense: 34, time: 2300, resonanceYield: { water: 24, earth: 12 }, icon: { portraitIcon: 'ghost' }, specials: [{ id: 'graveglass-touch', name: 'Graveglass Touch', damage: [{ type: 'arcane', coefficient: 1.35 }], status: { id: 'cursed' } }, { id: 'shard-step', name: 'Shard Step', status: { id: 'spectral-fade', target: 'self' } }] },

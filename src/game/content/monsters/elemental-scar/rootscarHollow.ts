@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'rootscar-hollow', id: 'thorn-maw', combatV2: true, primaryAffinity: 'earth', basicAttackElement: 'earth', targetPower: 3100, name: 'Thorn Maw', subtitle: 'A carnivorous bloom grown around a poisoned root', hp: 1875, damage: 78, defense: 42, resonanceYield: { earth: 24 }, icon: { portraitIcon: 'plant' }, specials: [{ id: 'venomous-bite', name: 'Venomous Bite', damage: [{ type: 'earth', coefficient: 1.25 }], dot: { statusId: 'root-rot', damageType: 'earth', coefficient: 1, durationMs: 8000 } }, { id: 'thorn-bloom', name: 'Thorn Bloom', status: { id: 'fortified', target: 'self' } }] },

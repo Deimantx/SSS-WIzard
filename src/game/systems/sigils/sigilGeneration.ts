@@ -1,5 +1,6 @@
 import type { CombatLocationId, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier } from '../../types'
-import { SIGIL_ATTUNEMENT_WEIGHT, SIGIL_CRAFT_QUALITY_WEIGHTS, SIGIL_QUALITY_WEIGHTS } from '../../content/sigils/sigilDropConfig'
+import { SIGIL_ATTUNEMENT_WEIGHT, SIGIL_CRAFT_QUALITY_WEIGHTS } from '../../content/sigils/sigilDropConfig'
+import { UNIVERSAL_LOOT_SIGIL_QUALITY_WEIGHTS } from '../../content/loot/universalLootTiers'
 import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
 import { getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
 import { SIGIL_MAIN_STAT_POOLS, SIGIL_SECONDARY_STAT_IDS } from '../../content/sigils/sigilStats'
@@ -38,7 +39,7 @@ const weightedPick = <T>(values: readonly T[], weights: readonly number[], rng: 
 }
 
 const rollQuality = (tier: SigilTier, isBoss: boolean, rng: () => number, override?: Record<SigilQuality, number>): SigilQuality => {
-  const weights = override ?? SIGIL_QUALITY_WEIGHTS[`${tier}-${isBoss ? 'boss' : 'normal'}`] ?? SIGIL_QUALITY_WEIGHTS['1-normal']
+  const weights = override ?? UNIVERSAL_LOOT_SIGIL_QUALITY_WEIGHTS[`${tier}-${isBoss ? 'boss' : 'normal'}`] ?? UNIVERSAL_LOOT_SIGIL_QUALITY_WEIGHTS['1-normal']
   return weightedPick(Object.keys(weights) as SigilQuality[], Object.values(weights), rng)
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyCombatV2Profile, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal } from './monsterTypes'
+import { getMonsterBasicAttackElement, getMonsterPrimaryAffinity, scaledBarrier, scaledDirectDamage, scaledDot, scaledHeal } from './monsterTypes'
 import { MONSTERS } from './index'
 
 describe('Monster action authoring helpers', () => {
@@ -17,21 +17,17 @@ describe('Monster action authoring helpers', () => {
   })
 
   it('authors DoT coefficients as total output split by the Status interval', () => {
-    const effect = scaledDot('thorn-wound', 'physical', 1.125, 6000)
+    const effect = scaledDot('thorn-wound', 'arcane', 1.125, 6000)
     expect(effect).toMatchObject({ type: 'apply-status', target: 'opponent', statusId: 'thorn-wound', durationMs: 6000 })
     expect(effect.type === 'apply-status' ? effect.periodicEffects?.[0] : undefined).toMatchObject({
       type: 'deal-damage',
-      components: [{ damageType: 'physical', magnitude: { type: 'source-basic-damage-percent', value: 0.375 } }],
+      components: [{ damageType: 'arcane', magnitude: { type: 'source-basic-damage-percent', value: 0.375 } }],
     })
   })
 
-  it('applies Combat V2 profiles without mutating authored monster content', () => {
-    const original = structuredClone(MONSTERS['forest-wisp'])
-    const before = structuredClone(original)
-    const profiled = applyCombatV2Profile(original, 'air', 300)
-    expect(original).toEqual(before)
-    expect(profiled.primaryAffinity).toBe('air')
-    expect(profiled.basicAttackElement).toBe('air')
-    expect(profiled.actions['arc-spark'].effects[0]).toMatchObject({ components: [{ damageType: 'arcane' }] })
+  it('reads the explicitly authored Monster affinity and Basic Attack element', () => {
+    const monster = MONSTERS['forest-wisp']
+    expect(getMonsterPrimaryAffinity(monster)).toBe('air')
+    expect(getMonsterBasicAttackElement(monster)).toBe('air')
   })
 })

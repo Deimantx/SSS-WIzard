@@ -12,7 +12,7 @@ import { combatTelemetryObserver, useCombatTelemetryStore } from './combatTeleme
 
 const damageEvent = (source: CombatEvent['source'], sourceKind: NonNullable<CombatEvent['sourceKind']>, sourceId: string, amount: number, target: 'player' | 'enemy', targetMonsterId?: CombatEvent['targetMonsterId']): CombatEvent => ({ source, sourceKind, sourceId, target, targetMonsterId, locationId: 'whispering-woods', category: 'damage', damageType: 'fire', amount, healthDamage: amount - 20, barrierAbsorbed: 20 })
 const barrierEvent = (source: CombatEvent['source'], sourceId: string, amount: number, target: 'player' | 'enemy', mode: 'add' | 'replace' = 'add'): CombatEvent => ({ source, sourceKind: source.kind === 'player' ? 'spell' : 'action', sourceId, spellId: source.kind === 'player' ? sourceId as 'water-ward' : undefined, actionId: source.kind === 'enemy' ? sourceId : undefined, target, category: 'barrier', amount, barrierGranted: amount, barrierMode: mode, barrierAfter: amount })
-const absorbedDamage = (amount: number, target: 'player' | 'enemy' = 'player'): CombatEvent => ({ source: target === 'player' ? { kind: 'enemy', monsterId: 'grove-sentinel' } : { kind: 'player' }, sourceKind: target === 'player' ? 'action' : 'spell', sourceId: target === 'player' ? 'root-crush' : 'fire-bolt', actionId: target === 'player' ? 'root-crush' : undefined, spellId: target === 'enemy' ? 'fire-bolt' : undefined, target, targetMonsterId: target === 'enemy' ? 'grove-sentinel' : undefined, category: 'damage', damageType: 'physical', amount, healthDamage: 0, barrierAbsorbed: amount })
+const absorbedDamage = (amount: number, target: 'player' | 'enemy' = 'player'): CombatEvent => ({ source: target === 'player' ? { kind: 'enemy', monsterId: 'grove-sentinel' } : { kind: 'player' }, sourceKind: target === 'player' ? 'action' : 'spell', sourceId: target === 'player' ? 'root-crush' : 'fire-bolt', actionId: target === 'player' ? 'root-crush' : undefined, spellId: target === 'enemy' ? 'fire-bolt' : undefined, target, targetMonsterId: target === 'enemy' ? 'grove-sentinel' : undefined, category: 'damage', damageType: 'arcane', amount, healthDamage: 0, barrierAbsorbed: amount })
 
 describe('combat telemetry foundation', () => {
   beforeEach(() => useCombatTelemetryStore.getState().clear())
@@ -100,7 +100,7 @@ describe('combat telemetry foundation', () => {
     const ward: CombatSource = { actor: 'player', kind: 'spell', sourceId: 'water-ward', school: 'water', tags: ['spell', 'water'] }
     const rootCrush: CombatSource = { actor: 'enemy', kind: 'action', sourceId: 'root-crush', ruleId: 'root-crush', sourceMonsterId: 'grove-sentinel', sourceInstanceKey: 'enemy:1', tags: ['special'] }
     executeCombatEffects(state, [{ type: 'gain-barrier', target: 'self', magnitude: { type: 'flat', value: 35 }, mode: 'replace', durationMs: 9_000 }], ward, undefined, sink)
-    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'physical', magnitude: { type: 'flat', value: 20 } }] }], rootCrush, undefined, sink)
+    executeCombatEffects(state, [{ type: 'deal-damage', target: 'opponent', components: [{ damageType: 'arcane', magnitude: { type: 'flat', value: 20 } }] }], rootCrush, undefined, sink)
 
     expect(events[0]).toMatchObject({ category: 'barrier', amount: 35, barrierGranted: 35, barrierMode: 'replace', barrierAfter: 35 })
     expect(events[1]).toMatchObject({ category: 'enemy-action', amount: 20, barrierBefore: 35, barrierAfter: 15, barrierAbsorbed: 20 })

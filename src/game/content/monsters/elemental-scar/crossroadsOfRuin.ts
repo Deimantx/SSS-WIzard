@@ -1,6 +1,6 @@
-import type { MonsterId } from '../../../../types'
-import { makeCombatMonster, type CombatMonsterSpec } from '../../combatMonsterAuthoring'
-import type { MonsterDefinition } from '../../monsterTypes'
+import type { MonsterId } from '../../../types'
+import { makeCombatMonster, type CombatMonsterSpec } from '../combatMonsterAuthoring'
+import type { MonsterDefinition } from '../monsterTypes'
 
 const specs: CombatMonsterSpec[] = [
   { locationId: 'crossroads-of-ruin', id: 'remnant-marauder', combatV2: true, primaryAffinity: 'earth', basicAttackElement: 'earth', targetPower: 4700, name: 'Remnant Marauder', subtitle: 'A road-warrior assembled from every failed expedition', hp: 2063, damage: 88, defense: 38, trait: 'remnant-marauder-pressure', specials: [{ id: 'ruin-cleave', name: 'Ruin Cleave', damage: [{ type: 'earth', coefficient: 1.55 }] }, { id: 'pressure', name: 'Pressure', status: { id: 'vulnerable' } }] },

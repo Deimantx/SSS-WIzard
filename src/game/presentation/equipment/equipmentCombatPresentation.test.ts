@@ -49,6 +49,11 @@ describe('equipment combat presentation', () => {
     expect(presentation.rules.flatMap((rule) => rule.effects).join(' ')).not.toContain('internal-only-key')
   })
 
+  it('describes reusable source-element periodic damage in item rule previews', () => {
+    const presentation = getEquipmentCombatPresentation({ combat: { rules: [{ id: 'source-poison', event: 'on-spell-hit', effects: [{ type: 'apply-status', target: 'opponent', statusId: 'poisoned', durationMs: 8_000 }] }] } })
+    expect(presentation.rules[0].effects).toContain('20 total damage from the applying source element')
+  })
+
   it('formats effect time in seconds and preserves fractional percentages', () => {
     const presentation = getEquipmentCombatPresentation({ combat: {
       modifiers: [{ key: 'damage-dealt-percent', value: 0.125 }],

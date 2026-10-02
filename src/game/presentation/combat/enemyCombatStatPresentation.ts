@@ -17,7 +17,7 @@ export interface EnemyCombatStatRow {
 
 export type EnemyCombatStatValues = Pick<EnemyCombatStats, 'maxHealth' | 'basicAttackDamage' | 'basicAttackSpeedMultiplier' | 'basicAttackIntervalMs' | 'critChance' | 'critDamageMultiplier' | 'defense' | 'defenseReduction' | 'blockChance' | 'resistances' | 'healingDoneBonus' | 'barrierPowerBonus' | 'damageOverTimeBonus' | 'statusDurationBonus'>
 
-const DAMAGE_TYPES: readonly DamageType[] = ['physical', 'arcane', 'fire', 'water', 'earth', 'air']
+const DAMAGE_TYPES: readonly DamageType[] = ['arcane', 'fire', 'water', 'earth', 'air']
 const finite = (value: number | undefined, fallback = 0) => Number.isFinite(value) ? value as number : fallback
 const percentage = (value: number) => `${Math.round(value * 100)}%`
 const pretty = (value: string) => value.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())

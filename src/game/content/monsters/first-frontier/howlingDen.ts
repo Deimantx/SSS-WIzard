@@ -1,447 +1,1203 @@
-import type { MonsterId } from "../../../types";
-import {
-  action,
-  applyStatus,
-  basic,
-  delayCurrentAction,
-  opponentStatusStackScaled,
-  scaledDirectDamage,
-  scaledDot,
-  scaledMultiDamage,
-  type MonsterDefinition,
-  applyCombatV2Profile,
-} from "../monsterTypes";
+import type { MonsterId } from '../../../types'
+import type { MonsterDefinition } from '../monsterTypes'
 
 export const HOWLING_DEN_MONSTERS = {
   "cavefang-wolf": {
-    id: "cavefang-wolf",
-    bestiaryCategory: "monster",
-    name: "Cavefang Wolf",
-    subtitle: "A patient predator that waits for weakness",
-    maxHealth: 350,
-    basicAttackDamage: 20,
-    basicAttackTimeMs: 2200,
-    defense: 16,
-    color: "#b8a0a0",
-    ui: { portraitIcon: "wolf" },
-    traitIds: ["cavefang-wolf-predator-instinct"],
-    resonanceYield: { air: 28 },
-    actions: {
-      pounce: {
-        id: "pounce",
-        name: "Pounce",
-        actionTimeMs: 1400,
-        description:
-          "The Wolf lunges through the Wizard's concentration and disrupts the current Spell cast.",
-        effects: [scaledDirectDamage("physical", 1.5), delayCurrentAction(400)],
-        tags: ["special", "physical", "melee", "control"],
+    "id": "cavefang-wolf",
+    "bestiaryCategory": "monster",
+    "name": "Cavefang Wolf",
+    "subtitle": "A patient predator that waits for weakness",
+    "maxHealth": 350,
+    "basicAttackDamage": 25.212477396021697,
+    "basicAttackTimeMs": 2200,
+    "defense": 16,
+    "color": "#b8a0a0",
+    "ui": {
+      "portraitIcon": "wolf"
+    },
+    "traitIds": [
+      "cavefang-wolf-predator-instinct"
+    ],
+    "resonanceYield": {
+      "air": 28
+    },
+    "actions": {
+      "pounce": {
+        "id": "pounce",
+        "name": "Pounce",
+        "actionTimeMs": 1400,
+        "description": "The Wolf lunges through the Wizard's concentration and disrupts the current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 400
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "air"
+        ]
       },
       "predator-howl": {
-        id: "predator-howl",
-        name: "Predator's Howl",
-        actionTimeMs: 1600,
-        description: "A hunting howl accelerates the Wolf's assault.",
-        effects: [applyStatus("haste", "self", 16000)],
-        tags: ["special", "buff"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          basic("basic-2"),
-          action("pounce-step", "pounce"),
-          basic("basic-3"),
-          action("predator-howl-step", "predator-howl"),
-          basic("basic-4"),
+        "id": "predator-howl",
+        "name": "Predator's Howl",
+        "actionTimeMs": 1600,
+        "description": "A hunting howl accelerates the Wolf's assault.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 16000,
+            "tags": [
+              "buff"
+            ]
+          }
         ],
-      },
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "pounce-step",
+            "type": "action",
+            "actionId": "pounce"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "predator-howl-step",
+            "type": "action",
+            "actionId": "predator-howl"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "primaryAffinity": "air",
+    "basicAttackElement": "air"
   },
   "razorclaw-lynx": {
-    id: "razorclaw-lynx",
-    bestiaryCategory: "monster",
-    name: "Razorclaw Lynx",
-    subtitle: "A blur of claws and hungry momentum",
-    maxHealth: 360,
-    basicAttackDamage: 21,
-    basicAttackTimeMs: 1900,
-    defense: 16,
-    color: "#c18b73",
-    ui: { portraitIcon: "claw" },
-    traitIds: ["razorclaw-lynx-relentless-hunter"],
-    resonanceYield: { air: 32 },
-    actions: {
+    "id": "razorclaw-lynx",
+    "bestiaryCategory": "monster",
+    "name": "Razorclaw Lynx",
+    "subtitle": "A blur of claws and hungry momentum",
+    "maxHealth": 360,
+    "basicAttackDamage": 24.551687763713076,
+    "basicAttackTimeMs": 1900,
+    "defense": 16,
+    "color": "#c18b73",
+    "ui": {
+      "portraitIcon": "claw"
+    },
+    "traitIds": [
+      "razorclaw-lynx-relentless-hunter"
+    ],
+    "resonanceYield": {
+      "air": 32
+    },
+    "actions": {
       "rending-claws": {
-        id: "rending-claws",
-        name: "Rending Claws",
-        actionTimeMs: 1300,
-        description:
-          "Raking claws cut the target and leave a lingering Bleeding wound.",
-        effects: [
-          scaledDirectDamage("physical", 1.25),
-          scaledDot("bleeding", "physical", 1.45, 8000),
+        "id": "rending-claws",
+        "name": "Rending Claws",
+        "actionTimeMs": 1300,
+        "description": "Raking claws cut the target and leave a lingering Bleeding wound.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.25
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "bleeding",
+            "durationMs": 8000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "air",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.3625
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "air"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "air"
+            ]
+          }
         ],
-        tags: ["special", "physical", "melee", "debuff"],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "air"
+        ]
       },
       "blood-scent": {
-        id: "blood-scent",
-        name: "Blood Scent",
-        actionTimeMs: 1200,
-        description:
-          "The Lynx catches the scent of blood and quickens its assault.",
-        effects: [applyStatus("haste", "self", 5000)],
-        tags: ["special", "buff"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          action("rending-claws-step-1", "rending-claws"),
-          basic("basic-2"),
-          basic("basic-3"),
-          action("blood-scent-step", "blood-scent"),
-          basic("basic-4"),
-          action("rending-claws-step-2", "rending-claws"),
+        "id": "blood-scent",
+        "name": "Blood Scent",
+        "actionTimeMs": 1200,
+        "description": "The Lynx catches the scent of blood and quickens its assault.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 5000,
+            "tags": [
+              "buff"
+            ]
+          }
         ],
-      },
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "rending-claws-step-1",
+            "type": "action",
+            "actionId": "rending-claws"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "blood-scent-step",
+            "type": "action",
+            "actionId": "blood-scent"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "rending-claws-step-2",
+            "type": "action",
+            "actionId": "rending-claws"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "primaryAffinity": "air",
+    "basicAttackElement": "air"
   },
   "corrupted-dire-wolf": {
-    id: "corrupted-dire-wolf",
-    bestiaryCategory: "monster",
-    name: "Corrupted Dire Wolf",
-    subtitle: "A beast split between fang and sorcery",
-    maxHealth: 420,
-    basicAttackDamage: 26,
-    basicAttackTimeMs: 2300,
-    defense: 13,
-    color: "#7e6c9f",
-    ui: { portraitIcon: "wolf" },
-    traitIds: ["corrupted-dire-wolf-arcane-corruption"],
-    resonanceYield: { air: 25, earth: 20 },
-    resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 },
-    actions: {
+    "id": "corrupted-dire-wolf",
+    "bestiaryCategory": "monster",
+    "name": "Corrupted Dire Wolf",
+    "subtitle": "A beast split between fang and sorcery",
+    "maxHealth": 420,
+    "basicAttackDamage": 30.316750342309447,
+    "basicAttackTimeMs": 2300,
+    "defense": 13,
+    "color": "#7e6c9f",
+    "ui": {
+      "portraitIcon": "wolf"
+    },
+    "traitIds": [
+      "corrupted-dire-wolf-arcane-corruption"
+    ],
+    "resonanceYield": {
+      "air": 25,
+      "earth": 20
+    },
+    "resistances": {
+      "fire": 0.1,
+      "water": 0.1,
+      "earth": 0.1,
+      "air": 0.1
+    },
+    "actions": {
       "arcane-bite": {
-        id: "arcane-bite",
-        name: "Arcane Bite",
-        actionTimeMs: 1600,
-        description: "A corrupted bite tears through both body and warding.",
-        effects: [
+        "id": "arcane-bite",
+        "name": "Arcane Bite",
+        "actionTimeMs": 1600,
+        "description": "A corrupted bite tears through both body and warding.",
+        "effects": [
           {
-            type: "deal-damage",
-            target: "opponent",
-            components: [
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
               {
-                damageType: "air",
-                magnitude: { type: "source-basic-damage-percent", value: 0.65 },
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.65
+                }
               },
               {
-                damageType: "arcane",
-                magnitude: { type: "source-basic-damage-percent", value: 0.65 },
-              },
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.65
+                }
+              }
             ],
-            tags: ["direct"],
-          },
+            "tags": [
+              "direct"
+            ]
+          }
         ],
-        tags: ["special", "physical", "arcane", "melee", "direct"],
+        "tags": [
+          "special",
+          "arcane",
+          "melee",
+          "direct"
+        ]
       },
       "corrupted-howl": {
-        id: "corrupted-howl",
-        name: "Corrupted Howl",
-        actionTimeMs: 1800,
-        description: "The howl fills the Corrupted Dire Wolf with Haste.",
-        effects: [applyStatus("haste", "self", 6000)],
-        tags: ["special", "buff"],
+        "id": "corrupted-howl",
+        "name": "Corrupted Howl",
+        "actionTimeMs": 1800,
+        "description": "The howl fills the Corrupted Dire Wolf with Haste.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 6000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
       },
       "corrupting-fang": {
-        id: "corrupting-fang",
-        name: "Corrupting Fang",
-        actionTimeMs: 1900,
-        description:
-          "A corrupted bite leaves unstable Arcane residue in the wound.",
-        effects: [
-          scaledMultiDamage(
-            [
-              { damageType: "air", coefficient: 0.9 },
-              { damageType: "arcane", coefficient: 0.6 },
+        "id": "corrupting-fang",
+        "name": "Corrupting Fang",
+        "actionTimeMs": 1900,
+        "description": "A corrupted bite leaves unstable Arcane residue in the wound.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.9
+                }
+              },
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.6
+                }
+              }
             ],
-            ["direct"],
-          ),
-          applyStatus("corruption", "opponent", undefined, 1),
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "corruption",
+            "stacks": 1,
+            "tags": [
+              "debuff"
+            ]
+          }
         ],
-        tags: ["special", "physical", "arcane", "melee", "debuff", "direct"],
-      },
+        "tags": [
+          "special",
+          "arcane",
+          "melee",
+          "debuff",
+          "direct"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          action("arcane-bite-step-1", "arcane-bite"),
-          basic("basic-2"),
-          action("corrupted-howl-step", "corrupted-howl"),
-          basic("basic-3"),
-          action("corrupting-fang-step", "corrupting-fang"),
-          basic("basic-4"),
-          action("arcane-bite-step-2", "arcane-bite"),
-        ],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "arcane-bite-step-1",
+            "type": "action",
+            "actionId": "arcane-bite"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "corrupted-howl-step",
+            "type": "action",
+            "actionId": "corrupted-howl"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "corrupting-fang-step",
+            "type": "action",
+            "actionId": "corrupting-fang"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "arcane-bite-step-2",
+            "type": "action",
+            "actionId": "arcane-bite"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane"
   },
   "bonehide-boar": {
-    id: "bonehide-boar",
-    bestiaryCategory: "monster",
-    name: "Bonehide Boar",
-    subtitle: "A slow armored bruiser that turns every charge into a wall of force",
-    maxHealth: 470,
-    basicAttackDamage: 24,
-    basicAttackTimeMs: 2900,
-    defense: 28,
-    color: "#9a8066",
-    ui: { portraitIcon: "bear" },
-    traitIds: [],
-    actions: {
+    "id": "bonehide-boar",
+    "bestiaryCategory": "monster",
+    "name": "Bonehide Boar",
+    "subtitle": "A slow armored bruiser that turns every charge into a wall of force",
+    "maxHealth": 470,
+    "basicAttackDamage": 37.94680851063829,
+    "basicAttackTimeMs": 2900,
+    "defense": 28,
+    "color": "#9a8066",
+    "ui": {
+      "portraitIcon": "bear"
+    },
+    "traitIds": [],
+    "actions": {
       "tusk-charge": {
-        id: "tusk-charge",
-        name: "Tusk Charge",
-        actionTimeMs: 2300,
-        description: "A brutal Earth charge delays the Wizard's current action.",
-        effects: [scaledDirectDamage("physical", 1.45), delayCurrentAction(500)],
-        tags: ["special", "physical", "melee", "control", "direct"],
+        "id": "tusk-charge",
+        "name": "Tusk Charge",
+        "actionTimeMs": 2300,
+        "description": "A brutal Earth charge delays the Wizard's current action.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.45
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 500
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "direct",
+          "earth"
+        ]
       },
       "bristle-guard": {
-        id: "bristle-guard",
-        name: "Bristle Guard",
-        actionTimeMs: 2000,
-        description: "The Boar hardens its hide and becomes Fortified.",
-        effects: [applyStatus("fortified", "self", 8000)],
-        tags: ["special", "buff"],
-      },
+        "id": "bristle-guard",
+        "name": "Bristle Guard",
+        "actionTimeMs": 2000,
+        "description": "The Boar hardens its hide and becomes Fortified.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "fortified",
+            "durationMs": 8000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [basic("basic-1"), action("tusk-charge-step-1", "tusk-charge"), basic("basic-2"), action("bristle-guard-step", "bristle-guard"), basic("basic-3"), basic("basic-4"), action("tusk-charge-step-2", "tusk-charge")],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "tusk-charge-step-1",
+            "type": "action",
+            "actionId": "tusk-charge"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "bristle-guard-step",
+            "type": "action",
+            "actionId": "bristle-guard"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "tusk-charge-step-2",
+            "type": "action",
+            "actionId": "tusk-charge"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    resonanceYield: { earth: 36 },
-    loot: [],
+    "defaultActionPatternId": "default",
+    "resonanceYield": {
+      "earth": 36
+    },
+    "loot": [],
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth"
   },
   "moonblind-jackal": {
-    id: "moonblind-jackal",
-    bestiaryCategory: "monster",
-    name: "Moonblind Jackal",
-    subtitle: "A fast debuff predator that hunts by scent and curse",
-    maxHealth: 340,
-    basicAttackDamage: 23,
-    basicAttackTimeMs: 1900,
-    defense: 15,
-    color: "#8c829d",
-    ui: { portraitIcon: "wolf" },
-    traitIds: [],
-    actions: {
-      moonbite: {
-        id: "moonbite",
-        name: "Moonbite",
-        actionTimeMs: 1700,
-        description: "Arcane damage leaves the Wizard Cursed.",
-        effects: [scaledDirectDamage("arcane", 1.1), applyStatus("cursed", "opponent", 7000)],
-        tags: ["special", "arcane", "melee", "debuff", "direct"],
+    "id": "moonblind-jackal",
+    "bestiaryCategory": "monster",
+    "name": "Moonblind Jackal",
+    "subtitle": "A fast debuff predator that hunts by scent and curse",
+    "maxHealth": 340,
+    "basicAttackDamage": 41.21456582633053,
+    "basicAttackTimeMs": 1900,
+    "defense": 15,
+    "color": "#8c829d",
+    "ui": {
+      "portraitIcon": "wolf"
+    },
+    "traitIds": [],
+    "actions": {
+      "moonbite": {
+        "id": "moonbite",
+        "name": "Moonbite",
+        "actionTimeMs": 1700,
+        "description": "Arcane damage leaves the Wizard Cursed.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "cursed",
+            "durationMs": 7000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "melee",
+          "debuff",
+          "direct"
+        ]
       },
       "blood-trail": {
-        id: "blood-trail",
-        name: "Blood Trail",
-        actionTimeMs: 1800,
-        description: "Fire damage opens a lingering wounded burn.",
-        effects: [scaledDirectDamage("fire", 0.9), scaledDot("burning", "fire", 1.2, 8000)],
-        tags: ["special", "fire", "melee", "debuff", "direct"],
-      },
+        "id": "blood-trail",
+        "name": "Blood Trail",
+        "actionTimeMs": 1800,
+        "description": "Fire damage opens a lingering wounded burn.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.9
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "burning",
+            "durationMs": 8000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.15
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "melee",
+          "debuff",
+          "direct"
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [basic("basic-1"), action("moonbite-step-1", "moonbite"), basic("basic-2"), action("blood-trail-step", "blood-trail"), basic("basic-3"), action("moonbite-step-2", "moonbite"), basic("basic-4")],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "moonbite-step-1",
+            "type": "action",
+            "actionId": "moonbite"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "blood-trail-step",
+            "type": "action",
+            "actionId": "blood-trail"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "moonbite-step-2",
+            "type": "action",
+            "actionId": "moonbite"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    resonanceYield: { air: 38, fire: 12 },
-    loot: [],
+    "defaultActionPatternId": "default",
+    "resonanceYield": {
+      "air": 38,
+      "fire": 12
+    },
+    "loot": [],
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane"
   },
   "den-stalker": {
-    id: "den-stalker",
-    bestiaryCategory: "monster",
-    name: "Den Stalker",
-    subtitle: "An ambush predator that sets up a fragile target for the killing bite",
-    maxHealth: 400,
-    basicAttackDamage: 28,
-    basicAttackTimeMs: 2200,
-    defense: 18,
-    color: "#5e526e",
-    ui: { portraitIcon: "claw" },
-    traitIds: [],
-    actions: {
+    "id": "den-stalker",
+    "bestiaryCategory": "monster",
+    "name": "Den Stalker",
+    "subtitle": "An ambush predator that sets up a fragile target for the killing bite",
+    "maxHealth": 400,
+    "basicAttackDamage": 46.82783018867924,
+    "basicAttackTimeMs": 2200,
+    "defense": 18,
+    "color": "#5e526e",
+    "ui": {
+      "portraitIcon": "claw"
+    },
+    "traitIds": [],
+    "actions": {
       "shadow-pounce": {
-        id: "shadow-pounce",
-        name: "Shadow Pounce",
-        actionTimeMs: 1800,
-        description: "An Arcane strike leaves the Wizard Fragile.",
-        effects: [scaledDirectDamage("physical", 1.2), applyStatus("fragile", "opponent", 6000)],
-        tags: ["special", "physical", "melee", "debuff", "direct"],
+        "id": "shadow-pounce",
+        "name": "Shadow Pounce",
+        "actionTimeMs": 1800,
+        "description": "An Arcane strike leaves the Wizard Fragile.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "fragile",
+            "durationMs": 6000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "direct",
+          "air"
+        ]
       },
-      vanish: {
-        id: "vanish",
-        name: "Vanish",
-        actionTimeMs: 1500,
-        description: "The Stalker slips into Spectral Fade.",
-        effects: [applyStatus("spectral-fade", "self", 5000)],
-        tags: ["special", "buff"],
+      "vanish": {
+        "id": "vanish",
+        "name": "Vanish",
+        "actionTimeMs": 1500,
+        "description": "The Stalker slips into Spectral Fade.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "spectral-fade",
+            "durationMs": 5000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
       },
       "execution-bite": {
-        id: "execution-bite",
-        name: "Execution Bite",
-        actionTimeMs: 2100,
-        description: "A devastating bite that deals extra damage to Fragile targets.",
-        effects: [{ type: "deal-damage", target: "opponent", components: [{ damageType: "physical", magnitude: opponentStatusStackScaled("fragile", { type: "source-basic-damage-percent", value: 1.3 }, 0.5, 1) }], tags: ["special", "physical", "melee", "direct"] }],
-      },
+        "id": "execution-bite",
+        "name": "Execution Bite",
+        "actionTimeMs": 2100,
+        "description": "A devastating bite that deals extra damage to Fragile targets.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "opponent-status-stack-scaled",
+                  "statusId": "fragile",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 1.3
+                  },
+                  "perStack": 0.5,
+                  "maxStacks": 1
+                }
+              }
+            ],
+            "tags": [
+              "special",
+              "melee",
+              "direct",
+              "air"
+            ]
+          }
+        ]
+      }
     },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [action("vanish-step", "vanish"), basic("basic-1"), action("shadow-pounce-step-1", "shadow-pounce"), basic("basic-2"), action("execution-bite-step", "execution-bite"), basic("basic-3"), action("shadow-pounce-step-2", "shadow-pounce")],
-      },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "vanish-step",
+            "type": "action",
+            "actionId": "vanish"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-pounce-step-1",
+            "type": "action",
+            "actionId": "shadow-pounce"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "execution-bite-step",
+            "type": "action",
+            "actionId": "execution-bite"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-pounce-step-2",
+            "type": "action",
+            "actionId": "shadow-pounce"
+          }
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    resonanceYield: { air: 32, earth: 18 },
-    loot: [],
+    "defaultActionPatternId": "default",
+    "resonanceYield": {
+      "air": 32,
+      "earth": 18
+    },
+    "loot": [],
+    "primaryAffinity": "air",
+    "basicAttackElement": "air"
   },
   "corrupted-greatbear": {
-    id: "corrupted-greatbear",
-    bestiaryCategory: "boss",
-    name: "Corrupted Greatbear",
-    subtitle: "A mountain of fur warped by hungry magic",
-    maxHealth: 2400,
-    basicAttackDamage: 50,
-    basicAttackTimeMs: 2800,
-    defense: 30,
-    color: "#554240",
-    ui: {
-      portraitIcon: "bear",
-      bestiary: {
-        roleTags: ["Earth", "Arcane", "Stacking Debuff", "Ramping Damage", "Control", "2 Phases"],
-        phaseLabels: { default: "Thick Hide", corrupted: "Corrupted" },
-        phaseOrder: ["default", "corrupted"],
-      },
+    "id": "corrupted-greatbear",
+    "bestiaryCategory": "boss",
+    "name": "Corrupted Greatbear",
+    "subtitle": "A mountain of fur warped by hungry magic",
+    "maxHealth": 2400,
+    "basicAttackDamage": 17.924242424242426,
+    "basicAttackTimeMs": 2800,
+    "defense": 30,
+    "color": "#554240",
+    "ui": {
+      "portraitIcon": "bear",
+      "bestiary": {
+        "roleTags": [
+          "Earth",
+          "Arcane",
+          "Stacking Debuff",
+          "Ramping Damage",
+          "Control",
+          "2 Phases"
+        ],
+        "phaseLabels": {
+          "default": "Thick Hide",
+          "corrupted": "Corrupted"
+        },
+        "phaseOrder": [
+          "default",
+          "corrupted"
+        ]
+      }
     },
-    traitIds: [
+    "traitIds": [
       "corrupted-greatbear-thick-hide",
-      "corrupted-greatbear-unstable-corruption",
+      "corrupted-greatbear-unstable-corruption"
     ],
-    resonanceYield: { earth: 110, air: 30 },
-    actions: {
+    "resonanceYield": {
+      "earth": 110,
+      "air": 30
+    },
+    "actions": {
       "crushing-maul": {
-        id: "crushing-maul",
-        name: "Crushing Maul",
-        actionTimeMs: 2200,
-        description: "A brutal maul strike crashes into the target.",
-        effects: [scaledDirectDamage("physical", 1.55)],
-        tags: ["special", "physical", "melee", "direct"],
+        "id": "crushing-maul",
+        "name": "Crushing Maul",
+        "actionTimeMs": 2200,
+        "description": "A brutal maul strike crashes into the target.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.55
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "direct",
+          "earth"
+        ]
       },
-      groundbreaker: {
-        id: "groundbreaker",
-        name: "Groundbreaker",
-        actionTimeMs: 2500,
-        description:
-          "The Greatbear shatters the ground, disrupting the Wizard's current Spell cast.",
-        effects: [scaledDirectDamage("earth", 1.2), applyStatus("tremored", "opponent", 2200), delayCurrentAction(1000)],
-        tags: ["special", "physical", "control"],
+      "groundbreaker": {
+        "id": "groundbreaker",
+        "name": "Groundbreaker",
+        "actionTimeMs": 2500,
+        "description": "The Greatbear shatters the ground, disrupting the Wizard's current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "tremored",
+            "durationMs": 2200,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 1000
+          }
+        ],
+        "tags": [
+          "special",
+          "control",
+          "earth"
+        ]
       },
       "corrupted-roar": {
-        id: "corrupted-roar",
-        name: "Corrupted Roar",
-        actionTimeMs: 2200,
-        description: "Makes the target Vulnerable and adds 1 Corruption.",
-        effects: [
-          applyStatus("vulnerable", "opponent", 10000),
-          applyStatus("corruption", "opponent", 30000, 1),
+        "id": "corrupted-roar",
+        "name": "Corrupted Roar",
+        "actionTimeMs": 2200,
+        "description": "Makes the target Vulnerable and adds 1 Corruption.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "vulnerable",
+            "durationMs": 10000,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "corruption",
+            "durationMs": 30000,
+            "stacks": 1,
+            "tags": [
+              "debuff"
+            ]
+          }
         ],
-        tags: ["special", "debuff"],
+        "tags": [
+          "special",
+          "debuff"
+        ]
       },
       "savage-rampage": {
-        id: "savage-rampage",
-        name: "Savage Rampage",
-        actionTimeMs: 3000,
-        description: "A heavy Earth strike empowered by Corruption.",
-        effects: [
+        "id": "savage-rampage",
+        "name": "Savage Rampage",
+        "actionTimeMs": 3000,
+        "description": "A heavy Earth strike empowered by Corruption.",
+        "effects": [
           {
-            type: "deal-damage",
-            target: "opponent",
-            components: [{
-              damageType: "physical",
-              magnitude: opponentStatusStackScaled("corruption", { type: "source-basic-damage-percent", value: 2 }, 0.12, 5),
-            }],
-            tags: ["direct"],
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "opponent-status-stack-scaled",
+                  "statusId": "corruption",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 2
+                  },
+                  "perStack": 0.12,
+                  "maxStacks": 5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
           },
-          applyStatus("corruption", "opponent", 30000, 1),
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "corruption",
+            "durationMs": 30000,
+            "stacks": 1,
+            "tags": [
+              "debuff"
+            ]
+          }
         ],
-        tags: ["special", "physical", "melee", "debuff", "direct"],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "direct",
+          "earth"
+        ]
       },
       "corrupting-maul": {
-        id: "corrupting-maul",
-        name: "Corrupting Maul",
-        actionTimeMs: 2800,
-        description: "Earth and Arcane impacts crash together as the corruption surges.",
-        effects: [scaledMultiDamage([{ damageType: "earth", coefficient: 0.9 }, { damageType: "arcane", coefficient: 0.7 }], ["special", "direct", "earth", "arcane"])],
-        tags: ["special", "earth", "arcane", "melee", "direct"],
-      },
-    },
-    actionPatterns: {
-      default: {
-        id: "default",
-        steps: [
-          basic("basic-1"),
-          basic("basic-2"),
-          action("crushing-maul-step", "crushing-maul"),
-          basic("basic-3"),
-          action("groundbreaker-step", "groundbreaker"),
-          basic("basic-4"),
+        "id": "corrupting-maul",
+        "name": "Corrupting Maul",
+        "actionTimeMs": 2800,
+        "description": "Earth and Arcane impacts crash together as the corruption surges.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.9
+                }
+              },
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.7
+                }
+              }
+            ],
+            "tags": [
+              "special",
+              "direct",
+              "earth",
+              "arcane"
+            ]
+          }
         ],
-      },
-      corrupted: {
-        id: "corrupted",
-        steps: [
-          action("corrupted-roar-step", "corrupted-roar"),
-          action("crushing-maul-step-1", "crushing-maul"),
-          basic("basic-1"),
-          action("savage-rampage-step-1", "savage-rampage"),
-          basic("basic-2"),
-          action("corrupting-maul-step", "corrupting-maul"),
-          action("savage-rampage-step-2", "savage-rampage"),
-          basic("basic-3"),
-        ],
-      },
+        "tags": [
+          "special",
+          "earth",
+          "arcane",
+          "melee",
+          "direct"
+        ]
+      }
     },
-    defaultActionPatternId: "default",
-    loot: [],
-  },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "crushing-maul-step",
+            "type": "action",
+            "actionId": "crushing-maul"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "groundbreaker-step",
+            "type": "action",
+            "actionId": "groundbreaker"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      },
+      "corrupted": {
+        "id": "corrupted",
+        "steps": [
+          {
+            "id": "corrupted-roar-step",
+            "type": "action",
+            "actionId": "corrupted-roar"
+          },
+          {
+            "id": "crushing-maul-step-1",
+            "type": "action",
+            "actionId": "crushing-maul"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "savage-rampage-step-1",
+            "type": "action",
+            "actionId": "savage-rampage"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "corrupting-maul-step",
+            "type": "action",
+            "actionId": "corrupting-maul"
+          },
+          {
+            "id": "savage-rampage-step-2",
+            "type": "action",
+            "actionId": "savage-rampage"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default",
+    "loot": [],
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth"
+  }
 } satisfies Partial<Record<MonsterId, MonsterDefinition>>;
-
-const howlingPowerProfiles = {
-  'cavefang-wolf': [650, 'air'], 'razorclaw-lynx': [700, 'air'], 'corrupted-dire-wolf': [760, 'arcane'],
-  'bonehide-boar': [820, 'earth'], 'moonblind-jackal': [880, 'arcane'], 'den-stalker': [950, 'air'],
-  'corrupted-greatbear': [1300, 'earth'],
-} as const;
-for (const [id, [power, affinity]] of Object.entries(howlingPowerProfiles) as Array<[keyof typeof howlingPowerProfiles, readonly [number, import('../../elements/elements').ElementId]]>) {
-  const monster = HOWLING_DEN_MONSTERS[id]
-  if (monster) (HOWLING_DEN_MONSTERS as Partial<Record<MonsterId, MonsterDefinition>>)[id] = applyCombatV2Profile(monster, affinity, power)
-}

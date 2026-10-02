@@ -52,7 +52,7 @@ describe('Rank-I spell mechanics', () => {
     expect(state.combat.playerStatuses[0].statusId).toBe('hardened')
     const before = state.player.health
     const source = { ...playerSpell, actor: 'enemy' as const, kind: 'basic-attack' as const }
-    const breakdown = calculateCombatDamage(state, 10, 'physical', source, 'player')
+    const breakdown = calculateCombatDamage(state, 10, 'arcane', source, 'player')
     expect(breakdown.resolvedBeforeBarrier).toBe(7.5)
     expect(state.player.health).toBe(before)
   })

@@ -50,7 +50,7 @@ export const getItemDropSources = (itemId: ItemId): ItemDropSource[] => COMBAT_L
   const monsterIds = [...dungeon.monsterPool, ...(hasBossEncounter(dungeon) ? [dungeon.boss] : [])]
   return monsterIds.flatMap((monsterId) => {
     const monster = MONSTERS[monsterId]
-    return monster.loot.filter((drop) => drop.itemId === itemId).map((drop) => ({ monsterId, monsterName: monster.name, locationId, locationName: dungeon.name, role: dungeon.boss === monsterId ? 'boss' as const : 'normal' as const, ...drop, itemId }))
+    return monster.loot.filter((drop) => drop.itemId === itemId).map((drop) => ({ monsterId, monsterName: monster.name, locationId, locationName: dungeon.name, role: dungeon.boss === monsterId ? 'boss' as const : 'normal' as const, min: drop.quantity.min, max: drop.quantity.max, chance: drop.baseChance, itemId }))
   })
 })
 

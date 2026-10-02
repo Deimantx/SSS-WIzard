@@ -1,10 +1,10 @@
 import { grantItem } from '../inventory/itemAcquisition'
 import { getConsumableQuantity } from '../../core/inventory/inventoryConsumption'
-import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
-import { CRYSTAL_CACHE_DUST, CRYSTAL_CACHE_ITEM_ID, CRYSTAL_CACHE_POWER_THRESHOLD, CRYSTAL_CACHE_DROP_CHANCE, CRYSTAL_CRUSH_DUST, CRYSTAL_FAMILY_ORDER, CRYSTAL_GROUP_CAP, CRYSTAL_SLOT_COUNT, CRYSTAL_STARTING_UNLOCKED_SLOTS, CRYSTAL_UPGRADE_COSTS, CRYSTAL_VARIANT_IDS, getCrystalFamily, getCrystalTier, getNextCrystalVariant } from '../../content/crystals/crystals'
+import { CRYSTAL_CACHE_DUST, CRYSTAL_CACHE_ITEM_ID, CRYSTAL_CRUSH_DUST, CRYSTAL_FAMILY_ORDER, CRYSTAL_GROUP_CAP, CRYSTAL_SLOT_COUNT, CRYSTAL_STARTING_UNLOCKED_SLOTS, CRYSTAL_UPGRADE_COSTS, CRYSTAL_VARIANT_IDS, getCrystalFamily, getCrystalTier, getNextCrystalVariant } from '../../content/crystals/crystals'
 import type { CrystalPreset, CrystalPresetId, CrystalState, CrystalTier, CrystalVariantId, GameState, ItemId } from '../../types'
-import { getWorldTierDefinition } from '../world-tier/worldTierRuntime'
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
+import { resolveCombatLootContext, type CombatLootContext } from '../loot/universalLootRuntime'
+import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
 
 export const CRYSTAL_RNG_DEFAULT_SEED = 0xC12A5EED
 const PRESET_IDS: readonly CrystalPresetId[] = ['crystal-preset-1', 'crystal-preset-2', 'crystal-preset-3']
@@ -202,11 +202,15 @@ export interface CrystalCacheOpenResult {
   reason?: string
 }
 
-export const isCrystalCacheEligiblePower = (power: number) => Number.isFinite(power) && power >= CRYSTAL_CACHE_POWER_THRESHOLD
+export const getCrystalCacheDropChance = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, lootContext?: CombatLootContext) => {
+  const context = lootContext ?? resolveCombatLootContext(enemyId, enemyWorldTier)
+  if (!isCrystalSystemUnlocked(state) || context.lootTier.tier < 10) return 0
+  return Math.min(1, context.lootTier.crystalCacheDropChance * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1) * (context.guildBonuses?.crystalCacheChanceMultiplier ?? getGuildProgressionBonuses(state).crystalCacheChanceMultiplier))
+}
 
-export const getCrystalCacheDropChance = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId) => {
-  if (!isCrystalSystemUnlocked(state) || !isCrystalCacheEligiblePower(resolveEnemyPowerRating(enemyId, enemyWorldTier))) return 0
-  return Math.min(1, CRYSTAL_CACHE_DROP_CHANCE * getWorldTierDefinition(enemyWorldTier).crystalCacheDropChanceMultiplier * getGuildProgressionBonuses(state).crystalCacheChanceMultiplier)
+export const getExpectedCrystalCacheQuantity = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, lootContext?: CombatLootContext) => {
+  const context = lootContext ?? resolveCombatLootContext(enemyId, enemyWorldTier)
+  return getCrystalCacheDropChance(state, enemyId, enemyWorldTier, context) * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1)
 }
 
 export const openCrystalCaches = (state: GameState, requestedQuantity: number, rng: () => number = () => nextCrystalRandom(state)): CrystalCacheOpenResult => {
@@ -229,10 +233,12 @@ export const openCrystalCaches = (state: GameState, requestedQuantity: number, r
   return { ok: true, opened: quantity, dust, crystals }
 }
 
-export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, rng: () => number) => {
-  const chance = getCrystalCacheDropChance(state, enemyId, enemyWorldTier)
-  if (chance <= 0) return false
-  if (rng() >= chance) return false
-  grantItem(state, CRYSTAL_CACHE_ITEM_ID, 1)
-  return true
+export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, rng: () => number, lootContext?: CombatLootContext) => {
+  const chance = getCrystalCacheDropChance(state, enemyId, enemyWorldTier, lootContext)
+  if (chance <= 0) return 0
+  if (rng() >= chance) return 0
+  const context = lootContext ?? resolveCombatLootContext(enemyId, enemyWorldTier)
+  const quantity = context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1
+  grantItem(state, CRYSTAL_CACHE_ITEM_ID, quantity)
+  return quantity
 }

@@ -1,0 +1,3826 @@
+{
+  "forest-wisp": {
+    "id": "forest-wisp",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 10
+    },
+    "maxHealth": 200,
+    "defense": 8,
+    "basicAttackDamage": 12.272727272727272,
+    "basicAttackTimeMs": 2800,
+    "traitIds": [
+      "forest-wisp-flicker"
+    ],
+    "actions": {
+      "arc-spark": {
+        "id": "arc-spark",
+        "name": "Arc Spark",
+        "actionTimeMs": 2000,
+        "description": "A bright Arcane spark lashes the target.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 2.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "magic",
+          "arcane",
+          "direct"
+        ]
+      },
+      "flicker": {
+        "id": "flicker",
+        "name": "Flicker",
+        "actionTimeMs": 1200,
+        "description": "The Wisp flickers forward, accelerating its action cadence.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 16000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff",
+          "air"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "arc-spark-step",
+            "type": "action",
+            "actionId": "arc-spark"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "flicker-step",
+            "type": "action",
+            "actionId": "flicker"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "thornling": {
+    "id": "thornling",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 12
+    },
+    "maxHealth": 240,
+    "defense": 12,
+    "basicAttackDamage": 11.57852564102564,
+    "basicAttackTimeMs": 2500,
+    "traitIds": [
+      "thornling-barkskin"
+    ],
+    "actions": {
+      "thorn-lash": {
+        "id": "thorn-lash",
+        "name": "Thorn Lash",
+        "actionTimeMs": 1800,
+        "description": "A thorned lash cuts the target and leaves a lingering Thorn Wound.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "thorn-wound",
+            "durationMs": 6000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "earth",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.39999999999999997
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "earth"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "earth"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "earth"
+        ]
+      },
+      "spore-burst": {
+        "id": "spore-burst",
+        "name": "Spore Burst",
+        "actionTimeMs": 2200,
+        "description": "A burst of barbed spores tears open existing Thorn Wounds.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.65
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "detonate-status",
+            "target": "opponent",
+            "statusId": "thorn-wound",
+            "multiplier": 0.5,
+            "consume": false
+          }
+        ],
+        "tags": [
+          "special",
+          "debuff",
+          "earth"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "thorn-lash-step-1",
+            "type": "action",
+            "actionId": "thorn-lash"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "spore-burst-step",
+            "type": "action",
+            "actionId": "spore-burst"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "thorn-lash-step-2",
+            "type": "action",
+            "actionId": "thorn-lash"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "dewbound-sprite": {
+    "id": "dewbound-sprite",
+    "primaryAffinity": "water",
+    "basicAttackElement": "water",
+    "resonanceYield": {
+      "water": 18
+    },
+    "maxHealth": 260,
+    "defense": 10,
+    "basicAttackDamage": 14.51166253101737,
+    "basicAttackTimeMs": 2700,
+    "traitIds": [],
+    "actions": {
+      "mist-lance": {
+        "id": "mist-lance",
+        "name": "Mist Lance",
+        "actionTimeMs": 2100,
+        "description": "A concentrated lance of mist chills the Wizard.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "water",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "chilled",
+            "durationMs": 5000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "water",
+          "direct",
+          "debuff"
+        ]
+      },
+      "healing-dew": {
+        "id": "healing-dew",
+        "name": "Healing Dew",
+        "actionTimeMs": 2400,
+        "description": "The Sprite gathers dew and restores its vitality.",
+        "effects": [
+          {
+            "type": "heal",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.08
+            },
+            "tags": [
+              "heal",
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "heal"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "mist-lance-step-1",
+            "type": "action",
+            "actionId": "mist-lance"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "healing-dew-step",
+            "type": "action",
+            "actionId": "healing-dew"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "mist-lance-step-2",
+            "type": "action",
+            "actionId": "mist-lance"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "cinder-moth": {
+    "id": "cinder-moth",
+    "primaryAffinity": "fire",
+    "basicAttackElement": "fire",
+    "resonanceYield": {
+      "fire": 20
+    },
+    "maxHealth": 250,
+    "defense": 9,
+    "basicAttackDamage": 16.441165048543688,
+    "basicAttackTimeMs": 2400,
+    "traitIds": [],
+    "actions": {
+      "ember-dust": {
+        "id": "ember-dust",
+        "name": "Ember Dust",
+        "actionTimeMs": 1900,
+        "description": "Scorching dust clings to the Wizard and burns over time.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "burning",
+            "durationMs": 5000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.2
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "debuff"
+        ]
+      },
+      "flame-flutter": {
+        "id": "flame-flutter",
+        "name": "Flame Flutter",
+        "actionTimeMs": 1800,
+        "description": "The Moth beats its wings faster through a veil of flame.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 6000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "buff"
+        ]
+      },
+      "cinder-dive": {
+        "id": "cinder-dive",
+        "name": "Cinder Dive",
+        "actionTimeMs": 2100,
+        "description": "The Moth dives through the Wizard in a burst of cinders.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.3
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "direct"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "ember-dust-step",
+            "type": "action",
+            "actionId": "ember-dust"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "flame-flutter-step",
+            "type": "action",
+            "actionId": "flame-flutter"
+          },
+          {
+            "id": "cinder-dive-step",
+            "type": "action",
+            "actionId": "cinder-dive"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "stone-root": {
+    "id": "stone-root",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 20
+    },
+    "maxHealth": 280,
+    "defense": 12,
+    "basicAttackDamage": 23.252747252747255,
+    "basicAttackTimeMs": 3200,
+    "traitIds": [
+      "stone-rooted-shell"
+    ],
+    "actions": {
+      "root-slam": {
+        "id": "root-slam",
+        "name": "Root Slam",
+        "actionTimeMs": 2500,
+        "description": "A crushing root strike disrupts the Wizard's current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 600
+          }
+        ],
+        "tags": [
+          "special",
+          "control",
+          "earth"
+        ]
+      },
+      "stone-shell": {
+        "id": "stone-shell",
+        "name": "Stone Shell",
+        "actionTimeMs": 2400,
+        "description": "Stone plates lock together into a temporary protective Barrier.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.12
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "barrier",
+          "earth"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "root-slam-step",
+            "type": "action",
+            "actionId": "root-slam"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "stone-shell-step",
+            "type": "action",
+            "actionId": "stone-shell"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "grove-sentinel": {
+    "id": "grove-sentinel",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 45
+    },
+    "maxHealth": 320,
+    "defense": 20,
+    "basicAttackDamage": 20.596875000000004,
+    "basicAttackTimeMs": 2600,
+    "traitIds": [
+      "grove-sentinel-ancient-growth"
+    ],
+    "actions": {
+      "root-crush": {
+        "id": "root-crush",
+        "name": "Root Crush",
+        "actionTimeMs": 2000,
+        "description": "The guardian brings its roots down with crushing force.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.35
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "direct",
+          "earth"
+        ]
+      },
+      "verdant-guard": {
+        "id": "verdant-guard",
+        "name": "Verdant Guard",
+        "actionTimeMs": 2500,
+        "description": "The guardian gathers living energy into a protective Barrier.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.16666666666666666
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "barrier"
+        ]
+      },
+      "shield-burst": {
+        "id": "shield-burst",
+        "name": "Shield Burst",
+        "actionTimeMs": 2200,
+        "description": "Deals Earth damage plus damage equal to 50% of the Sentinel's remaining Barrier, then consumes that Barrier.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.75
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-current-barrier-percent",
+                  "value": 0.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "consume-barrier",
+            "target": "self",
+            "mode": "all"
+          }
+        ],
+        "tags": [
+          "special",
+          "earth",
+          "barrier",
+          "direct"
+        ]
+      },
+      "rejuvenate": {
+        "id": "rejuvenate",
+        "name": "Rejuvenate",
+        "actionTimeMs": 2600,
+        "description": "The Sentinel draws vitality from the grove and restores Health.",
+        "effects": [
+          {
+            "type": "heal",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.08
+            },
+            "tags": [
+              "heal",
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "heal"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "verdant-guard-step",
+            "type": "action",
+            "actionId": "verdant-guard"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "root-crush-step-1",
+            "type": "action",
+            "actionId": "root-crush"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "shield-burst-step",
+            "type": "action",
+            "actionId": "shield-burst"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "rejuvenate-step",
+            "type": "action",
+            "actionId": "rejuvenate"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "tempest-stag": {
+    "id": "tempest-stag",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 50,
+      "earth": 15
+    },
+    "maxHealth": 460,
+    "defense": 18,
+    "basicAttackDamage": 16.61197703035275,
+    "basicAttackTimeMs": 2250,
+    "traitIds": [],
+    "actions": {
+      "static-antlers": {
+        "id": "static-antlers",
+        "name": "Static Antlers",
+        "actionTimeMs": 2000,
+        "description": "Lightning forks from the antlers and leaves Shock behind.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "shock",
+            "stacks": 2,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "air",
+          "direct",
+          "debuff"
+        ]
+      },
+      "gale-charge": {
+        "id": "gale-charge",
+        "name": "Gale Charge",
+        "actionTimeMs": 1900,
+        "description": "A rushing gale delays the Wizard's current action.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.15
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 500
+          }
+        ],
+        "tags": [
+          "special",
+          "air",
+          "direct",
+          "control"
+        ]
+      },
+      "storm-rush": {
+        "id": "storm-rush",
+        "name": "Storm Rush",
+        "actionTimeMs": 2100,
+        "description": "The Stag crashes through the arena in a storm-charged rush.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.45
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "air",
+          "direct"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "static-antlers-step-1",
+            "type": "action",
+            "actionId": "static-antlers"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "gale-charge-step",
+            "type": "action",
+            "actionId": "gale-charge"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "static-antlers-step-2",
+            "type": "action",
+            "actionId": "static-antlers"
+          },
+          {
+            "id": "storm-rush-step",
+            "type": "action",
+            "actionId": "storm-rush"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "forest-heart": {
+    "id": "forest-heart",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 80
+    },
+    "maxHealth": 900,
+    "defense": 30,
+    "basicAttackDamage": 17.515151515151516,
+    "basicAttackTimeMs": 2400,
+    "traitIds": [
+      "forest-heart-living-core"
+    ],
+    "actions": {
+      "heart-pulse": {
+        "id": "heart-pulse",
+        "name": "Heart Pulse",
+        "actionTimeMs": 2000,
+        "description": "The Forest Heart releases a crushing pulse through the roots.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "direct",
+          "earth"
+        ]
+      },
+      "root-prison": {
+        "id": "root-prison",
+        "name": "Root Prison",
+        "actionTimeMs": 2000,
+        "description": "Living roots crush the Wizard and disrupt the current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.8
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 900
+          }
+        ],
+        "tags": [
+          "special",
+          "control",
+          "earth"
+        ]
+      },
+      "overgrowth": {
+        "id": "overgrowth",
+        "name": "Overgrowth",
+        "actionTimeMs": 2800,
+        "description": "The Heart thickens its living shell behind a heavy living Barrier.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.14
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "barrier"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "heart-pulse-step",
+            "type": "action",
+            "actionId": "heart-pulse"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "root-prison-step",
+            "type": "action",
+            "actionId": "root-prison"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "basic-5",
+            "type": "basic"
+          }
+        ]
+      },
+      "overgrown": {
+        "id": "overgrown",
+        "steps": [
+          {
+            "id": "heart-pulse-step-1",
+            "type": "action",
+            "actionId": "heart-pulse"
+          },
+          {
+            "id": "root-prison-step-1",
+            "type": "action",
+            "actionId": "root-prison"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "overgrowth-step",
+            "type": "action",
+            "actionId": "overgrowth"
+          },
+          {
+            "id": "heart-pulse-step-2",
+            "type": "action",
+            "actionId": "heart-pulse"
+          },
+          {
+            "id": "root-prison-step-2",
+            "type": "action",
+            "actionId": "root-prison"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "cavefang-wolf": {
+    "id": "cavefang-wolf",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 28
+    },
+    "maxHealth": 350,
+    "defense": 16,
+    "basicAttackDamage": 25.212477396021697,
+    "basicAttackTimeMs": 2200,
+    "traitIds": [
+      "cavefang-wolf-predator-instinct"
+    ],
+    "actions": {
+      "pounce": {
+        "id": "pounce",
+        "name": "Pounce",
+        "actionTimeMs": 1400,
+        "description": "The Wolf lunges through the Wizard's concentration and disrupts the current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 400
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "air"
+        ]
+      },
+      "predator-howl": {
+        "id": "predator-howl",
+        "name": "Predator's Howl",
+        "actionTimeMs": 1600,
+        "description": "A hunting howl accelerates the Wolf's assault.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 16000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "pounce-step",
+            "type": "action",
+            "actionId": "pounce"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "predator-howl-step",
+            "type": "action",
+            "actionId": "predator-howl"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "razorclaw-lynx": {
+    "id": "razorclaw-lynx",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 32
+    },
+    "maxHealth": 360,
+    "defense": 16,
+    "basicAttackDamage": 24.551687763713076,
+    "basicAttackTimeMs": 1900,
+    "traitIds": [
+      "razorclaw-lynx-relentless-hunter"
+    ],
+    "actions": {
+      "rending-claws": {
+        "id": "rending-claws",
+        "name": "Rending Claws",
+        "actionTimeMs": 1300,
+        "description": "Raking claws cut the target and leave a lingering Bleeding wound.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.25
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "bleeding",
+            "durationMs": 8000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "air",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.3625
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "air"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "air"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "air"
+        ]
+      },
+      "blood-scent": {
+        "id": "blood-scent",
+        "name": "Blood Scent",
+        "actionTimeMs": 1200,
+        "description": "The Lynx catches the scent of blood and quickens its assault.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 5000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "rending-claws-step-1",
+            "type": "action",
+            "actionId": "rending-claws"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "blood-scent-step",
+            "type": "action",
+            "actionId": "blood-scent"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "rending-claws-step-2",
+            "type": "action",
+            "actionId": "rending-claws"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "corrupted-dire-wolf": {
+    "id": "corrupted-dire-wolf",
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane",
+    "resonanceYield": {
+      "air": 25,
+      "earth": 20
+    },
+    "resistances": {
+      "fire": 0.1,
+      "water": 0.1,
+      "earth": 0.1,
+      "air": 0.1
+    },
+    "maxHealth": 420,
+    "defense": 13,
+    "basicAttackDamage": 30.316750342309447,
+    "basicAttackTimeMs": 2300,
+    "traitIds": [
+      "corrupted-dire-wolf-arcane-corruption"
+    ],
+    "actions": {
+      "arcane-bite": {
+        "id": "arcane-bite",
+        "name": "Arcane Bite",
+        "actionTimeMs": 1600,
+        "description": "A corrupted bite tears through both body and warding.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.65
+                }
+              },
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.65
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "melee",
+          "direct"
+        ]
+      },
+      "corrupted-howl": {
+        "id": "corrupted-howl",
+        "name": "Corrupted Howl",
+        "actionTimeMs": 1800,
+        "description": "The howl fills the Corrupted Dire Wolf with Haste.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "haste",
+            "durationMs": 6000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      },
+      "corrupting-fang": {
+        "id": "corrupting-fang",
+        "name": "Corrupting Fang",
+        "actionTimeMs": 1900,
+        "description": "A corrupted bite leaves unstable Arcane residue in the wound.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.9
+                }
+              },
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.6
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "corruption",
+            "stacks": 1,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "melee",
+          "debuff",
+          "direct"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "arcane-bite-step-1",
+            "type": "action",
+            "actionId": "arcane-bite"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "corrupted-howl-step",
+            "type": "action",
+            "actionId": "corrupted-howl"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "corrupting-fang-step",
+            "type": "action",
+            "actionId": "corrupting-fang"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "arcane-bite-step-2",
+            "type": "action",
+            "actionId": "arcane-bite"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "bonehide-boar": {
+    "id": "bonehide-boar",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 36
+    },
+    "maxHealth": 470,
+    "defense": 28,
+    "basicAttackDamage": 37.94680851063829,
+    "basicAttackTimeMs": 2900,
+    "traitIds": [],
+    "actions": {
+      "tusk-charge": {
+        "id": "tusk-charge",
+        "name": "Tusk Charge",
+        "actionTimeMs": 2300,
+        "description": "A brutal Earth charge delays the Wizard's current action.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.45
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 500
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "direct",
+          "earth"
+        ]
+      },
+      "bristle-guard": {
+        "id": "bristle-guard",
+        "name": "Bristle Guard",
+        "actionTimeMs": 2000,
+        "description": "The Boar hardens its hide and becomes Fortified.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "fortified",
+            "durationMs": 8000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "tusk-charge-step-1",
+            "type": "action",
+            "actionId": "tusk-charge"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "bristle-guard-step",
+            "type": "action",
+            "actionId": "bristle-guard"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "tusk-charge-step-2",
+            "type": "action",
+            "actionId": "tusk-charge"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "moonblind-jackal": {
+    "id": "moonblind-jackal",
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane",
+    "resonanceYield": {
+      "air": 38,
+      "fire": 12
+    },
+    "maxHealth": 340,
+    "defense": 15,
+    "basicAttackDamage": 41.21456582633053,
+    "basicAttackTimeMs": 1900,
+    "traitIds": [],
+    "actions": {
+      "moonbite": {
+        "id": "moonbite",
+        "name": "Moonbite",
+        "actionTimeMs": 1700,
+        "description": "Arcane damage leaves the Wizard Cursed.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "cursed",
+            "durationMs": 7000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "melee",
+          "debuff",
+          "direct"
+        ]
+      },
+      "blood-trail": {
+        "id": "blood-trail",
+        "name": "Blood Trail",
+        "actionTimeMs": 1800,
+        "description": "Fire damage opens a lingering wounded burn.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.9
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "burning",
+            "durationMs": 8000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.15
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "melee",
+          "debuff",
+          "direct"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "moonbite-step-1",
+            "type": "action",
+            "actionId": "moonbite"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "blood-trail-step",
+            "type": "action",
+            "actionId": "blood-trail"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "moonbite-step-2",
+            "type": "action",
+            "actionId": "moonbite"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "den-stalker": {
+    "id": "den-stalker",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 32,
+      "earth": 18
+    },
+    "maxHealth": 400,
+    "defense": 18,
+    "basicAttackDamage": 46.82783018867924,
+    "basicAttackTimeMs": 2200,
+    "traitIds": [],
+    "actions": {
+      "shadow-pounce": {
+        "id": "shadow-pounce",
+        "name": "Shadow Pounce",
+        "actionTimeMs": 1800,
+        "description": "An Arcane strike leaves the Wizard Fragile.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "fragile",
+            "durationMs": 6000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "direct",
+          "air"
+        ]
+      },
+      "vanish": {
+        "id": "vanish",
+        "name": "Vanish",
+        "actionTimeMs": 1500,
+        "description": "The Stalker slips into Spectral Fade.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "spectral-fade",
+            "durationMs": 5000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      },
+      "execution-bite": {
+        "id": "execution-bite",
+        "name": "Execution Bite",
+        "actionTimeMs": 2100,
+        "description": "A devastating bite that deals extra damage to Fragile targets.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "opponent-status-stack-scaled",
+                  "statusId": "fragile",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 1.3
+                  },
+                  "perStack": 0.5,
+                  "maxStacks": 1
+                }
+              }
+            ],
+            "tags": [
+              "special",
+              "melee",
+              "direct",
+              "air"
+            ]
+          }
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "vanish-step",
+            "type": "action",
+            "actionId": "vanish"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-pounce-step-1",
+            "type": "action",
+            "actionId": "shadow-pounce"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "execution-bite-step",
+            "type": "action",
+            "actionId": "execution-bite"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-pounce-step-2",
+            "type": "action",
+            "actionId": "shadow-pounce"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "corrupted-greatbear": {
+    "id": "corrupted-greatbear",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 110,
+      "air": 30
+    },
+    "maxHealth": 2400,
+    "defense": 30,
+    "basicAttackDamage": 17.924242424242426,
+    "basicAttackTimeMs": 2800,
+    "traitIds": [
+      "corrupted-greatbear-thick-hide",
+      "corrupted-greatbear-unstable-corruption"
+    ],
+    "actions": {
+      "crushing-maul": {
+        "id": "crushing-maul",
+        "name": "Crushing Maul",
+        "actionTimeMs": 2200,
+        "description": "A brutal maul strike crashes into the target.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.55
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "direct",
+          "earth"
+        ]
+      },
+      "groundbreaker": {
+        "id": "groundbreaker",
+        "name": "Groundbreaker",
+        "actionTimeMs": 2500,
+        "description": "The Greatbear shatters the ground, disrupting the Wizard's current Spell cast.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "tremored",
+            "durationMs": 2200,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 1000
+          }
+        ],
+        "tags": [
+          "special",
+          "control",
+          "earth"
+        ]
+      },
+      "corrupted-roar": {
+        "id": "corrupted-roar",
+        "name": "Corrupted Roar",
+        "actionTimeMs": 2200,
+        "description": "Makes the target Vulnerable and adds 1 Corruption.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "vulnerable",
+            "durationMs": 10000,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "corruption",
+            "durationMs": 30000,
+            "stacks": 1,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "debuff"
+        ]
+      },
+      "savage-rampage": {
+        "id": "savage-rampage",
+        "name": "Savage Rampage",
+        "actionTimeMs": 3000,
+        "description": "A heavy Earth strike empowered by Corruption.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "opponent-status-stack-scaled",
+                  "statusId": "corruption",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 2
+                  },
+                  "perStack": 0.12,
+                  "maxStacks": 5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "corruption",
+            "durationMs": 30000,
+            "stacks": 1,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "direct",
+          "earth"
+        ]
+      },
+      "corrupting-maul": {
+        "id": "corrupting-maul",
+        "name": "Corrupting Maul",
+        "actionTimeMs": 2800,
+        "description": "Earth and Arcane impacts crash together as the corruption surges.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.9
+                }
+              },
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.7
+                }
+              }
+            ],
+            "tags": [
+              "special",
+              "direct",
+              "earth",
+              "arcane"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "earth",
+          "arcane",
+          "melee",
+          "direct"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "crushing-maul-step",
+            "type": "action",
+            "actionId": "crushing-maul"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "groundbreaker-step",
+            "type": "action",
+            "actionId": "groundbreaker"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      },
+      "corrupted": {
+        "id": "corrupted",
+        "steps": [
+          {
+            "id": "corrupted-roar-step",
+            "type": "action",
+            "actionId": "corrupted-roar"
+          },
+          {
+            "id": "crushing-maul-step-1",
+            "type": "action",
+            "actionId": "crushing-maul"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "savage-rampage-step-1",
+            "type": "action",
+            "actionId": "savage-rampage"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "corrupting-maul-step",
+            "type": "action",
+            "actionId": "corrupting-maul"
+          },
+          {
+            "id": "savage-rampage-step-2",
+            "type": "action",
+            "actionId": "savage-rampage"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "ashen-tracker": {
+    "id": "ashen-tracker",
+    "primaryAffinity": "fire",
+    "basicAttackElement": "fire",
+    "resonanceYield": {
+      "fire": 20,
+      "air": 32
+    },
+    "maxHealth": 590,
+    "defense": 15,
+    "basicAttackDamage": 20.40960451977401,
+    "basicAttackTimeMs": 1750,
+    "traitIds": [
+      "ashen-tracker-pursuit"
+    ],
+    "actions": {
+      "trail-rake": {
+        "id": "trail-rake",
+        "name": "Trail Rake",
+        "description": "A fast rake that leaves a bleeding wound.",
+        "actionTimeMs": 1350,
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.15
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "bleeding",
+            "durationMs": 6000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.3666666666666667
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "debuff",
+          "fire"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "trail-rake-1",
+            "type": "action",
+            "actionId": "trail-rake"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "trail-rake-2",
+            "type": "action",
+            "actionId": "trail-rake"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "gloamfang-stalker": {
+    "id": "gloamfang-stalker",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 40
+    },
+    "maxHealth": 650,
+    "defense": 16,
+    "basicAttackDamage": 22.478091528724438,
+    "basicAttackTimeMs": 1900,
+    "traitIds": [
+      "gloamfang-shadowstep"
+    ],
+    "actions": {
+      "shadow-pounce": {
+        "id": "shadow-pounce",
+        "name": "Shadow Pounce",
+        "description": "Marks the quarry as Vulnerable before striking hard and delaying its next cast.",
+        "actionTimeMs": 1650,
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "vulnerable",
+            "durationMs": 6500,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.65
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 450
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "debuff",
+          "air"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-pounce-1",
+            "type": "action",
+            "actionId": "shadow-pounce"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-pounce-2",
+            "type": "action",
+            "actionId": "shadow-pounce"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "runehorn-brute": {
+    "id": "runehorn-brute",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 48
+    },
+    "maxHealth": 820,
+    "defense": 28,
+    "basicAttackDamage": 24.63845925044616,
+    "basicAttackTimeMs": 2300,
+    "traitIds": [
+      "runehorn-leyplate"
+    ],
+    "actions": {
+      "leyplate-guard": {
+        "id": "leyplate-guard",
+        "name": "Leyplate Guard",
+        "description": "Raises a brief Fortified stance.",
+        "actionTimeMs": 1500,
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "fortified",
+            "durationMs": 6500,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      },
+      "rune-charge": {
+        "id": "rune-charge",
+        "name": "Rune Charge",
+        "description": "A heavy horn charge that chills the quarry.",
+        "actionTimeMs": 2200,
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.6
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "chilled",
+            "durationMs": 4500,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "earth"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "leyplate-guard-step",
+            "type": "action",
+            "actionId": "leyplate-guard"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "rune-charge-1",
+            "type": "action",
+            "actionId": "rune-charge"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "rune-charge-2",
+            "type": "action",
+            "actionId": "rune-charge"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "veilwing-harrier": {
+    "id": "veilwing-harrier",
+    "primaryAffinity": "air",
+    "basicAttackElement": "air",
+    "resonanceYield": {
+      "air": 46
+    },
+    "maxHealth": 640,
+    "defense": 14,
+    "basicAttackDamage": 27.156523686305732,
+    "basicAttackTimeMs": 1650,
+    "traitIds": [],
+    "actions": {
+      "razor-gale": {
+        "id": "razor-gale",
+        "name": "Razor Gale",
+        "description": "A cutting gust strikes the quarry and delays its current action.",
+        "actionTimeMs": 1150,
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "air",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.2
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 450
+          }
+        ],
+        "tags": [
+          "special",
+          "control",
+          "air"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "razor-gale-1",
+            "type": "action",
+            "actionId": "razor-gale"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "razor-gale-2",
+            "type": "action",
+            "actionId": "razor-gale"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "cinderback-mauler": {
+    "id": "cinderback-mauler",
+    "primaryAffinity": "fire",
+    "basicAttackElement": "fire",
+    "resonanceYield": {
+      "fire": 52
+    },
+    "maxHealth": 760,
+    "defense": 21,
+    "basicAttackDamage": 34.1521151008362,
+    "basicAttackTimeMs": 2100,
+    "traitIds": [],
+    "actions": {
+      "cinder-slam": {
+        "id": "cinder-slam",
+        "name": "Cinder Slam",
+        "description": "A heavy blow scorches the quarry with lingering Fire damage.",
+        "actionTimeMs": 2050,
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.55
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "burning",
+            "durationMs": 7000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.16428571428571426
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "melee",
+          "debuff"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "cinder-slam-1",
+            "type": "action",
+            "actionId": "cinder-slam"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "cinder-slam-2",
+            "type": "action",
+            "actionId": "cinder-slam"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "gloomroot-hexer": {
+    "id": "gloomroot-hexer",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "resonanceYield": {
+      "earth": 50
+    },
+    "maxHealth": 700,
+    "defense": 18,
+    "basicAttackDamage": 42.11590296495957,
+    "basicAttackTimeMs": 2000,
+    "traitIds": [],
+    "actions": {
+      "root-hex": {
+        "id": "root-hex",
+        "name": "Root Hex",
+        "description": "A ley-charged strike leaves the quarry Cursed.",
+        "actionTimeMs": 1700,
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.15
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "cursed",
+            "durationMs": 7500,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "debuff"
+        ]
+      },
+      "ley-barrier": {
+        "id": "ley-barrier",
+        "name": "Ley Barrier",
+        "description": "The Hexer braces behind a Fortified ward.",
+        "actionTimeMs": 1550,
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "fortified",
+            "durationMs": 6500,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "root-hex-1",
+            "type": "action",
+            "actionId": "root-hex"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "ley-barrier-1",
+            "type": "action",
+            "actionId": "ley-barrier"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "root-hex-2",
+            "type": "action",
+            "actionId": "root-hex"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "nightglass-alpha": {
+    "id": "nightglass-alpha",
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane",
+    "resonanceYield": {
+      "air": 80
+    },
+    "maxHealth": 1000,
+    "defense": 28,
+    "basicAttackDamage": 40.12957317073171,
+    "basicAttackTimeMs": 1950,
+    "traitIds": [],
+    "actions": {
+      "shadow-mark": {
+        "id": "shadow-mark",
+        "name": "Shadow Mark",
+        "description": "Curses and exposes its quarry to the Alpha’s follow-up.",
+        "actionTimeMs": 1750,
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "cursed",
+            "durationMs": 12000,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "vulnerable",
+            "durationMs": 12000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "debuff"
+        ]
+      },
+      "alpha-pounce": {
+        "id": "alpha-pounce",
+        "name": "Alpha Pounce",
+        "description": "A crushing leap that hits harder while the quarry is Vulnerable.",
+        "actionTimeMs": 1900,
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 2.15
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "modify-action-timer",
+            "target": "opponent",
+            "action": "current",
+            "amountMs": 700
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "control",
+          "arcane"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "shadow-mark-step",
+            "type": "action",
+            "actionId": "shadow-mark"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "alpha-pounce-step-1",
+            "type": "action",
+            "actionId": "alpha-pounce"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "alpha-pounce-step-2",
+            "type": "action",
+            "actionId": "alpha-pounce"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "restless-skeleton": {
+    "id": "restless-skeleton",
+    "primaryAffinity": "earth",
+    "basicAttackElement": "earth",
+    "maxHealth": 680,
+    "defense": 30,
+    "basicAttackDamage": 43.6764705882353,
+    "basicAttackTimeMs": 2700,
+    "traitIds": [],
+    "actions": {
+      "bone-cleaver": {
+        "id": "bone-cleaver",
+        "name": "Bone Cleaver",
+        "actionTimeMs": 2200,
+        "description": "A heavy cleaver blow splits through the target.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "earth",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.85
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "melee",
+          "direct",
+          "earth"
+        ]
+      },
+      "bone-rattle": {
+        "id": "bone-rattle",
+        "name": "Bone Rattle",
+        "actionTimeMs": 1900,
+        "description": "A violent clatter of cursed bones leaves the Wizard Fragile.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "fragile",
+            "durationMs": 6000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "debuff",
+          "earth"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "bone-cleaver-step",
+            "type": "action",
+            "actionId": "bone-cleaver"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "bone-rattle-step",
+            "type": "action",
+            "actionId": "bone-rattle"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "grave-wraith": {
+    "id": "grave-wraith",
+    "primaryAffinity": "water",
+    "basicAttackElement": "water",
+    "maxHealth": 600,
+    "defense": 20,
+    "basicAttackDamage": 58.59375,
+    "basicAttackTimeMs": 2400,
+    "traitIds": [],
+    "actions": {
+      "chilling-touch": {
+        "id": "chilling-touch",
+        "name": "Chilling Touch",
+        "actionTimeMs": 1800,
+        "description": "A cold touch damages the target and leaves it Chilled.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "water",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.3
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "chilled",
+            "durationMs": 10000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "water",
+          "magic",
+          "debuff"
+        ]
+      },
+      "frost-reap": {
+        "id": "frost-reap",
+        "name": "Frost Reap",
+        "actionTimeMs": 2100,
+        "description": "Reaps the target with spectral frost. Deals 50% more damage while the target is Chilled.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "water",
+                "magnitude": {
+                  "type": "opponent-status-stack-scaled",
+                  "statusId": "chilled",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 1.25
+                  },
+                  "perStack": 0.5,
+                  "maxStacks": 1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "water",
+          "magic",
+          "direct"
+        ]
+      },
+      "fade": {
+        "id": "fade",
+        "name": "Fade",
+        "actionTimeMs": 1700,
+        "description": "The Grave Wraith slips into Spectral Fade.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "spectral-fade",
+            "durationMs": 5000,
+            "tags": [
+              "buff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "buff"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "chilling-touch-step-1",
+            "type": "action",
+            "actionId": "chilling-touch"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "fade-step",
+            "type": "action",
+            "actionId": "fade"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "frost-reap-step",
+            "type": "action",
+            "actionId": "frost-reap"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "fallen-acolyte": {
+    "id": "fallen-acolyte",
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane",
+    "maxHealth": 550,
+    "defense": 18,
+    "basicAttackDamage": 87.40994854202401,
+    "basicAttackTimeMs": 2600,
+    "traitIds": [
+      "fallen-acolyte-grave-channeling"
+    ],
+    "actions": {
+      "grave-bolt": {
+        "id": "grave-bolt",
+        "name": "Grave Bolt",
+        "actionTimeMs": 1500,
+        "description": "A concentrated Arcane bolt tears through the target.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.45
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "magic",
+          "direct"
+        ]
+      },
+      "grave-curse": {
+        "id": "grave-curse",
+        "name": "Grave Curse",
+        "actionTimeMs": 1700,
+        "description": "A funerary curse weakens the Wizard's damage and recovery.",
+        "effects": [
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "cursed",
+            "durationMs": 12000,
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "debuff"
+        ]
+      },
+      "soul-drain": {
+        "id": "soul-drain",
+        "name": "Soul Drain",
+        "actionTimeMs": 2200,
+        "description": "Drains Arcane energy and restores Health. Both effects are 40% stronger while the target is Cursed.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "opponent-status-stack-scaled",
+                  "statusId": "cursed",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 1.1
+                  },
+                  "perStack": 0.4,
+                  "maxStacks": 1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "heal",
+            "target": "self",
+            "magnitude": {
+              "type": "opponent-status-stack-scaled",
+              "statusId": "cursed",
+              "base": {
+                "type": "source-max-health-percent",
+                "value": 0.07
+              },
+              "perStack": 0.4,
+              "maxStacks": 1
+            },
+            "tags": [
+              "heal",
+              "direct"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "magic",
+          "heal",
+          "direct"
+        ]
+      },
+      "death-ward": {
+        "id": "death-ward",
+        "name": "Death Ward",
+        "actionTimeMs": 2000,
+        "description": "A deathly ward gathers a protective Barrier around the caster.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.18
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "barrier"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "grave-bolt-step",
+            "type": "action",
+            "actionId": "grave-bolt"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "grave-curse-step",
+            "type": "action",
+            "actionId": "grave-curse"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "soul-drain-step",
+            "type": "action",
+            "actionId": "soul-drain"
+          },
+          {
+            "id": "death-ward-step",
+            "type": "action",
+            "actionId": "death-ward"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  },
+  "archmage-edrin-shade": {
+    "id": "archmage-edrin-shade",
+    "primaryAffinity": "arcane",
+    "basicAttackElement": "arcane",
+    "resonanceYield": {
+      "fire": 40,
+      "water": 40,
+      "earth": 40,
+      "air": 40
+    },
+    "maxHealth": 6000,
+    "defense": 45,
+    "basicAttackDamage": 17.536231884057973,
+    "basicAttackTimeMs": 2500,
+    "traitIds": [
+      "archmage-edrin-arcane-remnant",
+      "archmage-edrin-unbound-spirit"
+    ],
+    "actions": {
+      "gravefire": {
+        "id": "gravefire",
+        "name": "Gravefire",
+        "actionTimeMs": 1800,
+        "description": "Flame erupts across the target and leaves it Burning.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "fire",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "burning",
+            "durationMs": 5000,
+            "periodicEffects": [
+              {
+                "type": "deal-damage",
+                "target": "self",
+                "components": [
+                  {
+                    "damageType": "fire",
+                    "magnitude": {
+                      "type": "source-basic-damage-percent",
+                      "value": 0.2
+                    }
+                  }
+                ],
+                "tags": [
+                  "dot",
+                  "fire"
+                ]
+              }
+            ],
+            "tags": [
+              "debuff",
+              "dot",
+              "fire"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "fire",
+          "magic",
+          "debuff"
+        ]
+      },
+      "frostbind": {
+        "id": "frostbind",
+        "name": "Frostbind",
+        "actionTimeMs": 2000,
+        "description": "A freezing surge damages the target and leaves it Chilled.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "water",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.05
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "chilled",
+            "tags": [
+              "debuff"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "water",
+          "magic",
+          "debuff"
+        ]
+      },
+      "soul-drain": {
+        "id": "soul-drain",
+        "name": "Soul Drain",
+        "actionTimeMs": 2400,
+        "description": "Arcane force tears at the target and restores Health equal to the actual Health damage dealt.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 1.5
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ],
+            "lifeStealPercent": 1
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "magic",
+          "heal",
+          "direct"
+        ]
+      },
+      "arcane-disruption": {
+        "id": "arcane-disruption",
+        "name": "Arcane Disruption",
+        "actionTimeMs": 3000,
+        "description": "Edrin fractures the Wizard's flow of Mana and recovery.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-basic-damage-percent",
+                  "value": 0.8
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "opponent",
+            "statusId": "arcane-disruption",
+            "durationMs": 12000,
+            "tags": [
+              "debuff"
+            ]
+          },
+          {
+            "type": "set-action-pattern",
+            "target": "self",
+            "patternId": "unbound"
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "magic",
+          "debuff",
+          "direct"
+        ]
+      },
+      "final-incantation": {
+        "id": "final-incantation",
+        "name": "Final Incantation",
+        "actionTimeMs": 3500,
+        "description": "Each resolved cast permanently increases later Final Incantations by 10% for the encounter.",
+        "effects": [
+          {
+            "type": "deal-damage",
+            "target": "opponent",
+            "components": [
+              {
+                "damageType": "arcane",
+                "magnitude": {
+                  "type": "source-status-stack-scaled",
+                  "statusId": "final-incantation-empowerment",
+                  "base": {
+                    "type": "source-basic-damage-percent",
+                    "value": 2
+                  },
+                  "perStack": 0.1
+                }
+              }
+            ],
+            "tags": [
+              "direct"
+            ]
+          },
+          {
+            "type": "apply-status",
+            "target": "self",
+            "statusId": "final-incantation-empowerment",
+            "stacks": 1
+          }
+        ],
+        "tags": [
+          "special",
+          "arcane",
+          "magic",
+          "direct"
+        ]
+      },
+      "arcane-ward": {
+        "id": "arcane-ward",
+        "name": "Arcane Ward",
+        "actionTimeMs": 1800,
+        "description": "Raises an Arcane Barrier equal to 15% of maximum Health.",
+        "effects": [
+          {
+            "type": "gain-barrier",
+            "target": "self",
+            "magnitude": {
+              "type": "source-max-health-percent",
+              "value": 0.15
+            },
+            "mode": "add",
+            "durationMs": null,
+            "tags": [
+              "barrier"
+            ]
+          }
+        ],
+        "tags": [
+          "special",
+          "barrier",
+          "arcane"
+        ]
+      }
+    },
+    "actionPatterns": {
+      "default": {
+        "id": "default",
+        "steps": [
+          {
+            "id": "arcane-ward-step",
+            "type": "action",
+            "actionId": "arcane-ward"
+          },
+          {
+            "id": "gravefire-step",
+            "type": "action",
+            "actionId": "gravefire"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "frostbind-step",
+            "type": "action",
+            "actionId": "frostbind"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "gravefire-step-2",
+            "type": "action",
+            "actionId": "gravefire"
+          },
+          {
+            "id": "soul-drain-step-1",
+            "type": "action",
+            "actionId": "soul-drain"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          },
+          {
+            "id": "basic-4",
+            "type": "basic"
+          },
+          {
+            "id": "frostbind-step-2",
+            "type": "action",
+            "actionId": "frostbind"
+          },
+          {
+            "id": "soul-drain-step-2",
+            "type": "action",
+            "actionId": "soul-drain"
+          }
+        ]
+      },
+      "unbound-opening": {
+        "id": "unbound-opening",
+        "steps": [
+          {
+            "id": "arcane-ward-step",
+            "type": "action",
+            "actionId": "arcane-ward"
+          },
+          {
+            "id": "arcane-disruption-step",
+            "type": "action",
+            "actionId": "arcane-disruption"
+          }
+        ]
+      },
+      "unbound": {
+        "id": "unbound",
+        "steps": [
+          {
+            "id": "gravefire-step",
+            "type": "action",
+            "actionId": "gravefire"
+          },
+          {
+            "id": "frostbind-step",
+            "type": "action",
+            "actionId": "frostbind"
+          },
+          {
+            "id": "basic-1",
+            "type": "basic"
+          },
+          {
+            "id": "soul-drain-step",
+            "type": "action",
+            "actionId": "soul-drain"
+          },
+          {
+            "id": "final-incantation-step",
+            "type": "action",
+            "actionId": "final-incantation"
+          },
+          {
+            "id": "basic-2",
+            "type": "basic"
+          },
+          {
+            "id": "soul-drain-step-2",
+            "type": "action",
+            "actionId": "soul-drain"
+          },
+          {
+            "id": "basic-3",
+            "type": "basic"
+          }
+        ]
+      }
+    },
+    "defaultActionPatternId": "default"
+  }
+}

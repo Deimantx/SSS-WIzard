@@ -9,10 +9,10 @@ import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTy
 import { spawnEnemy } from '../../systems/combat/combatRuntime'
 import { advanceCombatState } from '../../systems/simulation/advanceGameState'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
-import type { EquipmentPosition, GameState, MonsterId, SchoolId, WorldTierId } from '../../types'
+import type { EquipmentPosition, GameState, ItemId, MonsterId, SchoolId, WorldTierId } from '../../types'
 import { getSelectedSpellPreset } from '../../systems/spells'
 import { createEmptyResonanceState } from '../../systems/resonance/resonanceRuntime'
-import { getCrystalCacheDropChance } from '../../systems/crystals/crystalRuntime'
+import { getExpectedCrystalCacheQuantity } from '../../systems/crystals/crystalRuntime'
 import { getPlayerCombatStats } from '../../systems/combat/combatStats'
 import { SPELLS } from '../../content/spells/spells'
 import { ARTIFACTS } from '../../content/artifacts/artifacts'
@@ -100,6 +100,7 @@ export interface CombatFarmingBenchmarkResult {
   crystalCachesPerHour: number
   expectedCrystalCachesPerHour: number
   arcanePointsPerHour: number
+  materialLootPerHour?: Partial<Record<ItemId, number>>
   resonanceTotal: ResonanceState
   resonancePerHour: ResonanceState
   totalResonancePerHour: number
@@ -189,6 +190,7 @@ export interface CombatDungeonRunBenchmarkResult {
   crystalCachesPerHour: number
   arcanePoints: number
   arcanePointsPerHour: number
+  materialLootPerHour?: Partial<Record<ItemId, number>>
   startingHealth: number
   endingHealth: number
   startingMana: number
@@ -221,6 +223,7 @@ export interface CombatBossCycleBenchmarkResult {
   sigilDropsPerHour: number
   expectedCrystalCachesPerHour: number
   arcanePointsPerHour: number
+  materialLootPerHour?: Partial<Record<ItemId, number>>
   damageTaken: number
   survived: boolean
   endingHealth: number
@@ -488,6 +491,11 @@ class BenchmarkCollector implements CombatEventSink, CombatTelemetryObserver {
   targetEnemyId: MonsterId = 'forest-wisp'
 }
 
+const resolveMaterialLootPerHour = (collector: BenchmarkCollector, hours: number): Partial<Record<ItemId, number>> => {
+  if (hours <= 0) return {}
+  return Object.fromEntries([...collector.loot.entries()].filter(([itemId, quantity]) => ITEMS[itemId as ItemId]?.kind === 'material' && quantity > 0).map(([itemId, quantity]) => [itemId, quantity / hours])) as Partial<Record<ItemId, number>>
+}
+
 export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput): CombatBossCycleBenchmarkResult | null => {
   const location = getCombatLocation(input.locationId)
   const dungeon = location?.id ? COMBAT_LOCATIONS[location.id] : undefined
@@ -527,8 +535,9 @@ export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput
     lifeEssencePerHour: hours > 0 ? (collector.loot.get('life-essence') ?? 0) / hours : 0,
     artifactEssencePerHour: hours > 0 ? (collector.loot.get('artifact-essence') ?? 0) / hours : 0,
     sigilDropsPerHour: hours > 0 ? collector.sigilDrops / hours : 0,
-    expectedCrystalCachesPerHour: hours > 0 ? [...collector.killsByMonster].reduce((sum, [monsterId, kills]) => sum + kills * getCrystalCacheDropChance(state, monsterId, input.worldTier), 0) / hours : 0,
+    expectedCrystalCachesPerHour: hours > 0 ? [...collector.killsByMonster].reduce((sum, [monsterId, kills]) => sum + kills * getExpectedCrystalCacheQuantity(state, monsterId, input.worldTier), 0) / hours : 0,
     arcanePointsPerHour: hours > 0 ? Math.max(0, (state.arcaneCore.totalPointsEarned ?? 0) - startingArcanePoints) / hours : 0,
+    materialLootPerHour: resolveMaterialLootPerHour(collector, hours),
     damageTaken: collector.damageTaken, survived: collector.timeToDeathMs === null, endingHealth: state.player.health, endingMana: state.player.mana,
   }
 }
@@ -577,6 +586,7 @@ export const runCombatDungeonRunBenchmark = (input: CombatDungeonRunBenchmarkInp
     sigilDrops: collector.sigilDrops, sigilsPerHour: collector.sigilDrops * runsPerHour,
     crystalCaches: cacheCount, crystalCachesPerHour: cacheCount * runsPerHour,
     arcanePoints, arcanePointsPerHour: arcanePoints * runsPerHour,
+    materialLootPerHour: resolveMaterialLootPerHour(collector, hours),
     startingHealth, endingHealth: state.player.health, startingMana, endingMana: state.player.mana,
     guardianDamage: collector.guardianDamage, guardianActiveTimeMs: collector.guardianActiveMs,
     guardianManaPerSecond: state.guardians.selectedGuardianId ? GUARDIANS[state.guardians.selectedGuardianId]?.manaPerSecond ?? 0 : 0,
@@ -675,8 +685,9 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
     artifactEssencePerHour: hours > 0 ? (collector.loot.get('artifact-essence') ?? 0) / hours : 0,
     sigilDropsPerHour: hours > 0 ? collector.sigilDrops / hours : 0,
     crystalCachesPerHour: hours > 0 ? (collector.loot.get('tier-1-crystal-cache') ?? 0) / hours : 0,
-    expectedCrystalCachesPerHour: hours > 0 ? (collector.kills / hours) * getCrystalCacheDropChance(state, input.targetEnemyId, input.worldTier) : 0,
+    expectedCrystalCachesPerHour: hours > 0 ? (collector.kills / hours) * getExpectedCrystalCacheQuantity(state, input.targetEnemyId, input.worldTier) : 0,
     arcanePointsPerHour: hours > 0 ? Math.max(0, (state.arcaneCore.totalPointsEarned ?? 0) - startingArcanePoints) / hours : 0,
+    materialLootPerHour: resolveMaterialLootPerHour(collector, hours),
     resonanceTotal: collector.resonance,
     resonancePerHour,
     totalResonancePerHour,

@@ -26,12 +26,12 @@ export interface EquipmentCombatPresentation {
 
 type EquipmentCombat = NonNullable<ItemDefinition['combat']>
 
-const DAMAGE_TYPE_NAMES: Record<DamageType, string> = { physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air' }
+const DAMAGE_TYPE_NAMES: Record<DamageType, string> = { arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air' }
 const SOURCE_KIND_NAMES: Record<CombatSource['kind'], string> = {
   'basic-attack': 'Basic Attacks', spell: 'Spells', weapon: 'Weapons', status: 'Status Effects', trait: 'Traits', action: 'Actions', 'arcane-core': 'Arcane Core', equipment: 'Equipment', guardian: 'Guardians', system: 'System',
 }
 const TAG_NAMES: Record<CombatTag, string> = {
-  'basic-attack': 'Basic Attack', spell: 'Spell', weapon: 'Weapon', equipment: 'Equipment', guardian: 'Guardian', summon: 'Summon', melee: 'Melee', ranged: 'Ranged', magic: 'Magic', direct: 'Direct', heal: 'Heal', dot: 'Damage over Time', hot: 'Heal over Time', status: 'Status', special: 'Special', trait: 'Trait', buff: 'Buff', debuff: 'Debuff', control: 'Control', barrier: 'Barrier', physical: 'Physical', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', 'conversion-generated': 'Conversion',
+  'basic-attack': 'Basic Attack', spell: 'Spell', weapon: 'Weapons', equipment: 'Equipment', guardian: 'Guardians', summon: 'Summons', melee: 'Melee', ranged: 'Ranged', magic: 'Magic', direct: 'Direct', heal: 'Heal', dot: 'Damage over Time', hot: 'Heal over Time', status: 'Status Effects', special: 'Special', trait: 'Traits', buff: 'Buff', debuff: 'Debuff', control: 'Control', barrier: 'Barrier', arcane: 'Arcane', fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', 'conversion-generated': 'Conversion',
 }
 const MODIFIER_LABELS: Record<ModifierKey, string> = {
   'damage-dealt-percent': 'Damage Dealt',
@@ -201,11 +201,10 @@ const effectMeaning = (effect: CombatEffect): string => {
 const periodicStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-status' }>): string[] => {
   const status = STATUS_DEFINITIONS[effect.statusId]
   const periodicEffects = effect.periodicEffects ?? status?.periodic?.effects
-  if (!periodicEffects?.length) return []
   const durationMs = effect.durationMs === undefined ? status?.defaultDurationMs : effect.durationMs
   const intervalMs = status?.periodic?.intervalMs ?? 0
   const tickCount = durationMs !== null && durationMs !== undefined && intervalMs > 0 ? Math.floor(Math.max(0, durationMs) / intervalMs) : 0
-  return periodicEffects.flatMap((periodicEffect) => {
+  const details = (periodicEffects ?? []).flatMap((periodicEffect) => {
     if (periodicEffect.type !== 'deal-damage') {
       return `${effectMeaning(periodicEffect)}${intervalMs > 0 ? ` per ${formatTime(intervalMs)}` : ''}`
     }
@@ -215,6 +214,12 @@ const periodicStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-stat
       return `${formatSpellMagnitude(totalMagnitude)} ${cadence} ${DAMAGE_TYPE_NAMES[component.damageType]} damage`
     })
   })
+  const sourceElementDamage = effect.periodicEffects === undefined ? status?.periodic?.sourceElementDamage : undefined
+  if (sourceElementDamage !== undefined) {
+    const total = tickCount > 0 ? `${formatSpellMagnitude({ type: 'flat', value: sourceElementDamage * tickCount })} total` : `${formatSpellMagnitude({ type: 'flat', value: sourceElementDamage })} per tick`
+    details.push(`${total} damage from the applying source element`)
+  }
+  return details
 }
 
 const applyStatusDetails = (effect: Extract<CombatEffect, { type: 'apply-status' }>): string[] => {

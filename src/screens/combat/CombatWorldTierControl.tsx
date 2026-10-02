@@ -8,7 +8,7 @@ import { useGameStore } from '../../store/gameStore'
 const formatMultiplier = (value: number) => `x${value.toFixed(2)}`
 const tierDescription = (tier: WorldTierId) => {
   const definition = WORLD_TIERS[tier]
-  return `Enemy Health ${formatMultiplier(definition.enemyHealthMultiplier)} · Enemy Damage ${formatMultiplier(definition.enemyDamageMultiplier)} · Enemy Defense ${formatMultiplier(definition.enemyDefenseMultiplier)} · Resonance ${formatMultiplier(definition.resonanceRewardMultiplier)} · Material Loot ${formatMultiplier(definition.itemLootQuantityMultiplier)}`
+  return `Enemy Health ${formatMultiplier(definition.enemyHealthMultiplier)} · Enemy Damage ${formatMultiplier(definition.enemyDamageMultiplier)} · Enemy Defense ${formatMultiplier(definition.enemyDefenseMultiplier)}. Loot Tier comes from encounter Power.`
 }
 
 const lockedTierDescription = (tier: WorldTierId) => tier === 2

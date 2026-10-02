@@ -13,7 +13,8 @@ export { getSpellPower, getSpellPowerBreakdown } from './systems/spells/spellPow
 
 export const getSchoolLevel = getCentralSchoolLevel
 
-export const equipmentStats = getPlayerBuildStaticStats
+// Keep this bridge lazy: mana/equipment/combat share an intentional runtime cycle.
+export const equipmentStats = (state: Parameters<typeof getPlayerBuildStaticStats>[0]) => getPlayerBuildStaticStats(state)
 
 export const recalculateDerivedStats = (state: GameState) => {
   const stats = equipmentStats(state)

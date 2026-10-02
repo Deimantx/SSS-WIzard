@@ -1,37 +1,29 @@
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, DamageType, MonsterId } from '../../types'
 import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS, ELEMENTAL_TUTORIAL_MONSTERS } from './first-frontier'
-import { REGIONAL_MONSTERS } from './regions'
+import { REGIONAL_MONSTERS } from './regionalMonsters'
 import { HUNTERS_ORDER_MONSTERS } from './first-frontier/gloamridge'
 import type { MonsterDefinition } from './monsterTypes'
-import { getMonsterPrimaryAffinity } from './monsterTypes'
 import { isElementId } from '../elements/elements'
 import { COMBAT_TAGS, DAMAGE_TYPES, createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/combatTiming'
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../items/items'
-import { isArtifactId } from '../artifacts/artifacts'
 import { RESONANCE_TYPES } from '../resonance/resonance'
+import { UNIVERSAL_LOOT_CATEGORIES } from '../loot/universalLootTiers'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './first-frontier'
 export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './first-frontier'
 export { HUNTERS_ORDER_MONSTERS, HUNTER_EXCLUSIVE_MONSTER_IDS } from './first-frontier/gloamridge'
-export { REGIONAL_MONSTERS } from './regions'
+export { REGIONAL_MONSTERS } from './regionalMonsters'
 
 const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, REGIONAL_MONSTERS] as const
 const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
 const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
 
 export const MONSTERS = Object.assign({}, ...MONSTER_REGISTRIES) as Record<MonsterId, MonsterDefinition>
-
-// Transitional legacy-content migration: material resonance already expresses authored creature identity.
-// Resolve it once at registry construction so every active Monster has explicit runtime affinity fields.
-Object.values(MONSTERS).forEach((monster) => {
-  monster.primaryAffinity ??= getMonsterPrimaryAffinity(monster)
-  monster.basicAttackElement ??= monster.primaryAffinity
-})
 
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
@@ -58,10 +50,13 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     monster.loot.forEach((drop) => {
       const item = ITEMS[drop.itemId]
       if (!item) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)
-      else if (item.kind === 'equipment' && isArtifactId(drop.itemId)) errors.push(`${monster.id}: monster loot may not contain Artifact Equipment; ${drop.itemId}`)
-      else if (item.kind !== 'material' && item.kind !== 'equipment') errors.push(`${monster.id}: monster loot may only contain materials or non-Artifact Equipment; ${drop.itemId} is ${item.kind}`)
-      if (!Number.isFinite(drop.chance) || drop.chance < 0 || drop.chance > 1) errors.push(`${monster.id}: invalid loot chance`)
-      if (!Number.isInteger(drop.min) || !Number.isInteger(drop.max) || drop.min < 1 || drop.max < drop.min) errors.push(`${monster.id}: invalid loot quantity`)
+      else if (item.kind !== 'material') errors.push(`${monster.id}: monster loot may only contain materials; ${drop.itemId} is ${item.kind}`)
+      if (!UNIVERSAL_LOOT_CATEGORIES.includes(drop.category)) errors.push(`${monster.id}: unknown loot category ${drop.category}`)
+      if (drop.category !== 'material') errors.push(`${monster.id}: monster loot category must be material`)
+      if (!Number.isFinite(drop.baseChance) || drop.baseChance < 0 || drop.baseChance > 1) errors.push(`${monster.id}: invalid loot base chance`)
+      if (!Number.isInteger(drop.quantity.min) || !Number.isInteger(drop.quantity.max) || drop.quantity.min < 1 || drop.quantity.max < drop.quantity.min) errors.push(`${monster.id}: invalid loot quantity`)
+      if (drop.minLootTier !== undefined && (!Number.isInteger(drop.minLootTier) || drop.minLootTier < 1)) errors.push(`${monster.id}: invalid minimum loot tier`)
+      if (drop.scaling && Object.entries(drop.scaling).some(([key, value]) => !['tierQuantity', 'tierChance', 'tierRarity', 'bossQuantity', 'bossChance', 'bossRarity'].includes(key) || typeof value !== 'boolean')) errors.push(`${monster.id}: invalid loot scaling rule`)
     })
     monster.traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)

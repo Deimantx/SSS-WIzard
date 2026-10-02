@@ -61,5 +61,3 @@ export const makeCombatMonster = (spec: CombatMonsterSpec): MonsterDefinition =>
     actions, actionPatterns: spec.actionPatterns ?? { default: { id: 'default', steps } }, defaultActionPatternId: spec.defaultActionPatternId ?? 'default', loot: [],
   }
 }
-
-// Dungeon is kept on the authored spec so each record remains easy to audit.

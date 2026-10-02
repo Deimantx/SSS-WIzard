@@ -38,7 +38,7 @@ export interface CombatV2ContentAuditRow {
   id: MonsterId; name: string; region: CombatV2AuditRegionId; location: string; order: number; boss: boolean; affinity: string; damageProfile: string[]; power: number; hp: number; defense: number; basicDamage: number; basicIntervalMs: number; basicDps: number; zoneAffix: string | null
   maxRepeatableDirectCoefficient: number; dotTotalCoefficient: number; periodicDamageCoefficient: number; periodicHealPercent: number
   repeatableHealPercent: number; repeatableBarrierPercent: number; onceOnlyHealPercent: number; onceOnlyBarrierPercent: number
-  repeatableSustainPercent: number; onceOnlySustainPercent: number; physicalComponentCount: number
+  repeatableSustainPercent: number; onceOnlySustainPercent: number
   defaultFlatPeriodicDamageCount: number; defaultFlatPeriodicHealCount: number; defaultFlatPeriodicCount: number; genericActionDescriptionCount: number; genericEquippedTraitCount: number
   maxControlMs: number; patternCycleMs: number; warnings: string[]
 }
@@ -143,12 +143,9 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   let onceOnlyPeriodicHealPercent = 0
   let defaultFlatPeriodicDamageCount = 0
   let defaultFlatPeriodicHealCount = 0
-  let physicalComponentCount = 0
-  authored.forEach(({ effect }) => { if (effect.type === 'deal-damage') physicalComponentCount += effect.components.filter((component) => component.damageType === 'physical').length })
   periodic.forEach((entry) => {
     const ticks = ticksFor(entry.statusId, entry.durationMs)
     if (entry.effect.type === 'deal-damage') {
-      physicalComponentCount += entry.effect.components.filter((component) => component.damageType === 'physical').length
       periodicDamageCoefficient += entry.effect.components.reduce((sum, component) => sum + sourceBasicCoefficient(component.magnitude) * ticks, 0)
       if (entry.fromDefault) defaultFlatPeriodicDamageCount += entry.effect.components.filter((component) => component.magnitude.type === 'flat').length
     } else if (entry.effect.type === 'heal') {
@@ -185,7 +182,6 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   if (monster.bestiaryCategory === 'boss' && repeatableSustainPercent > BOSS_REPEATABLE_SUSTAIN_BUDGET) warnings.push(`Repeatable sustain exceeds ${(BOSS_REPEATABLE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
   if (monster.bestiaryCategory === 'boss' && onceOnlySustainPercent > BOSS_ONCE_SUSTAIN_BUDGET) warnings.push(`One-transition sustain exceeds ${(BOSS_ONCE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
   if (maxControlMs > 5000 && ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(LOCATION_BY_ID[id])) warnings.push('First Frontier control exceeds 5 seconds')
-  if (physicalComponentCount) warnings.push(`${physicalComponentCount} Physical damage component(s)`)
   if (!monster.primaryAffinity) warnings.push('Missing explicit primary affinity')
   if (!monster.basicAttackElement) warnings.push('Missing explicit Basic Attack element')
   if (defaultFlatPeriodicDamageCount) warnings.push(`${defaultFlatPeriodicDamageCount} default flat periodic damage payload(s)`)
@@ -194,14 +190,13 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   return [{ id, name: monster.name, region: regionForLocation(LOCATION_BY_ID[id]), location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', order: targetOrder, boss: monster.bestiaryCategory === 'boss', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, defense: profile.defense, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, zoneAffix: locationDefinition?.zoneAffixId ? ELITE_ZONE_AFFIXES[locationDefinition.zoneAffixId]?.name ?? locationDefinition.zoneAffixId : null,
     maxRepeatableDirectCoefficient: maximumDirectCoefficient(repeatable), dotTotalCoefficient: periodicDamageCoefficient, periodicDamageCoefficient, periodicHealPercent,
     repeatableHealPercent, repeatableBarrierPercent, onceOnlyHealPercent, onceOnlyBarrierPercent, repeatableSustainPercent, onceOnlySustainPercent,
-    physicalComponentCount, defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]
+    defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]
 })
 
 export const buildCombatV2RegionalGlobalAudit = (worldTier: WorldTierId = 1) => {
   const rows = buildCombatV2ContentAudit(worldTier)
   return {
     implicitAffinityCount: rows.filter((row) => !MONSTERS[row.id]?.primaryAffinity).length,
-    physicalComponentCount: rows.reduce((sum, row) => sum + row.physicalComponentCount, 0),
     defaultFlatPeriodicDamageCount: rows.reduce((sum, row) => sum + row.defaultFlatPeriodicDamageCount, 0),
     defaultFlatPeriodicHealCount: rows.reduce((sum, row) => sum + row.defaultFlatPeriodicHealCount, 0),
     genericActionDescriptionCount: rows.reduce((sum, row) => sum + row.genericActionDescriptionCount, 0),

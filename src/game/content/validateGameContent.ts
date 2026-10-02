@@ -11,6 +11,7 @@ import { validateArtifactDefinitions } from './artifacts/artifacts'
 import { ITEMS } from './items/items'
 import { MONSTERS } from './monsters'
 import { validateEliteZoneAffixes } from './elite-affixes'
+import { validateUniversalLootTierDefinitions } from './loot/universalLootTiers'
 
 /**
  * Intentional development-time validation entry point for authored content.
@@ -18,6 +19,7 @@ import { validateEliteZoneAffixes } from './elite-affixes'
  * here once instead of as a side effect of whichever module imported first.
  */
 export const validateGameContent = () => {
+  const lootTierValidation = validateUniversalLootTierDefinitions()
   const errors = [
     ...validateSpellDefinitions(),
     ...validateStatusDefinitions(),
@@ -29,7 +31,9 @@ export const validateGameContent = () => {
     ...validateEquipmentSetDefinitions(),
     ...validateArtifactDefinitions(ITEMS),
     ...validateEliteZoneAffixes(),
+    ...lootTierValidation.errors,
   ]
+  if (lootTierValidation.warnings.length && import.meta.env.DEV) console.warn(`[game-content] ${lootTierValidation.warnings.join('; ')}`)
   if (errors.length && import.meta.env.DEV) console.error(`[game-content] ${errors.join('; ')}`)
   return errors
 }

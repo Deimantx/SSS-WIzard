@@ -1,7 +1,6 @@
 import { HUNTER_RANKS, HUNTER_STANDINGS } from '../../content/hunters-order/hunterRanks'
 import { HUNTER_UPGRADES } from '../../content/hunters-order/hunterUpgrades'
-import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../content/monsters/first-frontier/gloamridge'
-import { MONSTERS } from '../../content/monsters'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS, MONSTERS } from '../../content/monsters'
 import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { getEligibleHunterContractMembers, getHunterRankProgress, getHunterStandingProgress, getHunterUpgradePurchaseStatus } from '../../systems/hunters-order/huntersOrderRuntime'
 import type { GameState, HunterContractState, HunterRankId, HunterUpgradeId } from '../../types'

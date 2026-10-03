@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2RegionalGlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
+import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2GlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../../content/monsters/elementalTutorial'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
@@ -58,6 +58,9 @@ describe('Combat V2 authored content audit', () => {
       'corrupted-elemental-gatekeeper', 'drowned-keeper', 'flamebound-revenant', 'rootscar-ancient', 'crossroads-keeper',
       'graveglass-behemoth', 'storm-archivist', 'fallen-astromancer', 'meridian-splitter',
       'unspoken-prelate', 'sigil-warden', 'black-gatekeeper',
+      'moonwake-leviathan', 'furnace-maw', 'tempest-sovereign', 'unmade-magister',
+      'pyrehold-castellan', 'drowned-regent', 'steam-tyrant', 'sepulcher-flamekeeper',
+      'deep-bell-saint', 'abbot-ninth-gale', 'closed-index',
     ] as const
     const audit = buildCombatV2ContentAudit(1)
     const bosses = audit.filter((row) => MONSTERS[row.id].bestiaryCategory === 'boss')
@@ -219,7 +222,7 @@ describe('Combat V2 authored content audit', () => {
       ['meridian-warden', ['earth', 'arcane']], ['fractured-channeler', ['fire', 'water']], ['arc-surge-horror', ['arcane']], ['linebreaker-shade', ['air', 'arcane']], ['meridian-splitter', ['fire', 'water', 'air', 'earth', 'arcane']],
     ]
     for (const [id, expected] of damageProfiles) expect(getMonsterDamageProfile(MONSTERS[id]), id).toEqual(expected)
-    const shatteredRows = buildCombatV2ContentAudit().filter((row) => row.region === 'shattered-meridian')
+    const shatteredRows = buildCombatV2ContentAudit().filter((row) => profiles.some(([id]) => id === row.id))
     expect(shatteredRows).toHaveLength(profiles.length)
     expect(shatteredRows.every((row) => row.defaultFlatPeriodicDamageCount === 0 && row.defaultFlatPeriodicHealCount === 0)).toBe(true)
     for (const [file, source] of Object.entries(shatteredSources)) {
@@ -235,7 +238,7 @@ describe('Combat V2 authored content audit', () => {
       ['gatebound-remnant', 14000, 'earth', ['earth']], ['black-rift-stalker', 14500, 'air', ['air', 'arcane']], ['portalbound-acolyte', 15000, 'arcane', ['arcane']], ['sealbreaker-construct', 15500, 'earth', ['earth', 'arcane']], ['black-gatekeeper', 20000, 'arcane', ['arcane', 'fire', 'water', 'earth', 'air']],
     ]
     const audit = buildCombatV2ContentAudit(1)
-    const blackSigilRows = audit.filter((row) => row.region === 'black-sigil-reach')
+    const blackSigilRows = audit.filter((row) => profiles.some(([id]) => id === row.id))
     expect(blackSigilRows).toHaveLength(profiles.length)
     for (const [id, targetPower, affinity, damageProfile] of profiles) {
       const monster = MONSTERS[id]
@@ -269,7 +272,7 @@ describe('Combat V2 authored content audit', () => {
       expect(source, file).not.toMatch(noFormerDamagePayload); expect(source, file).not.toMatch(noFormerDamageResistance)
       expect(source, file).not.toMatch(/statusId:\s*['"](?:burning|poisoned|regeneration)['"]|status:\s*\{\s*id:\s*['"](?:burning|poisoned|regeneration)['"]|\bheal:\s*[\d.]+/)
     }
-    expect(buildCombatV2RegionalGlobalAudit()).toMatchObject({ implicitAffinityCount: 0, genericEquippedTraitCount: 0 })
+    expect(buildCombatV2GlobalAudit()).toMatchObject({ implicitAffinityCount: 0, genericEquippedTraitCount: 0 })
   })
 
   it('keeps Gatekeeper threshold mechanics on a single deterministic phase change', () => {

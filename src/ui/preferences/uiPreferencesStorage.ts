@@ -19,7 +19,7 @@ export const defaultScreenPreferences = (): ScreenPreferences => ({
   artificing: { mode: 'artifacts', sigilTab: 'refinement', selectedRecipeId: null, pinnedRecipeIds: [], pinsCollapsed: false, slotFilter: 'all', tierFilter: 'all', kindFilter: 'all', craftableOnly: false, ownershipFilter: 'all' },
   research: { selectedItemId: null, affinityFilter: 'all', targetSchoolId: 'fire' },
   combat: { combatLogFontSize: 'medium', combatDetailsMode: 'damage-done', dungeonStatisticsMode: 'runs' },
-  chronicles: { hideCompleted: true, showLocked: true, showOptional: true, statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'region', 'equipment'], sort: 'recommended', group: 'track', view: 'compact', trackedObjectiveIds: [], collapsedGroups: [] },
+  chronicles: { hideCompleted: true, showLocked: true, showOptional: true, statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'equipment'], sort: 'recommended', group: 'track', view: 'compact', trackedObjectiveIds: [], collapsedGroups: [] },
   guild: { activeTab: 'overview', commissionTab: 'board', studyChapterId: 'initiate', selectedStudyId: null, advancementDepartment: 'scholarship', selectedAdvancementId: null },
   huntersOrder: { activeTab: 'contracts' },
 })
@@ -67,7 +67,7 @@ export const normalizeUiPreferences = (value: unknown): UiPreferences => {
   const storedDungeonStatisticsMode = (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode === 'loot' ? 'drops' : (combat as { dungeonStatisticsMode?: unknown }).dungeonStatisticsMode
   const dungeonStatisticsMode = DUNGEON_STATISTICS_MODE_ORDER.includes(storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number]) ? storedDungeonStatisticsMode as typeof DUNGEON_STATISTICS_MODE_ORDER[number] : defaults.screenState.combat.dungeonStatisticsMode
   const statusFilterOptions: ChronicleStatusFilter[] = ['current', 'available', 'locked', 'completed']
-  const trackFilterOptions = ['main', 'combat', 'magic', 'tower', 'guild', 'region', 'equipment'] as const
+  const trackFilterOptions = ['main', 'combat', 'magic', 'tower', 'guild', 'equipment'] as const
   const statusFilters = Array.isArray(chronicles.statusFilters) ? Array.from(new Set(chronicles.statusFilters.filter((value): value is ChronicleStatusFilter => statusFilterOptions.includes(value as ChronicleStatusFilter)))) : defaults.screenState.chronicles.statusFilters
   const trackFilters = Array.isArray(chronicles.trackFilters) ? Array.from(new Set(chronicles.trackFilters.filter((value): value is typeof trackFilterOptions[number] => trackFilterOptions.includes(value as typeof trackFilterOptions[number])))) : defaults.screenState.chronicles.trackFilters
   const trackedObjectiveIds = Array.isArray(chronicles.trackedObjectiveIds) ? Array.from(new Set(chronicles.trackedObjectiveIds.filter((value): value is ScreenPreferences['chronicles']['trackedObjectiveIds'][number] => typeof value === 'string'))).slice(0, MAX_CHRONICLE_TRACKED_OBJECTIVES) : defaults.screenState.chronicles.trackedObjectiveIds

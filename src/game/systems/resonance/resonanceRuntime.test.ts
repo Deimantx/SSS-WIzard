@@ -1,13 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import { MONSTERS } from '../../content/monsters'
+import { ARCANE_PRIMARY_RESONANCE_AUDIT, MONSTERS } from '../../content/monsters'
 import { RESONANCE_TYPES } from '../../content/resonance/resonance'
-import { createEmptyResonanceState, grantResonance, grantResonanceBundle, normalizeResonanceState, resolveEnemyResonanceReward, sanitizeResonanceAmount, setResonance } from './resonanceRuntime'
+import { createEmptyResonanceState, grantResonance, grantResonanceBundle, normalizeResonanceState, resolveEnemyResonanceReward, sanitizeResonanceAmount, setResonance, spendResonanceBundle } from './resonanceRuntime'
 import { resolveCombatLootContext } from '../loot/universalLootRuntime'
 
 describe('Resonance runtime', () => {
-  it('creates exactly the four Phase 1 balances', () => {
-    expect(RESONANCE_TYPES).toEqual(['fire', 'water', 'earth', 'air'])
-    expect(createEmptyResonanceState()).toEqual({ fire: 0, water: 0, earth: 0, air: 0 })
+  it('creates the four school balances plus Arcane Resonance', () => {
+    expect(RESONANCE_TYPES).toEqual(['fire', 'water', 'earth', 'air', 'arcane'])
+    expect(createEmptyResonanceState()).toEqual({ fire: 0, water: 0, earth: 0, air: 0, arcane: 0 })
+    expect(normalizeResonanceState({ fire: 4 })).toEqual({ fire: 4, water: 0, earth: 0, air: 0, arcane: 0 })
+  })
+
+  it('grants, spends, and resolves Arcane Resonance for Arcane enemies', () => {
+    const state = createEmptyResonanceState()
+    expect(grantResonance(state, 'arcane', 35)).toBe(35)
+    expect(setResonance(state, 'arcane', 12)).toBe(12)
+    expect(spendResonanceBundle(state, { arcane: 5 })).toBe(true)
+    expect(state.arcane).toBe(7)
+    expect(resolveEnemyResonanceReward('runesunk-oracle').finalYield.arcane).toBeGreaterThan(0)
+    expect(resolveEnemyResonanceReward('unmade-magister').finalYield.arcane).toBeGreaterThan(0)
+  })
+
+  it('gives every Arcane-primary enemy a dominant Arcane reward while preserving secondary yields', () => {
+    expect(ARCANE_PRIMARY_RESONANCE_AUDIT.length).toBeGreaterThan(0)
+    for (const { id } of ARCANE_PRIMARY_RESONANCE_AUDIT) {
+      const yieldProfile = MONSTERS[id].resonanceYield ?? {}
+      expect(yieldProfile.arcane, id).toBeGreaterThan(0)
+      expect(yieldProfile.arcane, id).toBeGreaterThanOrEqual(Math.max(0, ...Object.entries(yieldProfile).filter(([type]) => type !== 'arcane').map(([, amount]) => amount ?? 0)))
+    }
   })
 
   it.each([
@@ -26,7 +46,7 @@ describe('Resonance runtime', () => {
   it('normalizes malformed records and grants bundles without touching unspecified types', () => {
     const state = normalizeResonanceState({ fire: 2.9, water: -2, earth: Number.POSITIVE_INFINITY, unknown: 99 })
     grantResonanceBundle(state, { fire: 3, air: 7 })
-    expect(state).toEqual({ fire: 5, water: 0, earth: 0, air: 7 })
+    expect(state).toEqual({ fire: 5, water: 0, earth: 0, air: 7, arcane: 0 })
   })
 
   it('resolves authored bundles with the universal Power-driven tier context', () => {

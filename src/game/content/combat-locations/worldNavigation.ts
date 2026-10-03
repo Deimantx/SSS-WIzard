@@ -1,13 +1,11 @@
 import type { GameState, MonsterId } from '../../types'
 import { MONSTERS } from '../monsters'
 import { getElementMultiplier } from '../elements/elements'
-import type { BossCombatLocationRuntimeView, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatLocationRuntimeView, CombatRegionDefinition } from './worldNavigationTypes'
+import type { BossCombatLocationRuntimeView, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatLocationRuntimeView } from './worldNavigationTypes'
 import { COMBAT_LOCATION_IDS } from './combatLocationIds'
 import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER } from './registry'
-import { COMBAT_REGIONS } from './regions'
 
 export { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER }
-export { COMBAT_REGIONS }
 export type { CombatLocationRuntimeView } from './worldNavigationTypes'
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined): CombatLocationRuntimeView | null => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null
@@ -15,7 +13,7 @@ export const getCombatLocationById = getCombatLocation
 
 type NavigationProgress = Pick<GameState['progress'], 'bossKillsByBoss'> & Partial<Pick<GameState['progress'], 'startingSchoolId' | 'chronicle'>>
 
-export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDefinition['unlock'] | CombatRegionDefinition['unlock'], progress: NavigationProgress): boolean => {
+export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDefinition['unlock'], progress: NavigationProgress): boolean => {
   if (!condition || condition.type === 'always') return true
   if (condition.type === 'boss-kill') return (progress.bossKillsByBoss[condition.bossId] ?? 0) >= (condition.count ?? 1)
   if (condition.type === 'all-boss-kills') return condition.bossIds.every((bossId) => (progress.bossKillsByBoss[bossId] ?? 0) >= 1)
@@ -31,8 +29,7 @@ export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDef
 export const isCombatLocationUnlocked = (locationRef: CombatLocationId | CombatLocationDefinition, progress: NavigationProgress): boolean => {
   const locationId = typeof locationRef === 'string' ? locationRef : locationRef.id
   const location = COMBAT_LOCATIONS[locationId]
-  const region = location && COMBAT_REGIONS[location.regionId]
-  if (!location || !region || !isCombatNavigationConditionUnlocked(region.unlock, progress) || !isCombatNavigationConditionUnlocked(location.unlock, progress)) return false
+  if (!location || !isCombatNavigationConditionUnlocked(location.unlock, progress)) return false
   return !location.prototype
 }
 

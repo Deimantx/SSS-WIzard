@@ -26,7 +26,7 @@ describe('canonical Combat Resonance rewards', () => {
     const events: import('./combatTypes').CombatEvent[] = []
     expect(resolveCombatDeaths(state, undefined, undefined, { push: (event) => events.push(event) })).toBe(true)
     const expectedReward = resolveEnemyResonanceReward('forest-wisp', 1)
-    expect(state.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: expectedReward.finalYield.air })
+    expect(state.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: expectedReward.finalYield.air, arcane: 0 })
     expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
     expect(resolveCombatDeaths(state)).toBe(false)
     expect(state.resonance.air).toBe(expectedReward.finalYield.air)
@@ -92,6 +92,24 @@ describe('canonical Combat Resonance rewards', () => {
     expect(state.resonance.air).toBe(resolveEnemyResonanceReward('forest-wisp', 2).finalYield.air)
     expect(events.filter((event) => event.category === 'resonance')).toHaveLength(1)
     expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield).toMatchObject(resolveEnemyResonanceReward('forest-wisp', 2).finalYield)
+  })
+
+  it('credits Arcane Resonance for Arcane enemies through Combat and Offline Bank', async () => {
+    const state = makeInitialState()
+    prepareCombat(state)
+    state.worldTier = { current: 2, highestUnlocked: 2 }
+    state.offlineBankMs = 1_000
+    state.combat.active = true
+    state.combat.locationId = 'brineveil-marsh'
+    expect(spawnEnemy(state, 'runesunk-oracle')).toBe(true)
+    state.combat.enemyHp = 0
+    const events: import('./combatTypes').CombatEvent[] = []
+
+    const result = await advanceWithOfflineBank(1_000, () => state, (recipe) => recipe(state), vi.fn(), undefined, { uiEvents: { push: (event) => events.push(event) } })
+
+    expect(result.ok).toBe(true)
+    expect(state.resonance.arcane).toBe(resolveEnemyResonanceReward('runesunk-oracle', 2).finalYield.arcane)
+    expect(events.find((event) => event.category === 'resonance')?.resonanceReward?.grantedYield.arcane).toBeGreaterThan(0)
   })
 
   it('snapshots World Tier at spawn and uses that tier for health, loot, and Resonance', () => {

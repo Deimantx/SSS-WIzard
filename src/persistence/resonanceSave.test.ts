@@ -9,16 +9,16 @@ describe('Resonance save migration and integrity', () => {
     const state = createInitialState()
     const migrated = migrateSave({ ...state, saveVersion: SAVE_VERSION - 1, resonance: undefined })
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 0 })
+    expect(migrated.resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 0, arcane: 0 })
   })
 
   it('preserves valid balances and sanitizes malformed persisted values', () => {
     const state = createInitialState()
-    state.resonance = { fire: 17, water: 23, earth: 0, air: 91 }
+    state.resonance = { fire: 17, water: 23, earth: 0, air: 91, arcane: 7 }
     const roundTrip = validateStoredSave(JSON.stringify(serializeGameState(state))).state!
     expect(roundTrip.resonance).toEqual(state.resonance)
     const malformed = migrateSave({ ...state, saveVersion: SAVE_VERSION, resonance: { fire: -2, water: 3.9, earth: Number.POSITIVE_INFINITY, air: 'bad', unknown: 42 } } as any)
-    expect(malformed.resonance).toEqual({ fire: 0, water: 3, earth: 0, air: 0 })
+    expect(malformed.resonance).toEqual({ fire: 0, water: 3, earth: 0, air: 0, arcane: 0 })
   })
 
   it('round-trips World Tier state and derives WT2 unlock from a historical Edrin defeat', () => {

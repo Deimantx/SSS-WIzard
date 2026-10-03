@@ -1,12 +1,11 @@
-import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
+﻿import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
 
 export const shatteredMeridianLocations = {
     "graveglass-hollow":  {
                               "id":  "graveglass-hollow",
-                              "regionId":  "shattered-meridian",
                               "name":  "Graveglass Hollow",
                               "type":  "elite-zone",
-                              "order":  1,
+                              "progressionOrder":  14,
                               "encounterMode":  "targeted",
                               "zoneAffixId":  "warded",
                               "targetMetadata":  {
@@ -59,10 +58,9 @@ export const shatteredMeridianLocations = {
                           },
     "stormvault-gallery":  {
                                "id":  "stormvault-gallery",
-                               "regionId":  "shattered-meridian",
                                "name":  "Stormvault Gallery",
                                "type":  "combat-zone",
-                               "order":  2,
+                               "progressionOrder":  15,
                                "encounterMode":  "targeted",
                                "targetMetadata":  {
                                                       "volt-wisp":  {
@@ -114,10 +112,9 @@ export const shatteredMeridianLocations = {
                            },
     "starfallen-observatory":  {
                                    "id":  "starfallen-observatory",
-                                   "regionId":  "shattered-meridian",
                                    "name":  "Starfallen Observatory",
                                    "type":  "elite-zone",
-                                   "order":  3,
+                                   "progressionOrder":  16,
                                    "encounterMode":  "targeted",
                                    "zoneAffixId":  "relentless",
                                    "targetMetadata":  {
@@ -170,10 +167,9 @@ export const shatteredMeridianLocations = {
                                },
     "broken-meridian":  {
                             "id":  "broken-meridian",
-                            "regionId":  "shattered-meridian",
                             "name":  "The Broken Meridian",
                             "type":  "dungeon",
-                            "order":  4,
+                            "progressionOrder":  17,
                             "encounterMode":  "sequence",
                             "firstClearUnlockPreview":  [
                                                             {

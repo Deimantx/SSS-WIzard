@@ -5,16 +5,18 @@ import { useGameStore } from '../../store/gameStore'
 import { DeveloperResonance } from './DeveloperResonance'
 import { aggregateResonanceBundle, resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
 import { formatResonanceAmount, getNonZeroResonanceEntries } from '../../game/presentation/resonance/resonancePresentation'
+import { RESONANCE_TYPES } from '../../game/content/resonance/resonance'
 
 describe('Developer Resonance tab', () => {
   beforeEach(() => { useGameStore.setState(createInitialState()) })
 
-  it('renders four balances and routes controls through store actions', () => {
+  it('renders every Resonance balance and routes controls through store actions', () => {
     render(<DeveloperResonance />)
     expect(screen.getByText('Fire Resonance')).toBeTruthy()
     expect(screen.getByText('Water Resonance')).toBeTruthy()
     expect(screen.getByText('Earth Resonance')).toBeTruthy()
     expect(screen.getByText('Air Resonance')).toBeTruthy()
+    expect(screen.getByText('Arcane Resonance')).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: '+100' })[0])
     expect(useGameStore.getState().resonance.fire).toBe(100)
     fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '3.9' } })
@@ -23,9 +25,9 @@ describe('Developer Resonance tab', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'CLEAR' })[0])
     expect(useGameStore.getState().resonance.fire).toBe(0)
     fireEvent.click(screen.getByRole('button', { name: 'GRANT TEST BUNDLE' }))
-    expect(useGameStore.getState().resonance).toEqual({ fire: 100, water: 100, earth: 100, air: 100 })
+    expect(useGameStore.getState().resonance).toEqual(Object.fromEntries(RESONANCE_TYPES.map((type) => [type, 100])))
     fireEvent.click(screen.getByRole('button', { name: 'CLEAR ALL' }))
-    expect(useGameStore.getState().resonance).toEqual({ fire: 0, water: 0, earth: 0, air: 0 })
+    expect(useGameStore.getState().resonance).toEqual(Object.fromEntries(RESONANCE_TYPES.map((type) => [type, 0])))
   })
 
   it('previews 100 authored kills without changing the profile', () => {

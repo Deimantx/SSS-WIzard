@@ -2,6 +2,7 @@ import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, DamageType, MonsterId } from '../../types'
 import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS, ELEMENTAL_TUTORIAL_MONSTERS } from './first-frontier'
 import { REGIONAL_MONSTERS } from './regionalMonsters'
+import { EXPANSION_MONSTERS } from './expansionMonsters'
 import { HUNTERS_ORDER_MONSTERS } from './first-frontier/gloamridge'
 import type { MonsterDefinition } from './monsterTypes'
 import { isElementId } from '../elements/elements'
@@ -17,17 +18,30 @@ import type { LootCategory, MonsterLootDropDefinition } from '../loot/lootCatego
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './first-frontier'
 export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './first-frontier'
-export { HUNTERS_ORDER_MONSTERS, HUNTER_EXCLUSIVE_MONSTER_IDS } from './first-frontier/gloamridge'
+export { HUNTERS_ORDER_MONSTERS } from './first-frontier/gloamridge'
 export { REGIONAL_MONSTERS } from './regionalMonsters'
 
-const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, REGIONAL_MONSTERS] as const
+const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, REGIONAL_MONSTERS, EXPANSION_MONSTERS] as const
 const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
 const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
 
-export const MONSTERS = Object.assign({}, ...MONSTER_REGISTRIES) as Record<MonsterId, MonsterDefinition>
+const authoredMonsterIndex = Object.assign({}, ...MONSTER_REGISTRIES) as Record<MonsterId, MonsterDefinition>
+const ensureArcaneResonanceIdentity = (monster: MonsterDefinition): MonsterDefinition => {
+  if (monster.primaryAffinity !== 'arcane') return monster
+  const previous = monster.resonanceYield ?? {}
+  if ((previous.arcane ?? 0) > 0) return monster
+  const strongestSecondary = Math.max(0, ...Object.values(previous))
+  const arcane = Math.max(10, Math.ceil(strongestSecondary * 1.25))
+  return { ...monster, resonanceYield: { ...previous, arcane } }
+}
+export const MONSTERS = Object.fromEntries(Object.entries(authoredMonsterIndex).map(([id, monster]) => [id, ensureArcaneResonanceIdentity(monster)])) as Record<MonsterId, MonsterDefinition>
+const expansionMonsterIds = new Set(Object.keys(EXPANSION_MONSTERS))
+export const ARCANE_PRIMARY_RESONANCE_AUDIT = Object.values(authoredMonsterIndex).filter((monster) => monster.primaryAffinity === 'arcane').map((monster) => ({ id: monster.id, name: monster.name, previous: monster.resonanceYield ?? {}, updated: MONSTERS[monster.id].resonanceYield ?? {}, expansion: expansionMonsterIds.has(monster.id) }))
 
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
+export const HUNTER_EXCLUSIVE_MONSTER_IDS = MONSTER_IDS.filter((id) => MONSTERS[id].hunter?.exclusive)
+export const HUNTER_REGULAR_MONSTER_IDS = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => MONSTERS[id].bestiaryCategory !== 'boss')
 
 const DIRECT_MONSTER_LOOT_CATEGORIES: readonly LootCategory[] = ['material', 'equipment', 'unique']
 const VALID_LOOT_TIER_IDS = new Set(UNIVERSAL_LOOT_TIERS.map(({ tier }) => tier))

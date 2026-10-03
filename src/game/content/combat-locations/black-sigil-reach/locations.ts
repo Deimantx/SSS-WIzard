@@ -1,12 +1,11 @@
-import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
+﻿import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
 
 export const blackSigilReachLocations = {
     "hall-of-unbound-names":  {
                                   "id":  "hall-of-unbound-names",
-                                  "regionId":  "black-sigil-reach",
                                   "name":  "Hall of Unbound Names",
                                   "type":  "elite-zone",
-                                  "order":  1,
+                                  "progressionOrder":  18,
                                   "encounterMode":  "targeted",
                                   "zoneAffixId":  "vicious",
                                   "targetMetadata":  {
@@ -59,10 +58,9 @@ export const blackSigilReachLocations = {
                               },
     "vault-of-the-black-sigil":  {
                                      "id":  "vault-of-the-black-sigil",
-                                     "regionId":  "black-sigil-reach",
                                      "name":  "Vault of the Black Sigil",
                                      "type":  "elite-zone",
-                                     "order":  2,
+                                     "progressionOrder":  19,
                                      "encounterMode":  "targeted",
                                      "zoneAffixId":  "armored",
                                      "targetMetadata":  {
@@ -115,10 +113,9 @@ export const blackSigilReachLocations = {
                                  },
     "black-gate":  {
                        "id":  "black-gate",
-                       "regionId":  "black-sigil-reach",
                        "name":  "The Black Gate",
                        "type":  "dungeon",
-                       "order":  3,
+                       "progressionOrder":  20,
                        "encounterMode":  "sequence",
                        "firstClearUnlockPreview":  [
                                                        {

@@ -7,6 +7,7 @@ import { setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../store/gameStore'
 import { createInitialState } from '../../store/initialState'
 import { HuntersOrderScreen } from './HuntersOrderScreen'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters'
 
 const renderScreen = () => render(<TooltipProvider><GameContextMenuProvider><HuntersOrderScreen /></GameContextMenuProvider></TooltipProvider>)
 
@@ -21,7 +22,7 @@ describe('Hunter’s Order locked shell', () => {
 
     expect(screen.getAllByRole('heading', { name: 'FIELD INTELLIGENCE' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('region', { name: 'Field Intelligence' })).toBeTruthy()
-    expect(screen.getByText('0 / 7')).toBeTruthy()
+    expect(screen.getByText(`0 / ${HUNTER_EXCLUSIVE_MONSTER_IDS.length}`)).toBeTruthy()
     expect(screen.getAllByText('HUNTER QUARRY').length).toBeGreaterThan(0)
     expect(screen.queryByRole('tab', { name: 'Hunting Grounds' })).toBeNull()
     expect(screen.getByRole('tab', { name: 'Bestiary' }).getAttribute('aria-selected')).toBe('true')

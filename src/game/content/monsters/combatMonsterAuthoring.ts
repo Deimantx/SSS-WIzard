@@ -4,7 +4,8 @@ import { action, applyStatus, basic, drainMana, gainBarrier, scaledDirectDamage,
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { deriveBasicDamageForTargetPower } from './monsterTypes'
 
-type Special = { id: string; name: string; description?: string; actionTimeMs?: number; tags?: CombatTag[]; damage?: Array<{ type: DamageType; coefficient: number }>; status?: { id: StatusId; target?: 'self' | 'opponent'; stacks?: number }; dot?: { statusId: StatusId; damageType: DamageType; coefficient: number; durationMs: number }; barrier?: number; heal?: number; manaDrain?: number }
+export type CombatMonsterSpecial = { id: string; name: string; description?: string; actionTimeMs?: number; tags?: CombatTag[]; damage?: Array<{ type: DamageType; coefficient: number }>; status?: { id: StatusId; target?: 'self' | 'opponent'; stacks?: number }; dot?: { statusId: StatusId; damageType: DamageType; coefficient: number; durationMs: number }; barrier?: number; heal?: number; manaDrain?: number; delayOpponentMs?: number }
+type Special = CombatMonsterSpecial
 type RegionalMonsterBase = { locationId: CombatLocationId; id: MonsterId; name: string; subtitle: string; hp: number; damage: number; defense: number; time?: number; resistances?: Partial<Record<DamageType, number>>; resonanceYield?: MonsterDefinition['resonanceYield']; icon?: MonsterDefinition['ui']; color?: string; specials: Special[]; boss?: boolean; patternSteps?: ActionStep[]; actionPatterns?: MonsterDefinition['actionPatterns']; defaultActionPatternId?: string }
 export type CombatMonsterSpec = RegionalMonsterBase & { combatV2: true; primaryAffinity: ElementId; basicAttackElement: ElementId; targetPower: number; trait?: TraitId; combatV2Traits?: TraitId[] }
 
@@ -21,6 +22,7 @@ const getSpecialTags = (special: Special): CombatTag[] => {
   if (special.barrier) tags.add('barrier')
   if (special.heal) tags.add('heal')
   if (special.manaDrain) { tags.add('special'); tags.add('debuff') }
+  if (special.delayOpponentMs) tags.add('debuff')
   return [...tags]
 }
 
@@ -36,6 +38,7 @@ const describeSpecial = (special: Special): string => {
   if (special.barrier) clauses.push(`raises a Barrier equal to ${Math.round(special.barrier * 100)}% of Max Health`)
   if (special.heal) clauses.push(`restores ${Math.round(special.heal * 100)}% of Max Health`)
   if (special.manaDrain) clauses.push(`drains ${special.manaDrain} Mana`)
+  if (special.delayOpponentMs) clauses.push(`delays the opponent's current action by ${special.delayOpponentMs} ms`)
   return clauses.length ? `${special.name} ${clauses.join(' and ')}.` : `${special.name} has no authored combat effect.`
 }
 
@@ -45,6 +48,7 @@ const specialEffects = (special: Special): CombatEffect[] => [
   ...(special.barrier ? [gainBarrier({ type: 'source-max-health-percent', value: special.barrier })] : []),
   ...(special.heal ? [scaledHeal(special.heal)] : []),
   ...(special.manaDrain ? [drainMana(special.manaDrain)] : []),
+  ...(special.delayOpponentMs ? [{ type: 'modify-action-timer' as const, target: 'opponent' as const, amountMs: special.delayOpponentMs, action: 'current' as const }] : []),
 ]
 
 export const makeCombatMonster = (spec: CombatMonsterSpec): MonsterDefinition => {

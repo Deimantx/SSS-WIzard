@@ -1,14 +1,13 @@
-import { COMBAT_LOCATIONS, COMBAT_REGIONS, getCombatEncounterMode, hasBossEncounter, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/combat-locations'
+import { COMBAT_LOCATIONS, getCombatEncounterMode, hasBossEncounter, type CombatLocationId, type CombatLocationType, type CombatTargetDifficulty } from '../../content/combat-locations'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 import type { MonsterId, WorldTierId } from '../../types'
 
 export interface MonsterPowerAuditRow {
-  region: string
+  locationType: CombatLocationType
   location: string
   locationId: CombatLocationId
-  locationType: CombatLocationType
   encounterMode: ReturnType<typeof getCombatEncounterMode>
   monsterId: MonsterId
   role: 'normal' | 'boss'
@@ -47,7 +46,7 @@ export interface DifficultyInversionAudit {
 }
 
 export interface ThreatKillsToBossAuditRow {
-  region: string
+  locationType: CombatLocationType
   location: string
   locationId: CombatLocationId
   worldTier: WorldTierId
@@ -71,11 +70,10 @@ const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): Mon
   const dungeon = COMBAT_LOCATIONS[location.id]
   if (!dungeon) return []
   const mode = getCombatEncounterMode(location)
-  const region = COMBAT_REGIONS[location.regionId]
   const rows: MonsterPowerAuditRow[] = []
   const add = (monsterId: MonsterId, role: 'normal' | 'boss', order: number, difficulty: CombatTargetDifficulty | null) => {
     if (!MONSTERS[monsterId]) return
-    rows.push({ region: region?.name ?? location.regionId, location: location.name, locationId, locationType: location.type, encounterMode: mode, monsterId, role, difficulty, order, worldTier, power: resolveEnemyPowerRating(monsterId, worldTier) })
+    rows.push({ locationType: location.type, location: location.name, locationId, encounterMode: mode, monsterId, role, difficulty, order, worldTier, power: resolveEnemyPowerRating(monsterId, worldTier) })
   }
 
   const normalIds = mode === 'targeted' && location.targetMetadata
@@ -155,7 +153,7 @@ export const buildThreatKillsToBossAudit = (): ThreatKillsToBossAuditRow[] => {
       if (killsUsingStrongest === 1) warnings.push('Strongest normal target unlocks the boss in one kill')
       if (worldTier >= 3 && killsUsingMedian > 12) warnings.push('Median target requires more than 12 kills per boss attempt')
       if (worldTier > 1 && worldTierDriftPercent > 25) warnings.push(`WT pacing drifts ${worldTierDriftPercent.toFixed(1)}% from WT1`)
-      rows.push({ region: COMBAT_REGIONS[location.regionId]?.name ?? location.regionId, location: location.name, locationId: location.id, worldTier, threatRequired: requirement, weakestThreatPerKill: weakest, medianThreatPerKill: median, strongestThreatPerKill: strongest, killsUsingWeakest, killsUsingMedian, killsUsingStrongest, worldTierDriftPercent, warnings })
+      rows.push({ locationType: location.type, location: location.name, locationId: location.id, worldTier, threatRequired: requirement, weakestThreatPerKill: weakest, medianThreatPerKill: median, strongestThreatPerKill: strongest, killsUsingWeakest, killsUsingMedian, killsUsingStrongest, worldTierDriftPercent, warnings })
     })
   })
   return rows

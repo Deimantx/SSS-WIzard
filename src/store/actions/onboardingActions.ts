@@ -37,7 +37,7 @@ export const chooseStartingSchoolAction = (state: GameState, schoolId: SchoolId)
   state.player.mana = state.player.maxMana
   state.ui.screen = 'combat'
   const counterAffinity = getTutorialCounterAffinity(schoolId)
-  const counterLocation = counterAffinity ? Object.values(COMBAT_LOCATIONS).find((location) => location.regionId === 'first-frontier' && location.primaryElement === counterAffinity && location.type === 'combat-zone') : undefined
+  const counterLocation = counterAffinity ? Object.values(COMBAT_LOCATIONS).find((location) => ['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(location.id) && location.primaryElement === counterAffinity && location.type === 'combat-zone') : undefined
   state.ui.lastEnteredCombatLocationId = counterLocation?.id ?? 'whispering-woods'
   reconcileChronicleProgress(state)
   return true

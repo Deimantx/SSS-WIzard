@@ -1,12 +1,11 @@
-import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
+﻿import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
 
 export const elementalScarLocations = {
     "fractured-approach":  {
                                "id":  "fractured-approach",
-                               "regionId":  "elemental-scar",
                                "name":  "Fractured Approach",
                                "type":  "dungeon",
-                               "order":  1,
+                               "progressionOrder":  9,
                                "encounterMode":  "sequence",
                                "firstClearUnlockPreview":  [
                                                                {
@@ -48,10 +47,9 @@ export const elementalScarLocations = {
                            },
     "flooded-reliquary":  {
                               "id":  "flooded-reliquary",
-                              "regionId":  "elemental-scar",
                               "name":  "Flooded Reliquary",
                               "type":  "combat-zone",
-                              "order":  2,
+                              "progressionOrder":  10,
                               "encounterMode":  "targeted",
                               "targetMetadata":  {
                                                      "drowned-acolyte":  {
@@ -103,10 +101,9 @@ export const elementalScarLocations = {
                           },
     "ashen-watch":  {
                         "id":  "ashen-watch",
-                        "regionId":  "elemental-scar",
                         "name":  "Ashen Watch",
                         "type":  "combat-zone",
-                        "order":  3,
+                        "progressionOrder":  11,
                         "encounterMode":  "targeted",
                         "targetMetadata":  {
                                                "cinder-hound":  {
@@ -158,10 +155,9 @@ export const elementalScarLocations = {
                     },
     "rootscar-hollow":  {
                             "id":  "rootscar-hollow",
-                            "regionId":  "elemental-scar",
                             "name":  "Rootscar Hollow",
                             "type":  "combat-zone",
-                            "order":  4,
+                            "progressionOrder":  12,
                             "encounterMode":  "targeted",
                             "targetMetadata":  {
                                                    "thorn-maw":  {
@@ -213,10 +209,9 @@ export const elementalScarLocations = {
                         },
     "crossroads-of-ruin":  {
                                "id":  "crossroads-of-ruin",
-                               "regionId":  "elemental-scar",
                                "name":  "Crossroads of Ruin",
                                "type":  "dungeon",
-                               "order":  5,
+                               "progressionOrder":  13,
                                "encounterMode":  "sequence",
                                "firstClearUnlockPreview":  [
                                                                {

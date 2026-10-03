@@ -1,4 +1,4 @@
-import { Droplets, Flame, Mountain, Wind } from 'lucide-react'
+import { Droplets, Flame, Mountain, Sparkles, Wind } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { Card, GameTooltip } from '../../components/ui'
 import { TooltipContent } from '../../components/ui/tooltip/Tooltip'
@@ -6,7 +6,7 @@ import { RESONANCE_METADATA, RESONANCE_TYPES, type ResonanceType } from '../../g
 import { formatResonanceAmount } from '../../game/presentation/resonance/resonancePresentation'
 import { useGameStore } from '../../store/gameStore'
 
-const ICONS: Record<ResonanceType, typeof Flame> = { fire: Flame, water: Droplets, earth: Mountain, air: Wind }
+const ICONS: Record<ResonanceType, typeof Flame> = { fire: Flame, water: Droplets, earth: Mountain, air: Wind, arcane: Sparkles }
 
 export function InventoryResourcesPanel() {
   const resonance = useGameStore(useShallow((state) => state.resonance))

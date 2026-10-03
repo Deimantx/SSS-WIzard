@@ -7,15 +7,19 @@ import { firstFrontierLocations } from './first-frontier/locations'
 import { elementalScarLocations } from './elemental-scar/locations'
 import { shatteredMeridianLocations } from './shattered-meridian/locations'
 import { blackSigilReachLocations } from './black-sigil-reach/locations'
+import { expansionLocations } from './expansionLocations'
 
 const authoredLocations = {
   ...firstFrontierLocations,
   ...elementalScarLocations,
   ...shatteredMeridianLocations,
   ...blackSigilReachLocations,
+  ...expansionLocations,
 } satisfies Partial<Record<CombatLocationId, CombatLocationDefinition>>
 
-export const COMBAT_LOCATION_ORDER: readonly CombatLocationId[] = COMBAT_LOCATION_IDS
+const missingAuthoredLocations = COMBAT_LOCATION_IDS.filter((id) => !authoredLocations[id])
+if (missingAuthoredLocations.length) throw new Error(`Missing canonical Combat Location: ${missingAuthoredLocations.join(', ')}`)
+export const COMBAT_LOCATION_ORDER: readonly CombatLocationId[] = [...COMBAT_LOCATION_IDS].sort((left, right) => authoredLocations[left]!.progressionOrder - authoredLocations[right]!.progressionOrder)
 
 const toRuntimeView = (location: CombatLocationDefinition): CombatLocationRuntimeView => {
   const roster = [...location.monsterPool, ...(location.bossId ? [location.bossId] : [])]

@@ -9,7 +9,8 @@ import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
-import { COMBAT_LOCATIONS } from '../../content/combat-locations'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER, type CombatLocationType } from '../../content/combat-locations'
+import { EXPANSION_MONSTERS } from '../../content/monsters/expansionMonsters'
 
 export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus',
@@ -32,10 +33,11 @@ export const COMBAT_V2_AUDIT_MONSTER_IDS: readonly MonsterId[] = [
   'name-eater', 'bound-echo', 'hollow-liturgist', 'whisper-archivist', 'nameless-cantor', 'oathless-confessor', 'unwritten-hierophant', 'unspoken-prelate',
   'sigil-guardian', 'black-seal-parasite', 'vault-devourer', 'inkbound-specter', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter', 'sigil-warden',
   'gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper',
+  ...Object.keys(EXPANSION_MONSTERS) as MonsterId[],
 ]
 
 export interface CombatV2ContentAuditRow {
-  id: MonsterId; name: string; region: CombatV2AuditRegionId; location: string; order: number; boss: boolean; affinity: string; damageProfile: string[]; power: number; hp: number; defense: number; basicDamage: number; basicIntervalMs: number; basicDps: number; zoneAffix: string | null
+  id: MonsterId; name: string; group: CombatV2AuditGroupId; location: string; locationType: CombatLocationType; order: number; boss: boolean; affinity: string; damageProfile: string[]; power: number; hp: number; defense: number; basicDamage: number; basicIntervalMs: number; basicDps: number; zoneAffix: string | null
   maxRepeatableDirectCoefficient: number; dotTotalCoefficient: number; periodicDamageCoefficient: number; periodicHealPercent: number
   repeatableHealPercent: number; repeatableBarrierPercent: number; onceOnlyHealPercent: number; onceOnlyBarrierPercent: number
   repeatableSustainPercent: number; onceOnlySustainPercent: number
@@ -43,23 +45,15 @@ export interface CombatV2ContentAuditRow {
   maxControlMs: number; patternCycleMs: number; warnings: string[]
 }
 
-export const COMBAT_V2_AUDIT_REGIONS = [
+export const COMBAT_V2_AUDIT_GROUPS = [
   { id: 'all', label: 'All Combat V2' },
-  { id: 'tutorial', label: 'Tutorial' },
-  { id: 'first-frontier', label: 'First Frontier' },
-  { id: 'elemental-scar', label: 'Elemental Scar' },
-  { id: 'shattered-meridian', label: 'Shattered Meridian' },
-  { id: 'black-sigil-reach', label: 'Black Sigil Reach' },
+  { id: 'combat-zone', label: 'Combat Zones' },
+  { id: 'elite-zone', label: 'Elite Zones' },
+  { id: 'hunting-ground', label: 'Hunting Grounds' },
+  { id: 'dungeon', label: 'Dungeons' },
 ] as const
-export type CombatV2AuditRegionId = typeof COMBAT_V2_AUDIT_REGIONS[number]['id']
+export type CombatV2AuditGroupId = typeof COMBAT_V2_AUDIT_GROUPS[number]['id']
 
-const LOCATIONS: Record<string, string> = {
-  'stonewake-hollow': 'Stonewake Hollow', 'galecrest-heights': 'Galecrest Heights', 'tideglass-caverns': 'Tideglass Caverns', 'emberfall-basin': 'Emberfall Basin',
-  'whispering-woods': 'Whispering Woods', 'howling-den': 'Howling Den', 'hunters-ground': 'Gloamridge', 'abandoned-catacombs': 'Abandoned Catacombs',
-  'fractured-approach': 'Fractured Approach', 'flooded-reliquary': 'Flooded Reliquary', 'ashen-watch': 'Ashen Watch', 'rootscar-hollow': 'Rootscar Hollow', 'crossroads-of-ruin': 'Crossroads of Ruin',
-  'graveglass-hollow': 'Graveglass Hollow', 'stormvault-gallery': 'Stormvault Gallery', 'starfallen-observatory': 'Starfallen Observatory', 'broken-meridian': 'Broken Meridian',
-  'hall-of-unbound-names': 'Hall of Unbound Names', 'vault-of-the-black-sigil': 'Vault of the Black Sigil', 'black-gate': 'The Black Gate',
-}
 const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries({
   'stonewake-hollow': ['stonewake-gravel-wisp', 'stonewake-rootback-crawler', 'stonewake-shardhide-golem', 'stonewake-stonebound-warden', 'heartstone-colossus'],
   'galecrest-heights': ['galecrest-zephyr-wisp', 'galecrest-gale-imp', 'galecrest-razorwing', 'galecrest-stormcaller-adept', 'tempest-roc'],
@@ -82,13 +76,10 @@ const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries
   'vault-of-the-black-sigil': ['sigil-guardian', 'black-seal-parasite', 'vault-devourer', 'inkbound-specter', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter', 'sigil-warden'],
   'black-gate': ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper'],
 }).flatMap(([location, ids]) => (ids as string[]).map((id) => [id, location])))
-const regionForLocation = (location: string): Exclude<CombatV2AuditRegionId, 'all'> => {
-  if (['stonewake-hollow', 'galecrest-heights', 'tideglass-caverns', 'emberfall-basin'].includes(location)) return 'tutorial'
-  if (['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(location)) return 'first-frontier'
-  if (['fractured-approach', 'flooded-reliquary', 'ashen-watch', 'rootscar-hollow', 'crossroads-of-ruin'].includes(location)) return 'elemental-scar'
-  if (['hall-of-unbound-names', 'vault-of-the-black-sigil', 'black-gate'].includes(location)) return 'black-sigil-reach'
-  return 'shattered-meridian'
-}
+COMBAT_LOCATION_ORDER.forEach((locationId) => {
+  const location = COMBAT_LOCATIONS[locationId]
+  ;[...location.monsterPool, ...(location.bossId ? [location.bossId] : [])].forEach((monsterId) => { LOCATION_BY_ID[monsterId] = locationId })
+})
 
 const collectAuthoredEffects = (monster: MonsterDefinition, affixId?: keyof typeof ELITE_ZONE_AFFIXES) => [
   ...Object.values(monster.actions).flatMap((action) => (action.effects ?? []).map((effect) => ({ effect, onceOnly: false, sourceName: action.name }))),
@@ -181,19 +172,19 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   if (onceOnlyBarrierPercent > 0.3) warnings.push('One-time Barrier exceeds 30% Max HP')
   if (monster.bestiaryCategory === 'boss' && repeatableSustainPercent > BOSS_REPEATABLE_SUSTAIN_BUDGET) warnings.push(`Repeatable sustain exceeds ${(BOSS_REPEATABLE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
   if (monster.bestiaryCategory === 'boss' && onceOnlySustainPercent > BOSS_ONCE_SUSTAIN_BUDGET) warnings.push(`One-transition sustain exceeds ${(BOSS_ONCE_SUSTAIN_BUDGET * 100).toFixed(0)}% Max Health budget`)
-  if (maxControlMs > 5000 && ['whispering-woods', 'howling-den', 'hunters-ground', 'abandoned-catacombs'].includes(LOCATION_BY_ID[id])) warnings.push('First Frontier control exceeds 5 seconds')
+  if (maxControlMs > 5000) warnings.push('Authored control exceeds 5 seconds')
   if (!monster.primaryAffinity) warnings.push('Missing explicit primary affinity')
   if (!monster.basicAttackElement) warnings.push('Missing explicit Basic Attack element')
   if (defaultFlatPeriodicDamageCount) warnings.push(`${defaultFlatPeriodicDamageCount} default flat periodic damage payload(s)`)
   if (defaultFlatPeriodicHealCount) warnings.push(`${defaultFlatPeriodicHealCount} default flat periodic healing payload(s)`)
   const defaultFlatPeriodicCount = defaultFlatPeriodicDamageCount + defaultFlatPeriodicHealCount
-  return [{ id, name: monster.name, region: regionForLocation(LOCATION_BY_ID[id]), location: LOCATIONS[LOCATION_BY_ID[id]] ?? 'Unknown', order: targetOrder, boss: monster.bestiaryCategory === 'boss', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, defense: profile.defense, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, zoneAffix: locationDefinition?.zoneAffixId ? ELITE_ZONE_AFFIXES[locationDefinition.zoneAffixId]?.name ?? locationDefinition.zoneAffixId : null,
+  return [{ id, name: monster.name, group: locationDefinition?.type ?? 'combat-zone', location: locationDefinition?.name ?? 'Unknown', locationType: locationDefinition?.type ?? 'combat-zone', order: targetOrder, boss: monster.bestiaryCategory === 'boss', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, defense: profile.defense, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, zoneAffix: locationDefinition?.zoneAffixId ? ELITE_ZONE_AFFIXES[locationDefinition.zoneAffixId]?.name ?? locationDefinition.zoneAffixId : null,
     maxRepeatableDirectCoefficient: maximumDirectCoefficient(repeatable), dotTotalCoefficient: periodicDamageCoefficient, periodicDamageCoefficient, periodicHealPercent,
     repeatableHealPercent, repeatableBarrierPercent, onceOnlyHealPercent, onceOnlyBarrierPercent, repeatableSustainPercent, onceOnlySustainPercent,
     defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]
 })
 
-export const buildCombatV2RegionalGlobalAudit = (worldTier: WorldTierId = 1) => {
+export const buildCombatV2GlobalAudit = (worldTier: WorldTierId = 1) => {
   const rows = buildCombatV2ContentAudit(worldTier)
   return {
     implicitAffinityCount: rows.filter((row) => !MONSTERS[row.id]?.primaryAffinity).length,

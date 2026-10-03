@@ -1,4 +1,5 @@
 import { Button, GameTooltip } from '../ui'
+import { Sparkles } from 'lucide-react'
 import { TooltipContent } from '../ui/tooltip/Tooltip'
 import { ItemIcon } from '../ui/item'
 import { SpellIcon } from '../spells/SpellIcon'
@@ -11,7 +12,11 @@ import type { ArtifactId, GameState, ItemId } from '../../game/types'
 import type { GameStore } from '../../store/gameStore'
 
 function RequirementCard({ requirement }: { requirement: ReturnType<typeof getArtifactRankPurchaseEligibility>['requirements'][number] }) {
-  const icon = requirement.kind === 'item' ? <ItemIcon itemId={requirement.id as ItemId} size="tiny" /> : <SpellIcon school={requirement.id as ResonanceType} size="small" />
+  const icon = requirement.kind === 'item'
+    ? <ItemIcon itemId={requirement.id as ItemId} size="tiny" />
+    : requirement.id === 'arcane'
+      ? <Sparkles size={16} aria-hidden="true" />
+      : <SpellIcon school={requirement.id as 'fire' | 'water' | 'earth' | 'air'} size="small" />
   return <div className={`artifact-requirement-card${requirement.sufficient ? ' sufficient' : ' missing'}`}><span className="artifact-requirement-icon">{icon}</span><span className="artifact-requirement-copy"><strong>{requirement.kind === 'item' ? requirement.label : RESONANCE_METADATA[requirement.id as ResonanceType].label}</strong><small>REQUIRED {requirement.required.toLocaleString()} · OWNED {requirement.owned.toLocaleString()}</small></span><span className="artifact-requirement-state">{requirement.sufficient ? 'READY' : `−${(requirement.required - requirement.owned).toLocaleString()}`}</span></div>
 }
 

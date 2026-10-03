@@ -1,12 +1,11 @@
 import { BALANCE } from '../../core/balance/balance'
-import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
+import { COMBAT_LOCATIONS, isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 import type { ResonanceType } from '../../content/resonance/resonance'
-import { HUNTER_EXCLUSIVE_MONSTER_IDS, HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/first-frontier/gloamridge'
 import { HUNTER_RANKS } from '../../content/hunters-order/hunterRanks'
 import { HUNTER_STANDINGS } from '../../content/hunters-order/hunterRanks'
 import { HUNTER_GROUNDS, getHunterGround } from '../../content/hunters-order/hunterGrounds'
 import { HUNTER_UPGRADES } from '../../content/hunters-order/hunterUpgrades'
-import { MONSTERS, isBossMonster } from '../../content/monsters'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS, HUNTER_REGULAR_MONSTER_IDS, MONSTERS, isBossMonster } from '../../content/monsters'
 import { pushNotification } from '../../engine'
 import { grantItem } from '../inventory/itemAcquisition'
 import { grantResonance } from '../resonance/resonanceRuntime'
@@ -115,7 +114,7 @@ export const getHunterUpgradePurchaseStatus = (state: Pick<GameState, 'progress'
   const requiredStanding = HUNTER_STANDINGS.find((standing) => standing.id === upgrade.requiredStanding) ?? HUNTER_STANDINGS[0]
   const requiredRank = HUNTER_RANKS.find((rank) => rank.id === requiredStanding.rankId) ?? HUNTER_RANKS[0]
   const hasRequiredRank = currentStanding.reputation >= requiredStanding.reputation
-  const hiddenUntilMultipleGrounds = (upgrade.id === 'ground-survey' || upgrade.id === 'priority-dispatch') && HUNTER_GROUNDS.filter((ground) => ground.enabled).length < 2
+  const hiddenUntilMultipleGrounds = (upgrade.id === 'ground-survey' || upgrade.id === 'priority-dispatch') && HUNTER_GROUNDS.filter((ground) => ground.enabled && isCombatLocationUnlocked(ground.id, state.progress)).length < 2
   const reason = ownedRank >= upgrade.maxRank ? 'max-rank' as const : !hasRequiredRank ? 'rank-required' as const : hiddenUntilMultipleGrounds ? 'ground-required' as const : cost === null || orderFor(state).hunterMarks < cost ? 'marks-required' as const : null
   return { upgrade, ownedRank, cost, currentRank, currentStanding, requiredRank, requiredStanding, canPurchase: reason === null, reason }
 }
@@ -158,7 +157,7 @@ const makeTargetSpecs = (state: Pick<GameState, 'progress'>): GroundTargetSpec[]
   const blocked = new Set(order.blockedTargets)
   const candidates: GroundTargetSpec[] = []
   const index = rankIndex(state)
-  for (const ground of HUNTER_GROUNDS.filter((entry) => entry.enabled && HUNTER_STANDINGS.findIndex((standing) => standing.id === getHunterStanding(order.reputation).id) >= HUNTER_STANDINGS.findIndex((standing) => standing.id === entry.minimumStandingId))) {
+  for (const ground of HUNTER_GROUNDS.filter((entry) => entry.enabled && isCombatLocationUnlocked(entry.id, state.progress) && HUNTER_STANDINGS.findIndex((standing) => standing.id === getHunterStanding(order.reputation).id) >= HUNTER_STANDINGS.findIndex((standing) => standing.id === entry.minimumStandingId))) {
     const dungeon = COMBAT_LOCATIONS[ground.id]
     const targets = [...(dungeon?.monsterPool ?? []), ...(dungeon?.boss ? [dungeon.boss] : [])].filter((id) => isHunterMonsterRankEligible(state, id))
     const specs: HunterContractTarget[] = targets.filter((id) => !blocked.has(id)).map((monsterId) => ({ type: 'monster', monsterId }))

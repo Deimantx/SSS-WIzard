@@ -24,6 +24,7 @@ export type TraitId =
   | 'drowned-acolyte-devotion' | 'remnant-marauder-pressure' | 'silent-mourner-fade'
   | 'tutorial-living-stone' | 'tutorial-restorative-tide' | 'meridian-splitter-severed-phase' | 'black-gatekeeper-unbound-phase'
   | 'ashen-tracker-pursuit' | 'gloamfang-shadowstep' | 'runehorn-leyplate' | 'flamebound-rekindle' | 'rootscar-ancient-regrowth'
+  | 'moonwake-leviathan-phase' | 'furnace-maw-phase' | 'tempest-sovereign-phase' | 'unmade-magister-phase' | 'pyrehold-castellan-phase' | 'drowned-regent-phase' | 'steam-tyrant-phase' | 'sepulcher-flamekeeper-phase' | 'deep-bell-saint-phase' | 'abbot-ninth-gale-phase' | 'closed-index-phase'
 
 export type CombatTag =
   | 'basic-attack'

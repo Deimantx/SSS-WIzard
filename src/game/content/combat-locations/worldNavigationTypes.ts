@@ -2,9 +2,9 @@ import type { MonsterId } from '../../types'
 import type { EliteZoneAffixId } from '../elite-affixes'
 import type { ElementId } from '../elements/elements'
 import type { ChronicleEventId } from '../../types'
-import type { CombatLocationId, CombatRegionId } from './combatLocationIds'
+import type { CombatLocationId } from './combatLocationIds'
 
-export type { CombatLocationId, CombatRegionId } from './combatLocationIds'
+export type { CombatLocationId } from './combatLocationIds'
 
 export type CombatLocationType =
   | 'combat-zone'
@@ -31,25 +31,14 @@ export type CombatNavigationUnlockCondition =
   | { type: 'any'; conditions: CombatNavigationUnlockCondition[] }
   | { type: 'all'; conditions: CombatNavigationUnlockCondition[] }
 
-export interface CombatRegionDefinition {
-  id: CombatRegionId
-  name: string
-  description?: string
-  locationIds: CombatLocationId[]
-  order: number
-  unlock?: CombatNavigationUnlockCondition
-  prototype?: boolean
-}
-
 export interface CombatLocationDefinition {
   id: CombatLocationId
-  regionId: CombatRegionId
   name: string
   description?: string
   type: CombatLocationType
   /** Authored when a location is consistently aligned to one element. */
   primaryElement?: ElementId
-  order: number
+  progressionOrder: number
   monsterPool: readonly MonsterId[]
   bossId: MonsterId | null
   threatRequired: number | null

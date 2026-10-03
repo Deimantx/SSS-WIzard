@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
+import { COMBAT_LOCATIONS, isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 import { createInitialState } from '../../../store/initialState'
 import { spawnEnemy, spawnNextEnemy } from '../combat/combatRuntime'
 import { getHunterAuthorization, getHunterBlockSlotCount, getHunterRankProgress, getHunterStanding, getHunterContractBoardSlotCount, getHunterContractChoiceCount, getHunterRerollMarkCost, getHunterSkipMarkCost, getHunterUpgradePurchaseStatus, acceptHunterContract, canHuntMonster, doesMonsterMatchHunterContract, generateHunterContractChoices, issueFirstHunterContract, requestHunterAssignment, recordHunterKill, rerollHunterContracts, setHunterTargetBlocked, skipHunterContract, purchaseHunterUpgrade, isHunterRankAtLeast, debugRegenerateHunterContractBoard, getEligibleHunterContractMembers, getMinimumContractTierForMonster, toggleHunterContractPin, getHunterContractTargetReduction, getHunterHarvestBonuses } from './huntersOrderRuntime'
@@ -7,8 +7,7 @@ import { BALANCE } from '../../core/balance/balance'
 import { HUNTER_RANKS, HUNTER_STANDINGS } from '../../content/hunters-order/hunterRanks'
 import { HUNTER_UPGRADES } from '../../content/hunters-order/hunterUpgrades'
 import { HUNTER_GROUNDS } from '../../content/hunters-order/hunterGrounds'
-import { HUNTER_REGULAR_MONSTER_IDS } from '../../content/monsters/first-frontier/gloamridge'
-import { MONSTERS } from '../../content/monsters'
+import { HUNTER_REGULAR_MONSTER_IDS, MONSTERS } from '../../content/monsters'
 import type { HunterContractState } from '../../types'
 
 const contract = (targetSpec: HunterContractState['targetSpec'], tier: HunterContractState['tier'] = 'routine'): HunterContractState => ({ id: 'test-contract', targetSpec, target: 1, progress: 0, tier, reputationReward: 100, marksReward: 3 })
@@ -17,9 +16,9 @@ const unlock = () => { const state = createInitialState(); state.progress.bossKi
 describe('Hunter Order hardened runtime', () => {
   it('uses the extended authored Gloamridge roster and rank thresholds', () => {
     expect(HUNTER_RANKS.map(({ reputation }) => reputation)).toEqual([0, 1250, 4000, 9000, 17500, 32500])
-    expect(HUNTER_REGULAR_MONSTER_IDS).toHaveLength(7)
+    expect(HUNTER_REGULAR_MONSTER_IDS).toHaveLength(21)
     expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toHaveLength(7)
-    expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toEqual(expect.arrayContaining([...HUNTER_REGULAR_MONSTER_IDS]))
+    expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toEqual(expect.arrayContaining(HUNTER_REGULAR_MONSTER_IDS.filter((id) => MONSTERS[id].hunter?.huntingGroundId === 'hunters-ground')))
     for (const id of ['veilwing-harrier', 'cinderback-mauler', 'gloomroot-hexer'] as const) {
       expect(MONSTERS[id]).toMatchObject({ bestiaryCategory: 'monster', hunter: { exclusive: true, contractRequired: true, huntingGroundId: 'hunters-ground' } })
       expect(MONSTERS[id]?.actions && Object.keys(MONSTERS[id]!.actions).length).toBeGreaterThan(0)
@@ -62,9 +61,14 @@ describe('Hunter Order hardened runtime', () => {
     state.progress.huntersOrder.reputation = 32500
     const offers = generateHunterContractChoices(state)
     const enabledGroundIds = HUNTER_GROUNDS.filter((ground) => ground.enabled).map((ground) => ground.id)
-    expect(enabledGroundIds).toEqual(['hunters-ground'])
+    expect(enabledGroundIds).toEqual(['hunters-ground', 'mistclaw-highlands', 'cinderhex-barrens'])
     expect(offers.length).toBeGreaterThan(0)
-    expect(offers.every((offer) => offer.huntingGroundId && enabledGroundIds.includes(offer.huntingGroundId))).toBe(true)
+    expect(offers.every((offer) => offer.huntingGroundId && enabledGroundIds.includes(offer.huntingGroundId) && isCombatLocationUnlocked(offer.huntingGroundId, state.progress))).toBe(true)
+    expect(isCombatLocationUnlocked('mistclaw-highlands', state.progress)).toBe(true)
+    expect(isCombatLocationUnlocked('cinderhex-barrens', state.progress)).toBe(false)
+    state.progress.bossKillsByBoss['unmade-magister'] = 1
+    const lateOffers = debugRegenerateHunterContractBoard(state, { archetype: 'monster', tier: 'routine', huntingGroundId: 'cinderhex-barrens' })
+    expect(lateOffers.some((offer) => offer.huntingGroundId === 'cinderhex-barrens')).toBe(true)
   })
 
   it('issues the first routine Contract immediately and supports the Tracker continuation action', () => {

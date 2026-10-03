@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { CHRONICLE_OBJECTIVE_BY_ID } from '../../content/chronicles/chronicles'
-import { buildChronicleReadModel, filterChronicleReadModel, getChronicleLockReasons, sortChronicleReadModel, CHRONICLE_TRACK_LABELS } from './chronicleReadModel'
+import { buildChronicleReadModel, filterChronicleReadModel, getChronicleLockReasons, sortChronicleReadModel, CHRONICLE_TRACK_LABELS, CHRONICLE_TRACKS } from './chronicleReadModel'
 import { formatChronicleCondition } from './chroniclePresentation'
 
 describe('Chronicle read model', () => {
   it('labels the shared side track as Organizations and renders Hunter’s Order correctly', () => {
     expect(CHRONICLE_TRACK_LABELS.guild).toBe('Organizations')
+    expect(CHRONICLE_TRACKS).not.toContain('region')
     expect(formatChronicleCondition({ type: 'hunters-order-unlocked' })).toBe('Unlock the Hunter’s Order')
   })
 
@@ -15,7 +16,7 @@ describe('Chronicle read model', () => {
     state.progress.startingSchoolId = 'fire'
     state.progress.chronicle.completedObjectiveIds = ['m1-choose-school']
     const models = buildChronicleReadModel(state, 'first-frontier')
-    const visible = filterChronicleReadModel(models, { search: '', statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'region'], hideCompleted: true, showLocked: true, showOptional: true })
+    const visible = filterChronicleReadModel(models, { search: '', statusFilters: ['current', 'available', 'locked', 'completed'], trackFilters: ['main', 'combat', 'magic', 'tower', 'guild', 'equipment'], hideCompleted: true, showLocked: true, showOptional: true })
     expect(visible.some((objective) => objective.id === 'm1-choose-school')).toBe(false)
     expect(state.progress.chronicle.completedObjectiveIds).toContain('m1-choose-school')
   })

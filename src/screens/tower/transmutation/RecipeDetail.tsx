@@ -1,4 +1,4 @@
-import { Droplets, Flame, LockKeyhole, Mountain, Wind, Zap } from 'lucide-react'
+import { Droplets, Flame, LockKeyhole, Mountain, Sparkles, Wind, Zap } from 'lucide-react'
 import { useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { Card, Status } from '../../../components/ui'
 import { ItemIcon, ItemRequirementTile, ItemUsesDialog } from '../../../components/ui/item'
@@ -16,7 +16,7 @@ import { useGameStore } from '../../../store/gameStore'
 import { setUiPreferences } from '../../../ui/preferences/uiPreferencesStore'
 import { useSmartScrollState } from '../../../ui/game-feel/useSmartScrollState'
 
-const RESONANCE_ICONS: Record<ResonanceType, ComponentType<{ size?: number }>> = { fire: Flame, water: Droplets, earth: Mountain, air: Wind }
+const RESONANCE_ICONS: Record<ResonanceType, ComponentType<{ size?: number }>> = { fire: Flame, water: Droplets, earth: Mountain, air: Wind, arcane: Sparkles }
 
 export function RecipeDetail({ recipe, onSelectRecipe }: { recipe: RecipeDefinition; onSelectRecipe?: (recipeId: TransmutationRecipeId) => void }) {
   const state = useGameStore()
@@ -41,7 +41,7 @@ function RecipeRequirements({ recipe, state, requirements }: { recipe: RecipeDef
   const fluxRequired = getEffectiveTransmutationFluxCost(state, recipe)
   const resonanceTiles = (Object.entries(resonanceCosts) as Array<[ResonanceType, number]>).filter(([, required]) => required > 0)
   const fluxOwned = state.tower.resources.arcaneFlux
-  return <DetailSection title="RECIPE REQUIREMENTS"><div className="transmutation-requirements-grid transmutation-requirement-cards">{resonanceTiles.map(([type, required]) => <ResourceRequirementTile key={type} label={`${SCHOOLS[type].name} Resonance`} icon={RESONANCE_ICONS[type]} color={SCHOOLS[type].color} owned={state.resonance[type] ?? 0} required={required} />)}<ResourceRequirementTile label="Arcane Flux" icon={Zap} color="var(--ui-accent)" owned={fluxOwned} required={fluxRequired} />{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} />)}</div></DetailSection>
+  return <DetailSection title="RECIPE REQUIREMENTS"><div className="transmutation-requirements-grid transmutation-requirement-cards">{resonanceTiles.map(([type, required]) => <ResourceRequirementTile key={type} label={RESONANCE_METADATA[type].label} icon={RESONANCE_ICONS[type]} color={type === 'arcane' ? 'var(--ui-accent)' : SCHOOLS[type].color} owned={state.resonance[type] ?? 0} required={required} />)}<ResourceRequirementTile label="Arcane Flux" icon={Zap} color="var(--ui-accent)" owned={fluxOwned} required={fluxRequired} />{requirements.map((requirement) => <ItemRequirementTile key={requirement.itemId} itemId={requirement.itemId} owned={requirement.owned} available={requirement.available} equipped={requirement.equipped} required={requirement.required} protectedItem={requirement.protected} />)}</div></DetailSection>
 }
 
 function ResourceRequirementTile({ label, icon: Icon, color, owned, required }: { label: string; icon: ComponentType<{ size?: number }>; color: string; owned: number; required: number }) { const sufficient = owned >= required; return <div className={`transmutation-resource-requirement ${sufficient ? 'sufficient' : 'missing'}`} style={{ '--requirement-accent': color } as React.CSSProperties}><span className="transmutation-resource-icon"><Icon size={18} /></span><span><strong>{label}</strong><small>{formatResourceAmount(owned)} / {formatResourceAmount(required)}</small></span></div> }

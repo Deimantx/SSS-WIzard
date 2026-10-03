@@ -52,11 +52,15 @@ describe('Hunter upgrade effect presentation', () => {
     expect(getHunterUpgradePurchaseStatus(state, 'contract-recall')).toMatchObject({ ownedRank: 2, reason: 'max-rank', canPurchase: false })
   })
 
-  it('keeps Ground Survey and Priority Dispatch locked until another enabled ground exists', () => {
+  it('unlocks Ground Survey and Priority Dispatch when another authored ground is progression-unlocked', () => {
     const state = stateAtStanding()
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 0
     expect(getHunterUpgradePurchaseStatus(state, 'ground-survey')).toMatchObject({ canPurchase: false, reason: 'ground-required' })
     expect(getHunterUpgradePurchaseStatus(state, 'priority-dispatch')).toMatchObject({ canPurchase: false, reason: 'ground-required' })
     expect(getHunterUpgradeEffectBreakdown(state, 'ground-survey')?.rankRows[0]?.label).not.toBe('Not active')
+    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    expect(getHunterUpgradePurchaseStatus(state, 'ground-survey')).toMatchObject({ canPurchase: true, reason: null })
+    expect(getHunterUpgradePurchaseStatus(state, 'priority-dispatch')).toMatchObject({ canPurchase: true, reason: null })
   })
 
   it('shows locked upgrades full current, next, maximum, and rank detail', () => {

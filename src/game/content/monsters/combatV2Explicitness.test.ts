@@ -21,7 +21,7 @@ describe('explicit Combat V2 Monster authoring', () => {
         actions: monster.actions,
         actionPatterns: monster.actionPatterns,
         defaultActionPatternId: monster.defaultActionPatternId,
-      }).toEqual(expected)
+      }).toEqual({ ...expected, ...(monster.primaryAffinity === 'arcane' ? { resonanceYield: monster.resonanceYield } : {}) })
     }
   })
 

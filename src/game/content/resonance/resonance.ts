@@ -1,5 +1,5 @@
-/** Phase 1 Resonance follows the four playable Magic Schools only. */
-export const RESONANCE_TYPES = ['fire', 'water', 'earth', 'air'] as const
+/** Resonance includes Arcane as a resource without implying an Arcane spell school. */
+export const RESONANCE_TYPES = ['fire', 'water', 'earth', 'air', 'arcane'] as const
 
 export type ResonanceType = typeof RESONANCE_TYPES[number]
 export type ResonanceState = Record<ResonanceType, number>
@@ -12,9 +12,10 @@ export const RESONANCE_METADATA: Record<ResonanceType, { label: string; shortLab
   water: { label: 'Water Resonance', shortLabel: 'Water' },
   earth: { label: 'Earth Resonance', shortLabel: 'Earth' },
   air: { label: 'Air Resonance', shortLabel: 'Air' },
+  arcane: { label: 'Arcane Resonance', shortLabel: 'Arcane' },
 }
 
-export const DEBUG_RESONANCE_TEST_BUNDLE: ResonanceState = { fire: 100, water: 100, earth: 100, air: 100 }
+export const DEBUG_RESONANCE_TEST_BUNDLE: ResonanceState = { fire: 100, water: 100, earth: 100, air: 100, arcane: 100 }
 
 export const sanitizeResonanceAmount = (value: unknown): number => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0

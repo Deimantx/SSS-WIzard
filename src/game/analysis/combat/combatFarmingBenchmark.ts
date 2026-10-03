@@ -230,7 +230,7 @@ export interface CombatBossCycleBenchmarkResult {
   endingMana: number
 }
 
-const SCHOOL_IDS = RESONANCE_TYPES satisfies readonly SchoolId[]
+const SCHOOL_IDS: readonly SchoolId[] = ['fire', 'water', 'earth', 'air']
 const EQUIPMENT_SLOTS: readonly EquipmentPosition[] = ['weapon', 'armor', 'head']
 
 const cloneState = (sourceState: GameState): GameState => JSON.parse(JSON.stringify(sourceState)) as GameState

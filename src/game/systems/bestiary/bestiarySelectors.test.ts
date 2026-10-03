@@ -31,7 +31,7 @@ describe('Bestiary selectors', () => {
     const completion = getBestiaryCompletion(state)
     const monsterTotal = Object.values(MONSTERS).filter((monster) => monster.bestiaryCategory === 'monster').length
     const bossTotal = Object.values(MONSTERS).filter((monster) => monster.bestiaryCategory === 'boss').length
-    expect(completion).toMatchObject({ discovered: 2, total: Object.keys(MONSTERS).length, percent: 2 })
+    expect(completion).toMatchObject({ discovered: 2, total: Object.keys(MONSTERS).length, percent: 1 })
     expect(completion.categories).toMatchObject({ monster: { discovered: 2, total: monsterTotal }, boss: { discovered: 0, total: bossTotal } })
     expect(getMonsterLocations('forest-wisp')).toEqual(['Whispering Woods'])
   })

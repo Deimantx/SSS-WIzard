@@ -1,12 +1,11 @@
-import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
+﻿import type { CombatLocationDefinition, CombatLocationId } from '../worldNavigationTypes'
 
 export const firstFrontierLocations = {
     "stonewake-hollow":  {
                              "id":  "stonewake-hollow",
-                             "regionId":  "first-frontier",
                              "name":  "Stonewake Hollow",
                              "type":  "combat-zone",
-                             "order":  1,
+                             "progressionOrder":  1,
                              "encounterMode":  "targeted",
                              "description":  "An Earth frontier of barriers and heavy, deliberate attacks.",
                              "primaryElement":  "earth",
@@ -54,10 +53,9 @@ export const firstFrontierLocations = {
                          },
     "galecrest-heights":  {
                               "id":  "galecrest-heights",
-                              "regionId":  "first-frontier",
                               "name":  "Galecrest Heights",
                               "type":  "combat-zone",
-                              "order":  2,
+                              "progressionOrder":  2,
                               "encounterMode":  "targeted",
                               "description":  "An Air frontier of haste and multi-hit pressure.",
                               "primaryElement":  "air",
@@ -105,10 +103,9 @@ export const firstFrontierLocations = {
                           },
     "tideglass-caverns":  {
                               "id":  "tideglass-caverns",
-                              "regionId":  "first-frontier",
                               "name":  "Tideglass Caverns",
                               "type":  "combat-zone",
-                              "order":  3,
+                              "progressionOrder":  3,
                               "encounterMode":  "targeted",
                               "description":  "A Water frontier of barriers, healing, and dragging currents.",
                               "primaryElement":  "water",
@@ -156,10 +153,9 @@ export const firstFrontierLocations = {
                           },
     "emberfall-basin":  {
                             "id":  "emberfall-basin",
-                            "regionId":  "first-frontier",
                             "name":  "Emberfall Basin",
                             "type":  "combat-zone",
-                            "order":  4,
+                            "progressionOrder":  4,
                             "encounterMode":  "targeted",
                             "description":  "A Fire frontier of direct strikes and lingering burns.",
                             "primaryElement":  "fire",
@@ -207,10 +203,9 @@ export const firstFrontierLocations = {
                         },
     "whispering-woods":  {
                              "id":  "whispering-woods",
-                             "regionId":  "first-frontier",
                              "name":  "Whispering Woods",
                              "type":  "combat-zone",
-                             "order":  5,
+                             "progressionOrder":  5,
                              "encounterMode":  "targeted",
                              "description":  "A mixed-target forest where elemental affinities shape each encounter.",
                              "unlock":  {
@@ -273,10 +268,9 @@ export const firstFrontierLocations = {
                          },
     "howling-den":  {
                         "id":  "howling-den",
-                        "regionId":  "first-frontier",
                         "name":  "Howling Den",
                         "type":  "elite-zone",
-                        "order":  6,
+                        "progressionOrder":  6,
                         "encounterMode":  "targeted",
                         "description":  "An elite hunting ground where every normal foe gains Haste once at half Health.",
                         "zoneAffixId":  "frenzied",
@@ -326,12 +320,11 @@ export const firstFrontierLocations = {
                     },
     "hunters-ground":  {
                            "id":  "hunters-ground",
-                           "regionId":  "first-frontier",
                            "name":  "Gloamridge",
                            "type":  "hunting-ground",
-                           "order":  7,
+                           "progressionOrder":  7,
                            "encounterMode":  "targeted",
-                           "description":  "A bossless ridge of deterministic Hunterâ€™s Order quarry contracts.",
+                           "description":  "A bossless ridge of deterministic HunterÃ¢â‚¬â„¢s Order quarry contracts.",
                            "unlock":  {
                                           "type":  "boss-kill",
                                           "bossId":  "corrupted-greatbear",
@@ -383,12 +376,11 @@ export const firstFrontierLocations = {
                        },
     "abandoned-catacombs":  {
                                 "id":  "abandoned-catacombs",
-                                "regionId":  "first-frontier",
                                 "name":  "Abandoned Catacombs",
                                 "type":  "dungeon",
-                                "order":  8,
+                                "progressionOrder":  8,
                                 "encounterMode":  "sequence",
-                                "description":  "A fixed sequence through the old crypts, ending at Archmage Edrinâ€™s Shade.",
+                                "description":  "A fixed sequence through the old crypts, ending at Archmage EdrinÃ¢â‚¬â„¢s Shade.",
                                 "unlock":  {
                                                "type":  "boss-kill",
                                                "bossId":  "corrupted-greatbear",

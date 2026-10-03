@@ -36,8 +36,8 @@ export interface ChronicleReadQuery {
   showOptional: boolean
 }
 
-export const CHRONICLE_TRACKS: readonly ChronicleTrack[] = ['main', 'combat', 'magic', 'tower', 'guild', 'region', 'equipment']
-export const CHRONICLE_TRACK_LABELS: Record<ChronicleTrack, string> = { main: 'Main', combat: 'Combat', magic: 'Magic', tower: 'Tower', guild: 'Organizations', region: 'Region', equipment: 'Equipment' }
+export const CHRONICLE_TRACKS: readonly ChronicleTrack[] = ['main', 'combat', 'magic', 'tower', 'guild', 'equipment']
+export const CHRONICLE_TRACK_LABELS: Record<ChronicleTrack, string> = { main: 'Main', combat: 'Combat', magic: 'Magic', tower: 'Tower', guild: 'Organizations', equipment: 'Equipment' }
 export const CHRONICLE_STATUS_LABELS: Record<ChronicleObjectiveStatus, string> = { current: 'Current', available: 'Available', locked: 'Locked', completed: 'Complete' }
 
 const completionPercent = (progress: ChronicleConditionProgress) => progress.target > 0 ? Math.min(100, Math.round(progress.current / progress.target * 100)) : progress.complete ? 100 : 0

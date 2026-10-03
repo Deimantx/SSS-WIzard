@@ -21,7 +21,7 @@ describe('combat Power audit reports', () => {
 
   it('exposes diagnostic Boss ratios and difficulty inversions without hard-failing them', () => {
     const ratios = buildBossPowerRatioAudit(1)
-    expect(ratios).toHaveLength(5)
+    expect(ratios).toHaveLength(9)
     expect(ratios.every((row) => Number.isFinite(row.bossToLastNormalRatio) && row.bossToLastNormalRatio > 1)).toBe(true)
     expect(buildDifficultyInversionAudit(1).some((row) => row.locationId === 'rootscar-hollow')).toBe(false)
     expect(getPowerAuditWorldTiers()).toEqual([1, 2, 3, 4, 5])

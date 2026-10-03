@@ -1,5 +1,5 @@
 import { MONSTERS } from '../../content/monsters'
-import { COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, COMBAT_REGIONS, getCombatEncounterMode, getCombatLocationById, getCombatLocationUnlockRequirement, hasBossEncounter, isCombatLocationCompleted, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/combat-locations'
+import { COMBAT_LOCATIONS, COMBAT_LOCATION_TYPE_METADATA, getCombatEncounterMode, getCombatLocationById, getCombatLocationUnlockRequirement, hasBossEncounter, isCombatLocationCompleted, isCombatLocationUnlocked, isCombatNavigationConditionUnlocked } from '../../content/combat-locations'
 import { getEliteZoneAffix } from '../../content/elite-affixes'
 import { buildCombatBossHuntPresentation } from './combatBossHuntPresentation'
 import type { CombatNavigationUnlockCondition, CombatLocationDefinition, CombatLocationId, CombatTargetDifficulty, CombatZoneType } from '../../content/combat-locations'
@@ -69,7 +69,7 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
   const state = getLocationState(locationId, progress, combat, worldTier.current)
   const dungeon = definition?.id ? COMBAT_LOCATIONS[definition.id] : null
   const zoneAffix = getEliteZoneAffix(definition?.zoneAffixId)
-  const unlockText = state === 'locked' ? (dungeon ? getCombatLocationUnlockRequirement(dungeon) : null) ?? getConditionText(definition?.unlock) ?? getConditionText(COMBAT_REGIONS[definition?.regionId ?? '']?.unlock) : null
+  const unlockText = state === 'locked' ? (dungeon ? getCombatLocationUnlockRequirement(dungeon) : null) ?? getConditionText(definition?.unlock) : null
   if (!definition || !dungeon) {
     return {
       id: locationId,
@@ -137,7 +137,7 @@ export function getInitialCombatLocationId({ combat, lastEnteredCombatLocationId
   return firstUnlocked?.id ?? 'stonewake-hollow'
 }
 
-const locationOrder = (left: CombatLocationDefinition, right: CombatLocationDefinition) => (COMBAT_REGIONS[left.regionId]?.order ?? 0) - (COMBAT_REGIONS[right.regionId]?.order ?? 0) || left.order - right.order
+const locationOrder = (left: CombatLocationDefinition, right: CombatLocationDefinition) => left.progressionOrder - right.progressionOrder
 
 export function buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedLocationId, selectedType }: { progress: GameState['progress']; combat: CombatState; worldTier?: WorldTierState; selectedLocationId?: CombatLocationId | null; selectedType?: CombatZoneType }): CombatWorldNavigationViewModel {
   const allLocations = Object.values(COMBAT_LOCATIONS).sort(locationOrder).map((location) => buildLocation(location.id, progress, combat, worldTier))

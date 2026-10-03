@@ -6,6 +6,7 @@ import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import { getUiPreferences, setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { HunterBestiaryTab } from './HunterBestiaryTab'
+import { HUNTER_EXCLUSIVE_MONSTER_IDS } from '../../game/content/monsters'
 import { openHunterBestiaryEntry } from '../../ui/navigation/hunterOrderNavigation'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 
@@ -41,7 +42,7 @@ describe('Hunter Bestiary field workspace', () => {
     const { container } = renderBestiary()
     await user.click(screen.getByRole('tab', { name: 'HUNTER QUARRY' }))
     expect(screen.getByText('Gloamridge', { selector: '.hunter-quarry-ground-group > header > strong' })).toBeTruthy()
-    expect(container.querySelectorAll('.hunter-quarry-tile-grid .hunter-quarry-tile')).toHaveLength(7)
+    expect(container.querySelectorAll('.hunter-quarry-tile-grid .hunter-quarry-tile')).toHaveLength(HUNTER_EXCLUSIVE_MONSTER_IDS.length)
     await user.click(screen.getByRole('button', { name: /Ashen Tracker/ }))
     expect(screen.getByRole('heading', { name: 'Ashen Tracker' })).toBeTruthy()
   })

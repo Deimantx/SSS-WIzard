@@ -3,19 +3,17 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import { InventoryResourcesPanel } from './InventoryResourcesPanel'
+import { RESONANCE_METADATA, RESONANCE_TYPES } from '../../game/content/resonance/resonance'
 
 describe('InventoryResourcesPanel', () => {
   beforeEach(() => useGameStore.setState(createInitialState()))
 
-  it('renders all four Resonance balances, including zero values', () => {
+  it('renders all Resonance balances, including zero values', () => {
     render(<InventoryResourcesPanel />)
 
     expect(screen.getByText('RESOURCES')).toBeTruthy()
-    expect(screen.getByText('Fire Resonance')).toBeTruthy()
-    expect(screen.getByText('Water Resonance')).toBeTruthy()
-    expect(screen.getByText('Earth Resonance')).toBeTruthy()
-    expect(screen.getByText('Air Resonance')).toBeTruthy()
-    expect(screen.getAllByText('0')).toHaveLength(4)
+    RESONANCE_TYPES.forEach((type) => expect(screen.getByText(RESONANCE_METADATA[type].label)).toBeTruthy())
+    expect(screen.getAllByText('0')).toHaveLength(RESONANCE_TYPES.length)
   })
 
   it('reacts to the canonical GameState Resonance balance', () => {

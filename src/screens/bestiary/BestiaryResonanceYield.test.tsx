@@ -8,11 +8,14 @@ import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combat
 import { resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
 import { getNonZeroResonanceEntries } from '../../game/presentation/resonance/resonancePresentation'
 import { formatDropQuantity } from '../../game/systems/bestiary/bestiarySelectors'
+import { MONSTER_IDS } from '../../game/content/monsters'
+import { resolveCombatLootContext } from '../../game/systems/loot/universalLootRuntime'
 import { BestiaryInspector } from './BestiaryInspector'
 
-const renderInspector = (monsterId: Parameters<typeof BestiaryInspector>[0]['monsterId'], worldTier: WorldTierId = 1, discovered = true) => {
+const renderInspector = (monsterId: Parameters<typeof BestiaryInspector>[0]['monsterId'], worldTier: WorldTierId = 1, discovered = true, crystalSystemUnlocked = false) => {
   const state = createInitialState()
   state.progress.discoveredMonsters = discovered && monsterId ? [monsterId] : []
+  state.progress.bossKillsByBoss['meridian-splitter'] = crystalSystemUnlocked ? 1 : 0
   state.worldTier.current = worldTier
   state.worldTier.highestUnlocked = Math.max(worldTier, 2) as WorldTierId
   useGameStore.setState(state)
@@ -74,5 +77,21 @@ describe('BestiaryResonanceYield', () => {
     renderInspector('forest-wisp', 1, false)
     expect(screen.getByText('UNDISCOVERED CREATURE')).toBeTruthy()
     expect(screen.queryByText('RESONANCE YIELD')).toBeNull()
+  })
+
+  it('does not show an active Crystal Cache chance before the Crystal System unlock', () => {
+    const eligibleMonster = MONSTER_IDS.find((id) => resolveCombatLootContext(id, 1).lootTier.tier >= 10)
+    expect(eligibleMonster).toBeDefined()
+    if (!eligibleMonster) return
+
+    const lockedView = renderInspector(eligibleMonster)
+    const lockedRow = screen.getByText('Tier 1 Crystal Cache').closest('.bestiary-loot-row')
+    expect(lockedRow?.textContent).toContain('LOCKED — Defeat Meridian Splitter')
+    expect(lockedRow?.textContent).not.toMatch(/\d+(?:\.\d+)?%/)
+
+    lockedView.unmount()
+    renderInspector(eligibleMonster, 1, true, true)
+    const unlockedRow = screen.getByText('Tier 1 Crystal Cache').closest('.bestiary-loot-row')
+    expect(unlockedRow?.textContent).toMatch(/\d+(?:\.\d+)?%/)
   })
 })

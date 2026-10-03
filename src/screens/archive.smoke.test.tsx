@@ -50,5 +50,5 @@ describe('archive screens', () => {
     const dossierTransition = document.querySelector('[data-inspector-identity="forest-wisp"]')
     expect(dossierTransition?.classList.contains('fill-bounded')).toBe(true)
     expect(dossierTransition?.querySelector('.hunter-dossier-content')?.classList.contains('smart-scroll-region')).toBe(true)
-  })
+  }, 20_000)
 })

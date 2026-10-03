@@ -892,7 +892,7 @@ export interface ManaPillarState {
 /** Gameplay UI state. Layout editing and developer tools are transient UI chrome outside the save. */
 export interface UiState {
   screen: ScreenId
-  /** The last dungeon the player successfully entered, not a world browse selection. */
+  /** The last Combat Location the player successfully entered. */
   lastEnteredCombatLocationId?: CombatLocationId
   /** One-shot destination for pre-embedded Collection / Bestiary save routes. */
   legacyArchiveRoute?: 'registry' | 'bestiary' | null

@@ -6,14 +6,15 @@ import type { MonsterDefinition } from '../../game/content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../game/systems/bestiary/bestiarySelectors'
 import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combatCurrencyRewards'
 import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../game/systems/loot/universalLootRuntime'
-import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS, UNIVERSAL_LOOT_CRYSTAL_MIN_TIER } from '../../game/content/loot/universalLootTiers'
+import { getLootUnlockTier, isLootUnlockedAtTier, UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../game/content/loot/universalLootTiers'
 import type { GameState, WorldTierId } from '../../game/types'
 
 export function BestiaryLootTable({ monster, progress, worldTier }: { monster: MonsterDefinition; progress: GameState['progress']; worldTier: WorldTierId }) {
   const context = resolveCombatLootContext(monster.id, worldTier)
   const lifeEssence = resolveCombatCurrencyRewardRange(monster.id, 'life-essence', worldTier)
   const artifactEssence = resolveCombatCurrencyRewardRange(monster.id, 'artifact-essence', worldTier)
-  const crystalCacheEligible = context.lootTier.tier >= UNIVERSAL_LOOT_CRYSTAL_MIN_TIER
+  const crystalCacheEligible = isLootUnlockedAtTier('crystal-cache-t1', context.lootTier)
+  const crystalCacheUnlockTier = getLootUnlockTier('crystal-cache-t1')
   const crystalCacheChance = crystalCacheEligible ? Math.min(1, context.lootTier.crystalCacheDropChance * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)) : 0
   const crystalCacheQuantity = context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1
   const renderStatus = (itemId: keyof typeof ITEMS) => {
@@ -47,6 +48,6 @@ export function BestiaryLootTable({ monster, progress, worldTier }: { monster: M
         </div>
       })}
     </div>
-    {crystalCacheEligible && <><span className="bestiary-section-label">SPECIAL DROP</span><div className="bestiary-loot-list"><div className="bestiary-loot-row" key="tier-1-crystal-cache"><GameTooltip content={<TooltipContent title={ITEMS['tier-1-crystal-cache'].name} description={`Unlocked at Loot Tier ${UNIVERSAL_LOOT_CRYSTAL_MIN_TIER}. Current tier chance ${formatDropChance(crystalCacheChance)}; ${crystalCacheQuantity} cache${crystalCacheQuantity === 1 ? '' : 's'} on success. System progression unlock is also required.`} />}><ItemIcon itemId="tier-1-crystal-cache" size="tiny" /></GameTooltip><div><strong>{ITEMS['tier-1-crystal-cache'].name}</strong><small>{formatDropChance(crystalCacheChance)} · {crystalCacheQuantity} on success</small></div>{renderStatus('tier-1-crystal-cache')}</div></div></>}
+    {crystalCacheEligible && <><span className="bestiary-section-label">SPECIAL DROP</span><div className="bestiary-loot-list"><div className="bestiary-loot-row" key="tier-1-crystal-cache"><GameTooltip content={<TooltipContent title={ITEMS['tier-1-crystal-cache'].name} description={`Unlocked at Loot Tier ${crystalCacheUnlockTier}. Current tier chance ${formatDropChance(crystalCacheChance)}; ${crystalCacheQuantity} cache${crystalCacheQuantity === 1 ? '' : 's'} on success. System progression unlock is also required.`} />}><ItemIcon itemId="tier-1-crystal-cache" size="tiny" /></GameTooltip><div><strong>{ITEMS['tier-1-crystal-cache'].name}</strong><small>{formatDropChance(crystalCacheChance)} · {crystalCacheQuantity} on success</small></div>{renderStatus('tier-1-crystal-cache')}</div></div></>}
   </section>
 }

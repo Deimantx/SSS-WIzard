@@ -22,7 +22,7 @@ export type AuthoredEquipmentDefinition = Omit<
   'kind' | 'category' | 'inventoryCategory' | 'source' | 'sourceNavigation'
 > & Required<Pick<ItemDefinition, 'equipmentSlot' | 'equipmentTier' | 'buildTags' | 'equipmentBudgetProfile'>>
 
-const MATERIAL_SUBTYPES: readonly InventoryMaterialSubtype[] = ['elemental', 'creature', 'ore', 'refined', 'arcane']
+const MATERIAL_SUBTYPES: readonly InventoryMaterialSubtype[] = ['elemental', 'creature', 'herb', 'ore', 'refined', 'arcane']
 
 export const material = (
   id: ItemId,

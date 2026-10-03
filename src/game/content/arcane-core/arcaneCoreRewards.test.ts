@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { finishEnemy } from '../../systems/combat/combatRuntime'
 import { getArcaneCoreReward } from './arcaneCoreRewards'
+import { getGuildProgressionBonuses } from '../../systems/guild/guildSelectors'
+import { resolveCombatLootContext, resolveLootQuantity } from '../../systems/loot/universalLootRuntime'
 
 describe('Arcane Core rewards', () => {
   it('defines dungeon-scaled Arcane Point rewards for normal and boss kills', () => {
@@ -24,7 +26,9 @@ describe('Arcane Core rewards', () => {
     normal.combat.enemyId = 'forest-wisp'
     normal.combat.enemyWorldTier = 5
     finishEnemy(normal)
-    expect(normal.arcaneCore.totalPointsEarned).toBe(9)
+    const normalContext = resolveCombatLootContext('forest-wisp', 5)
+    const normalGuild = getGuildProgressionBonuses(normal)
+    expect(normal.arcaneCore.totalPointsEarned).toBe(resolveLootQuantity(getArcaneCoreReward('whispering-woods')!.normalKillPoints, normalContext, normalGuild.combatArcanePointMultiplier))
 
     const boss = createInitialState()
     boss.combat.active = true
@@ -32,6 +36,8 @@ describe('Arcane Core rewards', () => {
     boss.combat.enemyId = 'forest-heart'
     boss.combat.enemyWorldTier = 2
     finishEnemy(boss)
-    expect(boss.arcaneCore.totalPointsEarned).toBe(20)
+    const bossContext = resolveCombatLootContext('forest-heart', 2)
+    const bossGuild = getGuildProgressionBonuses(boss)
+    expect(boss.arcaneCore.totalPointsEarned).toBe(resolveLootQuantity(getArcaneCoreReward('whispering-woods')!.bossKillPoints, bossContext, bossGuild.combatArcanePointMultiplier))
   })
 })

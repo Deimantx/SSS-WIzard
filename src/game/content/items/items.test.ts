@@ -4,6 +4,8 @@ import { ARTIFACT_ITEMS } from './artifactItems'
 import { ITEMS, validateItemDefinitions } from './items'
 import { mergeItemRegistries } from './itemAuthoring'
 import { SPECIAL_ITEMS } from './specialItems'
+import { material } from './itemAuthoring'
+import { MATERIAL_SUBCATEGORIES, MATERIAL_SUBTYPE_LABELS } from './inventoryMetadata'
 
 describe('items content architecture', () => {
   it('keeps only materials and permanent Artifact Equipment in the runtime registry', () => {
@@ -30,5 +32,13 @@ describe('items content architecture', () => {
 
   it('validates all canonical item definitions', () => {
     expect(validateItemDefinitions()).toEqual([])
+  })
+
+  it('preserves Herb as an authored material subtype and inventory filter label', () => {
+    const herb = material('fire-fragment', 'Test Herb', 'Test material', 'leaf', '#fff', 'monster-loot', 'Test', 'herb')
+    expect(herb.materialSubtype).toBe('herb')
+    expect(MATERIAL_SUBTYPE_LABELS.herb).toBe('Herb')
+    expect(MATERIAL_SUBCATEGORIES).toContain('Herb')
+    expect(herb.materialSubtype).not.toBe('creature')
   })
 })

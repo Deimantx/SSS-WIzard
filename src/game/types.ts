@@ -173,7 +173,7 @@ export type EquipmentBudgetProfileId = 'standard' | 'signature' | 'boss'
 /** Legacy authored category kept for save/content compatibility. */
 export type ItemCategory = 'elemental' | 'material' | 'monster-loot' | 'equipment' | 'boss-loot'
 export type InventoryCategory = 'material' | 'loot' | 'equipment' | 'special'
-export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'ore' | 'refined' | 'arcane'
+export type InventoryMaterialSubtype = 'elemental' | 'creature' | 'herb' | 'ore' | 'refined' | 'arcane'
 export type SpellType = 'damage' | 'heal' | 'barrier' | 'dot' | 'buff' | 'debuff' | 'hybrid'
 import type { ActiveStatus, CombatEffect, StatusId, TraitDefinition } from './systems/combat/combatTypes'
 import type { SigilSetId } from './content/sigils/sigilSets'

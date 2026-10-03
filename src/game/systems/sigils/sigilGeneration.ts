@@ -1,6 +1,6 @@
 import type { CombatLocationId, GameState, SigilInstance, SigilQuality, SigilSetId, SigilSlot, SigilStatId, SigilTier } from '../../types'
 import { SIGIL_ATTUNEMENT_WEIGHT, SIGIL_CRAFT_QUALITY_WEIGHTS } from '../../content/sigils/sigilDropConfig'
-import { UNIVERSAL_LOOT_SIGIL_QUALITY_WEIGHTS } from '../../content/loot/universalLootTiers'
+import { SIGIL_DROP_QUALITY_BASE } from '../../content/loot/universalLootTiers'
 import { getSigilRegionSetPool } from '../../content/sigils/sigilDropPools'
 import { getSigilQualityDefinition } from '../../content/sigils/sigilQualities'
 import { SIGIL_MAIN_STAT_POOLS, SIGIL_SECONDARY_STAT_IDS } from '../../content/sigils/sigilStats'
@@ -38,18 +38,18 @@ const weightedPick = <T>(values: readonly T[], weights: readonly number[], rng: 
   return values[values.length - 1] as T
 }
 
-const rollQuality = (tier: SigilTier, isBoss: boolean, rng: () => number, override?: Record<SigilQuality, number>): SigilQuality => {
-  const weights = override ?? UNIVERSAL_LOOT_SIGIL_QUALITY_WEIGHTS[`${tier}-${isBoss ? 'boss' : 'normal'}`] ?? UNIVERSAL_LOOT_SIGIL_QUALITY_WEIGHTS['1-normal']
+const rollQuality = (tier: SigilTier, rng: () => number, override?: Record<SigilQuality, number>): SigilQuality => {
+  const weights = override ?? SIGIL_DROP_QUALITY_BASE[tier] ?? SIGIL_DROP_QUALITY_BASE[1]
   return weightedPick(Object.keys(weights) as SigilQuality[], Object.values(weights), rng)
 }
 
-export const generateSigil = ({ state, locationId, enemyPower, isBoss = false, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop', persistGeneratedInstance = true }: SigilGenerationOptions): SigilInstance => {
+export const generateSigil = ({ state, locationId, enemyPower, rng, forcedTier, forcedSetId, forcedSlot, qualityWeights, forcedQuality, forcedMainStatId, source = 'drop', persistGeneratedInstance = true }: SigilGenerationOptions): SigilInstance => {
   const tier = forcedTier ?? resolveSigilTierFromEnemyPower(enemyPower)
   const pool = getSigilRegionSetPool(locationId)
   const weights = pool.map((setId) => setId === state.sigils.attunedSetId ? SIGIL_ATTUNEMENT_WEIGHT : 1)
   const setId = forcedSetId && (pool.includes(forcedSetId) || SIGIL_SET_IDS.includes(forcedSetId)) ? forcedSetId : weightedPick(pool, weights, rng)
   const slot = forcedSlot ?? (pick([1, 2, 3, 4, 5, 6] as const, rng) as SigilSlot)
-  const quality = forcedQuality ?? rollQuality(tier, isBoss, rng, qualityWeights)
+  const quality = forcedQuality ?? rollQuality(tier, rng, qualityWeights)
   const mainStatId = forcedMainStatId && SIGIL_MAIN_STAT_POOLS[slot].includes(forcedMainStatId) ? forcedMainStatId : pick(SIGIL_MAIN_STAT_POOLS[slot], rng)
   const count = getSigilQualityDefinition(quality).startingSecondaries
   const candidates = SIGIL_SECONDARY_STAT_IDS.filter((statId) => statId !== mainStatId)

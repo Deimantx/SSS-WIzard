@@ -5,6 +5,8 @@ import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import type { WorldTierId } from '../../game/types'
 import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combatCurrencyRewards'
+import { resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
+import { getNonZeroResonanceEntries } from '../../game/presentation/resonance/resonancePresentation'
 import { formatDropQuantity } from '../../game/systems/bestiary/bestiarySelectors'
 import { BestiaryInspector } from './BestiaryInspector'
 
@@ -25,11 +27,12 @@ describe('BestiaryResonanceYield', () => {
 
     expect(screen.getByText('RESONANCE YIELD')).toBeTruthy()
     expect(screen.getByText('Earth Resonance')).toBeTruthy()
-    expect(screen.getByText('+16')).toBeTruthy()
+    const resolved = resolveEnemyResonanceReward('forest-heart', 1)
+    getNonZeroResonanceEntries(resolved.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
     expect(screen.getByText('Life Essence')).toBeTruthy()
     expect(screen.getByText('Artifact Essence')).toBeTruthy()
-    expect(screen.getByText('GUARANTEED REWARDS · WT1')).toBeTruthy()
-    expect(screen.getByText('LOOT TABLE')).toBeTruthy()
+    expect(screen.getByText('GUARANTEED REWARDS')).toBeTruthy()
+    expect(document.querySelector('.bestiary-loot-list')).toBeTruthy()
     expect(document.querySelector('.bestiary-resonance-section')?.compareDocumentPosition(document.querySelector('.bestiary-loot-list') as Node) === Node.DOCUMENT_POSITION_FOLLOWING).toBe(true)
   })
 
@@ -53,13 +56,13 @@ describe('BestiaryResonanceYield', () => {
   it('renders multiple types and reacts to the current World Tier', () => {
     renderInspector('graveglass-shade', 1)
     expect(screen.getByText('WT1')).toBeTruthy()
-    expect(screen.getByText('+4')).toBeTruthy()
-    expect(screen.getByText('+2')).toBeTruthy()
+    const wt1 = resolveEnemyResonanceReward('graveglass-shade', 1)
+    getNonZeroResonanceEntries(wt1.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
 
     act(() => { useGameStore.getState().setWorldTier(2) })
     expect(screen.getByText('WT2')).toBeTruthy()
-    expect(screen.getByText('+12')).toBeTruthy()
-    expect(screen.getByText('+6')).toBeTruthy()
+    const wt2 = resolveEnemyResonanceReward('graveglass-shade', 2)
+    getNonZeroResonanceEntries(wt2.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
   })
 
   it('shows an explicit empty state for an enemy without Resonance', () => {

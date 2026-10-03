@@ -11,7 +11,8 @@ import { MAX_ACTION_WORK_MS, MIN_ACTION_TIME_MS } from '../../core/balance/comba
 import { MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_RESISTANCE, MIN_RESISTANCE } from '../../core/balance/combatStats'
 import { ITEMS } from '../items/items'
 import { RESONANCE_TYPES } from '../resonance/resonance'
-import { UNIVERSAL_LOOT_CATEGORIES } from '../loot/universalLootTiers'
+import { UNIVERSAL_LOOT_CATEGORIES, UNIVERSAL_LOOT_TIERS } from '../loot/universalLootTiers'
+import type { LootCategory, MonsterLootDropDefinition } from '../loot/lootCategoryTypes'
 
 export type { MonsterDefinition } from './monsterTypes'
 export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './first-frontier'
@@ -27,6 +28,30 @@ export const MONSTERS = Object.assign({}, ...MONSTER_REGISTRIES) as Record<Monst
 
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
+
+const DIRECT_MONSTER_LOOT_CATEGORIES: readonly LootCategory[] = ['material', 'equipment', 'unique']
+const VALID_LOOT_TIER_IDS = new Set(UNIVERSAL_LOOT_TIERS.map(({ tier }) => tier))
+
+export const validateMonsterLootDrop = (
+  monsterId: string,
+  drop: MonsterLootDropDefinition,
+  items: Record<string, { kind: string } | undefined> = ITEMS,
+  validLootTierIds: ReadonlySet<number> = VALID_LOOT_TIER_IDS,
+) => {
+  const errors: string[] = []
+  const item = items[drop.itemId]
+  if (!item) errors.push(`${monsterId}: unknown loot item ${drop.itemId}`)
+  else if (drop.category === 'material' && item.kind !== 'material') errors.push(`${monsterId}: material loot requires material item; ${drop.itemId} is ${item.kind}`)
+  else if (drop.category === 'equipment' && item.kind !== 'equipment') errors.push(`${monsterId}: equipment loot requires equipment item; ${drop.itemId} is ${item.kind}`)
+  else if (drop.category === 'unique' && item.kind !== 'material' && item.kind !== 'equipment') errors.push(`${monsterId}: unique loot requires material or equipment item; ${drop.itemId} is ${item.kind}`)
+  if (!UNIVERSAL_LOOT_CATEGORIES.includes(drop.category)) errors.push(`${monsterId}: unknown loot category ${drop.category}`)
+  else if (!DIRECT_MONSTER_LOOT_CATEGORIES.includes(drop.category)) errors.push(`${monsterId}: ${drop.category} loot must use its dedicated reward system`)
+  if (!Number.isFinite(drop.baseChance) || drop.baseChance < 0 || drop.baseChance > 1) errors.push(`${monsterId}: invalid loot base chance`)
+  if (!Number.isInteger(drop.quantity.min) || !Number.isInteger(drop.quantity.max) || drop.quantity.min < 1 || drop.quantity.max < drop.quantity.min) errors.push(`${monsterId}: invalid loot quantity`)
+  if (drop.minLootTier !== undefined && (!Number.isInteger(drop.minLootTier) || !validLootTierIds.has(drop.minLootTier))) errors.push(`${monsterId}: invalid minimum loot tier`)
+  if (drop.scaling && Object.entries(drop.scaling).some(([key, value]) => !['tierQuantity', 'tierChance', 'tierRarity', 'bossQuantity', 'bossChance', 'bossRarity'].includes(key) || typeof value !== 'boolean')) errors.push(`${monsterId}: invalid loot scaling rule`)
+  return errors
+}
 
 const validateEffects = (owner: string, effects: CombatEffect[], errors: string[]) => effects.forEach((effect) => {
   errors.push(...validateCombatEffect(effect, owner, createCombatValidationContext(STATUS_DEFINITIONS)))
@@ -48,15 +73,7 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     if (monster.loot.some((drop) => drop.itemId === 'life-essence')) errors.push(`${monster.id}: Life Essence must be resolved dynamically, not authored in monster loot`)
     if (monster.loot.some((drop) => drop.itemId === 'artifact-essence')) errors.push(`${monster.id}: Artifact Essence must be resolved dynamically, not authored in monster loot`)
     monster.loot.forEach((drop) => {
-      const item = ITEMS[drop.itemId]
-      if (!item) errors.push(`${monster.id}: unknown loot item ${drop.itemId}`)
-      else if (item.kind !== 'material') errors.push(`${monster.id}: monster loot may only contain materials; ${drop.itemId} is ${item.kind}`)
-      if (!UNIVERSAL_LOOT_CATEGORIES.includes(drop.category)) errors.push(`${monster.id}: unknown loot category ${drop.category}`)
-      if (drop.category !== 'material') errors.push(`${monster.id}: monster loot category must be material`)
-      if (!Number.isFinite(drop.baseChance) || drop.baseChance < 0 || drop.baseChance > 1) errors.push(`${monster.id}: invalid loot base chance`)
-      if (!Number.isInteger(drop.quantity.min) || !Number.isInteger(drop.quantity.max) || drop.quantity.min < 1 || drop.quantity.max < drop.quantity.min) errors.push(`${monster.id}: invalid loot quantity`)
-      if (drop.minLootTier !== undefined && (!Number.isInteger(drop.minLootTier) || drop.minLootTier < 1)) errors.push(`${monster.id}: invalid minimum loot tier`)
-      if (drop.scaling && Object.entries(drop.scaling).some(([key, value]) => !['tierQuantity', 'tierChance', 'tierRarity', 'bossQuantity', 'bossChance', 'bossRarity'].includes(key) || typeof value !== 'boolean')) errors.push(`${monster.id}: invalid loot scaling rule`)
+      errors.push(...validateMonsterLootDrop(monster.id, drop))
     })
     monster.traitIds.forEach((traitId) => { if (!getTraitDefinition(traitId)) errors.push(`${monster.id}: unknown trait ${traitId}`) })
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)

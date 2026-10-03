@@ -5,6 +5,7 @@ import { resolveCombatCurrencyRewardRange } from './combatCurrencyRewards'
 import { resolveMonsterLoot } from './lootResolution'
 import { getHunterHarvestBonuses } from '../hunters-order/huntersOrderRuntime'
 import { resolveCombatLootContext, resolveLootChance } from './universalLootRuntime'
+import { UNIVERSAL_LOOT_TIERS } from '../../content/loot/universalLootTiers'
 
 describe('monster loot resolution', () => {
   it('grants universal Life Essence through the normal item acquisition path', () => {
@@ -71,6 +72,21 @@ describe('monster loot resolution', () => {
     resolveMonsterLoot(boosted, 'ashen-tracker', undefined, () => sigilRoll, () => { boostedSigil = true }, boostedHunter)
     expect(baseSigil).toBe(false)
     expect(boostedSigil).toBe(true)
+  })
+
+  it('keeps T20 successful Sigil instances at one normal and five boss Sigils', () => {
+    const normalState = createInitialState()
+    const bossState = createInitialState()
+    const baseContext = resolveCombatLootContext('forest-heart', 5)
+    const normalContext = { ...baseContext, lootTier: UNIVERSAL_LOOT_TIERS[19], isBoss: false }
+    const bossContext = { ...normalContext, isBoss: true }
+    const normalDrops: string[] = []
+    const bossDrops: string[] = []
+    expect(normalContext.lootTier.quantityMultiplier).toBe(14)
+    resolveMonsterLoot(normalState, 'forest-wisp', undefined, () => 0, ({ instanceId }) => normalDrops.push(instanceId), {}, normalContext)
+    resolveMonsterLoot(bossState, 'forest-heart', undefined, () => 0, ({ instanceId }) => bossDrops.push(instanceId), {}, bossContext)
+    expect(normalDrops).toHaveLength(1)
+    expect(bossDrops).toHaveLength(5)
   })
 
   it('keeps every monster on the generic material-only authored loot path', () => {

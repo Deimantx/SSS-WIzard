@@ -8,12 +8,12 @@ import type { InventoryCategory, InventoryMaterialSubtype, ItemId, RecipeId, Scr
 /** Player-facing inventory filters and classification are shared item-domain metadata. */
 export const INVENTORY_CATEGORIES = ['All', 'Materials', 'Equipment', 'Special'] as const
 export type InventoryCategoryFilter = typeof INVENTORY_CATEGORIES[number]
-export const MATERIAL_SUBCATEGORIES = ['All Materials', 'Elemental', 'Creature', 'Ore', 'Refined', 'Arcane'] as const
+export const MATERIAL_SUBCATEGORIES = ['All Materials', 'Elemental', 'Creature', 'Herb', 'Ore', 'Refined', 'Arcane'] as const
 export type MaterialSubcategoryFilter = typeof MATERIAL_SUBCATEGORIES[number]
 
 export const INVENTORY_CATEGORY_ORDER: InventoryCategory[] = ['material', 'loot', 'equipment', 'special']
 export const CATEGORY_LABELS: Record<InventoryCategory, string> = { material: 'Materials', loot: 'Loot', equipment: 'Equipment', special: 'Special' }
-export const MATERIAL_SUBTYPE_LABELS: Record<InventoryMaterialSubtype, string> = { elemental: 'Elemental', creature: 'Creature', ore: 'Ore', refined: 'Refined', arcane: 'Arcane' }
+export const MATERIAL_SUBTYPE_LABELS: Record<InventoryMaterialSubtype, string> = { elemental: 'Elemental', creature: 'Creature', herb: 'Herb', ore: 'Ore', refined: 'Refined', arcane: 'Arcane' }
 
 export const getInventoryCategory = (itemId: ItemId) => ITEMS[itemId].inventoryCategory
 export const getMaterialSubtype = (itemId: ItemId) => ITEMS[itemId].materialSubtype

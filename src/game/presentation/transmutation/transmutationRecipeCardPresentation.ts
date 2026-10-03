@@ -8,6 +8,7 @@ export interface TransmutationRecipeCardMeta {
 const MATERIAL_SUBTYPE_LABELS: Record<NonNullable<ItemDefinition['materialSubtype']>, string> = {
   elemental: 'ELEMENTAL',
   creature: 'CREATURE',
+  herb: 'HERB',
   ore: 'ORE',
   refined: 'REFINED',
   arcane: 'ARCANE',

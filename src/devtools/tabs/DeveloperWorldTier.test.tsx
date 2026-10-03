@@ -14,7 +14,7 @@ describe('Developer World Tier tab', () => {
     expect(screen.getByText(/WT3.*World Tier 3/)).toBeTruthy()
     expect(screen.getByText(/WT4.*World Tier 4/)).toBeTruthy()
     expect(screen.getByText(/WT5.*World Tier 5/)).toBeTruthy()
-    expect(screen.getByText('NO ACTIVE ENCOUNTER')).toBeTruthy()
+    expect(screen.getByText('None')).toBeTruthy()
     expect(screen.getAllByText(/from 200/)).toHaveLength(5)
   })
 

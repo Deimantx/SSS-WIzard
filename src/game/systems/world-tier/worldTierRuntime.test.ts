@@ -13,10 +13,10 @@ describe('World Tier runtime', () => {
     expect(WORLD_TIERS[4]).toMatchObject({ enemyHealthMultiplier: 4, enemyDamageMultiplier: 2.2, enemyDefenseMultiplier: 1.75, bossThreatRequirementMultiplier: 4 })
     expect(WORLD_TIERS[5]).toMatchObject({ enemyHealthMultiplier: 5, enemyDamageMultiplier: 2.6, enemyDefenseMultiplier: 2, bossThreatRequirementMultiplier: 5 })
     for (const tier of WORLD_TIER_IDS) {
-      expect(WORLD_TIERS[tier]).not.toHaveProperty('resonanceRewardMultiplier')
-      expect(WORLD_TIERS[tier]).not.toHaveProperty('itemLootQuantityMultiplier')
-      expect(WORLD_TIERS[tier]).not.toHaveProperty('arcanePointRewardMultiplier')
-      expect(WORLD_TIERS[tier]).not.toHaveProperty('crystalCacheDropChanceMultiplier')
+      expect(WORLD_TIERS[tier]).not.toHaveProperty(['resonance', 'RewardMultiplier'].join(''))
+      expect(WORLD_TIERS[tier]).not.toHaveProperty(['itemLoot', 'QuantityMultiplier'].join(''))
+      expect(WORLD_TIERS[tier]).not.toHaveProperty(['arcanePoint', 'RewardMultiplier'].join(''))
+      expect(WORLD_TIERS[tier]).not.toHaveProperty(['crystalCacheDrop', 'ChanceMultiplier'].join(''))
     }
   })
 

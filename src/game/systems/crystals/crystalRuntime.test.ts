@@ -6,7 +6,7 @@ import {
   getCrystalVariantStats,
 } from "../../content/crystals/crystals";
 import { MONSTER_IDS } from "../../content/monsters";
-import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
+import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS, UNIVERSAL_LOOT_TIERS } from '../../content/loot/universalLootTiers'
 import { resolveCombatLootContext } from "../loot/universalLootRuntime";
 import { getGuildProgressionBonuses } from '../guild/guildSelectors'
 import { createInitialState, SAVE_VERSION } from "../../../store/initialState";
@@ -220,6 +220,18 @@ describe("Crystal System V1", () => {
     const quantity = resolveCrystalCacheDrop(state, 'meridian-splitter', 5, () => 0)
     expect(quantity).toBe(5)
     expect(state.inventory["tier-1-crystal-cache"]).toBe(5)
+  });
+
+  it('keeps T20 successful cache instances at one normal and five boss caches', () => {
+    const normalState = createInitialState()
+    const bossState = createInitialState()
+    for (const state of [normalState, bossState]) state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    const baseContext = resolveCombatLootContext('forest-wisp', 5)
+    const normalContext = { ...baseContext, lootTier: UNIVERSAL_LOOT_TIERS[19], isBoss: false }
+    const bossContext = { ...normalContext, isBoss: true }
+    expect(normalContext.lootTier.quantityMultiplier).toBe(14)
+    expect(resolveCrystalCacheDrop(normalState, 'forest-wisp', 5, () => 0, normalContext)).toBe(1)
+    expect(resolveCrystalCacheDrop(bossState, 'forest-wisp', 5, () => 0, bossContext)).toBe(5)
   });
 
   it("migrates a v46 save to an empty, valid current Crystal state without retroactive cache grants", () => {

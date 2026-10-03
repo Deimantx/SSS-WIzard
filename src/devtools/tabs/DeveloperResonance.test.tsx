@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
 import { DeveloperResonance } from './DeveloperResonance'
+import { aggregateResonanceBundle, resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
+import { formatResonanceAmount, getNonZeroResonanceEntries } from '../../game/presentation/resonance/resonancePresentation'
 
 describe('Developer Resonance tab', () => {
   beforeEach(() => { useGameStore.setState(createInitialState()) })
@@ -29,9 +31,11 @@ describe('Developer Resonance tab', () => {
   it('previews 100 authored kills without changing the profile', () => {
     render(<DeveloperResonance />)
     const before = { ...useGameStore.getState().resonance }
-    fireEvent.change(screen.getByRole('combobox', { name: 'Preview enemy' }), { target: { value: 'stone-root' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Batch preview enemy' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Stone Root' }))
     fireEvent.click(screen.getByRole('button', { name: 'SIMULATE' }))
-    expect(screen.getByText('400')).toBeTruthy()
+    const preview = aggregateResonanceBundle(resolveEnemyResonanceReward('stone-root').finalYield, 100)
+    getNonZeroResonanceEntries(preview).forEach(({ amount }) => expect(screen.getByText(formatResonanceAmount(amount))).toBeTruthy())
     expect(useGameStore.getState().resonance).toEqual(before)
   })
 })

@@ -41,7 +41,7 @@ describe('Inventory V3 selectors and display rules', () => {
 
   it('uses the Vault category model and material subcategories', () => {
     expect(INVENTORY_FILTERS).toEqual(['All', 'Materials', 'Equipment', 'Special'])
-    expect(MATERIAL_SUBCATEGORIES).toEqual(['All Materials', 'Elemental', 'Creature', 'Ore', 'Refined', 'Arcane'])
+    expect(MATERIAL_SUBCATEGORIES).toEqual(['All Materials', 'Elemental', 'Creature', 'Herb', 'Ore', 'Refined', 'Arcane'])
     expect(getInventoryCategory('fire-fragment')).toBe('material')
     expect(getInventoryCategory('life-essence')).toBe('material')
     expect(getInventoryCategory('artifact-essence')).toBe('material')

@@ -3,7 +3,7 @@ import { normalizeResonanceState } from '../../content/resonance/resonance'
 import { resolveCombatCurrencyRewardRange } from '../../systems/loot/combatCurrencyRewards'
 import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
 import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../systems/loot/universalLootRuntime'
-import { UNIVERSAL_LOOT_CRYSTAL_MIN_TIER, UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
+import { isLootUnlockedAtTier, UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
 import type { ItemId, MonsterId, ResonanceState, WorldTierId } from '../../types'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
 
@@ -57,7 +57,7 @@ export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldT
     lootTier: lootContext.lootTier.tier,
     sigilDropChance: Math.min(1, lootContext.lootTier.sigilDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)),
     expectedSigilQuantity: Math.min(1, lootContext.lootTier.sigilDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)) * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1),
-    crystalCacheDropChance: lootContext.lootTier.tier < UNIVERSAL_LOOT_CRYSTAL_MIN_TIER ? 0 : Math.min(1, lootContext.lootTier.crystalCacheDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)),
-    expectedCrystalCacheQuantity: lootContext.lootTier.tier < UNIVERSAL_LOOT_CRYSTAL_MIN_TIER ? 0 : Math.min(1, lootContext.lootTier.crystalCacheDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)) * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1),
+    crystalCacheDropChance: !isLootUnlockedAtTier('crystal-cache-t1', lootContext.lootTier) ? 0 : Math.min(1, lootContext.lootTier.crystalCacheDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)),
+    expectedCrystalCacheQuantity: !isLootUnlockedAtTier('crystal-cache-t1', lootContext.lootTier) ? 0 : Math.min(1, lootContext.lootTier.crystalCacheDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)) * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1),
   }
 }

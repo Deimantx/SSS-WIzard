@@ -10,7 +10,7 @@ import { SIGIL_STORAGE_SOFT_CAP } from '../../content/sigils/sigilDropConfig'
 import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
 import { resolveSigilTierFromEnemyPower } from '../../content/sigils/sigilTiers'
 import { pushNotification } from '../../engine'
-import { resolveAuthoredLootDrop, resolveCombatLootContext, resolveLootQuantity, resolveSigilDropQualityWeights, type CombatLootContext } from './universalLootRuntime'
+import { resolveAuthoredLootDrop, resolveCombatLootContext, resolveLootQuantity, resolveRareLootInstanceQuantity, resolveSigilDropQualityWeights, type CombatLootContext } from './universalLootRuntime'
 
 export interface SigilLootResolution { instanceId: string; setId: string; slot: number; tier: number; quality: string; autoSalvaged: boolean; dustGranted: number }
 export interface HunterLootMultipliers { itemDropMultiplier?: number; essenceMultiplier?: number; sigilDropMultiplier?: number }
@@ -58,7 +58,7 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
   const naturalDrop = boundedRandom(rng) < sigilChance
   if (pityGuarantee || naturalDrop) {
     // Onboarding pity deliberately guarantees one item, even on a boss kill.
-    const count = pityGuarantee ? 1 : context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1
+    const count = pityGuarantee ? 1 : resolveRareLootInstanceQuantity(context)
     for (let index = 0; index < count; index += 1) {
       const sigil = generateSigil({ state, locationId: state.combat.locationId ?? 'whispering-woods', enemyId, enemyPower: encounterPower, isBoss: context.isBoss, qualityWeights: resolveSigilDropQualityWeights(context, resolveSigilTierFromEnemyPower(encounterPower)), rng })
       drops.push(`T${sigil.tier} ${sigil.quality[0].toUpperCase()}${sigil.quality.slice(1)} ${sigil.setId} Sigil ${['I', 'II', 'III', 'IV', 'V', 'VI'][sigil.slot - 1]}`)

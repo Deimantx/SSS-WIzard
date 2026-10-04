@@ -18,11 +18,11 @@ describe('Resonance runtime', () => {
     expect(spendResonanceBundle(state, { arcane: 5 })).toBe(true)
     expect(state.arcane).toBe(7)
     expect(resolveEnemyResonanceReward('runesunk-oracle').finalYield.arcane).toBeGreaterThan(0)
-    expect(resolveEnemyResonanceReward('unmade-magister').finalYield.arcane).toBeGreaterThan(0)
+    expect(resolveEnemyResonanceReward('unmade-magister').finalYield.air).toBeGreaterThan(0)
   })
 
   it('gives every Arcane-primary enemy a dominant Arcane reward while preserving secondary yields', () => {
-    expect(ARCANE_PRIMARY_RESONANCE_AUDIT).toHaveLength(44)
+    expect(ARCANE_PRIMARY_RESONANCE_AUDIT).toHaveLength(41)
     for (const { id, resonanceYield } of ARCANE_PRIMARY_RESONANCE_AUDIT) {
       const yieldProfile = resonanceYield ?? {}
       expect(yieldProfile.arcane, id).toBeGreaterThan(0)

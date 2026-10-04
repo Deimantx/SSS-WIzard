@@ -84,7 +84,7 @@ describe('combat world navigation read model', () => {
     expect(catacombs?.sequence?.steps.map((step) => step.monsterId)).toEqual(['restless-skeleton', 'grave-wraith', 'fallen-acolyte', 'archmage-edrin-shade'])
     const sequenceSteps = catacombs?.sequence?.steps ?? []
     expect(sequenceSteps[sequenceSteps.length - 1]?.role).toBe('boss')
-    expect(catacombs?.firstClearUnlockPreview).toHaveLength(6)
+    expect(catacombs?.firstClearUnlockPreview).toHaveLength(7)
   })
 
   it('presents the final Black Sigil topology and keeps target cards distinct from the dungeon run', () => {

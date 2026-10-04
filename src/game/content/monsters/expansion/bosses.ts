@@ -48,8 +48,8 @@ export const EXPANSION_BOSSES = [
     phaseTwo: ['skill-6', 'skill-3', 'basic', 'skill-2', 'skill-1', 'skill-5', 'basic'],
   }),
   authorExpansionBoss({
-    id: 'unmade-magister', name: 'The Unmade Magister', locationId: 'runeblight-expanse', affinity: 'arcane', subtitle: 'A ley-warped scholar whose unfinished spells tear at the world.',
-    hp: 19000, damage: 128, defense: 84, targetPower: 7000, resonanceYield: { arcane: 80 },
+    id: 'unmade-magister', name: 'The Unmade Magister', locationId: 'runeblight-expanse', affinity: 'air', subtitle: 'A ley-warped scholar whose unfinished spells tear at the world.',
+    hp: 19000, damage: 128, defense: 84, targetPower: 7000, resonanceYield: { air: 80 },
     traitId: 'unmade-magister-phase', phaseOneLabel: 'formula', phaseTwoLabel: 'unbound',
     specials: [
       bossAction('Arcane Lance', { damage: [hit('arcane', 1.45)] }),

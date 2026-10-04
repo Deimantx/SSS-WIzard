@@ -17,6 +17,12 @@ describe('content relations', () => {
     expect(getMonsterCombatLocation('thorn-maw')).toMatchObject({ locationId: 'whispering-woods', role: 'normal' })
     expect(getMonsterCombatLocation('deep-bell-saint')).toMatchObject({ locationId: 'black-gate', role: 'boss' })
     expect(getMonsterCombatLocation('sepulcher-flamekeeper')).toMatchObject({ locationId: 'broken-meridian', role: 'boss' })
+    expect(getMonsterCombatLocation('stormcurrent-hunter')).toMatchObject({ locationId: 'stormspire-monastery', role: 'normal' })
+    expect(getMonsterCombatLocation('smokeveil-assassin')).toMatchObject({ locationId: 'stormspire-monastery', role: 'normal' })
+    expect(getMonsterCombatLocation('rainveil-monk')).toMatchObject({ locationId: 'abyssal-reservoir', role: 'normal' })
+    expect(getMonsterCombatLocation('obsidian-custodian')).toMatchObject({ locationId: 'vault-of-the-black-sigil', role: 'normal' })
+    expect(getMonsterCombatLocation('starbound-eye')).toMatchObject({ locationId: 'nullstone-archive', role: 'normal' })
+    expect(getMonsterCombatLocation('steam-tyrant')).toMatchObject({ locationId: 'scalding-rift', role: 'boss' })
   })
 
   it('returns every recipe that consumes an item', () => {

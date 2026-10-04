@@ -35,8 +35,10 @@ const authoredLocations = (() => {
     const source = locations[sourceId]
     const target = locations[targetId]
     source.monsterPool = source.monsterPool.filter((id) => id !== monsterId)
+    if (source.sequence) source.sequence = source.sequence.filter((id) => id !== monsterId)
     if (target.monsterPool.includes(monsterId as never)) throw new Error(`Duplicate Combat roster member: ${monsterId}`)
     target.monsterPool = [...target.monsterPool, monsterId as never]
+    if (target.sequence && !target.sequence.includes(monsterId as never)) target.sequence = [...target.sequence, monsterId as never]
   })
   Object.entries(COMBAT_SEQUENCE_BOSSES).forEach(([locationId, bossIds]) => {
     const location = locations[locationId as CombatLocationId]

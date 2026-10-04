@@ -220,7 +220,7 @@ describe('Combat V2 authored content audit', () => {
     const profiles: readonly [keyof typeof MONSTERS, number, string][] = [
       ['graveglass-shade', 5700, 'water'], ['bone-shardling', 5950, 'earth'], ['silent-mourner', 6200, 'water'], ['crypt-guardian', 6450, 'earth'], ['epitaph-weaver', 6800, 'arcane'], ['tombglass-reaver', 7200, 'earth'], ['ossuary-oracle', 7600, 'arcane'], ['graveglass-behemoth', 9100, 'earth'],
       ['volt-wisp', 5600, 'air'], ['gale-scribe', 5900, 'air'], ['charged-seeker', 6200, 'air'], ['thundercoil-serpent', 6500, 'air'], ['static-armor', 6800, 'air'], ['stormbound-curator', 7150, 'air'], ['tempest-engine', 7550, 'air'], ['storm-archivist', 9000, 'air'],
-      ['starbound-eye', 5800, 'arcane'], ['astral-husk', 6100, 'arcane'], ['orbiting-fragment', 6400, 'arcane'], ['lenskeeper-remnant', 6750, 'arcane'], ['comet-wraith', 7100, 'fire'], ['voidglass-custodian', 7500, 'arcane'], ['zenith-horror', 7900, 'fire'], ['fallen-astromancer', 9300, 'arcane'],
+      ['starbound-eye', 5800, 'arcane'], ['astral-husk', 6100, 'arcane'], ['orbiting-fragment', 6400, 'arcane'], ['lenskeeper-remnant', 6750, 'arcane'], ['comet-wraith', 7100, 'fire'], ['voidglass-custodian', 7500, 'arcane'], ['zenith-horror', 7900, 'fire'], ['fallen-astromancer', 9300, 'fire'],
       ['meridian-warden', 8000, 'earth'], ['fractured-channeler', 8350, 'water'], ['arc-surge-horror', 8700, 'arcane'], ['linebreaker-shade', 9050, 'air'], ['meridian-splitter', 11800, 'arcane'],
     ]
     for (const [id, targetPower, affinity] of profiles) {
@@ -246,7 +246,7 @@ describe('Combat V2 authored content audit', () => {
 
   it('pins Black Sigil target Power, affinity, damage profile, and normal/boss dungeon behavior', () => {
     const profiles: readonly [keyof typeof MONSTERS, number, string, readonly string[]][] = [
-      ['name-eater', 9800, 'arcane', ['arcane']], ['bound-echo', 10300, 'air', ['air', 'arcane']], ['hollow-liturgist', 10800, 'water', ['water', 'arcane']], ['whisper-archivist', 11300, 'air', ['air', 'arcane']], ['nameless-cantor', 11900, 'water', ['water', 'arcane']], ['oathless-confessor', 12600, 'water', ['water', 'arcane']], ['unwritten-hierophant', 13300, 'arcane', ['arcane']], ['unspoken-prelate', 15500, 'arcane', ['arcane', 'air', 'water']],
+      ['name-eater', 9800, 'arcane', ['arcane']], ['bound-echo', 10300, 'air', ['air', 'arcane']], ['hollow-liturgist', 10800, 'water', ['water', 'arcane']], ['whisper-archivist', 11300, 'air', ['air', 'arcane']], ['nameless-cantor', 11900, 'water', ['water', 'arcane']], ['oathless-confessor', 12600, 'water', ['water', 'arcane']], ['unwritten-hierophant', 13300, 'arcane', ['arcane']], ['unspoken-prelate', 15500, 'water', ['arcane', 'air', 'water']],
       ['black-seal-parasite', 10000, 'fire', ['fire', 'arcane']], ['inkbound-specter', 10500, 'arcane', ['arcane']], ['sigil-guardian', 11100, 'earth', ['earth']], ['vault-devourer', 11700, 'earth', ['earth', 'arcane']], ['sealbound-custodian', 12300, 'earth', ['earth', 'arcane']], ['blackscript-colossus', 13000, 'earth', ['earth', 'arcane']], ['voidseal-arbiter', 13800, 'fire', ['fire', 'arcane']], ['sigil-warden', 16000, 'earth', ['earth', 'fire', 'arcane']],
       ['gatebound-remnant', 14000, 'earth', ['earth']], ['black-rift-stalker', 14500, 'air', ['air', 'arcane']], ['portalbound-acolyte', 15000, 'arcane', ['arcane']], ['sealbreaker-construct', 15500, 'earth', ['earth', 'arcane']], ['black-gatekeeper', 20000, 'arcane', ['arcane', 'fire', 'water', 'earth', 'air']],
     ]
@@ -277,7 +277,7 @@ describe('Combat V2 authored content audit', () => {
     expect(vault.unlock).toEqual({ type: 'always' })
     expect(isCombatLocationUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 0 } } as never)).toBe(false)
     expect(isCombatLocationUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 1, 'meridian-splitter': 1 } } as never)).toBe(true)
-    expect(gate).toMatchObject({ threatRequired: 0, encounterSequence: ['portalbound-acolyte', 'voidglass-custodian', 'vaporbound-siren', 'brineforged-brute', 'deep-bell-saint'], sequenceBossIds: ['deep-bell-saint'] })
+    expect(gate).toMatchObject({ threatRequired: 0, encounterSequence: ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'deep-bell-saint'], sequenceBossIds: ['deep-bell-saint'] })
     expect(COMBAT_LOCATIONS['hall-of-unbound-names']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'vicious' })
     expect(COMBAT_LOCATIONS['vault-of-the-black-sigil']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'armored' })
     expect(blackSigilRows.every((row) => row.genericActionDescriptionCount === 0 && row.genericEquippedTraitCount === 0), JSON.stringify(blackSigilRows.filter((row) => row.genericActionDescriptionCount || row.genericEquippedTraitCount))).toBe(true)
@@ -327,9 +327,10 @@ describe('Combat V2 authored content audit', () => {
 
   it('previews concrete Combat Location and system unlocks instead of removed containers', () => {
     const labels = (id: keyof typeof COMBAT_LOCATIONS) => COMBAT_LOCATIONS[id].firstClearUnlockPreview?.map(({ label }) => label) ?? []
-    expect(labels('abandoned-catacombs')).toEqual(expect.arrayContaining(['Cinderwild Expanse', 'Fractured Approach', 'World Tier 2', 'Dark Portal', 'Magic School Cap Increase']))
-    expect(labels('crossroads-of-ruin')).toEqual(expect.arrayContaining(['Runeblight Expanse', 'Graveglass Hollow', 'Stormvault Gallery', 'Starfallen Observatory', 'World Tier 3']))
-    expect(labels('broken-meridian')).toEqual(expect.arrayContaining(['Hall of Unbound Names', 'Vault of the Black Sigil', 'World Tier 4', 'Crystals']))
+    expect(labels('abandoned-catacombs')).toEqual(expect.arrayContaining(['Combat Tier 2: Fire, Earth, Air and Water Zones', 'Fractured Approach', 'World Tier 2', 'Dark Portal', 'Magic School Cap Increase', 'Mistclaw Highlands requires Hunter’s Order Warden I']))
+    expect(labels('fractured-approach')).toEqual(expect.arrayContaining(['Combat Tier 3: Fire, Earth, Air and Water Zones', 'Cinderhex Barrens requires Hunter’s Order Warden I', 'World Tier 3']))
+    expect(labels('crossroads-of-ruin')).toEqual(expect.arrayContaining(['Combat Tier 4: Fire, Earth, Air and Water Zones', 'Cinder Sepulcher requires Hunter’s Order Veteran I', 'World Tier 3']))
+    expect(labels('broken-meridian')).toEqual(expect.arrayContaining(['Combat Tier 5: Fire, Earth, Air and Water Zones', 'Sunken Bell Grounds requires Hunter’s Order Master Hunter I', 'World Tier 4', 'Crystals']))
     for (const id of ['abandoned-catacombs', 'crossroads-of-ruin', 'broken-meridian'] as const) expect(labels(id).join('|')).not.toMatch(/Elemental Scar|Shattered Meridian|Black Sigil Reach/)
   })
 })

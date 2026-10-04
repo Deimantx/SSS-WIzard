@@ -26,8 +26,8 @@ describe('location loot presentation', () => {
     const woods = buildLocationLootPresentation('whispering-woods', discoveredProgress('whispering-woods', false))
     const life = woods.monsters.find((entry) => entry.itemId === 'life-essence')!
     const artifact = woods.monsters.find((entry) => entry.itemId === 'artifact-essence')!
-    expect(life).toMatchObject({ chanceMin: 1, chanceMax: 1, variesByEncounter: true, sourceCount: 7, encounterCount: 7 })
-    expect(artifact).toMatchObject({ chanceMin: 1, chanceMax: 1, variesByEncounter: true, sourceCount: 7, encounterCount: 7 })
+    expect(life).toMatchObject({ chanceMin: 1, chanceMax: 1, variesByEncounter: true, sourceCount: 8, encounterCount: 8 })
+    expect(artifact).toMatchObject({ chanceMin: 1, chanceMax: 1, variesByEncounter: true, sourceCount: 8, encounterCount: 8 })
     expect(getLocationLootAvailabilityLabel(life)).toBe('Varies')
   })
 

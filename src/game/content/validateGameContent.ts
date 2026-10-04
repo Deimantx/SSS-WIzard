@@ -41,7 +41,7 @@ export const validateGameContent = () => {
   Object.entries(expectedLocations).filter(([type]) => type !== 'total').forEach(([type, expected]) => { if ((locationCounts[type] ?? 0) !== expected) errors.push(`combat locations: expected ${expected} ${type}, received ${locationCounts[type] ?? 0}`) })
   const bossCount = MONSTER_IDS.filter((id) => isBossMonster(MONSTERS[id])).length
   if (MONSTER_IDS.length !== 220 || bossCount !== 30 || MONSTER_IDS.length - bossCount !== 190) errors.push(`combat monsters: expected 190 normal and 30 bosses; received ${MONSTER_IDS.length - bossCount} normal and ${bossCount} bosses`)
-  const expectedAffinityTotals = { earth: 44, arcane: 44, air: 44, fire: 44, water: 44 }
+  const expectedAffinityTotals = { earth: 44, arcane: 41, air: 45, fire: 45, water: 45 }
   const affinityTotals = Object.fromEntries(ELEMENT_IDS.map((element) => [element, MONSTER_IDS.filter((id) => getMonsterPrimaryAffinity(MONSTERS[id]) === element).length])) as Record<string, number>
   Object.entries(expectedAffinityTotals).forEach(([element, expected]) => { if (affinityTotals[element] !== expected) errors.push(`combat monsters: expected ${expected} ${element} affinities, received ${affinityTotals[element] ?? 0}`) })
   if (lootTierValidation.warnings.length && import.meta.env.DEV) console.warn(`[game-content] ${lootTierValidation.warnings.join('; ')}`)

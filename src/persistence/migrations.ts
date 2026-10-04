@@ -865,7 +865,7 @@ const seedLegacyItemDiscoveries = (migrated: GameState, raw: Record<string, any>
   migrated.progress.discoveredItems = itemIds.filter((itemId) => discovered.has(itemId as ItemId)) as ItemId[]
 }
 
-const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>) => {
+const normalizeDirectContentReferences = (migrated: GameState, raw: Record<string, any>, sourceVersion: number) => {
   const fresh = createInitialState()
   const rawEquipment = isRecord(raw.equipment) ? raw.equipment : {}
   const candidate: Partial<Record<EquipmentPosition, ItemId | null>> = {}
@@ -916,6 +916,11 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
     migrated.combat.sequenceIndex = null
     migrated.combat.pendingBossId = null
     migrated.combat.inBossFight = false
+    migrated.combat.threatCleared = 0
+  }
+  if (sourceVersion === 66 && migrated.combat.active && migrated.combat.locationId === 'stormspire-monastery') {
+    migrated.combat.sequenceIndex = null
+    migrated.combat.pendingBossId = null
     migrated.combat.threatCleared = 0
   }
 }
@@ -1175,7 +1180,7 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   normalizeSpellProgression(migrated, raw, sourceVersion)
   normalizeSpellPresets(migrated, raw, sourceVersion)
   normalizeCombatState(migrated, raw, sourceVersion)
-  normalizeDirectContentReferences(migrated, raw)
+  normalizeDirectContentReferences(migrated, raw, sourceVersion)
   const historicalProgress = isRecord(raw.progress) ? raw.progress : {}
   const historicalBossKills = isRecord(historicalProgress.bossKillsByBoss) ? historicalProgress.bossKillsByBoss : {}
   const historicalTutorialStage = historicalProgress.tutorialStage

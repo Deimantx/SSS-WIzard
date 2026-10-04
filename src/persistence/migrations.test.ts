@@ -892,7 +892,7 @@ describe('v44 Shattered Meridian migration', () => {
   }
 
   it.each([
-    ['graveglass-hollow', 'graveglass-shade', 1, 15_000, 'silent-mourner'],
+    ['graveglass-hollow', 'graveglass-shade', 1, 15_000, 'bone-shardling'],
     ['starfallen-observatory', 'comet-wraith', 3, 45_000, 'comet-wraith'],
   ] as const)('scales legacy %s Threat from the old 50-point requirement', (locationId, enemyId, worldTier, expectedThreat, expectedTarget) => {
     const migrated = migrateSave(activeSave({ locationId, enemyId, threatCleared: 25 }, worldTier) as any)
@@ -903,7 +903,7 @@ describe('v44 Shattered Meridian migration', () => {
 
   it('clamps converted Shattered Threat, recovers the first target, and preserves a pending boss', () => {
     const migrated = migrateSave(activeSave({ locationId: 'graveglass-hollow', enemyId: 'graveglass-behemoth', targetEnemyId: 'ossuary-oracle', pendingBossId: 'graveglass-behemoth', threatCleared: 80 }) as any)
-    expect(migrated.combat.targetEnemyId).toBe('silent-mourner')
+    expect(migrated.combat.targetEnemyId).toBe('bone-shardling')
     expect(migrated.combat.pendingBossId).toBe('graveglass-behemoth')
     expect(migrated.combat.threatCleared).toBe(30_000)
 
@@ -956,6 +956,24 @@ describe('v44 Shattered Meridian migration', () => {
 })
 
 describe('structured dungeon save migration', () => {
+  it('converts active Stormspire v66 sequence checkpoints into targeted Combat Zone state', () => {
+    const initial = createInitialState()
+    const migrated = migrateSave({
+      ...initial,
+      saveVersion: 66,
+      player: { ...initial.player, health: 73 },
+      combat: {
+        ...initial.combat, active: true, locationId: 'stormspire-monastery', enemyId: 'stonebell-keeper',
+        targetEnemyId: null, sequenceIndex: 3, pendingBossId: 'abbot-ninth-gale', threatCleared: 44,
+      },
+    } as any)
+    expect(migrated.player.health).toBe(73)
+    expect(migrated.combat).toMatchObject({
+      active: true, locationId: 'stormspire-monastery', enemyId: 'stonebell-keeper',
+      targetEnemyId: 'stonebell-keeper', sequenceIndex: null, pendingBossId: null, threatCleared: 0,
+    })
+  })
+
   it.each([
     ['cinder-sepulcher', 'sepulcher-flamekeeper', 'emberbound-dead'],
     ['temple-of-the-sunken-bell', 'deep-bell-saint', 'bell-drowned-monk'],
@@ -1044,7 +1062,7 @@ describe('v45 Black Sigil Reach migration', () => {
 
   it.each([
     ['hall-of-unbound-names', 'unspoken-prelate', 'name-eater'],
-    ['vault-of-the-black-sigil', 'sigil-warden', 'blackscript-colossus'],
+    ['vault-of-the-black-sigil', 'sigil-warden', 'sigil-guardian'],
   ] as const)('preserves an active %s boss while assigning the first future normal target', (locationId, bossId, firstTarget) => {
     const migrated = migrateSave(activeSave({ locationId, enemyId: bossId, targetEnemyId: bossId, threatCleared: 60 }) as any)
     expect(migrated.combat.enemyId).toBe(bossId)

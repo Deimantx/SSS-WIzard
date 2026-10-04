@@ -24,7 +24,7 @@ const PROGRESSION_SLOTS: Record<CombatLocationId, Slot> = {
   'hall-of-unbound-names': { tier: 4, locationType: 'combat-zone', element: 'water', progressionRole: 'standard', mandatoryForTierProgression: false },
   'pyrehold-bastion': { tier: 5, locationType: 'combat-zone', element: 'fire', progressionRole: 'standard', mandatoryForTierProgression: false },
   'vault-of-the-black-sigil': { tier: 5, locationType: 'combat-zone', element: 'earth', progressionRole: 'standard', mandatoryForTierProgression: false },
-  'scalding-rift': { tier: 5, locationType: 'combat-zone', element: 'air', progressionRole: 'standard', mandatoryForTierProgression: false },
+  'stormspire-monastery': { tier: 5, locationType: 'combat-zone', element: 'air', progressionRole: 'standard', mandatoryForTierProgression: false },
   'abyssal-reservoir': { tier: 5, locationType: 'combat-zone', element: 'water', progressionRole: 'standard', mandatoryForTierProgression: false },
 
   'hunters-ground': { tier: 1, locationType: 'hunting-ground', element: 'mixed', progressionRole: 'hunting', mandatoryForTierProgression: false, hunterStanding: 'tracker-1' },
@@ -40,7 +40,7 @@ const PROGRESSION_SLOTS: Record<CombatLocationId, Slot> = {
   'black-gate': { tier: 5, locationType: 'dungeon', element: 'mixed', progressionRole: 'dungeon', mandatoryForTierProgression: true },
 
   'howling-den': { tier: 1, locationType: 'special', element: 'mixed', progressionRole: 'special', mandatoryForTierProgression: false },
-  'stormspire-monastery': { tier: 5, locationType: 'special', element: 'mixed', progressionRole: 'special', mandatoryForTierProgression: false },
+  'scalding-rift': { tier: 5, locationType: 'special', element: 'mixed', progressionRole: 'special', mandatoryForTierProgression: false },
   'nullstone-archive': { tier: 5, locationType: 'special', element: 'arcane', progressionRole: 'special', mandatoryForTierProgression: false },
 }
 
@@ -55,7 +55,7 @@ export const getCombatProgressionMetadata = (location: CombatLocationDefinition)
   return {
     ...slot,
     progressionOrder: location.progressionOrder,
-    ...(slot.tier > 1 && slot.locationType !== 'special' ? { requiredTier: slot.tier, requiredDungeonClear: TIER_GATE_DUNGEON[slot.tier] } : {}),
+    ...(slot.tier > 1 ? { requiredTier: slot.tier, ...(TIER_GATE_DUNGEON[slot.tier] ? { requiredDungeonClear: TIER_GATE_DUNGEON[slot.tier] } : {}) } : {}),
     ...(slot.locationType === 'hunting-ground' ? { requiredHunterOrderRank: slot.hunterStanding } : {}),
     ...(unlocksTier ? { unlocksTier } : {}),
   }

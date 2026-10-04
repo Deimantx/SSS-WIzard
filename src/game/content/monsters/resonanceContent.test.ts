@@ -80,9 +80,9 @@ describe('Howling Den Resonance authoring', () => {
 
 describe('Shattered Meridian Resonance authoring', () => {
   it.each([
-    ['graveglass-hollow', { water: 32 }],
+    ['graveglass-hollow', { earth: 34 }],
     ['stormvault-gallery', { air: 38 }],
-    ['starfallen-observatory', { air: 24, fire: 16 }],
+    ['starfallen-observatory', { arcane: 35, air: 28, fire: 18 }],
   ] as const)('authors the requested resonance progression for %s', (locationId, firstProfile) => {
     const dungeon = COMBAT_LOCATIONS[locationId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(expectedYield(dungeon.monsterPool[0], firstProfile))
@@ -115,8 +115,8 @@ describe('Shattered Meridian Resonance authoring', () => {
 
 describe('Black Sigil Reach Resonance authoring', () => {
   it.each([
-    ['hall-of-unbound-names', { air: 36, water: 24 }, { air: 100, water: 100 }],
-    ['vault-of-the-black-sigil', { earth: 70, fire: 38 }, { earth: 110, fire: 110 }],
+    ['hall-of-unbound-names', { air: 36, water: 24 }, { water: 125, air: 100, arcane: 100 }],
+    ['vault-of-the-black-sigil', { earth: 44, fire: 20 }, { earth: 110, fire: 110 }],
   ] as const)('authors the requested mixed profile progression for %s', (locationId, firstProfile, bossProfile) => {
     const dungeon = COMBAT_LOCATIONS[locationId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(expectedYield(dungeon.monsterPool[0], firstProfile))

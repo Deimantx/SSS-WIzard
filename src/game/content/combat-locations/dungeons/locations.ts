@@ -27,8 +27,12 @@ export const dungeonLocations = {
                                                                     "label":  "World Tier 2"
                                                                 },
                                                                 {
-                                                                    "id":  "cinderwild-expanse",
-                                                                    "label":  "Cinderwild Expanse"
+                                                                    "id":  "combat-tier-2-zones",
+                                                                    "label":  "Combat Tier 2: Fire, Earth, Air and Water Zones"
+                                                                },
+                                                                {
+                                                                    "id":  "tier-2-hunting-ground",
+                                                                    "label":  "Mistclaw Highlands requires Hunter’s Order Warden I"
                                                                 },
                                                                 {
                                                                     "id":  "fractured-approach",
@@ -66,16 +70,16 @@ export const dungeonLocations = {
                                                                    "label":  "Summoning"
                                                                },
                                                                {
-                                                                   "id":  "flooded-reliquary",
-                                                                   "label":  "Flooded Reliquary"
+                                                                   "id":  "combat-tier-3-zones",
+                                                                   "label":  "Combat Tier 3: Fire, Earth, Air and Water Zones"
                                                                },
                                                                {
-                                                                   "id":  "ashen-watch",
-                                                                   "label":  "Ashen Watch"
+                                                                   "id":  "world-tier-3",
+                                                                   "label":  "World Tier 3"
                                                                },
                                                                {
-                                                                   "id":  "rootscar-hollow",
-                                                                   "label":  "Rootscar Hollow"
+                                                                   "id":  "tier-3-hunting-ground",
+                                                                   "label":  "Cinderhex Barrens requires Hunter’s Order Warden I"
                                                                }
                                                            ],
                                "monsterPool":  [
@@ -105,26 +109,18 @@ export const dungeonLocations = {
                                "progressionOrder":  17,
                                "encounterMode":  "sequence",
                                "firstClearUnlockPreview":  [
-                                                               {
-                                                                   "id":  "runeblight-expanse",
-                                                                   "label":  "Runeblight Expanse"
-                                                               },
-                                                               {
-                                                                   "id":  "graveglass-hollow",
-                                                                   "label":  "Graveglass Hollow"
-                                                               },
-                                                               {
-                                                                   "id":  "stormvault-gallery",
-                                                                   "label":  "Stormvault Gallery"
-                                                               },
-                                                               {
-                                                                   "id":  "starfallen-observatory",
-                                                                   "label":  "Starfallen Observatory"
-                                                               },
-                                                               {
-                                                                   "id":  "world-tier-3",
-                                                                   "label":  "World Tier 3"
-                                                               }
+                                                                {
+                                                                    "id":  "combat-tier-4-zones",
+                                                                    "label":  "Combat Tier 4: Fire, Earth, Air and Water Zones"
+                                                                },
+                                                                {
+                                                                    "id":  "world-tier-3",
+                                                                    "label":  "World Tier 3"
+                                                                },
+                                                                {
+                                                                    "id":  "tier-4-hunting-ground",
+                                                                    "label":  "Cinder Sepulcher requires Hunter’s Order Veteran I"
+                                                                }
                                                            ],
                                "monsterPool":  [
                                                    "remnant-marauder",
@@ -158,16 +154,16 @@ export const dungeonLocations = {
                             "encounterMode":  "sequence",
                             "firstClearUnlockPreview":  [
                                                             {
-                                                                "id":  "hall-of-unbound-names",
-                                                                "label":  "Hall of Unbound Names"
-                                                            },
-                                                            {
-                                                                "id":  "vault-of-the-black-sigil",
-                                                                "label":  "Vault of the Black Sigil"
+                                                                "id":  "combat-tier-5-zones",
+                                                                "label":  "Combat Tier 5: Fire, Earth, Air and Water Zones"
                                                             },
                                                             {
                                                                 "id":  "world-tier-4",
                                                                 "label":  "World Tier 4"
+                                                            },
+                                                            {
+                                                                "id":  "tier-5-hunting-ground",
+                                                                "label":  "Sunken Bell Grounds requires Hunter’s Order Master Hunter I"
                                                             },
                                                             {
                                                                 "id":  "crystals",

@@ -25,7 +25,7 @@ describe('current Save System', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(3)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(66)
+    expect(SAVE_VERSION).toBe(67)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -71,6 +71,26 @@ describe('current Save System', () => {
     expect(loaded.progress.autoHuntBossByLocation['black-gate']).toBe(true)
     expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'ground', groundId: 'hunters-ground' })
     expect(loaded.ui.lastEnteredCombatLocationId).toBe('black-gate')
+  })
+
+  it('normalizes saved Stormspire sequence state into the T5 Air encounter model', () => {
+    const state = createInitialState()
+    state.player.health = 73
+    state.combat.active = true
+    state.combat.locationId = 'stormspire-monastery'
+    state.combat.enemyId = 'stonebell-keeper'
+    state.combat.targetEnemyId = null
+    state.combat.sequenceIndex = 3
+    state.combat.pendingBossId = 'abbot-ninth-gale'
+    state.combat.threatCleared = 44
+    const legacy = serializeGameState(state, 1237) as unknown as Record<string, any>
+    legacy.contentVersion = 66
+    const loaded = loadPersistedGameStateV3(parsePersistedGameStateV3(JSON.stringify(legacy)))
+    expect(loaded.player.health).toBe(73)
+    expect(loaded.combat).toMatchObject({
+      active: true, locationId: 'stormspire-monastery', enemyId: 'stonebell-keeper',
+      targetEnemyId: 'stonebell-keeper', sequenceIndex: null, pendingBossId: null, threatCleared: 0,
+    })
   })
 
   it('keeps a current active encounter World Tier snapshot and computes loot tier only at runtime', () => {

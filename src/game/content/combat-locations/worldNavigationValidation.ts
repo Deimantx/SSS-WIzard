@@ -25,6 +25,25 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
     if (location.type === 'elite-zone' && encounterMode === 'targeted' && (!location.zoneAffixId || !ELITE_ZONE_AFFIXES[location.zoneAffixId])) errors.push(`${location.id}: targeted elite zone requires one valid Zone Affix`)
     if (location.type !== 'elite-zone' && location.zoneAffixId) errors.push(`${location.id}: Zone Affix is only valid on targeted Elite Zones`)
     if (encounterMode === 'sequence' && !location.sequence?.length) errors.push(`${location.id}: sequence location requires a non-empty encounter sequence`)
+    if (location.progression?.locationType === 'combat-zone') {
+      const tier = location.progression.tier
+      const minimumRosterSize = tier === 1 ? 4 : 5
+      const maximumRosterSize = tier === 1 ? Number.POSITIVE_INFINITY : 8
+      if (location.monsterPool.length < minimumRosterSize || location.monsterPool.length > maximumRosterSize) errors.push(`${location.id}: T${tier} core roster must contain ${tier === 1 ? 'at least 4' : '5–8'} normal enemies`)
+      const counts = { fire: 0, earth: 0, air: 0, water: 0, arcane: 0 }
+      location.monsterPool.forEach((monsterId) => {
+        const affinity = MONSTERS[monsterId]?.primaryAffinity
+        if (affinity && affinity in counts) counts[affinity as keyof typeof counts] += 1
+      })
+      const element = location.progression.element
+      const laneCount = element in counts ? counts[element as keyof typeof counts] : 0
+      const laneShare = location.monsterPool.length > 0 ? laneCount / location.monsterPool.length : 0
+      const requiredShare = tier === 1 ? 1 : 0.6
+      if (laneShare < requiredShare) errors.push(`${location.id}: ${tier === 1 ? 'T1 opening lane' : `T${tier} lane`} requires at least ${Math.round(requiredShare * 100)}% ${element} normal enemies (received ${laneCount}/${location.monsterPool.length})`)
+      const boss = location.bossId ? MONSTERS[location.bossId] : undefined
+      if (!boss || !isBossMonster(boss)) errors.push(`${location.id}: core elemental Combat Zone requires a valid boss`)
+      else if (boss.primaryAffinity !== element) errors.push(`${location.id}: ${element} Combat Zone boss ${location.bossId} has ${boss.primaryAffinity} affinity`)
+    }
     if (location.sequenceBossIds?.length) {
       if (encounterMode !== 'sequence') errors.push(`${location.id}: sequence bosses require a sequence encounter`)
       location.sequenceBossIds.forEach((bossId) => {

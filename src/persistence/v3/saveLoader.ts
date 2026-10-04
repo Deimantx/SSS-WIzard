@@ -19,17 +19,24 @@ const sanitizeWards = (input: unknown): GameState['combat']['elementalDamageRedu
 }
 
 export const reconcileLoadedProfileState = (state: GameState, sourceContentVersion?: number): GameState => {
-  if (sourceContentVersion === undefined || sourceContentVersion < SAVE_VERSION && sourceContentVersion !== 65) {
+  if (sourceContentVersion === undefined || sourceContentVersion < SAVE_VERSION && sourceContentVersion !== 65 && sourceContentVersion !== 66) {
     Object.assign(state, createInitialState())
     return state
   }
 
-  if (sourceContentVersion === 65 && state.combat.active && state.combat.locationId) {
+  if ((sourceContentVersion === 65 || sourceContentVersion === 66) && state.combat.active && state.combat.locationId) {
     const location = COMBAT_LOCATIONS[state.combat.locationId]
     const convertedBoss = state.combat.locationId === 'cinder-sepulcher' ? 'sepulcher-flamekeeper' : state.combat.locationId === 'temple-of-the-sunken-bell' ? 'deep-bell-saint' : null
     if (convertedBoss && state.combat.enemyId === convertedBoss) {
       const fresh = createInitialState()
       state.combat = { ...fresh.combat, log: state.combat.log, combatRngState: state.combat.combatRngState }
+    } else if (state.combat.locationId === 'stormspire-monastery' && location) {
+      const activeNormal = state.combat.enemyId && location.monsterPool.includes(state.combat.enemyId) ? state.combat.enemyId : null
+      const savedTarget = state.combat.targetEnemyId && location.monsterPool.includes(state.combat.targetEnemyId) ? state.combat.targetEnemyId : null
+      state.combat.sequenceIndex = null
+      state.combat.targetEnemyId = activeNormal ?? savedTarget ?? location.monsterPool[0] ?? null
+      state.combat.pendingBossId = null
+      state.combat.threatCleared = 0
     } else if (location?.encounterMode === 'sequence') {
       const sequence = location.encounterSequence ?? []
       const activeIndex = state.combat.enemyId ? sequence.indexOf(state.combat.enemyId) : -1

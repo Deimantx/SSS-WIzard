@@ -202,15 +202,15 @@ export interface CrystalCacheOpenResult {
   reason?: string
 }
 
-export const getCrystalCacheDropChance = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, lootContext?: CombatLootContext) => {
-  const context = lootContext ?? resolveCombatLootContext(enemyId, enemyWorldTier)
+export const getCrystalCacheDropChance = (state: GameState, enemyId: import('../../types').MonsterId, lootContext?: CombatLootContext) => {
+  const context = lootContext ?? resolveCombatLootContext(enemyId)
   if (!isCrystalSystemUnlocked(state) || !isLootUnlockedAtTier('crystal-cache-t1', context.lootTier)) return 0
   return Math.min(1, context.lootTier.crystalCacheDropChance * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1) * (context.guildBonuses?.crystalCacheChanceMultiplier ?? getGuildProgressionBonuses(state).crystalCacheChanceMultiplier))
 }
 
-export const getExpectedCrystalCacheQuantity = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, lootContext?: CombatLootContext) => {
-  const context = lootContext ?? resolveCombatLootContext(enemyId, enemyWorldTier)
-  return getCrystalCacheDropChance(state, enemyId, enemyWorldTier, context) * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1)
+export const getExpectedCrystalCacheQuantity = (state: GameState, enemyId: import('../../types').MonsterId, lootContext?: CombatLootContext) => {
+  const context = lootContext ?? resolveCombatLootContext(enemyId)
+  return getCrystalCacheDropChance(state, enemyId, context) * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1)
 }
 
 export const openCrystalCaches = (state: GameState, requestedQuantity: number, rng: () => number = () => nextCrystalRandom(state)): CrystalCacheOpenResult => {
@@ -233,11 +233,11 @@ export const openCrystalCaches = (state: GameState, requestedQuantity: number, r
   return { ok: true, opened: quantity, dust, crystals }
 }
 
-export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, enemyWorldTier: import('../../types').WorldTierId, rng: () => number, lootContext?: CombatLootContext) => {
-  const chance = getCrystalCacheDropChance(state, enemyId, enemyWorldTier, lootContext)
+export const resolveCrystalCacheDrop = (state: GameState, enemyId: import('../../types').MonsterId, rng: () => number, lootContext?: CombatLootContext) => {
+  const chance = getCrystalCacheDropChance(state, enemyId, lootContext)
   if (chance <= 0) return 0
   if (rng() >= chance) return 0
-  const context = lootContext ?? resolveCombatLootContext(enemyId, enemyWorldTier)
+  const context = lootContext ?? resolveCombatLootContext(enemyId)
   const quantity = resolveRareLootInstanceQuantity(context)
   grantItem(state, CRYSTAL_CACHE_ITEM_ID, quantity)
   return quantity

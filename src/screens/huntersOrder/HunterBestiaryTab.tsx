@@ -155,7 +155,6 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
   const contentRef = useRef<HTMLDivElement>(null)
   useSmartScrollState(contentRef, { resetKey: selectedId })
   const progress = state.progress
-  const worldTier = state.worldTier.current
   const isHunter = Boolean(monster?.hunter?.exclusive)
   const masterDossierAvailable = Boolean(!discovered && monster?.hunter?.exclusive && getHunterUpgradeRank(state, 'master-dossier') > 0 && isHunterMonsterRankEligible(state, monster.id))
   const groundId = (monster?.hunter?.huntingGroundId ?? 'hunters-ground') as CombatLocationId
@@ -191,14 +190,14 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
         </div>
       </header>
       {stats && <div className="hunter-dossier-metrics">{[
-        ['POWER', formatNumber(resolveEnemyPowerRating(monster.id, worldTier))], ['HP', formatNumber(stats.maxHealth)], ['DEFENSE', formatNumber(stats.defense)], ['ATTACK', formatBasicAttackTime(stats.basicAttackIntervalMs)],
+        ['POWER', formatNumber(resolveEnemyPowerRating(monster.id))], ['HP', formatNumber(stats.maxHealth)], ['DEFENSE', formatNumber(stats.defense)], ['ATTACK', formatBasicAttackTime(stats.basicAttackIntervalMs)],
       ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>}
       {isHunter && <section className={`hunter-authorization-panel${authorized ? ' is-authorized' : ' is-locked'}`}><div><span>{authLabel}</span><strong>{authDescription}</strong>{relation === 'exact-target' && contract && <small>{contract.progress.toLocaleString()} / {contract.target.toLocaleString()} · {Math.max(0, contract.target - contract.progress).toLocaleString()} remaining</small>}</div>{authorized ? <GameTooltip content={`Open ${groundName} with this quarry selected. Combat will not start automatically.`}><Button variant="primary" onClick={huntInGround}><Crosshair size={15} /> HUNT IN {groundName.toUpperCase()}</Button></GameTooltip> : <GameTooltip content={authDescription}><Button variant="secondary" disabled>{!authorization.authorized && authorization.reason === 'contract-tier-locked' && monster.hunter?.minimumRank ? 'MASTER HUNTER REQUIRED' : 'CONTRACT REQUIRED'}</Button></GameTooltip>}</section>}
       <div className="hunter-dossier-tabs-sticky"><FilterBar options={dossierTabs} value={tab} onChange={onTab} ariaLabel="Quarry dossier sections" /></div>
       <div ref={contentRef} className="hunter-dossier-content smart-scroll-region">
         {tab === 'overview' && <OverviewSection monster={monster} state={state} relation={relation} authorization={authorization} locationName={locationName} />}
         {tab === 'combat' && <CombatSection monster={monster} />}
-        {tab === 'rewards' && <RewardsSection monster={monster} state={state} worldTier={worldTier} />}
+        {tab === 'rewards' && <RewardsSection monster={monster} state={state} />}
         {tab === 'record' && <HunterRecordSection monster={monster} state={state} relation={relation} record={record} blocked={blocked} activeTarget={activeTarget} blockSlots={blockSlots} canBlock={canBlock} onToggleBlock={() => selectedId && methods.setHunterTargetBlocked(selectedId, !blocked)} />}
       </div>
       {authorized && <footer className="hunter-dossier-sticky-hunt"><div><Status tone="active">AUTHORIZED</Status><span>{Math.max(0, (contract?.target ?? 0) - (contract?.progress ?? 0)).toLocaleString()} kills remaining</span></div><GameTooltip content={`Open ${groundName} with this eligible quarry selected.`}><Button variant="primary" onClick={huntInGround}>HUNT IN {groundName.toUpperCase()}</Button></GameTooltip></footer>}
@@ -217,8 +216,8 @@ function SectionLabel({ children }: { children: string }) { return <h3 className
 function CombatSection({ monster }: { monster: (typeof MONSTERS)[keyof typeof MONSTERS] }) {
   return <div className="hunter-dossier-section-stack"><SectionLabel>COMBAT PROFILE</SectionLabel><BestiaryStats monster={monster} />{isBossMonster(monster) ? <><BestiaryBossMechanics monster={monster} /><BestiaryBossPhases monster={monster} /></> : <BestiaryTraits monster={monster} />}<BestiaryAbilities monster={monster} />{!isBossMonster(monster) && <BestiarySequence monster={monster} />}</div>
 }
-function RewardsSection({ monster, state, worldTier }: { monster: (typeof MONSTERS)[keyof typeof MONSTERS]; state: GameState; worldTier: GameState['worldTier']['current'] }) {
-  return <div className="hunter-dossier-section-stack"><SectionLabel>RESONANCE & ESSENCE</SectionLabel><BestiaryResonanceYield monster={monster} worldTier={worldTier} /><SectionLabel>ITEM LOOT</SectionLabel><BestiaryLootTable monster={monster} progress={state.progress} worldTier={worldTier} /><SectionLabel>SIGIL SOURCES</SectionLabel><BestiarySigilDrops monster={monster} worldTier={worldTier} /></div>
+function RewardsSection({ monster, state }: { monster: (typeof MONSTERS)[keyof typeof MONSTERS]; state: GameState }) {
+  return <div className="hunter-dossier-section-stack"><SectionLabel>RESONANCE & ESSENCE</SectionLabel><BestiaryResonanceYield monster={monster} /><SectionLabel>ITEM LOOT</SectionLabel><BestiaryLootTable monster={monster} progress={state.progress} /><SectionLabel>SIGIL SOURCES</SectionLabel><BestiarySigilDrops monster={monster} /></div>
 }
 function HunterRecordSection({ monster, state, relation, record, blocked, activeTarget, blockSlots, canBlock, onToggleBlock }: { monster: (typeof MONSTERS)[keyof typeof MONSTERS]; state: GameState; relation: ReturnType<typeof getMonsterHunterContractRelation>; record: GameState['progress']['huntersOrder']['monsterHunterStats'][MonsterId] | undefined; blocked: boolean; activeTarget: boolean; blockSlots: number; canBlock: boolean; onToggleBlock: () => void }) {
   const metadata = monster.hunter

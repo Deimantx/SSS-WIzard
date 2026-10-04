@@ -4,7 +4,7 @@ import { resolveCombatCurrencyRewardRange } from '../../systems/loot/combatCurre
 import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
 import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../systems/loot/universalLootRuntime'
 import { isLootUnlockedAtTier, UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
-import type { ItemId, MonsterId, ResonanceState, WorldTierId } from '../../types'
+import type { ItemId, MonsterId, ResonanceState } from '../../types'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
 
 export interface CombatTargetItemDropPresentation {
@@ -21,7 +21,6 @@ export interface CombatTargetRewardPresentation {
   resonance: ResonanceState
   powerRating: number
   threatGain: number
-  worldTier: WorldTierId
   lootTier: number
   sigilDropChance: number
   expectedSigilQuantity: number
@@ -30,13 +29,13 @@ export interface CombatTargetRewardPresentation {
 }
 
 /** Read model for targeted-hunting reward inspection; it is transparent before Bestiary discovery. */
-export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldTier: WorldTierId): CombatTargetRewardPresentation => {
+export const buildCombatTargetRewardPresentation = (monsterId: MonsterId): CombatTargetRewardPresentation => {
   const monster = MONSTERS[monsterId]
-  const resonanceReward = resolveEnemyResonanceReward(monsterId, worldTier)
-  const lifeEssence = resolveCombatCurrencyRewardRange(monsterId, 'life-essence', worldTier)
-  const artifactEssence = resolveCombatCurrencyRewardRange(monsterId, 'artifact-essence', worldTier)
-  const powerRating = resolveEnemyPowerRating(monsterId, worldTier)
-  const lootContext = resolveCombatLootContext(monsterId, worldTier)
+  const resonanceReward = resolveEnemyResonanceReward(monsterId)
+  const lifeEssence = resolveCombatCurrencyRewardRange(monsterId, 'life-essence')
+  const artifactEssence = resolveCombatCurrencyRewardRange(monsterId, 'artifact-essence')
+  const powerRating = resolveEnemyPowerRating(monsterId)
+  const lootContext = resolveCombatLootContext(monsterId)
   return {
     monsterId,
     monsterName: monster.name,
@@ -53,7 +52,6 @@ export const buildCombatTargetRewardPresentation = (monsterId: MonsterId, worldT
     resonance: normalizeResonanceState(resonanceReward.finalYield),
     powerRating,
     threatGain: powerRating,
-    worldTier: resonanceReward.worldTier,
     lootTier: lootContext.lootTier.tier,
     sigilDropChance: Math.min(1, lootContext.lootTier.sigilDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)),
     expectedSigilQuantity: Math.min(1, lootContext.lootTier.sigilDropChance * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1)) * (lootContext.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1),

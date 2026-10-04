@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import { formatDropChance, formatDropQuantity } from '../../systems/bestiary/bestiarySelectors'
 import { resolveCombatCurrencyRewardRange } from '../../systems/loot/combatCurrencyRewards'
 import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../systems/loot/universalLootRuntime'
-import type { CombatLocationId, GameState, ItemId, MonsterId, WorldTierId } from '../../types'
+import type { CombatLocationId, GameState, ItemId, MonsterId } from '../../types'
 
 export interface LocationLootEntry {
   itemId: ItemId
@@ -33,12 +33,12 @@ interface AggregateEntry extends LocationLootEntry {
 
 const percentage = (chance: number) => `${Number((Math.max(0, chance) * 100).toFixed(1))}%`
 
-const aggregateLoot = (monsterIds: readonly MonsterId[], worldTier: WorldTierId, signatureItemId?: ItemId): LocationLootEntry[] => {
+const aggregateLoot = (monsterIds: readonly MonsterId[], signatureItemId?: ItemId): LocationLootEntry[] => {
   const entries = new Map<ItemId, AggregateEntry>()
   monsterIds.forEach((monsterId) => {
-    const lifeEssence = resolveCombatCurrencyRewardRange(monsterId, 'life-essence', worldTier)
-    const artifactEssence = resolveCombatCurrencyRewardRange(monsterId, 'artifact-essence', worldTier)
-    const context = resolveCombatLootContext(monsterId, worldTier)
+    const lifeEssence = resolveCombatCurrencyRewardRange(monsterId, 'life-essence')
+    const artifactEssence = resolveCombatCurrencyRewardRange(monsterId, 'artifact-essence')
+    const context = resolveCombatLootContext(monsterId)
     const drops = [
       ...MONSTERS[monsterId].loot.map((drop) => ({ itemId: drop.itemId, min: resolveAuthoredLootDropQuantity(drop, drop.quantity.min, context), max: resolveAuthoredLootDropQuantity(drop, drop.quantity.max, context), chance: resolveAuthoredLootDropChance(drop, context) })),
       { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 },
@@ -73,15 +73,15 @@ const aggregateLoot = (monsterIds: readonly MonsterId[], worldTier: WorldTierId,
   return [...entries.values()].map(({ sourceValues: _sourceValues, sourceMonsterIds: _sourceMonsterIds, ...entry }) => entry)
 }
 
-export function buildLocationLootPresentation(locationId: CombatLocationId, progress: Pick<GameState, 'progress'>['progress'], worldTier: WorldTierId = 1): LocationLootGroups {
+export function buildLocationLootPresentation(locationId: CombatLocationId, progress: Pick<GameState, 'progress'>['progress']): LocationLootGroups {
   const dungeon = COMBAT_LOCATIONS[locationId]
   const discovered = new Set(progress.discoveredMonsters)
   const discoveredNormalIds = dungeon.monsterPool.filter((monsterId) => discovered.has(monsterId))
   const bossId = hasBossEncounter(dungeon) ? dungeon.boss : null
   const discoveredBoss = bossId !== null && discovered.has(bossId)
   return {
-    monsters: aggregateLoot(discoveredNormalIds, worldTier),
-    boss: discoveredBoss && bossId ? aggregateLoot([bossId], worldTier) : [],
+    monsters: aggregateLoot(discoveredNormalIds),
+    boss: discoveredBoss && bossId ? aggregateLoot([bossId]) : [],
     bossId,
     normalEncounterCount: dungeon.monsterPool.length,
     discoveredNormalEncounterCount: discoveredNormalIds.length,

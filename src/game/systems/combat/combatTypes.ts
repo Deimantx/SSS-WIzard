@@ -1,6 +1,5 @@
 import type { CombatLocationId, ItemId, MonsterId, SchoolId, SpellId } from '../../types'
 import type { ResonanceRewardEventPayload } from '../resonance/resonanceRuntime'
-import type { WorldTierId } from '../../types'
 import type { ElementId } from '../../content/elements/elements'
 
 export type DamageType = ElementId
@@ -164,7 +163,6 @@ export interface CombatEvent {
   itemId?: ItemId
   resonanceReward?: ResonanceRewardEventPayload
   sigilLoot?: { instanceId: string; setId: string; slot: number; tier: number; quality: string; autoSalvaged: boolean; dustGranted: number }
-  worldTier?: WorldTierId
   damageType?: DamageType
   /** All damage types represented by one Hit. */
   damageTypes?: DamageType[]

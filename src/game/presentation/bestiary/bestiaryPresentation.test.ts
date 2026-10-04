@@ -30,9 +30,9 @@ describe('Bestiary combat presentation', () => {
   })
 
   it('presents current Power-derived loot tier resonance in canonical order and omits zero values', () => {
-    const presentation = getBestiaryResonancePresentation(MONSTERS['graveglass-shade'], 2)
-    const expected = resolveEnemyResonanceReward('graveglass-shade', 2)
-    expect(presentation).toMatchObject({ worldTier: 2, lootTier: expected.lootTier, lootQuantityMultiplier: expected.lootQuantityMultiplier, bossQuantityMultiplier: expected.bossQuantityMultiplier, rewardMultiplier: expected.rewardMultiplier })
+    const presentation = getBestiaryResonancePresentation(MONSTERS['graveglass-shade'])
+    const expected = resolveEnemyResonanceReward('graveglass-shade')
+    expect(presentation).toMatchObject({ lootTier: expected.lootTier, lootQuantityMultiplier: expected.lootQuantityMultiplier, bossQuantityMultiplier: expected.bossQuantityMultiplier, rewardMultiplier: expected.rewardMultiplier })
     expect(presentation.entries.map((entry) => [entry.label, entry.baseAmount, entry.finalAmount])).toEqual([
       ['Water Resonance', expected.baseYield.water, expected.finalYield.water],
       ['Earth Resonance', expected.baseYield.earth, expected.finalYield.earth],

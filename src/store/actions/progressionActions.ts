@@ -72,7 +72,7 @@ export const setLevelCapAction = (state: GameState, cap: number) => {
   reconcileSelectedPresetRuntime(state)
 }
 export const setThreatAction = (state: GameState, amount: number) => {
-  const requirement = state.combat.locationId ? resolveBossThreatRequirement(state.combat.locationId, state.worldTier.current) : Number.POSITIVE_INFINITY
+  const requirement = state.combat.locationId ? resolveBossThreatRequirement(state.combat.locationId) : Number.POSITIVE_INFINITY
   state.combat.threatCleared = Math.min(requirement, Math.max(0, Number.isFinite(amount) ? amount : 0))
 }
 export const setBossKillsAction = (state: GameState, bossId: MonsterId, amount: number) => {

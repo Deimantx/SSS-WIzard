@@ -5,7 +5,8 @@ describe('Developer Tools V4 registry', () => {
   it('contains unique IDs and routes every tool to one workspace', () => {
     const ids = DEVELOPER_TOOL_REGISTRY.map((tool) => tool.id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(DEVELOPER_TOOL_REGISTRY).toHaveLength(32)
+    expect(ids).not.toContain('world-tier')
+    expect(DEVELOPER_TOOL_REGISTRY).toHaveLength(31)
     for (const workspace of DEVELOPER_WORKSPACE_REGISTRY) expect(getDeveloperWorkspaceTools(workspace.id).length).toBeGreaterThan(0)
   })
 

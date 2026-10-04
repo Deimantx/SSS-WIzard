@@ -10,7 +10,6 @@ import { GUILD_SKILL_NODES } from '../../game/content/guild/guildSkills'
 import { TRANSMUTATION_RECIPES } from '../../game/content/recipes/transmutationRecipes'
 import { ARTIFICING_RECIPES } from '../../game/content/recipes/artificingRecipes'
 import { RESEARCH_SLOT_ORDER } from '../../game/systems/research/researchReservations'
-import { WORLD_TIER_IDS } from '../../game/content/world-tier/worldTiers'
 import { GUILD_RANKS } from '../../game/content/guild/guildRanks'
 import { ARTIFACTS } from '../../game/content/artifacts/artifacts'
 import { RESONANCE_TYPES } from '../../game/content/resonance/resonance'
@@ -18,7 +17,7 @@ import { SCHOOLS } from '../../game/content/schools/schools'
 import { ELEMENT_IDS } from '../../game/content/elements/elements'
 
 const gameplayFields = [
-  'player', 'schools', 'currencies', 'resonance', 'tower', 'worldTier', 'inventory', 'crystals',
+  'player', 'schools', 'currencies', 'resonance', 'tower', 'inventory', 'crystals',
   'protectedItems', 'equipment', 'arcaneCore', 'artifactProgress', 'sigils', 'guardians', 'activities',
   'combat', 'progress', 'storyProgress', 'darkPortal', 'spellPresets',
 ] as const
@@ -130,13 +129,9 @@ export const validatePersistedGameStateV3 = (value: unknown): value is Persisted
   const combatDungeon = (combat as Record<string, unknown>).locationId
   const combatEnemy = (combat as Record<string, unknown>).enemyId
   const combatTarget = (combat as Record<string, unknown>).targetEnemyId
-  const combatTier = (combat as Record<string, unknown>).enemyWorldTier
   if (combatDungeon !== null && !isCombatLocationId(combatDungeon)) return false
   for (const id of [combatEnemy, combatTarget]) if (id !== null && (typeof id !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, id))) return false
-  if (combatTier !== null && !WORLD_TIER_IDS.includes(combatTier as typeof WORLD_TIER_IDS[number])) return false
   if (typeof (combat as Record<string, unknown>).combatRngState !== 'number' || !Number.isFinite((combat as Record<string, unknown>).combatRngState)) return false
-  const worldTier = value.worldTier as Record<string, unknown>
-  if (!WORLD_TIER_IDS.includes(worldTier.current as typeof WORLD_TIER_IDS[number]) || !WORLD_TIER_IDS.includes(worldTier.highestUnlocked as typeof WORLD_TIER_IDS[number])) return false
 
   const activities = value.activities as Record<string, unknown>
   const channeling = activities.channeling
@@ -167,7 +162,51 @@ export const validatePersistedGameStateV3 = (value: unknown): value is Persisted
 
 export const parsePersistedGameStateV3 = (encoded: string): PersistedGameStateV3 => {
   const parsed: unknown = JSON.parse(encoded)
-  const value = isRecord(parsed) ? migrateSchema2LocationFields(parsed) : parsed
+  let value = isRecord(parsed) ? migrateSchema2LocationFields(parsed) : parsed
+  if (isRecord(value)) value = migrateLegacyWorldTierFields(value)
   if (!validatePersistedGameStateV3(value)) throw new Error('Save does not match the V3 schema.')
+  return value
+}
+
+/** Drops legacy v3 World Tier fields and carries completed Chronicle evidence into Combat Tier IDs. */
+const migrateLegacyWorldTierFields = (source: Record<string, unknown>): Record<string, unknown> => {
+  const value = { ...source }
+  delete value.worldTier
+  if (isRecord(value.combat)) {
+    value.combat = { ...value.combat }
+    delete (value.combat as Record<string, unknown>).enemyWorldTier
+  }
+  if (isRecord(value.sigils)) {
+    value.sigils = { ...value.sigils }
+    delete (value.sigils as Record<string, unknown>).hasDefeatedWorldTier2Boss
+  }
+  if (isRecord(value.progress) && isRecord(value.progress.chronicle)) {
+    const progress = { ...value.progress }
+    const chronicle = { ...(value.progress.chronicle as Record<string, unknown>) }
+    const objectiveMap: Record<string, string> = {
+      'sf-m6-world-tier-two': 'sf-m6-combat-tier-two',
+      'sf-c1-world-tier-three': 'sf-c1-combat-tier-three',
+      'sf-c2-world-tier-four': 'sf-c2-combat-tier-four',
+      'sf-c3-world-tier-five': 'sf-c3-combat-tier-five',
+    }
+    const eventMap: Record<string, string> = {
+      'first-wt2-kill': 'first-combat-tier-2-kill',
+      'first-wt3-kill': 'first-combat-tier-3-kill',
+      'first-wt4-kill': 'first-combat-tier-4-kill',
+      'first-wt5-kill': 'first-combat-tier-5-kill',
+    }
+    for (const key of ['completedObjectiveIds', 'grantedUnlockRewardIds'] as const) {
+      const ids = chronicle[key]
+      if (Array.isArray(ids)) chronicle[key] = [...new Set(ids.map((id) => typeof id === 'string' ? objectiveMap[id] ?? id : id))]
+    }
+    if (isRecord(chronicle.eventFlags)) {
+      const flags = { ...chronicle.eventFlags }
+      for (const [oldId, newId] of Object.entries(eventMap)) if (flags[oldId] === true) flags[newId] = true
+      Object.keys(eventMap).forEach((id) => delete flags[id])
+      chronicle.eventFlags = flags
+    }
+    progress.chronicle = chronicle
+    value.progress = progress
+  }
   return value
 }

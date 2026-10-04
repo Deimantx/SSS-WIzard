@@ -349,7 +349,7 @@ Channeling
 → World → Continent → Region → Location
 → targeted Zone farming or fixed-sequence Dungeon
 → Zone/Elite Boss or Dungeon final Boss
-→ Main Boss / higher World Tier / new content
+→ Main Boss / higher Combat Tier location / new content
 ```
 
 Lygiagrečiai:
@@ -384,8 +384,8 @@ Reserved future Location types are `SPECIAL ZONE` and `TOWER`; they are not curr
 
 For current targeted Combat Zones and Elite Zones:
 
-- a normal kill grants Threat equal to the defeated enemy Power at the encounter World Tier;
-- the Boss requirement is the authored WT1 base requirement multiplied by the canonical World Tier multiplier;
+- a normal kill grants Threat equal to the defeated enemy's authored Power;
+- the Boss requirement is the location's authored Threat requirement;
 - Threat is capped at that resolved Boss requirement;
 - death or leaving the Location resets Threat, while the selected target remains available when the player returns.
 
@@ -1816,7 +1816,7 @@ The Location mode is authoritative for encounter behavior:
 
 - The player selects one exact normal target from the authored Location pool.
 - The target is repeatable farming content.
-- Each normal kill grants Threat equal to the target's resolved Power at the current encounter World Tier.
+- Each normal kill grants Threat equal to the target's authored Power.
 - Threat advances to the authored Zone Boss requirement.
 - The Boss can be started manually; Auto Hunt is available after the first manual Boss clear.
 - A Boss clear resets Threat, and the selected target resumes afterward.
@@ -1839,8 +1839,8 @@ The Location mode is authoritative for encounter behavior:
 ### Threat resolution
 
 ```text
-targeted normal kill Threat = enemy Power at encounter World Tier
-Boss requirement = authored WT1 base requirement × canonical World Tier multiplier
+targeted normal kill Threat = authored enemy Power
+Boss requirement = authored location Threat requirement
 ```
 
 Threat is capped at the resolved requirement. Sequence Dungeons grant no Threat. A legacy `+1 Threat` rule may exist only for historical migration compatibility.
@@ -1853,7 +1853,7 @@ Threat is capped at the resolved requirement. Sequence Dungeons grant no Threat.
 
 ---
 
-# 32.1. Shattered Meridian and World Tier progression
+# 32.1. Shattered Meridian progression
 
 Shattered Meridian is the first fully targeted late-act region:
 
@@ -1862,19 +1862,7 @@ Shattered Meridian is the first fully targeted late-act region:
 - Starfallen Observatory — targeted Elite Zone with the Relentless affix;
 - The Broken Meridian — a four-normal fixed sequence Dungeon followed by Meridian Splitter.
 
-Each targeted Shattered Meridian Zone has seven authored Hunt Targets and uses the canonical Power Threat resolver. Its WT1 base requirement is 30,000 Threat and World Tier multipliers resolve WT1 through WT5 as 30,000 / 60,000 / 90,000 / 120,000 / 150,000. The Broken Meridian grants no Threat or Resonance and never uses Auto Hunt.
-
-The current World Tier unlock map is:
-
-| Unlock evidence | World Tier / content |
-| --- | --- |
-| Start | WT1 |
-| Archmage Edrin's Shade | WT2 / Elemental Scar |
-| Crossroads Keeper | WT3 / Shattered Meridian |
-| Meridian Splitter | WT4 / Black Sigil Reach |
-| Black Gatekeeper | WT5 |
-
-Boss kills may unlock a tier once and show one notification; save migration silently reconciles durable boss-kill evidence without lowering valid access.
+Each targeted Shattered Meridian Zone has seven authored Hunt Targets and uses the canonical Power Threat resolver. Each location uses its authored Threat requirement. The Broken Meridian grants no Threat or Resonance and never uses Auto Hunt. Combat difficulty is set by each location's authored Combat Tier; there is no global difficulty multiplier.
 
 ### 32.2. Black Sigil Reach endpoint topology
 
@@ -1884,17 +1872,17 @@ Black Sigil Reach completes the current Continent I location topology:
 - Vault of the Black Sigil — targeted Elite Zone with the Armored affix;
 - The Black Gate — a fixed four-normal sequence Dungeon followed by Black Gatekeeper.
 
-The two Elite Zones are the repeatable targeted farming layer. Their Boss clears jointly unlock The Black Gate, and Black Gatekeeper is the current Continent I endpoint that unlocks WT5. Crystal System V1 is implemented after the first Meridian Splitter defeat; Alchemy remains a reserved future milestone only.
+The two Elite Zones are the repeatable targeted farming layer. Their Boss clears jointly unlock The Black Gate, and Black Gatekeeper is the current Continent I endpoint. Crystal System V1 is implemented after the first Meridian Splitter defeat; Alchemy remains a reserved future milestone only.
 
 ### Current and reserved progression milestones
 
 | Milestone | Current progression | Reserved future unlock |
 | --- | --- | --- |
-| Archmage Edrin's Shade | WT2, Elemental Scar, existing chapter | — |
+| Archmage Edrin's Shade | Elemental Scar, existing chapter | — |
 | Corrupted Elemental Gatekeeper | Summoning / Elemental Guardians | — |
-| Crossroads Keeper | WT3, Shattered Meridian | — |
-| Meridian Splitter | WT4, Black Sigil Reach, Act 1 Artifact Levels 8–10, Crystal System V1 / Crystal Upgrading | — |
-| Black Gatekeeper | WT5 | `[RESERVED FUTURE UNLOCK]` Alchemy |
+| Crossroads Keeper | Shattered Meridian | — |
+| Meridian Splitter | Black Sigil Reach, Act 1 Artifact Levels 8–10, Crystal System V1 / Crystal Upgrading | — |
+| Black Gatekeeper | Current Continent I endpoint | `[RESERVED FUTURE UNLOCK]` Alchemy |
 
 Crystal System V1 is an implemented Hero progression layer with dedicated Crystal state, Crystal Dust, cache loot, loadouts, presets, and first-clear presentation. Alchemy remains a reserved design milestone and is not implemented.
 
@@ -2794,9 +2782,9 @@ Prieš projektuojant naują sistemą:
 - [x] World taxonomy is World → Continent → Region → Location.
 - [x] Combat Zone and Elite Zone use an exact selected target and Power-based Threat.
 - [x] Sequence Dungeon uses a fixed authored sequence with no target, Threat, or Auto Hunt.
-- [x] Targeted normal kill = resolved enemy Power at encounter World Tier.
+- [x] Targeted normal kill = authored enemy Power.
 - [x] Legacy random-pool `+1 Threat` exists only for historical migration compatibility.
-- [x] Threat is capped at the resolved World-Tier boss requirement.
+- [x] Threat is capped at the authored location boss requirement.
 - [x] Auto Hunt Boss is available after the first manual Zone/Elite Boss clear.
 - [x] Main Boss kelia Magic School cap.
 - [x] Collection yra item archive.

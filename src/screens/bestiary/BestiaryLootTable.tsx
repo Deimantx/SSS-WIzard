@@ -7,12 +7,12 @@ import { formatDropChance, formatDropQuantity } from '../../game/systems/bestiar
 import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combatCurrencyRewards'
 import { resolveAuthoredLootDropChance, resolveAuthoredLootDropQuantity, resolveCombatLootContext } from '../../game/systems/loot/universalLootRuntime'
 import { getLootUnlockTier, isLootUnlockedAtTier, UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../game/content/loot/universalLootTiers'
-import type { GameState, WorldTierId } from '../../game/types'
+import type { GameState } from '../../game/types'
 
-export function BestiaryLootTable({ monster, progress, worldTier }: { monster: MonsterDefinition; progress: GameState['progress']; worldTier: WorldTierId }) {
-  const context = resolveCombatLootContext(monster.id, worldTier)
-  const lifeEssence = resolveCombatCurrencyRewardRange(monster.id, 'life-essence', worldTier)
-  const artifactEssence = resolveCombatCurrencyRewardRange(monster.id, 'artifact-essence', worldTier)
+export function BestiaryLootTable({ monster, progress }: { monster: MonsterDefinition; progress: GameState['progress'] }) {
+  const context = resolveCombatLootContext(monster.id)
+  const lifeEssence = resolveCombatCurrencyRewardRange(monster.id, 'life-essence')
+  const artifactEssence = resolveCombatCurrencyRewardRange(monster.id, 'artifact-essence')
   const crystalSystemUnlocked = (progress.bossKillsByBoss['meridian-splitter'] ?? 0) >= 1
   const crystalLootTierUnlocked = isLootUnlockedAtTier('crystal-cache-t1', context.lootTier)
   const crystalCacheEligible = crystalSystemUnlocked && crystalLootTierUnlocked
@@ -33,7 +33,7 @@ export function BestiaryLootTable({ monster, progress, worldTier }: { monster: M
   }
 
   return <section className="bestiary-section">
-    <span className="bestiary-section-label">POWER {context.effectivePower.toLocaleString()} · LOOT TIER {context.lootTier.tier} · WT{worldTier}</span>
+    <span className="bestiary-section-label">POWER {context.effectivePower.toLocaleString()} · LOOT TIER {context.lootTier.tier} ·</span>
     <span className="bestiary-section-label">GUARANTEED REWARDS</span>
     <div className="bestiary-loot-list">{currencyRow('life-essence', lifeEssence)}{currencyRow('artifact-essence', artifactEssence)}</div>
     <span className="bestiary-section-label">MONSTER DROPS</span>

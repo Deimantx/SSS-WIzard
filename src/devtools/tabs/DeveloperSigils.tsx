@@ -88,7 +88,7 @@ export function DeveloperSigils() {
     const ids = pattern === 'all' ? stored.slice(0, 6) : pattern === '2+2+2' ? grouped.slice(0, 3).flatMap((group) => group.slice(0, 2)) : [...(grouped[0]?.slice(0, 4) ?? []), ...(grouped[1]?.slice(0, 2) ?? [])]
     ids.slice(0, 6).forEach((sigil) => useGameStore.getState().equipSigil(sigil.instanceId))
   }
-  const simulateDrops = (count: number) => setSimulation(simulateSigilDrops({ locationId: 'whispering-woods', enemyId: 'forest-wisp', worldTier: tier === 1 ? 1 : 2, attunedSetId: setId, iterations: count }))
+  const simulateDrops = (count: number) => setSimulation(simulateSigilDrops({ locationId: 'whispering-woods', enemyId: 'forest-wisp', attunedSetId: setId, iterations: count }))
   const forceTrait = (index: 0 | 1) => {
     if (!selected) return
     const candidates = getEligibleSigilTraits(selected.setId, selected.traitIds)

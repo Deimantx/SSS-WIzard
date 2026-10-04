@@ -65,7 +65,6 @@ import {
 import { stabilizeResourceValue } from "../../presentation/resources/resourcePresentation";
 import { getArcaneCoreHealingReceivedBonusPct, tryConsumeArcaneCoreSurvival } from "../arcane-core/arcaneCoreRuntime";
 import { recordArcaneCoreCriticalResult } from "../arcane-core/arcaneCoreMechanicRuntime";
-import { getActiveEncounterWorldTierDefinition } from '../world-tier/worldTierRuntime'
 
 const MAX_EFFECT_DEPTH = 20;
 const finiteDamage = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -242,9 +241,7 @@ const calculateCombatDamageWithRolls = (
 ): DamageBreakdown => {
   const effectiveDamageType = damageType;
   const effectiveTags = resolveDamageTags(tags);
-  const enemyDamageMultiplier = source.actor === 'enemy' ? getActiveEncounterWorldTierDefinition(state).enemyDamageMultiplier : 1
-  const scaledRaw = raw * enemyDamageMultiplier
-  const amount = Number.isFinite(scaledRaw) ? Math.max(0, scaledRaw) : 0;
+  const amount = Number.isFinite(raw) ? Math.max(0, raw) : 0;
   const direct = isDirectHit(effectiveTags);
   const root = getRootCombatSourceProvenance(source);
   const attackingElement = isElementId(effectiveDamageType) ? effectiveDamageType : null;

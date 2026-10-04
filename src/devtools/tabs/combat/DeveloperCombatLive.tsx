@@ -21,8 +21,7 @@ export function DeveloperCombatLive() {
   const debug = useGameStore((state) => state.debug)
   const enemy = combat.enemyId ? MONSTERS[combat.enemyId] : null
   const dungeon = COMBAT_LOCATIONS[combat.locationId ?? 'whispering-woods']
-  const worldTier = useGameStore((state) => state.worldTier.current)
-  const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier)
+  const threatRequired = resolveBossThreatRequirement(dungeon.id)
   const location = getCombatLocationById(combat.locationId)
   const setCombatTarget = useGameStore((state) => state.setCombatTarget)
   const targetIds = location?.targetMetadata

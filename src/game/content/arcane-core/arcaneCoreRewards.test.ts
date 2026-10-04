@@ -24,9 +24,8 @@ describe('Arcane Core rewards', () => {
     normal.combat.active = true
     normal.combat.locationId = 'whispering-woods'
     normal.combat.enemyId = 'forest-wisp'
-    normal.combat.enemyWorldTier = 5
     finishEnemy(normal)
-    const normalContext = resolveCombatLootContext('forest-wisp', 5)
+    const normalContext = resolveCombatLootContext('forest-wisp')
     const normalGuild = getGuildProgressionBonuses(normal)
     expect(normal.arcaneCore.totalPointsEarned).toBe(resolveLootQuantity(getArcaneCoreReward('whispering-woods')!.normalKillPoints, normalContext, normalGuild.combatArcanePointMultiplier))
 
@@ -34,9 +33,8 @@ describe('Arcane Core rewards', () => {
     boss.combat.active = true
     boss.combat.locationId = 'whispering-woods'
     boss.combat.enemyId = 'forest-heart'
-    boss.combat.enemyWorldTier = 2
     finishEnemy(boss)
-    const bossContext = resolveCombatLootContext('forest-heart', 2)
+    const bossContext = resolveCombatLootContext('forest-heart')
     const bossGuild = getGuildProgressionBonuses(boss)
     expect(boss.arcaneCore.totalPointsEarned).toBe(resolveLootQuantity(getArcaneCoreReward('whispering-woods')!.bossKillPoints, bossContext, bossGuild.combatArcanePointMultiplier))
   })

@@ -73,7 +73,6 @@ const snapshot = (state: GameState) => ({
   },
   inventory: state.inventory,
   resonance: state.resonance,
-  worldTier: state.worldTier,
   progression: {
     lifetimeKillsByMonster: state.progress.lifetimeKillsByMonster,
     bossKillsByBoss: state.progress.bossKillsByBoss,

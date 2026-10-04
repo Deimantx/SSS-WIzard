@@ -29,7 +29,6 @@ describe('EnemyCombatCard contextual controls', () => {
     state.combat.active = true
     state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
-    state.combat.enemyWorldTier = 1
     state.combat.enemyHp = 100
     state.combat.enemyMaxHp = 100
     useGameStore.setState(state)

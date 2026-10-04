@@ -108,7 +108,6 @@ import type {
   SpellPresetId,
   StatusId,
   StoryEventId,
-  WorldTierId,
 } from "../game/types";
 import { clamp } from "../game/utils";
 import {
@@ -356,11 +355,6 @@ import {
   grantResonance,
   setResonance,
 } from "../game/systems/resonance/resonanceRuntime";
-import {
-  createInitialWorldTierState,
-  setCurrentWorldTier,
-  unlockWorldTier,
-} from "../game/systems/world-tier/worldTierRuntime";
 import {
   createInitialCrystalState,
   CRYSTAL_RNG_DEFAULT_SEED,
@@ -637,10 +631,6 @@ export interface GameActions {
   debugClearResonance: (type: ResonanceType) => void;
   debugClearAllResonance: () => void;
   debugGrantResonanceTestBundle: () => void;
-  setWorldTier: (tier: WorldTierId) => boolean;
-  debugSetWorldTier: (tier: WorldTierId) => void;
-  debugUnlockWorldTier: (tier: WorldTierId) => void;
-  debugResetWorldTier: () => void;
   purchaseArcaneCoreNode: (nodeId: string) => boolean;
   refundArcaneCoreNode: (nodeId: string) => boolean;
   setArcaneCoreNodeRank: (nodeId: string, rank: number) => void;
@@ -1505,44 +1495,6 @@ export const useGameStore = create<GameStore>()(
         );
         return state;
       }),
-    setWorldTier: (tier) => {
-      let changed = false;
-      set((state) => {
-        if (state.combat.active) {
-          pushNotification(
-            state,
-            "Leave the current Location to change World Tier.",
-            "warning",
-            { key: "world-tier-active-combat", cooldownMs: 1000 },
-          );
-          return state;
-        }
-        changed = setCurrentWorldTier(state, tier);
-        if (!changed)
-          pushNotification(state, `World Tier ${tier} is locked.`, "warning", {
-            key: `world-tier-locked-${tier}`,
-            cooldownMs: 1000,
-          });
-        return state;
-      });
-      return changed;
-    },
-    debugSetWorldTier: (tier) =>
-      set((state) => {
-        state.worldTier.highestUnlocked = tier;
-        state.worldTier.current = tier;
-        return state;
-      }),
-    debugUnlockWorldTier: (tier) =>
-      set((state) => {
-        unlockWorldTier(state, tier);
-        return state;
-      }),
-    debugResetWorldTier: () =>
-      set((state) => {
-        state.worldTier = createInitialWorldTierState();
-        return state;
-      }),
     purchaseArcaneCoreNode: (nodeId) => {
       let ok = false;
       set((state) => {
@@ -2248,10 +2200,7 @@ export const useGameStore = create<GameStore>()(
           );
           return state;
         }
-        const threatRequired = resolveBossThreatRequirement(
-          dungeon.id,
-          state.worldTier.current,
-        );
+        const threatRequired = resolveBossThreatRequirement(dungeon.id);
         if (state.combat.threatCleared < threatRequired) {
           pushNotification(
             state,
@@ -2271,7 +2220,6 @@ export const useGameStore = create<GameStore>()(
             {
               combat: state.combat,
               progress: state.progress,
-              worldTier: state.worldTier.current,
             },
             dungeon,
           )
@@ -2310,10 +2258,7 @@ export const useGameStore = create<GameStore>()(
         const activeLocation =
           state.combat.active && state.combat.locationId === locationId;
         const bossActive = isBossCurrentlyActive(state);
-        const threatRequired = resolveBossThreatRequirement(
-          locationId,
-          state.worldTier.current,
-        );
+        const threatRequired = resolveBossThreatRequirement(locationId);
         if (
           !enabled &&
           activeLocation &&

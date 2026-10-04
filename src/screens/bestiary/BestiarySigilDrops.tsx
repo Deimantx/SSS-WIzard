@@ -6,21 +6,21 @@ import { getSigilTierDefinition, resolveSigilTierFromEnemyPower } from '../../ga
 import { getMonsterLocationEntries } from '../../game/systems/bestiary/bestiarySelectors'
 import { resolveEnemyPowerRating } from '../../game/systems/combat/enemyPower'
 import { isBossMonster, type MonsterDefinition } from '../../game/content/monsters'
-import type { MonsterId, WorldTierId } from '../../game/types'
+import type { MonsterId } from '../../game/types'
 import { resolveCombatLootContext } from '../../game/systems/loot/universalLootRuntime'
 import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../game/content/loot/universalLootTiers'
 import { setNavigationIntent } from '../../ui/navigation/navigationIntent'
 import { setUiPreferences } from '../../ui/preferences/uiPreferencesStore'
 import { useGameStore } from '../../store/gameStore'
 
-export function BestiarySigilDrops({ monster, worldTier }: { monster: MonsterDefinition; worldTier: WorldTierId }) {
+export function BestiarySigilDrops({ monster }: { monster: MonsterDefinition }) {
   const locations = getMonsterLocationEntries(monster.id)
   const setIds = [...new Set(locations.flatMap((location) => getSigilRegionSetPool(location.id)))]
-  const power = resolveEnemyPowerRating(monster.id, worldTier)
+  const power = resolveEnemyPowerRating(monster.id)
   const sigilTier = resolveSigilTierFromEnemyPower(power)
   const tierDefinition = getSigilTierDefinition(sigilTier)
   const boss = isBossMonster(monster)
-  const loot = resolveCombatLootContext(monster.id, worldTier)
+  const loot = resolveCombatLootContext(monster.id)
   const chance = Math.min(1, loot.lootTier.sigilDropChance * (boss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1))
   const openSet = (setId: keyof typeof SIGIL_SETS) => {
     setUiPreferences({ screenState: { collection: { primaryTab: 'sigils' } } })

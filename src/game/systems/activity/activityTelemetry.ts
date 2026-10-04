@@ -24,7 +24,7 @@ export const getActivityTelemetry = (state: GameState): ActivityTelemetry[] => {
   const sequenceTotal = sequence ? (dungeon.encounterSequence?.length ?? 0) + 1 : 0
   const sequenceStep = sequence ? Math.min(sequenceTotal, Math.max(1, (state.combat.sequenceIndex ?? 0) + 1)) : 0
   const sequenceRunLabel = sequence ? `Step ${sequenceStep} / ${sequenceTotal}` : null
-  const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+  const threatRequired = resolveBossThreatRequirement(dungeon.id)
   const hasThreatProgress = hasBossEncounter(dungeon) && !sequence
 
   if (state.combat.active) {

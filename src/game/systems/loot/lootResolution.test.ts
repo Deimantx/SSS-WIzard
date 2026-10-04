@@ -13,30 +13,27 @@ describe('monster loot resolution', () => {
     const drops: Array<[string, number]> = []
     resolveMonsterLoot(state, 'forest-wisp', (itemId, quantity) => drops.push([itemId, quantity]), () => 0)
     expect(state.inventory['artifact-essence']).toBeGreaterThan(0)
-    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1).finalMin)
+    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence').finalMin)
     expect(drops.filter(([itemId]) => itemId === 'artifact-essence')).toHaveLength(1)
     expect(drops.filter(([itemId]) => itemId === 'life-essence')).toHaveLength(1)
     expect(Object.keys(state.inventory).some((itemId) => (state.inventory[itemId as keyof typeof state.inventory] ?? 0) > 0 && ['ember-staff', 'wispweave-robe', 'wispveil-hood'].includes(itemId))).toBe(false)
   })
 
-  it('scales Life Essence after rolling its WT1 base quantity', () => {
-    const wt1 = createInitialState()
-    const wt5 = createInitialState()
-    wt5.worldTier = { current: 5, highestUnlocked: 5 }
-    resolveMonsterLoot(wt1, 'forest-wisp', undefined, () => 0)
-    resolveMonsterLoot(wt5, 'forest-wisp', undefined, () => 0)
-    const base = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1)
-    const wt5Range = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 5)
-    expect(wt1.inventory['life-essence']).toBe(base.finalMin)
-    expect(wt5.inventory['life-essence']).toBe(wt5Range.finalMin)
+  it('uses the canonical Power-selected Life Essence quantity', () => {
+    const first = createInitialState()
+    const second = createInitialState()
+    resolveMonsterLoot(first, 'forest-wisp', undefined, () => 0)
+    resolveMonsterLoot(second, 'forest-wisp', undefined, () => 0)
+    const base = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence')
+    const secondRange = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence')
+    expect(first.inventory['life-essence']).toBe(base.finalMin)
+    expect(second.inventory['life-essence']).toBe(secondRange.finalMin)
   })
 
-  it('uses the encounter snapshot instead of the current global tier', () => {
+  it('uses the canonical enemy profile for reward quantities', () => {
     const state = createInitialState()
-    state.worldTier = { current: 1, highestUnlocked: 4 }
-    state.combat.enemyWorldTier = 4
     resolveMonsterLoot(state, 'forest-wisp', undefined, () => 0)
-    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 4).finalMin)
+    expect(state.inventory['life-essence']).toBe(resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence').finalMin)
   })
 
   it('applies Hunter material and Sigil chance upgrades as relative multipliers only for authorized quarry', () => {
@@ -52,7 +49,7 @@ describe('monster loot resolution', () => {
     const drops: string[] = []
     const baseHunter = getHunterHarvestBonuses(base, 'ashen-tracker', 'hunters-ground')
     const boostedHunter = getHunterHarvestBonuses(boosted, 'ashen-tracker', 'hunters-ground')
-    const context = resolveCombatLootContext('ashen-tracker', 1)
+    const context = resolveCombatLootContext('ashen-tracker')
     const material = MONSTERS['ashen-tracker'].loot.find((drop) => drop.itemId === 'fire-fragment')!
     const baseMaterialChance = resolveLootChance(material.baseChance, context, baseHunter.itemDropMultiplier)
     const boostedMaterialChance = resolveLootChance(material.baseChance, context, boostedHunter.itemDropMultiplier)
@@ -77,7 +74,7 @@ describe('monster loot resolution', () => {
   it('keeps T20 successful Sigil instances at one normal and five boss Sigils', () => {
     const normalState = createInitialState()
     const bossState = createInitialState()
-    const baseContext = resolveCombatLootContext('forest-heart', 5)
+    const baseContext = resolveCombatLootContext('forest-heart')
     const normalContext = { ...baseContext, lootTier: UNIVERSAL_LOOT_TIERS[19], isBoss: false }
     const bossContext = { ...normalContext, isBoss: true }
     const normalDrops: string[] = []

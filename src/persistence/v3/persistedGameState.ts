@@ -1,8 +1,7 @@
-import type { CombatLocationId, EquipmentPosition, GameState, GuildCommissionObjective, HunterRankId, HunterUpgradeId, ItemId, MonsterId, ResearchSlotId, SchoolId, TransmutationRecipeId, WorldTierId } from '../../game/types'
+import type { CombatLocationId, EquipmentPosition, GameState, GuildCommissionObjective, HunterRankId, HunterUpgradeId, ItemId, MonsterId, ResearchSlotId, SchoolId, TransmutationRecipeId } from '../../game/types'
 
 export type PersistedInventoryV3 = Partial<Record<ItemId, number>>
 export type PersistedEquipmentV3 = Record<EquipmentPosition, ItemId | null>
-export interface PersistedWorldV3 { current: WorldTierId; highestUnlocked: WorldTierId }
 
 export interface PersistedResearchJobV3 {
   itemId: ItemId
@@ -91,7 +90,7 @@ export type PersistedProgressV3 = Omit<GameState['progress'], 'huntersOrder' | '
 /** Explicit combat checkpoint allowlist. The deterministic mid-combat checkpoint stays
  * intact across reloads; UI event log and later runtime-only fields do not enter saves. */
 export type PersistedCombatStateV3 = Pick<GameState['combat'],
-  | 'active' | 'locationId' | 'enemyId' | 'targetEnemyId' | 'enemyWorldTier'
+  | 'active' | 'locationId' | 'enemyId' | 'targetEnemyId'
   | 'enemyInstanceSerial' | 'enemyInstanceKey' | 'enemyHp' | 'enemyMaxHp'
   | 'enemyBarrier' | 'playerBarrier' | 'enemyBarrierRemainingMs' | 'playerBarrierRemainingMs'
   | 'enemyActionPatternId' | 'enemyNextActionIndex' | 'enemyCurrentStepId' | 'enemyCurrentActionId'
@@ -103,7 +102,7 @@ export type PersistedCombatStateV3 = Pick<GameState['combat'],
 >
 
 export const PERSISTED_COMBAT_FIELDS_V3 = [
-  'active', 'locationId', 'enemyId', 'targetEnemyId', 'enemyWorldTier', 'enemyInstanceSerial', 'enemyInstanceKey',
+  'active', 'locationId', 'enemyId', 'targetEnemyId', 'enemyInstanceSerial', 'enemyInstanceKey',
   'enemyHp', 'enemyMaxHp', 'enemyBarrier', 'playerBarrier', 'enemyBarrierRemainingMs', 'playerBarrierRemainingMs',
   'enemyActionPatternId', 'enemyNextActionIndex', 'enemyCurrentStepId', 'enemyCurrentActionId', 'enemyCurrentActionPatternId',
   'enemyActionTimerMs', 'enemyActionDurationMs', 'triggeredRuleIds', 'ruleCooldowns', 'sigilRuntime', 'pendingBossId',
@@ -122,7 +121,6 @@ export interface PersistedGameStateV3 {
   currencies: GameState['currencies']
   resonance: GameState['resonance']
   tower: GameState['tower']
-  worldTier: PersistedWorldV3
   inventory: PersistedInventoryV3
   crystals: GameState['crystals']
   protectedItems: GameState['protectedItems']
@@ -142,7 +140,7 @@ export interface PersistedGameStateV3 {
 }
 
 export const PERSISTED_GAMEPLAY_FIELDS = [
-  'player', 'schools', 'currencies', 'resonance', 'tower', 'worldTier', 'inventory', 'crystals',
+  'player', 'schools', 'currencies', 'resonance', 'tower', 'inventory', 'crystals',
   'protectedItems', 'equipment', 'arcaneCore', 'artifactProgress', 'sigils', 'guardians', 'activities',
   'combat', 'progress', 'storyProgress', 'darkPortal', 'spellPresets', 'offlineBankMs',
 ] as const satisfies readonly (keyof PersistedGameStateV3)[]

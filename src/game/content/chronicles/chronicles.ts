@@ -1,4 +1,4 @@
-import type { ArtifactId, ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, CrystalVariantId, CombatLocationId, GuildRankId, ItemId, MonsterId, ScreenId, SchoolId, SigilQuality, SigilSetId, SigilTier, WorldTierId } from '../../types'
+import type { ArtifactId, ChronicleChapterId, ChronicleEventId, ChronicleObjectiveId, ChronicleTrack, CrystalVariantId, CombatLocationId, GuildRankId, ItemId, MonsterId, ScreenId, SchoolId, SigilQuality, SigilSetId, SigilTier } from '../../types'
 import { SIGIL_SETS, SIGIL_SET_IDS } from '../sigils/sigilSets'
 
 export type ChronicleCondition =
@@ -28,7 +28,7 @@ export type ChronicleCondition =
   | { type: 'crystal-equipped'; count: number }
   | { type: 'arcane-core-invested-nodes'; count: number }
   | { type: 'spell-loadout-slots'; count: number }
-  | { type: 'world-tier-kill'; tier: WorldTierId; count: number }
+  | { type: 'combat-tier-kill'; tier: 2 | 3 | 4 | 5; count: number }
   | { type: 'sigil-obtained'; count: number }
   | { type: 'sigil-equipped'; count: number }
   | { type: 'sigil-rank-at-least'; rank: number }
@@ -134,10 +134,10 @@ export const CHRONICLE_OBJECTIVES: readonly ChronicleObjectiveDefinition[] = [
   { id: 'sf-m5a-break-black-sigil-reach', chapterId: 'shattered-frontier', track: 'main', title: 'Break the Sigil Wardens', description: 'Defeat Unspoken Prelate and Sigil Warden to open the Black Gate.', prerequisiteIds: ['sf-m5-meridian-splitter'], condition: { type: 'all-boss-kills', bossIds: ['unspoken-prelate', 'sigil-warden'] }, navigateTo: 'combat' },
   { id: 'sf-m5b-enter-black-gate', chapterId: 'shattered-frontier', track: 'main', title: 'Enter the Black Gate', description: 'Begin the fixed five-encounter run through the Black Gate.', prerequisiteIds: ['sf-m5a-break-black-sigil-reach'], condition: { type: 'dungeon-entered', locationId: 'black-gate' }, navigateTo: 'combat' },
   { id: 'sf-m5c-black-gatekeeper', chapterId: 'shattered-frontier', track: 'main', title: 'Defeat the Black Gatekeeper', description: 'Defeat the Gatekeeper and open the road ahead.', prerequisiteIds: ['sf-m5b-enter-black-gate'], condition: { type: 'boss-kill', bossId: 'black-gatekeeper', count: 1 }, navigateTo: 'combat' },
-  { id: 'sf-m6-world-tier-two', chapterId: 'shattered-frontier', track: 'combat', title: 'Step Into World Tier II', description: 'Defeat one enemy in World Tier II, unlocked by Archmage Edrin.', prerequisiteIds: ['m5-fallen-archmage'], condition: { type: 'world-tier-kill', tier: 2, count: 1 }, navigateTo: 'combat', optional: true },
-  { id: 'sf-c1-world-tier-three', chapterId: 'shattered-frontier', track: 'combat', title: 'Test World Tier III', description: 'Defeat one enemy in World Tier III after defeating the Crossroads Keeper.', unlockCondition: { type: 'boss-kill', bossId: 'crossroads-keeper', count: 1 }, condition: { type: 'world-tier-kill', tier: 3, count: 1 }, navigateTo: 'combat', optional: true },
-  { id: 'sf-c2-world-tier-four', chapterId: 'shattered-frontier', track: 'combat', title: 'Test World Tier IV', description: 'Defeat one enemy in World Tier IV after defeating the Meridian Splitter.', unlockCondition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, condition: { type: 'world-tier-kill', tier: 4, count: 1 }, navigateTo: 'combat', optional: true },
-  { id: 'sf-c3-world-tier-five', chapterId: 'shattered-frontier', track: 'combat', title: 'Test World Tier V', description: 'Defeat one enemy in World Tier V after unlocking it from the Black Gatekeeper.', unlockCondition: { type: 'boss-kill', bossId: 'black-gatekeeper', count: 1 }, condition: { type: 'world-tier-kill', tier: 5, count: 1 }, navigateTo: 'combat', optional: true },
+  { id: 'sf-m6-combat-tier-two', chapterId: 'shattered-frontier', track: 'combat', title: 'Enter Combat Tier 2', description: 'Defeat one enemy in a Combat Tier 2 location.', prerequisiteIds: ['m5-fallen-archmage'], condition: { type: 'combat-tier-kill', tier: 2, count: 1 }, navigateTo: 'combat', optional: true },
+  { id: 'sf-c1-combat-tier-three', chapterId: 'shattered-frontier', track: 'combat', title: 'Test Combat Tier 3', description: 'Defeat one enemy in a Combat Tier 3 location after defeating the Crossroads Keeper.', unlockCondition: { type: 'boss-kill', bossId: 'crossroads-keeper', count: 1 }, condition: { type: 'combat-tier-kill', tier: 3, count: 1 }, navigateTo: 'combat', optional: true },
+  { id: 'sf-c2-combat-tier-four', chapterId: 'shattered-frontier', track: 'combat', title: 'Test Combat Tier 4', description: 'Defeat one enemy in a Combat Tier 4 location after defeating the Meridian Splitter.', unlockCondition: { type: 'boss-kill', bossId: 'meridian-splitter', count: 1 }, condition: { type: 'combat-tier-kill', tier: 4, count: 1 }, navigateTo: 'combat', optional: true },
+  { id: 'sf-c3-combat-tier-five', chapterId: 'shattered-frontier', track: 'combat', title: 'Test Combat Tier 5', description: 'Defeat one enemy in a Combat Tier 5 location after defeating the Black Gatekeeper.', unlockCondition: { type: 'boss-kill', bossId: 'black-gatekeeper', count: 1 }, condition: { type: 'combat-tier-kill', tier: 5, count: 1 }, navigateTo: 'combat', optional: true },
 
   { id: 'sf-bind-guardian', chapterId: 'shattered-frontier', track: 'magic', title: 'Guardian Bond', description: 'Choose one elemental Guardian.', unlockCondition: { type: 'boss-kill', bossId: 'corrupted-elemental-gatekeeper', count: 1 }, condition: { type: 'guardian-selected' }, navigateTo: 'tower-summoning', optional: true },
   { id: 'sf-fight-together', chapterId: 'shattered-frontier', track: 'magic', title: 'Fight Together', description: 'Complete one valid encounter with an active Guardian.', prerequisiteIds: ['sf-bind-guardian'], condition: { type: 'guardian-combat-completed' }, navigateTo: 'combat', onCompleteReward: [{ type: 'arcane-points', amount: 250 }] },

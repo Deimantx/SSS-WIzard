@@ -111,7 +111,7 @@ describe('Combat Lab immortality and forced-resolution runtime', () => {
     const state = activeState()
     const result = fastResolveNormalEnemiesForDebug(state, 100, 'howling-den', true)
     expect(result.bossReady).toBe(true)
-    expect(state.combat.threatCleared).toBe(resolveBossThreatRequirement('howling-den', 1))
+    expect(state.combat.threatCleared).toBe(resolveBossThreatRequirement('howling-den'))
     expect(state.progress.lifetimeKills).toBe(result.resolved)
     expect(state.combat.enemyId).toBeNull()
   })

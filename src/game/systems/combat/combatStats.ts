@@ -8,7 +8,6 @@ import type { EquipmentStats, GameState } from '../../types'
 import type { CombatActor } from './magnitude'
 import type { CombatSource, DamageType } from './combatTypes'
 import { getCombatModifiers, getResistance, type CombatModifierState } from './modifiers'
-import { getActiveEncounterWorldTier, resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { getActiveSigilTraitIds } from '../sigils/sigilRuntime'
 
 export { BLOCK_DAMAGE_REDUCTION, DEFAULT_COMBAT_SPEED_MULTIPLIER, DEFAULT_ENEMY_CRIT_CHANCE, DEFAULT_ENEMY_CRIT_DAMAGE_MULTIPLIER, DEFAULT_ENEMY_DEFENSE, DEFENSE_K, MAX_BLOCK_CHANCE, MAX_CRIT_CHANCE, MAX_CRIT_DAMAGE_MULTIPLIER, MAX_DEFENSE_REDUCTION, MAX_RESISTANCE, MIN_CRIT_DAMAGE_MULTIPLIER, MIN_RESISTANCE } from '../../core/balance/combatStats'
@@ -119,7 +118,7 @@ const getEnemyStats = (state: GameState): EnemyCombatStats => {
     maxMana: 0,
     manaRegen: 0,
     spellPower: 0,
-    basicAttackDamage: monster ? resolveWorldTierEnemyProfile(monster.id, getActiveEncounterWorldTier(state)).basicAttackDamage : 0,
+    basicAttackDamage: monster?.basicAttackDamage ?? 0,
     basicAttackSpeedMultiplier,
     basicAttackIntervalMs: (monster?.basicAttackTimeMs ?? DEFAULT_ENEMY_BASIC_ATTACK_INTERVAL_MS) / basicAttackSpeedMultiplier,
     critChance: getCritChance(state, 'enemy'),
@@ -143,7 +142,7 @@ export const getEnemyCombatStats = getEnemyStats
 export const getCombatStats = (state: GameState, actor: CombatActor) => actor === 'player' ? getPlayerCombatStats(state) : getEnemyCombatStats(state)
 
 export const getDefense = (state: GameState, actor: CombatActor) => {
-  const base = actor === 'player' ? BALANCE.player.baseDefense : getEnemyBase(state) ? resolveWorldTierEnemyProfile(getEnemyBase(state)!.id, getActiveEncounterWorldTier(state)).defense : DEFAULT_ENEMY_DEFENSE
+  const base = actor === 'player' ? BALANCE.player.baseDefense : getEnemyBase(state)?.defense ?? DEFAULT_ENEMY_DEFENSE
   const flat = getCombatModifiers(state, actor, 'defense-flat')
   const percent = getCombatModifiers(state, actor, 'defense-percent')
   return Math.max(0, (base + flat) * (1 + percent))

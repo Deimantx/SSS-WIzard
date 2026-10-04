@@ -45,7 +45,7 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'crystal-equipped': return `Equip ${condition.count} Crystal${condition.count === 1 ? '' : 's'}`
     case 'arcane-core-invested-nodes': return `Invest in ${condition.count} Arcane Core node${condition.count === 1 ? '' : 's'}`
     case 'spell-loadout-slots': return `Fill ${condition.count} Spell slots`
-    case 'world-tier-kill': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'} in World Tier ${condition.tier}`
+    case 'combat-tier-kill': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'} in a Combat Tier ${condition.tier} location`
     case 'sigil-obtained': return `Earn ${condition.count} Sigil${condition.count === 1 ? '' : 's'}`
     case 'sigil-equipped': return `Equip ${condition.count} Sigil${condition.count === 1 ? '' : 's'}`
     case 'sigil-rank-at-least': return `Reach Sigil Rank +${condition.rank}`

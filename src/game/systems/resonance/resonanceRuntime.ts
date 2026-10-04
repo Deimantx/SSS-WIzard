@@ -1,12 +1,11 @@
 import { MONSTERS } from '../../content/monsters'
 import { UNIVERSAL_LOOT_BOSS_MULTIPLIERS } from '../../content/loot/universalLootTiers'
 import { multiplyResonanceBundle, normalizeResonanceState, RESONANCE_TYPES, sanitizeResonanceAmount, type ResonanceState, type ResonanceType, type ResonanceYield } from '../../content/resonance/resonance'
-import type { MonsterId, WorldTierId } from '../../types'
+import type { MonsterId } from '../../types'
 import { resolveCombatLootContext, roundLootQuantity, type CombatLootContext } from '../loot/universalLootRuntime'
 
 export interface ResonanceRewardResolution {
   enemyId: MonsterId
-  worldTier: WorldTierId
   effectivePower: number
   lootTier: number
   lootQuantityMultiplier: number
@@ -78,8 +77,8 @@ export const aggregateResonanceBundle = (bundle: ResonanceYield, count: unknown)
   return multiplyResonanceBundle(bundle, safeCount)
 }
 
-export const resolveEnemyResonanceReward = (enemyId: MonsterId, worldTier: WorldTierId = 1, guildRewardMultiplier = 1, lootContext?: CombatLootContext): ResonanceRewardResolution => {
-  const context = lootContext ?? resolveCombatLootContext(enemyId, worldTier)
+export const resolveEnemyResonanceReward = (enemyId: MonsterId, guildRewardMultiplier = 1, lootContext?: CombatLootContext): ResonanceRewardResolution => {
+  const context = lootContext ?? resolveCombatLootContext(enemyId)
   const baseYield = normalizeResonanceState(MONSTERS[enemyId]?.resonanceYield) as ResonanceYield
   const lootQuantityMultiplier = context.lootTier.quantityMultiplier
   const bossQuantityMultiplier = context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity : 1
@@ -89,11 +88,11 @@ export const resolveEnemyResonanceReward = (enemyId: MonsterId, worldTier: World
     const authored = sanitizeResonanceAmount(baseYield[type])
     return authored > 0 ? [[type, roundLootQuantity(authored * rewardMultiplier)]] : []
   })) as ResonanceYield
-  return { enemyId, worldTier, effectivePower: context.effectivePower, lootTier: context.lootTier.tier, lootQuantityMultiplier, bossQuantityMultiplier, externalRewardMultiplier, rewardMultiplier, baseYield, finalYield }
+  return { enemyId, effectivePower: context.effectivePower, lootTier: context.lootTier.tier, lootQuantityMultiplier, bossQuantityMultiplier, externalRewardMultiplier, rewardMultiplier, baseYield, finalYield }
 }
 
-export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId, worldTier: WorldTierId = 1, guildRewardMultiplier = 1, lootContext?: CombatLootContext): ResonanceRewardEventPayload => {
-  const resolution = resolveEnemyResonanceReward(enemyId, worldTier, guildRewardMultiplier, lootContext)
+export const grantEnemyResonanceReward = (state: ResonanceState, enemyId: MonsterId, guildRewardMultiplier = 1, lootContext?: CombatLootContext): ResonanceRewardEventPayload => {
+  const resolution = resolveEnemyResonanceReward(enemyId, guildRewardMultiplier, lootContext)
   return { ...resolution, grantedYield: grantResonanceBundleWithDelta(state, resolution.finalYield) }
 }
 

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { buildCombatWorldNavigationViewModel, getInitialCombatLocationId } from './combatWorldNavigationReadModel'
 import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
@@ -84,7 +84,7 @@ describe('combat world navigation read model', () => {
     expect(catacombs?.sequence?.steps.map((step) => step.monsterId)).toEqual(['restless-skeleton', 'grave-wraith', 'fallen-acolyte', 'archmage-edrin-shade'])
     const sequenceSteps = catacombs?.sequence?.steps ?? []
     expect(sequenceSteps[sequenceSteps.length - 1]?.role).toBe('boss')
-    expect(catacombs?.firstClearUnlockPreview).toHaveLength(7)
+    expect(catacombs?.firstClearUnlockPreview).toHaveLength(6)
   })
 
   it('presents the final Black Sigil topology and keeps target cards distinct from the dungeon run', () => {
@@ -103,7 +103,7 @@ describe('combat world navigation read model', () => {
     state.progress.bossKillsByBoss['unspoken-prelate'] = 1
     state.progress.bossKillsByBoss['sigil-warden'] = 1
     const gate = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'black-gate' }).selectedLocation
-    expect(gate).toMatchObject({ type: 'dungeon', encounterMode: 'sequence', targeting: null, bossHunt: null, firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }] })
+    expect(gate).toMatchObject({ type: 'dungeon', encounterMode: 'sequence', targeting: null, bossHunt: null, firstClearUnlockPreview: [] })
     expect(gate?.sequence?.steps.map((step) => step.monsterId)).toEqual([...COMBAT_LOCATIONS['black-gate'].encounterSequence!, COMBAT_LOCATIONS['black-gate'].boss!])
   })
 

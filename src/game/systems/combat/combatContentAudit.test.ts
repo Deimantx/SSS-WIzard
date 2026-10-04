@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2GlobalAudit, buildCombatV2ContentAudit, buildCombatV2MonsterWorldTierComparison } from './combatContentAudit'
+import { COMBAT_V2_AUDIT_MONSTER_IDS, buildCombatV2GlobalAudit, buildCombatV2ContentAudit } from './combatContentAudit'
 import { ELEMENTAL_TUTORIAL_ZONE_ROSTERS } from '../../content/monsters/elementalTutorial'
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
 import { getMonsterDamageProfile } from '../../content/monsters/monsterTypes'
 import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import type { TraitId } from './combatTypes'
-import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
 import { COMBAT_LOCATIONS, isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
@@ -32,18 +31,18 @@ const blackSigilSources = {
 } as Record<string, string>
 
 describe('Combat V2 authored content audit', () => {
-  it('keeps tutorial tiers in their intended WT1 Power bands and above passive regeneration pressure', () => {
+  it('keeps tutorial tiers in their intended Combat Tier 1 Power bands and above passive regeneration pressure', () => {
     const bands = [[95, 115], [125, 155], [170, 210], [230, 280]] as const
     for (const roster of Object.values(ELEMENTAL_TUTORIAL_ZONE_ROSTERS)) {
       roster.normalEnemyIds.forEach((id, index) => {
         const monster = MONSTERS[id]
-        const row = resolveEnemyPowerBreakdown(id, 1)
+        const row = resolveEnemyPowerBreakdown(id)
         expect(row.power).toBeGreaterThanOrEqual(bands[index][0])
         expect(row.power).toBeLessThanOrEqual(bands[index][1])
         expect(monster.basicAttackDamage).toBeGreaterThan(0)
         if (index >= 1) expect(row.basicDps).toBeGreaterThan(1)
       })
-      const boss = resolveEnemyPowerBreakdown(roster.bossId, 1)
+      const boss = resolveEnemyPowerBreakdown(roster.bossId)
       expect(boss.power).toBeGreaterThanOrEqual(400)
       expect(boss.power).toBeLessThanOrEqual(500)
       expect(boss.basicDps).toBeGreaterThan(1)
@@ -73,23 +72,23 @@ describe('Combat V2 authored content audit', () => {
       'pyrehold-castellan', 'drowned-regent', 'steam-tyrant', 'sepulcher-flamekeeper',
       'deep-bell-saint', 'abbot-ninth-gale', 'closed-index',
     ] as const
-    const audit = buildCombatV2ContentAudit(1)
+    const audit = buildCombatV2ContentAudit()
     const bosses = audit.filter((row) => MONSTERS[row.id].bestiaryCategory === 'boss')
     expect(bosses.map((row) => row.id)).toEqual(expectedBosses)
-    expect(bosses.every((row) => row.boss && row.affinity !== '—' && row.order > 0 && row.hp > 0 && row.defense >= 0 && row.basicDamage > 0 && row.basicIntervalMs > 0 && row.basicDps > 0 && row.damageProfile.length > 0)).toBe(true)
+    expect(bosses.every((row) => row.boss && row.affinity !== 'â€”' && row.order > 0 && row.hp > 0 && row.defense >= 0 && row.basicDamage > 0 && row.basicIntervalMs > 0 && row.basicDps > 0 && row.damageProfile.length > 0)).toBe(true)
     const periodicWarnings = bosses.filter((row) => row.warnings.some((warning) => /default flat periodic damage payload/.test(warning))).map((row) => row.id)
     expect(periodicWarnings).toEqual(['furnace-maw', 'steam-tyrant', 'sepulcher-flamekeeper'])
     expect(bosses.flatMap((row) => row.warnings.filter((warning) => /Arcane|Missing explicit|Generic or missing|pattern|phase|Action/i.test(warning)))).toEqual([])
   })
 
-  it('pins every rebuilt first-frontier WT1 roster to its authored Power target', () => {
+  it('pins every rebuilt first-frontier T1 roster to its authored Power target', () => {
     const profiles: readonly [keyof typeof MONSTERS, number][] = [
       ['forest-wisp', 300], ['thornling', 340], ['dewbound-sprite', 380], ['cinder-moth', 420], ['stone-root', 460], ['grove-sentinel', 520], ['tempest-stag', 600], ['forest-heart', 850],
       ['cavefang-wolf', 650], ['razorclaw-lynx', 700], ['corrupted-dire-wolf', 760], ['bonehide-boar', 820], ['moonblind-jackal', 880], ['den-stalker', 950], ['corrupted-greatbear', 1300],
       ['ashen-tracker', 850], ['gloamfang-stalker', 900], ['runehorn-brute', 980], ['veilwing-harrier', 1050], ['cinderback-mauler', 1150], ['gloomroot-hexer', 1250], ['nightglass-alpha', 1500],
       ['restless-skeleton', 1100], ['grave-wraith', 1250], ['fallen-acolyte', 1400], ['archmage-edrin-shade', 2200],
     ]
-    profiles.forEach(([id, targetPower]) => expect(resolveEnemyPowerBreakdown(id, 1).power, id).toBe(targetPower))
+    profiles.forEach(([id, targetPower]) => expect(resolveEnemyPowerBreakdown(id).power, id).toBe(targetPower))
   })
 
   it('derives Damage Profile from basic and authored damage components', () => {
@@ -103,7 +102,7 @@ describe('Combat V2 authored content audit', () => {
     expect(getMonsterDamageProfile(MONSTERS['fallen-astromancer'])).toEqual(['fire', 'air', 'arcane'])
   })
 
-  it('pins explicit Elemental Scar identities and deterministic WT1 target Power', () => {
+  it('pins explicit Elemental Scar identities and deterministic T1 target Power', () => {
     const profiles: readonly [keyof typeof MONSTERS, number, string][] = [
       ['rift-wolf', 2350, 'air'], ['arcane-scavenger', 2500, 'arcane'], ['withered-watcher', 2700, 'arcane'], ['warded-husk', 2900, 'earth'], ['corrupted-elemental-gatekeeper', 3700, 'arcane'],
       ['drowned-acolyte', 3000, 'water'], ['reliquary-slime', 3200, 'water'], ['mist-wraith', 3350, 'water'], ['rune-leech', 3500, 'arcane'], ['tidefang-serpent', 3700, 'water'], ['brinebound-sentinel', 3950, 'water'], ['abyssal-archivist', 4200, 'arcane'], ['drowned-keeper', 5000, 'water'],
@@ -114,7 +113,7 @@ describe('Combat V2 authored content audit', () => {
     for (const [id, targetPower, affinity] of profiles) {
       expect(MONSTERS[id].primaryAffinity, id).toBe(affinity)
       expect(MONSTERS[id].basicAttackElement, id).toBe(affinity)
-      expect(resolveEnemyPowerBreakdown(id, 1).power, id).toBe(targetPower)
+      expect(resolveEnemyPowerBreakdown(id).power, id).toBe(targetPower)
     }
     const scarRows = buildCombatV2ContentAudit().filter((row) => ['Fractured Approach', 'Flooded Reliquary', 'Ashen Watch', 'Rootscar Hollow', 'Crossroads of Ruin'].includes(row.location))
     expect(scarRows.flatMap((row) => row.warnings.filter((warning) => warning.startsWith('Generic or missing action description')))).toEqual([])
@@ -123,17 +122,17 @@ describe('Combat V2 authored content audit', () => {
     }
   })
 
-  it('audits one-time boss sustain and respects the selected World Tier profile', () => {
-    const wt1 = buildCombatV2ContentAudit(1)
-    const wt2 = buildCombatV2ContentAudit(2)
-    const row = (rows: typeof wt1, id: keyof typeof MONSTERS) => rows.find((entry) => entry.id === id)!
-    expect(row(wt1, 'forest-heart').onceOnlyHealPercent).toBeCloseTo(0.15)
-    expect(row(wt1, 'archmage-edrin-shade').onceOnlyBarrierPercent).toBe(0)
-    expect(row(wt1, 'flamebound-revenant').onceOnlyHealPercent).toBeCloseTo(0.14)
-    expect(row(wt1, 'rootscar-ancient').onceOnlyHealPercent).toBeCloseTo(0.15)
-    expect(row(wt1, 'forest-heart').defaultFlatPeriodicCount).toBe(0)
-    expect(row(wt2, 'drowned-keeper').hp).toBeGreaterThan(row(wt1, 'drowned-keeper').hp)
-    expect(row(wt2, 'drowned-keeper').power).toBeGreaterThan(row(wt1, 'drowned-keeper').power)
+  it('audits one-time boss sustain against the single authored combat profile', () => {
+    const canonical = buildCombatV2ContentAudit()
+    const repeated = buildCombatV2ContentAudit()
+    const row = (rows: typeof canonical, id: keyof typeof MONSTERS) => rows.find((entry) => entry.id === id)!
+    expect(row(canonical, 'forest-heart').onceOnlyHealPercent).toBeCloseTo(0.15)
+    expect(row(canonical, 'archmage-edrin-shade').onceOnlyBarrierPercent).toBe(0)
+    expect(row(canonical, 'flamebound-revenant').onceOnlyHealPercent).toBeCloseTo(0.14)
+    expect(row(canonical, 'rootscar-ancient').onceOnlyHealPercent).toBeCloseTo(0.15)
+    expect(row(canonical, 'forest-heart').defaultFlatPeriodicCount).toBe(0)
+    expect(row(repeated, 'drowned-keeper').hp).toBe(row(canonical, 'drowned-keeper').hp)
+    expect(row(repeated, 'drowned-keeper').power).toBe(row(canonical, 'drowned-keeper').power)
   })
 
   it('keeps tutorial stats directly authored instead of generated through profile helpers', () => {
@@ -216,7 +215,7 @@ describe('Combat V2 authored content audit', () => {
     expect(getMonsterDamageProfile(profileMonster)).toEqual(['water', 'earth'])
   })
 
-  it('pins every Shattered Meridian WT1 target Power, identity, and elemental-only damage', () => {
+  it('pins every Shattered Meridian T1 target Power, identity, and elemental-only damage', () => {
     const profiles: readonly [keyof typeof MONSTERS, number, string][] = [
       ['graveglass-shade', 5700, 'water'], ['bone-shardling', 5950, 'earth'], ['silent-mourner', 6200, 'water'], ['crypt-guardian', 6450, 'earth'], ['epitaph-weaver', 6800, 'arcane'], ['tombglass-reaver', 7200, 'earth'], ['ossuary-oracle', 7600, 'arcane'], ['graveglass-behemoth', 9100, 'earth'],
       ['volt-wisp', 5600, 'air'], ['gale-scribe', 5900, 'air'], ['charged-seeker', 6200, 'air'], ['thundercoil-serpent', 6500, 'air'], ['static-armor', 6800, 'air'], ['stormbound-curator', 7150, 'air'], ['tempest-engine', 7550, 'air'], ['storm-archivist', 9000, 'air'],
@@ -226,7 +225,7 @@ describe('Combat V2 authored content audit', () => {
     for (const [id, targetPower, affinity] of profiles) {
       expect(MONSTERS[id].primaryAffinity, id).toBe(affinity)
       expect(MONSTERS[id].basicAttackElement, id).toBe(affinity)
-      expect(resolveEnemyPowerBreakdown(id, 1).power, id).toBe(targetPower)
+      expect(resolveEnemyPowerBreakdown(id).power, id).toBe(targetPower)
     }
     const damageProfiles: ReadonlyArray<readonly [keyof typeof MONSTERS, readonly string[]]> = [
       ['graveglass-shade', ['water', 'arcane']], ['bone-shardling', ['earth']], ['silent-mourner', ['water', 'arcane']], ['crypt-guardian', ['earth']], ['epitaph-weaver', ['arcane']], ['tombglass-reaver', ['earth']], ['ossuary-oracle', ['arcane']], ['graveglass-behemoth', ['earth', 'arcane']],
@@ -240,7 +239,7 @@ describe('Combat V2 authored content audit', () => {
     expect(shatteredRows.every((row) => row.defaultFlatPeriodicDamageCount === 0 && row.defaultFlatPeriodicHealCount === 0)).toBe(true)
     for (const [file, source] of Object.entries(shatteredSources)) {
       expect(source, file).not.toMatch(noFormerDamagePayload)
-      expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
+      expect(source, file).not.toMatch(/ÃƒÆ’|ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢|ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ|ÃƒÂ¢Ã¢â€šÂ¬/)
     }
   })
 
@@ -250,7 +249,7 @@ describe('Combat V2 authored content audit', () => {
       ['black-seal-parasite', 10000, 'fire', ['fire', 'arcane']], ['inkbound-specter', 10500, 'arcane', ['arcane']], ['sigil-guardian', 11100, 'earth', ['earth']], ['vault-devourer', 11700, 'earth', ['earth', 'arcane']], ['sealbound-custodian', 12300, 'earth', ['earth', 'arcane']], ['blackscript-colossus', 13000, 'earth', ['earth', 'arcane']], ['voidseal-arbiter', 13800, 'fire', ['fire', 'arcane']], ['sigil-warden', 16000, 'earth', ['earth', 'fire', 'arcane']],
       ['gatebound-remnant', 14000, 'earth', ['earth']], ['black-rift-stalker', 14500, 'air', ['air', 'arcane']], ['portalbound-acolyte', 15000, 'arcane', ['arcane']], ['sealbreaker-construct', 15500, 'earth', ['earth', 'arcane']], ['black-gatekeeper', 20000, 'arcane', ['arcane', 'fire', 'water', 'earth', 'air']],
     ]
-    const audit = buildCombatV2ContentAudit(1)
+    const audit = buildCombatV2ContentAudit()
     const blackSigilRows = audit.filter((row) => profiles.some(([id]) => id === row.id))
     expect(blackSigilRows).toHaveLength(profiles.length)
     for (const [id, targetPower, affinity, damageProfile] of profiles) {
@@ -304,18 +303,9 @@ describe('Combat V2 authored content audit', () => {
     expect(STATUS_DEFINITIONS['gate-unbound']).toMatchObject({ defaultDurationMs: null, cleanseable: false, dispellable: false, modifiers: [expect.objectContaining({ key: 'damage-dealt-percent', value: 0.15 })] })
   })
 
-  it('produces canonical WT1 through WT5 Power and stat comparisons', () => {
-    const rows = buildCombatV2MonsterWorldTierComparison('meridian-splitter')
-    expect(rows.map((row) => row.worldTier)).toEqual([1, 2, 3, 4, 5])
-    rows.forEach((row) => {
-      const profile = resolveWorldTierEnemyProfile('meridian-splitter', row.worldTier)
-      expect(row).toMatchObject({ power: resolveEnemyPowerBreakdown('meridian-splitter', row.worldTier).power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, defense: profile.defense })
-    })
-  })
-
   it('finds common source mojibake markers in reorganized Combat definitions', () => {
     expect(Object.keys(convertedRegionSources).length).toBeGreaterThan(0)
-    for (const [file, source] of Object.entries(convertedRegionSources)) expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
+    for (const [file, source] of Object.entries(convertedRegionSources)) expect(source, file).not.toMatch(/ÃƒÆ’|ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢|ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ|ÃƒÂ¢Ã¢â€šÂ¬/)
   })
 
   it('keeps Combat Location sources and key descriptions free of mojibake', () => {
@@ -325,12 +315,12 @@ describe('Combat V2 authored content audit', () => {
     expect(COMBAT_LOCATIONS['abandoned-catacombs'].description).toContain(`Archmage Edrin${String.fromCharCode(0x2019)}s Shade`)
   })
 
-  it('previews concrete Combat Location and system unlocks instead of removed containers', () => {
+  it('previews Combat Tier unlocks without World Tier entries', () => {
     const labels = (id: keyof typeof COMBAT_LOCATIONS) => COMBAT_LOCATIONS[id].firstClearUnlockPreview?.map(({ label }) => label) ?? []
-    expect(labels('abandoned-catacombs')).toEqual(expect.arrayContaining(['Combat Tier 2: Fire, Earth, Air and Water Zones', 'Fractured Approach', 'World Tier 2', 'Dark Portal', 'Magic School Cap Increase', 'Mistclaw Highlands requires Hunter’s Order Warden I']))
-    expect(labels('fractured-approach')).toEqual(expect.arrayContaining(['Combat Tier 3: Fire, Earth, Air and Water Zones', 'Cinderhex Barrens requires Hunter’s Order Warden I', 'World Tier 3']))
-    expect(labels('crossroads-of-ruin')).toEqual(expect.arrayContaining(['Combat Tier 4: Fire, Earth, Air and Water Zones', 'Cinder Sepulcher requires Hunter’s Order Veteran I', 'World Tier 3']))
-    expect(labels('broken-meridian')).toEqual(expect.arrayContaining(['Combat Tier 5: Fire, Earth, Air and Water Zones', 'Sunken Bell Grounds requires Hunter’s Order Master Hunter I', 'World Tier 4', 'Crystals']))
-    for (const id of ['abandoned-catacombs', 'crossroads-of-ruin', 'broken-meridian'] as const) expect(labels(id).join('|')).not.toMatch(/Elemental Scar|Shattered Meridian|Black Sigil Reach/)
+    expect(labels('abandoned-catacombs')).toEqual(expect.arrayContaining(['Combat Tier 2: Fire, Earth, Air and Water Zones', 'Fractured Approach', 'Dark Portal']))
+    expect(labels('fractured-approach')).toEqual(expect.arrayContaining(['Combat Tier 3: Fire, Earth, Air and Water Zones']))
+    expect(labels('crossroads-of-ruin')).toEqual(expect.arrayContaining(['Combat Tier 4: Fire, Earth, Air and Water Zones']))
+    expect(labels('broken-meridian')).toEqual(expect.arrayContaining(['Combat Tier 5: Fire, Earth, Air and Water Zones', 'Crystals']))
+    for (const id of ['abandoned-catacombs', 'fractured-approach', 'crossroads-of-ruin', 'broken-meridian'] as const) expect(labels(id).join('|')).not.toMatch(/World Tier|\bWT[1-5]\b/)
   })
 })

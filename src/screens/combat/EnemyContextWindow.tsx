@@ -161,16 +161,15 @@ function ActionIntel({ monsterId }: { monsterId: MonsterId }) {
 export function EnemyLootContent({ selectedCombatLocationId }: { selectedCombatLocationId: CombatLocationId }) {
   const combat = useGameStore((state) => state.combat)
   const inventory = useGameStore((state) => state.inventory)
-  const worldTier = useGameStore((state) => state.combat.enemyWorldTier ?? state.worldTier.current)
   const dungeon = COMBAT_LOCATIONS[combat.locationId ?? selectedCombatLocationId]
   const current = combat.enemyId ? MONSTERS[combat.enemyId] : null
-  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} worldTier={worldTier} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div>{hasBossEncounter(dungeon) && <div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} worldTier={worldTier} /></div>}</div>
+  return <div className="enemy-loot-content"><div className="enemy-context-loot-group"><div className="combat-subsection-label">{current ? 'CURRENT ENEMY DROPS' : 'LOCATION DROPS'}</div>{current ? <LootTiles monster={current} inventory={inventory} /> : <p className="muted">No active enemy. Boss and normal enemy drops are shown when an encounter is active.</p>}</div>{hasBossEncounter(dungeon) && <div className="enemy-context-loot-group"><div className="combat-subsection-label">BOSS DROPS · {MONSTERS[dungeon.boss].name.toUpperCase()}</div><LootTiles monster={MONSTERS[dungeon.boss]} inventory={inventory} /></div>}</div>
 }
 
-function LootTiles({ monster, inventory, worldTier }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>>; worldTier: 1 | 2 | 3 | 4 | 5 }) {
-  const lifeEssence = resolveCombatCurrencyRewardRange(monster.id, 'life-essence', worldTier)
-  const artifactEssence = resolveCombatCurrencyRewardRange(monster.id, 'artifact-essence', worldTier)
-  const context = resolveCombatLootContext(monster.id, worldTier)
+function LootTiles({ monster, inventory }: { monster: typeof MONSTERS[MonsterId]; inventory: Partial<Record<ItemId, number>> }) {
+  const lifeEssence = resolveCombatCurrencyRewardRange(monster.id, 'life-essence')
+  const artifactEssence = resolveCombatCurrencyRewardRange(monster.id, 'artifact-essence')
+  const context = resolveCombatLootContext(monster.id)
   const drops = [
     ...monster.loot.map((drop) => ({ itemId: drop.itemId, min: resolveAuthoredLootDropQuantity(drop, drop.quantity.min, context), max: resolveAuthoredLootDropQuantity(drop, drop.quantity.max, context), chance: resolveAuthoredLootDropChance(drop, context) })),
     { itemId: 'life-essence' as const, min: lifeEssence.finalMin, max: lifeEssence.finalMax, chance: 1 },

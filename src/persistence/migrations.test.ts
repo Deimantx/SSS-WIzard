@@ -893,7 +893,7 @@ describe('v44 Shattered Meridian migration', () => {
 
   it.each([
     ['graveglass-hollow', 'graveglass-shade', 1, 15_000, 'bone-shardling'],
-    ['starfallen-observatory', 'comet-wraith', 3, 45_000, 'comet-wraith'],
+    ['starfallen-observatory', 'comet-wraith', 3, 30_000, 'comet-wraith'],
   ] as const)('scales legacy %s Threat from the old 50-point requirement', (locationId, enemyId, worldTier, expectedThreat, expectedTarget) => {
     const migrated = migrateSave(activeSave({ locationId, enemyId, threatCleared: 25 }, worldTier) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
@@ -938,20 +938,12 @@ describe('v44 Shattered Meridian migration', () => {
     expect(boss.combat.inBossFight).toBe(true)
   })
 
-  it('reconciles World Tier from boss evidence silently and remains idempotent', () => {
+  it('drops legacy World Tier while preserving durable boss evidence', () => {
     const initial = createInitialState()
-    const migrated = migrateSave({
-      ...initial,
-      saveVersion: 44,
-      worldTier: { current: 2, highestUnlocked: 2 },
-      progress: { ...initial.progress, bossKillsByBoss: { 'crossroads-keeper': 1, 'meridian-splitter': 1, 'black-gatekeeper': 1 } },
-    } as any)
-    expect(migrated.worldTier).toEqual({ current: 2, highestUnlocked: 5 })
+    const migrated = migrateSave({ ...initial, saveVersion: 67, worldTier: { current: 2, highestUnlocked: 2 }, progress: { ...initial.progress, bossKillsByBoss: { 'black-gatekeeper': 1 } } } as any)
+    expect('worldTier' in migrated).toBe(false)
+    expect(migrated.progress.bossKillsByBoss['black-gatekeeper']).toBe(1)
     expect(migrated.notifications).toEqual([])
-    expect(migrateSave(JSON.parse(JSON.stringify(migrated))).worldTier).toEqual(migrated.worldTier)
-
-    const validHighTier = migrateSave({ ...initial, saveVersion: 44, worldTier: { current: 5, highestUnlocked: 5 } } as any)
-    expect(validHighTier.worldTier).toEqual({ current: 5, highestUnlocked: 5 })
   })
 })
 
@@ -1057,7 +1049,7 @@ describe('v45 Black Sigil Reach migration', () => {
   it('converts Vault kill Threat against the captured WT4 requirement', () => {
     const migrated = migrateSave(activeSave({ locationId: 'vault-of-the-black-sigil', enemyId: 'blackscript-colossus', threatCleared: 30 }, 4) as any)
     expect(migrated.combat.targetEnemyId).toBe('blackscript-colossus')
-    expect(migrated.combat.threatCleared).toBe(80000)
+    expect(migrated.combat.threatCleared).toBe(40000)
   })
 
   it.each([
@@ -1093,12 +1085,6 @@ describe('v45 Black Sigil Reach migration', () => {
     expect(migrated.combat.threatCleared).toBe(0)
   })
 
-  it('reconciles stale WT4 access to WT5 from existing Black Gatekeeper evidence without a notification', () => {
-    const migrated = migrateSave(activeSave({ locationId: 'black-gate', enemyId: null }, 4, { bossKillsByBoss: { 'black-gatekeeper': 1 } }) as any)
-    expect(migrated.worldTier).toEqual({ current: 4, highestUnlocked: 5 })
-    expect(migrated.notifications).toEqual([])
-  })
-
   it('round-trips targeted and sequence v46 combat state without losing the save version', () => {
     const targeted = createInitialState()
     targeted.combat.active = true
@@ -1106,13 +1092,10 @@ describe('v45 Black Sigil Reach migration', () => {
     targeted.combat.targetEnemyId = 'nameless-cantor'
     targeted.combat.enemyId = 'nameless-cantor'
     targeted.combat.enemyHp = 3210
-    targeted.combat.enemyWorldTier = 4
     targeted.combat.threatCleared = 80000
-    targeted.worldTier.current = 4
-    targeted.worldTier.highestUnlocked = 4
     const targetedLoaded = validateStoredSave(JSON.stringify(serializeGameState(targeted))).state!
     expect(targetedLoaded.saveVersion).toBe(SAVE_VERSION)
-    expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, enemyWorldTier: 4, threatCleared: 80000 })
+    expect(targetedLoaded.combat).toMatchObject({ targetEnemyId: 'nameless-cantor', enemyId: 'nameless-cantor', enemyHp: 3210, threatCleared: 80000 })
 
     const sequence = createInitialState()
     sequence.combat.active = true

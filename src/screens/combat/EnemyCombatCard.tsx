@@ -6,7 +6,6 @@ import { isBossMonster, MONSTERS } from '../../game/content/monsters'
 import { getCombatEncounterMode, getCombatLocationById } from '../../game/content/combat-locations'
 import { getMonsterTraits } from '../../game/systems/combat/traitRuntime'
 import { getActiveEliteZoneAffix } from '../../game/systems/combat/eliteZoneAffixRuntime'
-import { getWorldTierDefinition } from '../../game/systems/world-tier/worldTierRuntime'
 import { resolveBossThreatRequirement } from '../../game/systems/combat/combatThreat'
 import { formatNumber, formatTime } from '../../game/utils'
 import { useGameStore } from '../../store/gameStore'
@@ -28,7 +27,6 @@ export function EnemyCombatCard({ selectedCombatLocationId, selectedMonsterId, c
   const combatActive = useGameStore((state) => state.combat.active)
   const combatLocationId = useGameStore((state) => state.combat.locationId)
   const enemyId = useGameStore((state) => state.combat.enemyId)
-  const enemyWorldTier = useGameStore((state) => state.combat.enemyWorldTier)
   const enemyHp = useGameStore((state) => state.combat.enemyHp)
   const enemyMaxHp = useGameStore((state) => state.combat.enemyMaxHp)
   const enemyBarrier = useGameStore((state) => state.combat.enemyBarrier)
@@ -53,12 +51,11 @@ export function EnemyCombatCard({ selectedCombatLocationId, selectedMonsterId, c
   const enemy = (renderedEnemyId ? MONSTERS[renderedEnemyId] : null) ?? (enemyId ? MONSTERS[enemyId] : null)
   const boss = Boolean(enemy && isBossMonster(enemy))
   const traits = useMemo(() => enemy ? getMonsterTraits(enemy) : [], [enemy])
-  const worldTier = enemyWorldTier ? getWorldTierDefinition(enemyWorldTier) : null
   const activeZoneAffix = useGameStore((state) => getActiveEliteZoneAffix(state))
 
   if (!enemy) {
     const dungeon = COMBAT_LOCATIONS[resolveEnemyPreviewCombatLocationId({ combatActive, combatLocationId, selectedCombatLocationId })]
-    const threatRequired = resolveBossThreatRequirement(dungeon.id, useGameStore.getState().worldTier.current)
+    const threatRequired = resolveBossThreatRequirement(dungeon.id)
     const sequence = getCombatEncounterMode(getCombatLocationById(dungeon.id)) === 'sequence' ? dungeon.encounterSequence : null
     const selectedPreview = selectedMonsterId && (dungeon.monsterPool.includes(selectedMonsterId) || (hasBossEncounter(dungeon) && dungeon.boss === selectedMonsterId)) ? MONSTERS[selectedMonsterId] : null
     const bossPreview = hasBossEncounter(dungeon) ? MONSTERS[dungeon.boss] : null
@@ -74,7 +71,7 @@ export function EnemyCombatCard({ selectedCombatLocationId, selectedMonsterId, c
     openContextMenu({ x: event.clientX, y: event.clientY, anchor: event.currentTarget, header: { title: enemy.name, meta: `${boss ? 'BOSS' : 'ENEMY'} · ${COMBAT_LOCATIONS[monsterDungeon.locationId].name}` }, sections: [{ id: 'enemy', actions: [{ id: 'bestiary', label: 'Open Bestiary', icon: BookOpen, onSelect: () => { setNavigationIntent({ combatMonsterId: enemy.id, combatLocationId: monsterDungeon.locationId }); useGameStore.getState().setScreen('hunters-order') } }, { id: 'drops', label: 'View Drops', icon: Package, onSelect: () => onOpenContext?.(event.currentTarget, 'loot') }, { id: 'location', label: 'Open Location', icon: Crosshair, onSelect: () => { setNavigationIntent({ combatLocationId: monsterDungeon.locationId, combatMonsterId: null }); useGameStore.getState().setScreen('combat') } }] }] })
   }
   return <section ref={cardRef} className={`combat-actor-card combat-enemy-card${boss ? ' is-boss' : ''}${transitionState === 'exiting' ? ' combat-enemy-transition-exit' : transitionState === 'entering' ? ' combat-enemy-transition-enter' : ''}`} style={{ '--enemy-accent': enemy.color } as CSSProperties} onContextMenu={openEnemyMenu}>
-    <header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">{boss ? 'BOSS' : 'ENEMY'}</span><h2>{enemy.name}</h2></div><div className="combat-actor-head-status">{worldTier && <GameTooltip content={<TooltipContent title={worldTier.name} description={`Health ×${worldTier.enemyHealthMultiplier}; damage ×${worldTier.enemyDamageMultiplier}; defense ×${worldTier.enemyDefenseMultiplier}. Rewards resolve from effective encounter Power.`} />}><span className="combat-enemy-tier-badge" tabIndex={0}>WT{worldTier.id}</span></GameTooltip>}{activeZoneAffix && !boss && <GameTooltip content={<TooltipContent title={`Zone Affix · ${activeZoneAffix.name}`} description={activeZoneAffix.description} />}><span className="combat-enemy-zone-affix-badge" tabIndex={0}>ZONE AFFIX · {activeZoneAffix.name.toUpperCase()}</span></GameTooltip>}<Status tone={boss ? 'warning' : 'active'}>{boss ? 'Boss fight' : 'Engaged'}</Status></div></header>
+    <header className="combat-actor-head"><div className="combat-actor-head-copy"><span className="combat-subsection-label">{boss ? 'BOSS' : 'ENEMY'}</span><h2>{enemy.name}</h2></div><div className="combat-actor-head-status">{activeZoneAffix && !boss && <GameTooltip content={<TooltipContent title={`Zone Affix · ${activeZoneAffix.name}`} description={activeZoneAffix.description} />}><span className="combat-enemy-zone-affix-badge" tabIndex={0}>ZONE AFFIX · {activeZoneAffix.name.toUpperCase()}</span></GameTooltip>}<Status tone={boss ? 'warning' : 'active'}>{boss ? 'Boss fight' : 'Engaged'}</Status></div></header>
     <MonsterPortrait monster={enemy} boss={boss} />
     <div className="combat-enemy-subtitle">{enemy.subtitle}</div>
     <CombatFloatingFeedback actor="enemy" health={enemyHp} barrier={enemyBarrier} resetKey={enemy.id} />

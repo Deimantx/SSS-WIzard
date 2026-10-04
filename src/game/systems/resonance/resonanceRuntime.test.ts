@@ -51,20 +51,20 @@ describe('Resonance runtime', () => {
 
   it('resolves authored bundles with the universal Power-driven tier context', () => {
     const wisp = resolveEnemyResonanceReward('forest-wisp')
-    expect(wisp).toMatchObject({ enemyId: 'forest-wisp', worldTier: 1, lootQuantityMultiplier: 1.15, bossQuantityMultiplier: 1, rewardMultiplier: 1.15, baseYield: { air: 10 }, finalYield: { air: 12 } })
-    expect(wisp.lootTier).toBe(resolveCombatLootContext('forest-wisp', 1).lootTier.tier)
+    expect(wisp).toMatchObject({ enemyId: 'forest-wisp', lootQuantityMultiplier: 1.15, bossQuantityMultiplier: 1, rewardMultiplier: 1.15, baseYield: { air: 10 }, finalYield: { air: 12 } })
+    expect(wisp.lootTier).toBe(resolveCombatLootContext('forest-wisp').lootTier.tier)
     const unprofiled = resolveEnemyResonanceReward('cavefang-wolf')
-    expect(unprofiled).toMatchObject({ worldTier: 1, finalYield: {} })
-    expect(unprofiled.rewardMultiplier).toBe(resolveCombatLootContext('cavefang-wolf', 1).lootTier.quantityMultiplier)
+    expect(unprofiled).toMatchObject({ finalYield: {} })
+    expect(unprofiled.rewardMultiplier).toBe(resolveCombatLootContext('cavefang-wolf').lootTier.quantityMultiplier)
   })
 
-  it('scales the authored bundle from effective encounter Power and boss status', () => {
-    const wt1 = resolveEnemyResonanceReward('forest-wisp', 1)
-    const wt5 = resolveEnemyResonanceReward('forest-wisp', 5)
-    expect(wt1.rewardMultiplier).toBe(resolveCombatLootContext('forest-wisp', 1).lootTier.quantityMultiplier)
-    expect(wt5.rewardMultiplier).toBe(resolveCombatLootContext('forest-wisp', 5).lootTier.quantityMultiplier)
-    expect(wt5.finalYield.air).toBe(Math.round(10 * wt5.rewardMultiplier))
-    const boss = resolveEnemyResonanceReward('forest-heart', 1)
+  it('scales the authored bundle from canonical Power and boss status', () => {
+    const first = resolveEnemyResonanceReward('forest-wisp')
+    const repeat = resolveEnemyResonanceReward('forest-wisp')
+    expect(first.rewardMultiplier).toBe(resolveCombatLootContext('forest-wisp').lootTier.quantityMultiplier)
+    expect(repeat.rewardMultiplier).toBe(resolveCombatLootContext('forest-wisp').lootTier.quantityMultiplier)
+    expect(repeat.finalYield.air).toBe(Math.round(10 * repeat.rewardMultiplier))
+    const boss = resolveEnemyResonanceReward('forest-heart')
     expect(boss.bossQuantityMultiplier).toBe(5)
     expect(Object.values(boss.finalYield).some((value) => value > 0)).toBe(true)
   })
@@ -73,7 +73,7 @@ describe('Resonance runtime', () => {
     const original = MONSTERS['forest-wisp'].resonanceYield
     MONSTERS['forest-wisp'].resonanceYield = { air: 7 }
     try {
-      const resolved = resolveEnemyResonanceReward('forest-wisp', 5)
+      const resolved = resolveEnemyResonanceReward('forest-wisp')
       expect(resolved.finalYield).toEqual({ air: Math.round(7 * resolved.rewardMultiplier) })
     } finally {
       MONSTERS['forest-wisp'].resonanceYield = original

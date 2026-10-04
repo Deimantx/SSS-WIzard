@@ -208,7 +208,6 @@
   .combat-location-browser, .combat-location-inspector { max-height: none; }
   .combat-location-browser, .combat-location-inspector { min-height: 0; }
   .combat-world-navigation-header-actions { align-items: stretch; flex-direction: column-reverse; gap: 6px; }
-  .combat-world-tier-control.is-embedded { width: 100%; }
 }
 @media (max-width: 520px) {
   .combat-world-navigation { padding-inline: 10px; }

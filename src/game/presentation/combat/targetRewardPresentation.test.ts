@@ -7,9 +7,9 @@ import { resolveEnemyPowerRating } from './enemyPowerRating'
 
 describe('combat target reward presentation', () => {
   it('exposes authored item drops before Bestiary discovery and applies canonical item scaling', () => {
-    const reward = buildCombatTargetRewardPresentation('cinder-moth', 2)
-    const lifeEssence = resolveCombatCurrencyRewardRange('cinder-moth', 'life-essence', 2)
-    const artifactEssence = resolveCombatCurrencyRewardRange('cinder-moth', 'artifact-essence', 2)
+    const reward = buildCombatTargetRewardPresentation('cinder-moth')
+    const lifeEssence = resolveCombatCurrencyRewardRange('cinder-moth', 'life-essence')
+    const artifactEssence = resolveCombatCurrencyRewardRange('cinder-moth', 'artifact-essence')
     expect(reward.itemDrops).toEqual([...MONSTERS['cinder-moth'].loot.map((drop, index) => ({
       itemId: drop.itemId,
       min: reward.itemDrops[index].min,
@@ -22,14 +22,14 @@ describe('combat target reward presentation', () => {
   })
 
   it('keeps multi-type Resonance in canonical Fire, Water, Earth, Air order', () => {
-    const reward = buildCombatTargetRewardPresentation('tempest-stag', 1)
+    const reward = buildCombatTargetRewardPresentation('tempest-stag')
     expect(getNonZeroResonanceEntries(reward.resonance).map((entry) => entry.type)).toEqual(['earth', 'air'])
     expect(reward.powerRating).toBeGreaterThan(0)
-    expect(reward.threatGain).toBe(resolveEnemyPowerRating('tempest-stag', 1))
+    expect(reward.threatGain).toBe(resolveEnemyPowerRating('tempest-stag'))
   })
 
   it('keeps location-owned Zone Affix context out of target reward payloads', () => {
-    const reward = buildCombatTargetRewardPresentation('bonehide-boar', 1)
+    const reward = buildCombatTargetRewardPresentation('bonehide-boar')
     expect('minorAffix' in reward).toBe(false)
     expect('zoneAffix' in reward).toBe(false)
   })

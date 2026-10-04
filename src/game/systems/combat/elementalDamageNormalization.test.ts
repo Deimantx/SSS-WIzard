@@ -18,8 +18,6 @@ describe('effective elemental damage normalization', () => {
     state.combat.active = true
     state.combat.locationId = 'emberfall-basin'
     state.combat.enemyId = 'emberfall-flame-hound'
-    state.combat.enemyWorldTier = 1
-    state.worldTier.current = 1
     state.player.health = 1000
     state.player.maxHealth = 1000
     state.combat.arcaneCoreRuntime.elapsedMs = 1000
@@ -34,13 +32,11 @@ describe('effective elemental damage normalization', () => {
     expect(state.progress.chronicle.eventFlags['first-elemental-ward-mitigation']).toBe(true)
   })
 
-  it('keeps World Tier damage scaling ahead of elemental Ward reduction', () => {
+  it('applies Ward reduction to authored enemy damage without a global multiplier', () => {
     const state = createInitialState()
     state.combat.active = true
     state.combat.locationId = 'emberfall-basin'
     state.combat.enemyId = 'emberfall-flame-hound'
-    state.combat.enemyWorldTier = 2
-    state.worldTier.current = 2
     state.player.health = 1000
     state.player.maxHealth = 1000
     applyElementalWard(state, { element: 'fire', reduction: 0.15, sourceId: 'fire-ward', durationMs: 22_000 })

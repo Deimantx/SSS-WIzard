@@ -1,9 +1,8 @@
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { TooltipProvider } from '../../components/ui/tooltip/Tooltip'
 import { createInitialState } from '../../store/initialState'
 import { useGameStore } from '../../store/gameStore'
-import type { WorldTierId } from '../../game/types'
 import { resolveCombatCurrencyRewardRange } from '../../game/systems/loot/combatCurrencyRewards'
 import { resolveEnemyResonanceReward } from '../../game/systems/resonance/resonanceRuntime'
 import { getNonZeroResonanceEntries } from '../../game/presentation/resonance/resonancePresentation'
@@ -12,12 +11,10 @@ import { MONSTER_IDS } from '../../game/content/monsters'
 import { resolveCombatLootContext } from '../../game/systems/loot/universalLootRuntime'
 import { BestiaryInspector } from './BestiaryInspector'
 
-const renderInspector = (monsterId: Parameters<typeof BestiaryInspector>[0]['monsterId'], worldTier: WorldTierId = 1, discovered = true, crystalSystemUnlocked = false) => {
+const renderInspector = (monsterId: Parameters<typeof BestiaryInspector>[0]['monsterId'], discovered = true, crystalSystemUnlocked = false) => {
   const state = createInitialState()
   state.progress.discoveredMonsters = discovered && monsterId ? [monsterId] : []
   state.progress.bossKillsByBoss['meridian-splitter'] = crystalSystemUnlocked ? 1 : 0
-  state.worldTier.current = worldTier
-  state.worldTier.highestUnlocked = Math.max(worldTier, 2) as WorldTierId
   useGameStore.setState(state)
   return render(<TooltipProvider><BestiaryInspector monsterId={monsterId} progress={state.progress} /></TooltipProvider>)
 }
@@ -30,7 +27,7 @@ describe('BestiaryResonanceYield', () => {
 
     expect(screen.getByText('RESONANCE YIELD')).toBeTruthy()
     expect(screen.getByText('Earth Resonance')).toBeTruthy()
-    const resolved = resolveEnemyResonanceReward('forest-heart', 1)
+    const resolved = resolveEnemyResonanceReward('forest-heart')
     getNonZeroResonanceEntries(resolved.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
     expect(screen.getByText('Life Essence')).toBeTruthy()
     expect(screen.getByText('Artifact Essence')).toBeTruthy()
@@ -39,33 +36,24 @@ describe('BestiaryResonanceYield', () => {
     expect(document.querySelector('.bestiary-resonance-section')?.compareDocumentPosition(document.querySelector('.bestiary-loot-list') as Node) === Node.DOCUMENT_POSITION_FOLLOWING).toBe(true)
   })
 
-  it('shows guaranteed dynamic Essence ranges and updates them with World Tier', () => {
-    renderInspector('forest-wisp', 1)
-    const wt1Life = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 1)
-    const wt1Artifact = resolveCombatCurrencyRewardRange('forest-wisp', 'artifact-essence', 1)
-    const wt1Loot = document.querySelector('.bestiary-loot-list') as HTMLElement
-    expect(wt1Loot.textContent).toContain(formatDropQuantity(wt1Life.finalMin, wt1Life.finalMax))
-    expect(wt1Loot.textContent).toContain(formatDropQuantity(wt1Artifact.finalMin, wt1Artifact.finalMax))
-    expect(wt1Loot.textContent).toContain('GUARANTEED')
+  it('shows guaranteed Essence ranges from canonical enemy Power', () => {
+    renderInspector('forest-wisp')
+    const canonicalLife = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence')
+    const canonicalArtifact = resolveCombatCurrencyRewardRange('forest-wisp', 'artifact-essence')
+    const lootList = document.querySelector('.bestiary-loot-list') as HTMLElement
+    expect(lootList.textContent).toContain(formatDropQuantity(canonicalLife.finalMin, canonicalLife.finalMax))
+    expect(lootList.textContent).toContain(formatDropQuantity(canonicalArtifact.finalMin, canonicalArtifact.finalMax))
+    expect(lootList.textContent).toContain('GUARANTEED')
 
-    act(() => { useGameStore.getState().setWorldTier(2) })
-    const wt2Life = resolveCombatCurrencyRewardRange('forest-wisp', 'life-essence', 2)
-    const wt2Artifact = resolveCombatCurrencyRewardRange('forest-wisp', 'artifact-essence', 2)
-    const wt2Loot = document.querySelector('.bestiary-loot-list') as HTMLElement
-    expect(wt2Loot.textContent).toContain(formatDropQuantity(wt2Life.finalMin, wt2Life.finalMax))
-    expect(wt2Loot.textContent).toContain(formatDropQuantity(wt2Artifact.finalMin, wt2Artifact.finalMax))
+    expect(lootList.textContent).toContain('GUARANTEED')
   })
 
-  it('renders multiple types and reacts to the current World Tier', () => {
-    renderInspector('graveglass-shade', 1)
-    expect(screen.getByText('WT1')).toBeTruthy()
-    const wt1 = resolveEnemyResonanceReward('graveglass-shade', 1)
-    getNonZeroResonanceEntries(wt1.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
+  it('renders multiple types from the single canonical reward profile', () => {
+    renderInspector('graveglass-shade')
+    const canonical = resolveEnemyResonanceReward('graveglass-shade')
+    getNonZeroResonanceEntries(canonical.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
 
-    act(() => { useGameStore.getState().setWorldTier(2) })
-    expect(screen.getByText('WT2')).toBeTruthy()
-    const wt2 = resolveEnemyResonanceReward('graveglass-shade', 2)
-    getNonZeroResonanceEntries(wt2.finalYield).forEach(({ amount }) => expect(screen.getByText(`+${amount.toLocaleString('en-US')}`)).toBeTruthy())
+
   })
 
   it('shows an explicit empty state for an enemy without Resonance', () => {
@@ -74,13 +62,13 @@ describe('BestiaryResonanceYield', () => {
   })
 
   it('keeps undiscovered dossier details private', () => {
-    renderInspector('forest-wisp', 1, false)
+    renderInspector('forest-wisp', false)
     expect(screen.getByText('UNDISCOVERED CREATURE')).toBeTruthy()
     expect(screen.queryByText('RESONANCE YIELD')).toBeNull()
   })
 
   it('does not show an active Crystal Cache chance before the Crystal System unlock', () => {
-    const eligibleMonster = MONSTER_IDS.find((id) => resolveCombatLootContext(id, 1).lootTier.tier >= 10)
+    const eligibleMonster = MONSTER_IDS.find((id) => resolveCombatLootContext(id).lootTier.tier >= 10)
     expect(eligibleMonster).toBeDefined()
     if (!eligibleMonster) return
 
@@ -90,7 +78,7 @@ describe('BestiaryResonanceYield', () => {
     expect(lockedRow?.textContent).not.toMatch(/\d+(?:\.\d+)?%/)
 
     lockedView.unmount()
-    renderInspector(eligibleMonster, 1, true, true)
+    renderInspector(eligibleMonster, true, true)
     const unlockedRow = screen.getByText('Tier 1 Crystal Cache').closest('.bestiary-loot-row')
     expect(unlockedRow?.textContent).toMatch(/\d+(?:\.\d+)?%/)
   })

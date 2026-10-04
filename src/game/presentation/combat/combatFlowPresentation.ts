@@ -4,7 +4,6 @@ import { buildCombatActionPresentation, formatCombatEffect, type CombatActionPre
 import { classifyEnemyActionPatternIcon, type EnemyPatternIconKind } from './enemyPatternIconPresentation'
 import type { ActionPattern, ActionStep, CombatActionDefinition } from '../../systems/combat/combatTypes'
 import type { CombatLocationId, MonsterId } from '../../types'
-import type { WorldTierId } from '../../types'
 import { SPELLS } from '../../content/spells'
 import type { PendingPlayerSpellCast } from '../../types'
 import { getFallbackTimedActionState, type TimedActionState } from '../../systems/combat/actionTiming'
@@ -55,7 +54,6 @@ export interface CombatFlowRuntimeInput {
   dungeon: CombatLocationRuntimeView
   enemy: MonsterDefinition | null
   threatCleared: number
-  worldTier?: WorldTierId
   inBossFight: boolean
   encounterTimerMs: number
   enemyActionTimerMs: number
@@ -84,7 +82,7 @@ const stepIndex = (pattern: ActionPattern | undefined, stepId: string | null | u
 }
 export function getCombatFlowPresentation(input: CombatFlowRuntimeInput): CombatFlowPresentation {
   const locationId = input.locationId ?? input.selectedCombatLocationId
-  const threatRequired = resolveBossThreatRequirement(input.dungeon.id, input.worldTier ?? 1)
+  const threatRequired = resolveBossThreatRequirement(input.dungeon.id)
   const isSequence = getCombatEncounterMode(getCombatLocationById(input.dungeon.id)) === 'sequence'
   const bossReady = hasBossEncounter(input.dungeon) && input.active && !isSequence && !input.enemy && !input.inBossFight && input.threatCleared >= threatRequired
   if (!input.active) return { mode: 'tower', locationId, dungeon: input.dungeon, threatRequired, enemy: null, playerTimeline: null, enemyTimeline: null, enemyCurrentAction: null, pattern: undefined, currentStepIndex: -1, currentStepId: null, currentActionId: null, currentPatternOriginId: null, currentActionDurationMs: 0, encounterTimerMs: input.encounterTimerMs }

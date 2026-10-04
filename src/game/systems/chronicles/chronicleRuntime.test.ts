@@ -145,15 +145,15 @@ describe('Chronicle runtime', () => {
     expect(getChronicleMainObjective(state)?.id).toBe('sf-m5-meridian-splitter')
   })
 
-  it('requires an actual WT4 kill for the optional tier objective', () => {
+  it('requires an actual Combat Tier 4 kill for the optional tier objective', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['meridian-splitter'] = 1
     reconcileChronicleProgress(state, { notify: false })
-    const objective = CHRONICLE_OBJECTIVES.find((entry) => entry.id === 'sf-c2-world-tier-four')!
+    const objective = CHRONICLE_OBJECTIVES.find((entry) => entry.id === 'sf-c2-combat-tier-four')!
     expect(evaluateChronicleCondition(state, objective.condition)).toBe(false)
-    state.progress.chronicle.eventFlags['first-wt3-kill'] = true
+    state.progress.chronicle.eventFlags['first-combat-tier-3-kill'] = true
     expect(evaluateChronicleCondition(state, objective.condition)).toBe(false)
-    state.progress.chronicle.eventFlags['first-wt4-kill'] = true
+    state.progress.chronicle.eventFlags['first-combat-tier-4-kill'] = true
     expect(evaluateChronicleCondition(state, objective.condition)).toBe(true)
   })
 })

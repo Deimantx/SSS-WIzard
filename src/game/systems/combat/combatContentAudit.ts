@@ -2,10 +2,8 @@ import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerBreakdown } from './enemyPower'
 import type { MonsterDefinition } from '../../content/monsters/monsterTypes'
 import type { CombatEffect } from './combatTypes'
-import type { MonsterId, WorldTierId } from '../../types'
-import { WORLD_TIERS } from '../../content/world-tier/worldTiers'
+import type { MonsterId } from '../../types'
 import { getMonsterDamageProfile } from '../../content/monsters/monsterTypes'
-import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
 import { TRAIT_DEFINITIONS } from '../../content/traits/traits'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
@@ -104,11 +102,10 @@ const isGenericActionDescription = (monster: MonsterDefinition, action: MonsterD
 const BOSS_REPEATABLE_SUSTAIN_BUDGET = 0.3
 const BOSS_ONCE_SUSTAIN_BUDGET = 0.3
 
-export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2ContentAuditRow[] => COMBAT_V2_AUDIT_MONSTER_IDS.flatMap((id) => {
+export const buildCombatV2ContentAudit = (): CombatV2ContentAuditRow[] => COMBAT_V2_AUDIT_MONSTER_IDS.flatMap((id) => {
   const monster = MONSTERS[id]
   if (!monster) return []
-  const power = resolveEnemyPowerBreakdown(id, worldTier)
-  const profile = resolveWorldTierEnemyProfile(id, worldTier)
+  const power = resolveEnemyPowerBreakdown(id)
   const affixId = monster.bestiaryCategory === 'boss' ? undefined : COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]?.zoneAffixId
   const locationDefinition = COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]
   const dungeon = locationDefinition?.id ? COMBAT_LOCATIONS[locationDefinition.id] : undefined
@@ -164,8 +161,8 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   for (const action of Object.values(monster.actions)) if (isGenericActionDescription(monster, action)) warnings.push(`Generic or missing action description: ${action.name}`)
   const genericEquippedTraitCount = monster.traitIds.filter((traitId) => /distinct regional progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? '')).length
   if (genericEquippedTraitCount) warnings.push(`${genericEquippedTraitCount} generic equipped Trait(s)`)
-  if (maximumDirectCoefficient(repeatable) > 3) warnings.push('Repeatable direct hit exceeds 3× Basic')
-  if (periodicDamageCoefficient > 2) warnings.push('Repeatable DoT exceeds 2× Basic')
+  if (maximumDirectCoefficient(repeatable) > 3) warnings.push('Repeatable direct hit exceeds 3Ã— Basic')
+  if (periodicDamageCoefficient > 2) warnings.push('Repeatable DoT exceeds 2Ã— Basic')
   if (repeatableHealPercent > 0.2) warnings.push('Repeatable healing exceeds 20% Max HP')
   if (repeatableBarrierPercent > 0.25) warnings.push('Repeatable Barrier exceeds 25% Max HP')
   if (onceOnlyHealPercent > 0.25) warnings.push('One-time healing exceeds 25% Max HP')
@@ -178,14 +175,14 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   if (defaultFlatPeriodicDamageCount) warnings.push(`${defaultFlatPeriodicDamageCount} default flat periodic damage payload(s)`)
   if (defaultFlatPeriodicHealCount) warnings.push(`${defaultFlatPeriodicHealCount} default flat periodic healing payload(s)`)
   const defaultFlatPeriodicCount = defaultFlatPeriodicDamageCount + defaultFlatPeriodicHealCount
-  return [{ id, name: monster.name, group: locationDefinition?.type ?? 'combat-zone', location: locationDefinition?.name ?? 'Unknown', locationType: locationDefinition?.type ?? 'combat-zone', order: targetOrder, boss: monster.bestiaryCategory === 'boss', affinity: monster.primaryAffinity ?? '—', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: profile.maxHealth, defense: profile.defense, basicDamage: profile.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, zoneAffix: locationDefinition?.zoneAffixId ? ELITE_ZONE_AFFIXES[locationDefinition.zoneAffixId]?.name ?? locationDefinition.zoneAffixId : null,
+  return [{ id, name: monster.name, group: locationDefinition?.type === 'elite-zone' ? 'elite-zone' : locationDefinition?.type === 'hunting-ground' ? 'hunting-ground' : locationDefinition?.type === 'dungeon' ? 'dungeon' : 'combat-zone', location: locationDefinition?.name ?? 'Unknown', locationType: locationDefinition?.type ?? 'combat-zone', order: targetOrder, boss: monster.bestiaryCategory === 'boss', affinity: monster.primaryAffinity ?? 'â€”', damageProfile: getMonsterDamageProfile(monster), power: power.power, hp: monster.maxHealth, defense: monster.defense ?? 0, basicDamage: monster.basicAttackDamage, basicIntervalMs: monster.basicAttackTimeMs, basicDps: power.basicDps, zoneAffix: locationDefinition?.zoneAffixId ? ELITE_ZONE_AFFIXES[locationDefinition.zoneAffixId]?.name ?? locationDefinition.zoneAffixId : null,
     maxRepeatableDirectCoefficient: maximumDirectCoefficient(repeatable), dotTotalCoefficient: periodicDamageCoefficient, periodicDamageCoefficient, periodicHealPercent,
     repeatableHealPercent, repeatableBarrierPercent, onceOnlyHealPercent, onceOnlyBarrierPercent, repeatableSustainPercent, onceOnlySustainPercent,
     defaultFlatPeriodicDamageCount, defaultFlatPeriodicHealCount, defaultFlatPeriodicCount, genericActionDescriptionCount, genericEquippedTraitCount, maxControlMs, patternCycleMs, warnings }]
 })
 
-export const buildCombatV2GlobalAudit = (worldTier: WorldTierId = 1) => {
-  const rows = buildCombatV2ContentAudit(worldTier)
+export const buildCombatV2GlobalAudit = () => {
+  const rows = buildCombatV2ContentAudit()
   return {
     implicitAffinityCount: rows.filter((row) => !MONSTERS[row.id]?.primaryAffinity).length,
     defaultFlatPeriodicDamageCount: rows.reduce((sum, row) => sum + row.defaultFlatPeriodicDamageCount, 0),
@@ -194,8 +191,3 @@ export const buildCombatV2GlobalAudit = (worldTier: WorldTierId = 1) => {
     genericEquippedTraitCount: rows.reduce((sum, row) => sum + row.genericEquippedTraitCount, 0),
   }
 }
-
-export const buildCombatV2MonsterWorldTierComparison = (monsterId: MonsterId) => Object.values(WORLD_TIERS).map(({ id: worldTier }) => {
-  const profile = resolveWorldTierEnemyProfile(monsterId, worldTier)
-  return { monsterId, worldTier, power: resolveEnemyPowerBreakdown(monsterId, worldTier).power, hp: profile.maxHealth, basicDamage: profile.basicAttackDamage, defense: profile.defense }
-})

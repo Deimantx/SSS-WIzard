@@ -25,8 +25,7 @@ export function DeveloperCombatEncounter() {
   const clearToBoss = useGameStore((state) => state.clearDebugThreatToBoss)
   const jumpBoss = useGameStore((state) => state.jumpDebugToBoss)
   const dungeon = COMBAT_LOCATIONS[selectedCombatLocationId]
-  const worldTier = useGameStore((state) => state.worldTier.current)
-  const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier)
+  const threatRequired = resolveBossThreatRequirement(dungeon.id)
   const unlocked = isCombatLocationUnlocked(dungeon, progress)
   const sequenceMode = getCombatEncounterMode(getCombatLocationById(selectedCombatLocationId)) === 'sequence'
   const sequenceTotal = (dungeon.encounterSequence?.length ?? 0) + 1

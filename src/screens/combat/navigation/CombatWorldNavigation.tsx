@@ -11,7 +11,6 @@ import { useGameStore } from '../../../store/gameStore'
 import { CombatLocationBrowser } from './CombatLocationBrowser'
 import { CombatLocationInspector } from './CombatLocationInspector'
 import { CombatLocationLootModal } from './CombatLocationLootModal'
-import { CombatWorldTierControl } from '../CombatWorldTierControl'
 import { ELEMENT_IDS, ELEMENT_DEFINITIONS, type ElementId } from '../../../game/content/elements/elements'
 import { GameTooltip } from '../../../components/ui'
 import { TooltipContent } from '../../../components/ui/tooltip/Tooltip'
@@ -26,7 +25,7 @@ const elementIcons = { fire: Flame, water: Droplets, air: Wind, earth: Mountain,
 const matchesElement = (location: CombatLocationViewModel, element: ElementId | null) => !element || location.elementsPresent.includes(element)
 
 export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHuntTarget, onBestiary, onReturnToCombat }: { onSelectLocation: (locationId: CombatLocationId) => void; onEnterLocation: (locationId: CombatLocationId, targetEnemyId?: MonsterId) => void; onHuntTarget: (locationId: CombatLocationId, targetEnemyId: MonsterId) => boolean; onBestiary: (location: CombatLocationViewModel, monsterId?: MonsterId | null) => void; onReturnToCombat: () => void }) {
-  const { progress, combat, worldTier, lastEnteredCombatLocationId } = useGameStore(useShallow((state) => ({ progress: state.progress, combat: state.combat, worldTier: state.worldTier, lastEnteredCombatLocationId: state.ui.lastEnteredCombatLocationId })))
+  const { progress, combat, lastEnteredCombatLocationId } = useGameStore(useShallow((state) => ({ progress: state.progress, combat: state.combat, lastEnteredCombatLocationId: state.ui.lastEnteredCombatLocationId })))
   const navigationIntent = useNavigationIntent()
   const [selectedLocationId, setSelectedLocationId] = useState<CombatLocationId | null>(() => {
     const initialLocationId = getInitialCombatLocationId({ combat, lastEnteredCombatLocationId, progress })
@@ -37,7 +36,7 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
   const [selectedType, setSelectedType] = useState<CombatProgressionLocationType>(() => initialType ?? 'combat-zone')
   const [selectedTier, setSelectedTier] = useState<1 | 2 | 3 | 4 | 5>(() => activeLocation?.progression?.tier ?? 1)
   const [selectedElement, setSelectedElement] = useState<ElementId | null>(null)
-  const viewModel = buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedLocationId, selectedType })
+  const viewModel = buildCombatWorldNavigationViewModel({ progress, combat, selectedLocationId, selectedType })
   const visibleLocations = viewModel.allLocations.filter((location) => location.progressionType === selectedType && location.tier === selectedTier && matchesElement(location, selectedElement))
   const [lootRequest, setLootRequest] = useState<{ location: CombatLocationViewModel; targetMonsterId: MonsterId | null } | null>(null)
   const [selectedTargetEnemyId, setSelectedTargetEnemyId] = useState<MonsterId | null>(null)
@@ -128,7 +127,7 @@ export function CombatWorldNavigation({ onSelectLocation, onEnterLocation, onHun
     else onEnterLocation(location.id)
   }
 
-  return <Card title="WORLD NAVIGATION" className="combat-world-navigation" action={<div className="combat-world-navigation-header-actions"><CombatWorldTierControl variant="embedded" /></div>}>
+  return <Card title="WORLD NAVIGATION" className="combat-world-navigation">
     <div className="combat-world-navigation-intro"><p>Browse the five combat tiers by progression role.</p></div>
     <nav className="combat-zone-type-filters" aria-label="Combat location type" role="tablist">
       {zoneFilters.map(({ id, label, Icon }) => <button key={id} type="button" role="tab" aria-selected={selectedType === id} className={`combat-zone-type-filter${selectedType === id ? ' is-selected' : ''}`} onClick={() => selectType(id)}><Icon size={15} aria-hidden="true" /><span>{label}</span></button>)}

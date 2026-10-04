@@ -24,7 +24,6 @@ export const serializeGameStateV3 = (state: GameState, savedAt = state.lastSaved
     currencies: clone(state.currencies),
     resonance: clone(state.resonance),
     tower: clone(state.tower),
-    worldTier: clone(state.worldTier),
     inventory: clone(state.inventory),
     crystals: clone(state.crystals),
     protectedItems: clone(state.protectedItems),

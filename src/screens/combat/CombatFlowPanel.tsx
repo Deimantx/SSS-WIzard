@@ -35,7 +35,6 @@ export function CombatFlowPanel({ selectedCombatLocationId }: { selectedCombatLo
     enemyCurrentActionPatternId: state.combat.enemyCurrentActionPatternId,
     enemyActionPatternId: state.combat.enemyActionPatternId,
     enemyActionDurationMs: state.combat.enemyActionDurationMs,
-    worldTier: state.worldTier.current,
   })))
   const enemy = useGameStore((state) => state.combat.enemyId ? MONSTERS[state.combat.enemyId] ?? null : null)
   const dungeon = COMBAT_LOCATIONS[combat.active ? combat.locationId ?? selectedCombatLocationId : selectedCombatLocationId]
@@ -56,7 +55,6 @@ export function CombatFlowPanel({ selectedCombatLocationId }: { selectedCombatLo
     dungeon,
     enemy,
     threatCleared: combat.threatCleared,
-    worldTier: combat.worldTier,
     inBossFight: combat.inBossFight,
     encounterTimerMs: 0,
     enemyActionTimerMs: structuralTiming?.remainingWorkMs ?? 0,

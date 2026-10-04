@@ -15,7 +15,6 @@ export function DeveloperToolsWindow() {
   const debug = useGameStore((state) => state.debug)
   const resetDebug = useGameStore((state) => state.resetDebugOverrides)
   const combatActive = useGameStore((state) => state.combat.active)
-  const worldTier = useGameStore((state) => state.worldTier.current)
   const [copied, setCopied] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -123,7 +122,7 @@ export function DeveloperToolsWindow() {
           <GameTooltip content="Close Developer Tools"><button className="icon-button" onClick={closeDeveloperTools} aria-label="Close Developer Tools"><X size={18} /></button></GameTooltip>
         </div>
       </header>
-      <div className="developer-context-bar"><span>WT{worldTier}</span><span>{combatActive ? 'COMBAT ACTIVE' : 'COMBAT IDLE'}</span><span>{activeOverrides.length ? `${activeOverrides.length} SESSION OVERRIDES` : 'SESSION CLEAN'}</span>{session.sandbox.active && <span className="developer-sandbox-indicator">DEV SANDBOX · AUTOSAVE PAUSED</span>}</div>
+      <div className="developer-context-bar"><span>{combatActive ? 'COMBAT ACTIVE' : 'COMBAT IDLE'}</span><span>{activeOverrides.length ? `${activeOverrides.length} SESSION OVERRIDES` : 'SESSION CLEAN'}</span>{session.sandbox.active && <span className="developer-sandbox-indicator">DEV SANDBOX · AUTOSAVE PAUSED</span>}</div>
       {activeOverrides.length > 0 && <details className="developer-override-center"><summary><strong>{activeOverrides.length} SESSION OVERRIDES</strong><span>Inspect active runtime mutations</span></summary><div>{activeOverrides.map((override) => <span className="developer-override-entry" key={override.id}><span className={`developer-override-chip ${override.tone}`}>{override.label}</span><button type="button" className="developer-override-clear" onClick={() => clearOverride(override)}>CLEAR</button></span>)}<button type="button" className="developer-override-clear" onClick={resetDebug}>CLEAR ALL SESSION OVERRIDES</button></div></details>}
       <div className="developer-local-tabs" role="tablist" aria-label={`${workspaceDefinition.label} tools`}>{workspaceTools.map((tool) => <button key={tool.id} role="tab" aria-selected={session.activeTab === tool.id} className={session.activeTab === tool.id ? 'active' : ''} onClick={() => setDeveloperToolsTab(tool.id)}>{tool.label}</button>)}</div>
       <div className="developer-tools-body">

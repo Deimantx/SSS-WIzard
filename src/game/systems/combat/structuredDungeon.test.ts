@@ -5,7 +5,6 @@ import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation
 import { advanceWithOfflineBank } from '../offline-bank/offlineBankSimulation'
 import { fastResolveNormalEnemiesForDebug } from './debugCombatRuntime'
 import { resolveCombatDeaths, spawnEnemy, spawnNextEnemy } from './combatRuntime'
-import { unlockWorldTierFromBossKill } from '../world-tier/worldTierRuntime'
 
 const prepare = () => {
   const state = createInitialState()
@@ -79,10 +78,9 @@ describe('structured dungeon encounters', () => {
     expect(state.combat.threatCleared).toBe(0)
   })
 
-  it('ends the Black Gate after Black Gatekeeper and unlocks WT5 once through the generic boss map', () => {
+  it('ends the Black Gate after Black Gatekeeper', () => {
     const state = prepare()
     state.combat.locationId = 'black-gate'
-    state.worldTier = { current: 4, highestUnlocked: 4 }
     const sequenceBossIds = COMBAT_LOCATIONS['black-gate'].sequenceBossIds ?? []
     for (const expectedEnemyId of COMBAT_LOCATIONS['black-gate'].encounterSequence ?? []) {
       expect(spawnNextEnemy(state)).toBe(true)
@@ -95,9 +93,6 @@ describe('structured dungeon encounters', () => {
     killCurrent(state)
 
     expect(state.combat.active).toBe(false)
-    expect(state.worldTier.highestUnlocked).toBe(5)
-    expect(state.notifications.filter((note) => note.text.includes('WORLD TIER 5')).length).toBe(1)
-    expect(unlockWorldTierFromBossKill(state, 'black-gatekeeper')).toBeNull()
   })
 
   it('completes after Edrin, preserves player resources, and clears the run state', () => {
@@ -112,7 +107,7 @@ describe('structured dungeon encounters', () => {
     killCurrent(state)
     expect(state.combat.active).toBe(false)
     expect(state.combat.enemyId).toBeNull()
-    expect(state.combat.enemyWorldTier).toBeNull()
+    expect('enemyWorldTier' in state.combat).toBe(false)
     expect(state.combat.sequenceIndex).toBeNull()
     expect(state.combat.targetEnemyId).toBeNull()
     expect(state.combat.pendingBossId).toBeNull()
@@ -121,7 +116,6 @@ describe('structured dungeon encounters', () => {
     expect(state.player.health).toBe(61)
     expect(state.player.mana).toBe(37)
     expect(state.progress.bossKillsByBoss['archmage-edrin-shade']).toBe(1)
-    expect(state.worldTier.highestUnlocked).toBe(2)
   })
 
   it('resets the sequence on player death and on leaving the dungeon', () => {

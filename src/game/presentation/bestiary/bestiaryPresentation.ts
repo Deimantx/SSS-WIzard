@@ -4,7 +4,6 @@ import { getMonsterTraits } from '../../systems/combat/traitRuntime'
 import { resolveEnemyResonanceReward } from '../../systems/resonance/resonanceRuntime'
 import type { MonsterDefinition } from '../../content/monsters'
 import type { ResonanceType } from '../../content/resonance/resonance'
-import type { WorldTierId } from '../../types'
 import type { ActionPattern, CombatCondition, CombatEffect, CombatModifier, CombatTriggerRule, StatusId, TraitDefinition } from '../../systems/combat/combatTypes'
 import { buildCombatActionPresentation, formatCombatCondition, formatCombatEffect, formatCombatModifier, formatCombatStatusDuration } from '../combat'
 
@@ -60,7 +59,6 @@ export interface BestiaryResonanceEntryPresentation {
 }
 
 export interface BestiaryResonancePresentation {
-  worldTier: WorldTierId
   effectivePower: number
   lootTier: number
   lootQuantityMultiplier: number
@@ -69,10 +67,9 @@ export interface BestiaryResonancePresentation {
   entries: BestiaryResonanceEntryPresentation[]
 }
 
-export const getBestiaryResonancePresentation = (monster: MonsterDefinition, worldTier: WorldTierId): BestiaryResonancePresentation => {
-  const reward = resolveEnemyResonanceReward(monster.id, worldTier)
+export const getBestiaryResonancePresentation = (monster: MonsterDefinition): BestiaryResonancePresentation => {
+  const reward = resolveEnemyResonanceReward(monster.id)
   return {
-    worldTier: reward.worldTier,
     effectivePower: reward.effectivePower,
     lootTier: reward.lootTier,
     lootQuantityMultiplier: reward.lootQuantityMultiplier,
@@ -87,7 +84,7 @@ export const getBestiaryResonancePresentation = (monster: MonsterDefinition, wor
   }
 }
 
-/** Search identity is authored/base data, so it remains stable across World Tier changes. */
+/** Search identity is authored/base data, so it remains stable as reward sources change. */
 export const getBestiaryResonanceSearchText = (monster: MonsterDefinition) => RESONANCE_TYPES.flatMap((type) => {
   const amount = monster.resonanceYield?.[type] ?? 0
   return amount > 0 ? [type, RESONANCE_METADATA[type].shortLabel, RESONANCE_METADATA[type].label] : []

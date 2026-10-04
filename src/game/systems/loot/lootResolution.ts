@@ -23,8 +23,7 @@ const boundedRandom = (rng: () => number) => {
 /** The shared combat reward resolver for authored monster materials, essences, and Sigils. */
 export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?: (itemId: ItemId, quantity: number) => void, rng: () => number = Math.random, onSigilDrop?: (drop: SigilLootResolution) => void, hunterBonuses: HunterLootMultipliers = {}, lootContext?: CombatLootContext): string {
   const drops: string[] = []
-  const context = lootContext ?? resolveCombatLootContext(enemyId, state.combat.enemyWorldTier ?? state.worldTier.current, state.combat.locationId)
-  const worldTier = context.worldTier
+  const context = lootContext ?? resolveCombatLootContext(enemyId, state.combat.locationId)
   const guild = context.guildBonuses ?? getGuildProgressionBonuses(state)
   const hunter = context.hunterBonuses ?? hunterBonuses
   const monster = MONSTERS[enemyId]
@@ -51,7 +50,6 @@ export function resolveMonsterLoot(state: GameState, enemyId: MonsterId, onDrop?
 
   const encounterPower = context.effectivePower
   state.sigils.highestSourcePowerDefeated = Math.max(state.sigils.highestSourcePowerDefeated, encounterPower)
-  if (context.isBoss && worldTier >= 2) state.sigils.hasDefeatedWorldTier2Boss = true
   const firstDropPending = state.sigils.lifetimeDrops === 0
   const pityGuarantee = firstDropPending && state.sigils.firstDropPityKills >= 4
   const sigilChance = Math.min(1, context.lootTier.sigilDropChance * (context.isBoss ? UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance : 1) * Math.max(1, hunter.sigilDropMultiplier ?? 1))

@@ -170,16 +170,14 @@ describe("Crystal System V1", () => {
 
   it("only drops caches after the system and Loot Tier unlocks", () => {
     const state = createInitialState();
-    expect(getCrystalCacheDropChance(state, "meridian-splitter", 5)).toBe(0)
+    expect(getCrystalCacheDropChance(state, "meridian-splitter")).toBe(0)
     expect(
-      resolveCrystalCacheDrop(state, "meridian-splitter", 5, () => 0),
+      resolveCrystalCacheDrop(state, "meridian-splitter", () => 0),
     ).toBe(0);
     state.progress.bossKillsByBoss["meridian-splitter"] = 1;
     const dropped = resolveCrystalCacheDrop(
       state,
-      "meridian-splitter",
-      5,
-      () => 0,
+      "meridian-splitter", () => 0,
     );
     expect(dropped).toBeGreaterThan(0);
     expect(state.inventory["tier-1-crystal-cache"]).toBe(dropped);
@@ -187,37 +185,31 @@ describe("Crystal System V1", () => {
 
   it("blocks every Crystal Cache drop until the first Splitter victory", () => {
     const state = createInitialState();
-    expect(resolveCrystalCacheDrop(state, "graveglass-behemoth", 3, () => 0)).toBe(0);
+    expect(resolveCrystalCacheDrop(state, "graveglass-behemoth", () => 0)).toBe(0);
     expect(state.inventory["tier-1-crystal-cache"] ?? 0).toBe(0);
     state.progress.bossKillsByBoss["meridian-splitter"] = 1;
-    expect(getCrystalCacheDropChance(state, "meridian-splitter", 5)).toBeGreaterThan(0)
-    const amount = resolveCrystalCacheDrop(state, "graveglass-behemoth", 3, () => 0)
+    expect(getCrystalCacheDropChance(state, "meridian-splitter")).toBeGreaterThan(0)
+    const amount = resolveCrystalCacheDrop(state, "graveglass-behemoth", () => 0)
     expect(amount).toBeGreaterThan(0)
     expect(state.inventory["tier-1-crystal-cache"]).toBe(amount)
   });
 
-  it("unlocks cache chance at Loot Tier 10, which can be reached by higher encounter Power", () => {
-    const candidate = MONSTER_IDS.find((monsterId) => {
-      const wt1 = resolveCombatLootContext(monsterId, 1).lootTier.tier;
-      const higherTier = resolveCombatLootContext(monsterId, 5).lootTier.tier;
-      return wt1 < 10 && higherTier >= 10;
-    });
-    expect(candidate).toBeDefined();
-    if (!candidate) return;
-
-    const state = createInitialState();
-    state.progress.bossKillsByBoss["meridian-splitter"] = 1;
-    expect(resolveCrystalCacheDrop(state, candidate, 1, () => 0)).toBe(0);
-    expect(resolveCrystalCacheDrop(state, candidate, 5, () => 0)).toBeGreaterThan(0);
-    expect(state.inventory["tier-1-crystal-cache"]).toBeGreaterThan(0);
+  it("unlocks cache chance when canonical enemy Power reaches Loot Tier 10", () => {
+    const candidate = MONSTER_IDS.find((monsterId) => resolveCombatLootContext(monsterId).lootTier.tier >= 10)
+    expect(candidate).toBeDefined()
+    if (!candidate) return
+    const state = createInitialState()
+    state.progress.bossKillsByBoss["meridian-splitter"] = 1
+    expect(getCrystalCacheDropChance(state, candidate)).toBeGreaterThan(0)
+    expect(resolveCrystalCacheDrop(state, candidate, () => 0)).toBeGreaterThan(0)
   });
 
   it("uses the resolved tier chance and fixed normal/boss cache quantities", () => {
     const state = createInitialState();
     state.progress.bossKillsByBoss["meridian-splitter"] = 1;
-    const bossContext = resolveCombatLootContext('meridian-splitter', 5)
-    expect(getCrystalCacheDropChance(state, 'meridian-splitter', 5)).toBeCloseTo(bossContext.lootTier.crystalCacheDropChance * UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance * getGuildProgressionBonuses(state).crystalCacheChanceMultiplier)
-    const quantity = resolveCrystalCacheDrop(state, 'meridian-splitter', 5, () => 0)
+    const bossContext = resolveCombatLootContext('meridian-splitter')
+    expect(getCrystalCacheDropChance(state, 'meridian-splitter')).toBeCloseTo(bossContext.lootTier.crystalCacheDropChance * UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance * getGuildProgressionBonuses(state).crystalCacheChanceMultiplier)
+    const quantity = resolveCrystalCacheDrop(state, 'meridian-splitter', () => 0)
     expect(quantity).toBe(5)
     expect(state.inventory["tier-1-crystal-cache"]).toBe(5)
   });
@@ -226,12 +218,12 @@ describe("Crystal System V1", () => {
     const normalState = createInitialState()
     const bossState = createInitialState()
     for (const state of [normalState, bossState]) state.progress.bossKillsByBoss['meridian-splitter'] = 1
-    const baseContext = resolveCombatLootContext('forest-wisp', 5)
+    const baseContext = resolveCombatLootContext('forest-wisp')
     const normalContext = { ...baseContext, lootTier: UNIVERSAL_LOOT_TIERS[19], isBoss: false }
     const bossContext = { ...normalContext, isBoss: true }
     expect(normalContext.lootTier.quantityMultiplier).toBe(14)
-    expect(resolveCrystalCacheDrop(normalState, 'forest-wisp', 5, () => 0, normalContext)).toBe(1)
-    expect(resolveCrystalCacheDrop(bossState, 'forest-wisp', 5, () => 0, bossContext)).toBe(5)
+    expect(resolveCrystalCacheDrop(normalState, 'forest-wisp', () => 0, normalContext)).toBe(1)
+    expect(resolveCrystalCacheDrop(bossState, 'forest-wisp', () => 0, bossContext)).toBe(5)
   });
 
   it("migrates a v46 save to an empty, valid current Crystal state without retroactive cache grants", () => {

@@ -25,7 +25,6 @@ export const createEmptySigilState = (): SigilState => ({
   secondaryRollsLifetime: 0,
   traitsUnlockedLifetime: 0,
   discovery: { discoveredSets: {}, discoveredSlotsBySet: {}, bestQualityBySet: {}, bestTierBySet: {}, discoveredTraits: {}, qualitiesFound: {}, tiersFound: {} },
-  hasDefeatedWorldTier2Boss: false,
   autoSalvage: { ...SIGIL_AUTO_SALVAGE_DEFAULTS },
 })
 
@@ -148,7 +147,6 @@ export const normalizeSigilState = (input: unknown): SigilState => {
     secondaryRollsLifetime: Math.max(0, safeInteger(source.secondaryRollsLifetime)),
     traitsUnlockedLifetime: Math.max(0, safeInteger(source.traitsUnlockedLifetime)),
     discovery,
-    hasDefeatedWorldTier2Boss: source.hasDefeatedWorldTier2Boss === true,
     autoSalvage: Object.fromEntries(SIGIL_QUALITIES.map(({ id }) => [id, isRecord(source.autoSalvage) && source.autoSalvage[id] === true])) as Record<SigilQuality, boolean>,
   }
 }

@@ -11,7 +11,6 @@ This repository intentionally does not maintain a generated Markdown balancing w
 | Monsters | `src/game/content/monsters/` |
 | Combat locations / dungeon definitions | `src/game/content/dungeons/` |
 | World navigation / target metadata | `src/game/content/world-navigation/` |
-| World Tier values | `src/game/content/world-tier/` |
 | Items / equipment | `src/game/content/items/` |
 | Artifacts | `src/game/content/artifacts/` |
 | Spells | `src/game/content/spells/` |

@@ -140,32 +140,6 @@
   font-size: 9px;
 }
 
-.combat-world-tier-control { min-width: 0; padding: 11px 13px; }
-.combat-world-tier-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.combat-world-tier-head > div { display: grid; min-width: 0; gap: 2px; }
-.combat-world-tier-head small { color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-world-tier-control .card-head { margin-bottom: 8px; }
-.combat-world-tier-control .card-head h2 { font-size: 10px; }
-.combat-world-tier-control { display: grid; align-content: start; gap: 7px; }
-.combat-world-tier-control .card-head { display: flex; align-items: center; justify-content: space-between; }
-.combat-world-tier-current { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-world-tier-current strong { color: var(--ui-text); font-size: 12px; }
-.combat-world-tier-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.combat-world-tier-buttons .button { min-width: 0; padding: 7px 8px; font-size: 9px; }
-.combat-world-tier-buttons .button.is-selected { border-color: var(--semantic-focus); color: var(--semantic-focus); background: color-mix(in srgb, var(--semantic-focus) 11%, transparent); }
-.combat-world-tier-control-note { margin: 0; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-world-tier-head > strong { color: var(--ui-accent); font: 700 14px var(--font-mono); }
-.combat-world-tier-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 6px; }
-.combat-world-tier-options .button { min-width: 0; padding: 7px 8px; font-size: 9px; }
-.combat-world-tier-status { display: block; color: var(--ui-text-muted); font: var(--text-micro) var(--font-mono); }
-.combat-world-tier-control.is-embedded { padding: 0; gap: 4px; min-width: min(240px, 100%); }
-.combat-world-tier-control.is-embedded .combat-world-tier-head { margin-bottom: 3px; }
-.combat-world-tier-control.is-embedded .combat-world-tier-head small { display: none; }
-.combat-world-tier-control.is-embedded .combat-world-tier-head > strong { font-size: 12px; }
-.combat-world-tier-control.is-embedded .combat-world-tier-options { display: flex; flex-wrap: nowrap; gap: 4px; }
-.combat-world-tier-control.is-embedded .combat-world-tier-options > .game-tooltip-trigger { flex: 1 1 0; min-width: 0; }
-.combat-world-tier-control.is-embedded .combat-world-tier-options .button { width: 100%; min-width: 34px; min-height: 27px; padding: 4px 5px; }
-.combat-world-tier-control.is-embedded .combat-world-tier-status { font-size: 8px; text-align: right; }
 
 /* Stage */
 .combat-stage-panel {
@@ -264,20 +238,6 @@
   flex: 0 0 auto;
 }
 .combat-actor-head-status .status { margin-left: 0; }
-.combat-enemy-tier-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 19px;
-  padding: 0 5px;
-  border: 1px solid color-mix(in srgb, var(--ui-accent) 55%, var(--ui-border));
-  border-radius: 4px;
-  color: var(--ui-accent);
-  background: color-mix(in srgb, var(--ui-accent) 9%, transparent);
-  font: 700 9px var(--font-mono);
-  letter-spacing: .04em;
-}
 .combat-actor-mark {
   display: grid;
   place-items: center;

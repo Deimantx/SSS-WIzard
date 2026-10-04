@@ -14,7 +14,7 @@ const events: readonly { id: ChronicleEventId; label: string }[] = [
   { id: 'first-fragment-transmuted', label: 'First Fragment Transmuted' },
   { id: 'first-research-batch-completed', label: 'First Research Batch Completed' },
   { id: 'first-guardian-combat-completed', label: 'First Guardian Combat Completed' },
-  { id: 'first-wt2-kill', label: 'First World Tier 2 Kill' },
+  { id: 'first-combat-tier-2-kill', label: 'First Combat Tier 2 Kill' },
 ]
 
 export function DeveloperChronicles() {

@@ -2,10 +2,8 @@ import type { PortalShardId } from './content/dark-portal/portalShards'
 import type { ResonanceState } from './content/resonance/resonance'
 import type { ElementId as CombatElementId } from './content/elements/elements'
 export type { ResonanceState, ResonanceType, ResonanceYield } from './content/resonance/resonance'
-import type { WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
 import type { CombatLocationId } from './content/combat-locations/combatLocationIds'
 import type { DamageType, ModifierKey } from './systems/combat/combatTypes'
-export type { WorldTierDefinition, WorldTierId, WorldTierState } from './content/world-tier/worldTiers'
 
 export type SchoolId = 'fire' | 'water' | 'earth' | 'air'
 export type ElementId = SchoolId
@@ -22,10 +20,10 @@ export type ChronicleObjectiveId =
   | 'mg1-strengthen-artifact' | 'mg2-expand-spellbook' | 'mg3-four-spell-arsenal'
   | 't1-channeling-acolyte' | 't2-shape-resonance' | 't3-study-the-fragment' | 't4-answer-verdant-circle' | 't5-read-a-sigil'
   | 'g1-join-verdant-circle' | 'g2-first-guild-contract' | 'g3-guild-apprentice' | 'g4-hunters-calling' | 'g5-first-hunt-contract' | 'g6-arcane-service' | 'g7-professional-standing' | 'g8-guild-rank-two' | 'g9-restore-guild-archive' | 'g10-first-registry-set' | 'g11-invest-in-the-guild' | 'g12-enter-gloamridge' | 'g13-accept-a-hunt' | 'g14-hunter-training'
-  | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m3a-stabilize-elemental-scar' | 'sf-m3b-enter-crossroads' | 'sf-m3c-crossroads-keeper' | 'sf-m3d-stabilize-shattered-meridian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m5a-break-black-sigil-reach' | 'sf-m5b-enter-black-gate' | 'sf-m5c-black-gatekeeper' | 'sf-m6-world-tier-two' | 'sf-c1-world-tier-three' | 'sf-c2-world-tier-four' | 'sf-c3-world-tier-five'
+  | 'sf-m1-cross-fractured-approach' | 'sf-m2-elemental-gatekeeper' | 'sf-m3-bind-guardian' | 'sf-m3a-stabilize-elemental-scar' | 'sf-m3b-enter-crossroads' | 'sf-m3c-crossroads-keeper' | 'sf-m3d-stabilize-shattered-meridian' | 'sf-m4-reach-meridian' | 'sf-m5-meridian-splitter' | 'sf-m5a-break-black-sigil-reach' | 'sf-m5b-enter-black-gate' | 'sf-m5c-black-gatekeeper' | 'sf-m6-combat-tier-two' | 'sf-c1-combat-tier-three' | 'sf-c2-combat-tier-four' | 'sf-c3-combat-tier-five'
   | 'sf-bind-guardian' | 'sf-fight-together' | 'sf-socket-first-crystal' | 'sf-step-into-harder-world'
   | `sigil-${string}`
-export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-wt2-kill' | 'first-wt3-kill' | 'first-wt4-kill' | 'first-wt5-kill' | 'first-sigil-earned' | 'first-elemental-weakness-hit' | 'elemental-tutorial-zones-opened' | 'first-elemental-ward-equipped' | 'first-elemental-ward-mitigation' | 'first-elemental-tutorial-boss-defeated' | 'starting-counter-zone-entered'
+export type ChronicleEventId = 'first-fragment-transmuted' | 'first-research-batch-completed' | 'first-guardian-combat-completed' | 'first-combat-tier-2-kill' | 'first-combat-tier-3-kill' | 'first-combat-tier-4-kill' | 'first-combat-tier-5-kill' | 'first-sigil-earned' | 'first-elemental-weakness-hit' | 'elemental-tutorial-zones-opened' | 'first-elemental-ward-equipped' | 'first-elemental-ward-mitigation' | 'first-elemental-tutorial-boss-defeated' | 'starting-counter-zone-entered'
 export type GuildRankId = 'outsider' | 'initiate' | 'apprentice' | 'adept' | 'magister' | 'circle-master'
 export type GuildRequestKind = 'donation' | 'dungeon-kills' | 'monster-kills' | 'boss-kill'
 export type GuildSkillNodeId =
@@ -306,7 +304,6 @@ export interface SigilState {
   secondaryRollsLifetime: number
   traitsUnlockedLifetime: number
   discovery: SigilDiscoveryState
-  hasDefeatedWorldTier2Boss: boolean
   autoSalvage: Record<SigilQuality, boolean>
 }
 
@@ -541,8 +538,6 @@ export interface CombatState {
   enemyId: MonsterId | null
   /** Authored normal encounter target for targeted Locations; null for random-pool runs. */
   targetEnemyId: MonsterId | null
-  /** World Tier captured when the current enemy spawned. */
-  enemyWorldTier: WorldTierId | null
   /** Monotonic deterministic identity for the currently spawned encounter. */
   enemyInstanceSerial: number
   /** `enemy:<serial>` while an enemy is alive; null during encounter downtime. */
@@ -916,7 +911,6 @@ export interface GameState {
   currencies: { gold: number }
   resonance: ResonanceState
   tower: TowerState
-  worldTier: WorldTierState
   inventory: Partial<Record<ItemId, number>>
   crystals: CrystalState
   protectedItems: Partial<Record<ItemId, boolean>>

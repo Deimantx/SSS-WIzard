@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Activity, Beaker, BookOpen, Boxes, Bug, Castle, CircleGauge, Compass, Crosshair, Gem, Globe2, Hammer, Hexagon, Library, ListChecks, Package, PersonStanding, Save, ScrollText, Sparkles, Swords, Telescope, TowerControl, Wrench, Zap } from 'lucide-react'
+import { Activity, Beaker, BookOpen, Boxes, Bug, Castle, CircleGauge, Compass, Crosshair, Gem, Hammer, Hexagon, Library, ListChecks, Package, PersonStanding, Save, ScrollText, Sparkles, Swords, Telescope, TowerControl, Wrench, Zap } from 'lucide-react'
 import { DeveloperArtificing } from './tabs/DeveloperArtificing'
 import { DeveloperArtifacts } from './tabs/DeveloperArtifacts'
 import { DeveloperArcaneCore } from './tabs/DeveloperArcaneCore'
@@ -27,7 +27,6 @@ import { DeveloperSpells } from './tabs/DeveloperSpells'
 import { DeveloperStatuses } from './tabs/DeveloperStatuses'
 import { DeveloperTransmutation } from './tabs/DeveloperTransmutation'
 import { DeveloperUITuning } from './tabs/DeveloperUITuning'
-import { DeveloperWorldTier } from './tabs/DeveloperWorldTier'
 import { DeveloperUniversalLootTiers } from './tabs/DeveloperUniversalLootTiers'
 import { DeveloperDashboardOverview, DeveloperOfflineBank, DeveloperScenarios } from './tabs/DeveloperV4SupportTabs'
 import { DEVELOPER_TOOL_METADATA, DEVELOPER_WORKSPACES, type DeveloperToolMetadata, type DeveloperWorkspaceDefinition, type DeveloperWorkspaceId } from './developerToolRegistryModel'
@@ -46,7 +45,7 @@ const icons: Record<DeveloperToolsTab, DeveloperToolIcon> = {
   quick: Zap, scenarios: Compass, 'offline-bank': Activity, character: PersonStanding, 'arcane-core': CircleGauge,
   spells: Sparkles, 'magic-schools': BookOpen, resonance: Gem, acolytes: PersonStanding, channeling: TowerControl, research: Telescope,
   transmutation: Beaker, artificing: Hammer, inventory: Package, artifacts: Boxes, crystals: Gem, sigils: Hexagon,
-  combat: Swords, 'combat-encounter': Crosshair, 'combat-boss': Swords, 'combat-actions': ListChecks, 'combat-balance': CircleGauge, 'combat-telemetry': Activity, 'universal-loot-tiers': Boxes, 'world-tier': Globe2, monsters: Crosshair, statuses: ListChecks, progression: Castle, chronicles: ScrollText,
+  combat: Swords, 'combat-encounter': Crosshair, 'combat-boss': Swords, 'combat-actions': ListChecks, 'combat-balance': CircleGauge, 'combat-telemetry': Activity, 'universal-loot-tiers': Boxes, monsters: Crosshair, statuses: ListChecks, progression: Castle, chronicles: ScrollText,
   save: Save, diagnostics: Bug, 'ui-tuning': Wrench,
 }
 
@@ -55,7 +54,7 @@ const components: Record<DeveloperToolsTab, ComponentType<DeveloperToolProps>> =
   character: noProps(DeveloperCharacter), 'arcane-core': noProps(DeveloperArcaneCore), spells: noProps(DeveloperSpells), 'magic-schools': noProps(DeveloperSchools), resonance: noProps(DeveloperResonance),
   acolytes: noProps(DeveloperAcolytes), channeling: noProps(DeveloperChanneling), research: noProps(DeveloperResearch), transmutation: noProps(DeveloperTransmutation), artificing: noProps(DeveloperArtificing),
   inventory: noProps(DeveloperInventory), artifacts: noProps(DeveloperArtifacts), crystals: noProps(DeveloperCrystals), sigils: noProps(DeveloperSigils),
-  combat: noProps(DeveloperCombat), 'combat-encounter': noProps(DeveloperCombatEncounter), 'combat-boss': noProps(DeveloperCombatBoss), 'combat-actions': noProps(DeveloperCombatActions), 'combat-balance': noProps(DeveloperCombatBalance), 'combat-telemetry': noProps(DeveloperCombatTelemetry), 'universal-loot-tiers': noProps(DeveloperUniversalLootTiers), 'world-tier': noProps(DeveloperWorldTier), monsters: noProps(DeveloperMonsters), statuses: noProps(DeveloperStatuses),
+  combat: noProps(DeveloperCombat), 'combat-encounter': noProps(DeveloperCombatEncounter), 'combat-boss': noProps(DeveloperCombatBoss), 'combat-actions': noProps(DeveloperCombatActions), 'combat-balance': noProps(DeveloperCombatBalance), 'combat-telemetry': noProps(DeveloperCombatTelemetry), 'universal-loot-tiers': noProps(DeveloperUniversalLootTiers), monsters: noProps(DeveloperMonsters), statuses: noProps(DeveloperStatuses),
   progression: noProps(DeveloperProgression), chronicles: noProps(DeveloperChronicles),
   save: noProps(DeveloperSaveState), diagnostics: diagnosticsTool, 'ui-tuning': uiTuningTool,
 }

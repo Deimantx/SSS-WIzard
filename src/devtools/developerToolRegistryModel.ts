@@ -53,7 +53,6 @@ export const DEVELOPER_TOOL_METADATA: readonly DeveloperToolMetadata[] = [
   { id: 'combat-balance', workspace: 'combat', label: 'Balance', description: 'Measure combat throughput and incoming pressure.', keywords: ['combat', 'balance', 'benchmark'] },
   { id: 'combat-telemetry', workspace: 'combat', label: 'Telemetry', description: 'Inspect combat event and performance telemetry.', keywords: ['combat', 'telemetry'] },
   { id: 'universal-loot-tiers', workspace: 'combat', label: 'Universal Loot Tiers', description: 'Audit Power-driven tier curves, drop scaling, and Monster coverage.', keywords: ['loot', 'tier', 'power', 'reward', 'economy'] },
-  { id: 'world-tier', workspace: 'combat', label: 'World Tier', description: 'Inspect world tier definitions and progression.', keywords: ['world', 'tier', 'combat'] },
   { id: 'monsters', workspace: 'combat', label: 'Enemies', description: 'Inspect authored monsters and deep-link into Combat Lab.', keywords: ['monsters', 'enemies', 'bestiary'] },
   { id: 'statuses', workspace: 'combat', label: 'Effects', description: 'Inspect active combat effects and status definitions.', keywords: ['statuses', 'effects', 'barrier'] },
   { id: 'progression', workspace: 'progression', label: 'Overview', description: 'Inspect broad progression state.', keywords: ['progression', 'guild'] },

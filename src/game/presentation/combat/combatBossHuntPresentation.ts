@@ -3,7 +3,7 @@ import { MONSTERS } from '../../content/monsters'
 import type { BossCombatLocationRuntimeView, CombatLocationType } from '../../content/combat-locations'
 import { canManuallyEngageDungeonBoss, isAutoHuntEnabledForDungeon, isAutoHuntUnlocked, isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
-import type { GameState, MonsterId, WorldTierId } from '../../types'
+import type { GameState, MonsterId } from '../../types'
 
 export type CombatBossHuntState = 'building' | 'ready' | 'queued' | 'fighting'
 
@@ -22,16 +22,15 @@ export interface CombatBossHuntPresentation {
   active: boolean
 }
 
-export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, locationType, worldTier }: {
+export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, locationType }: {
   combat: Pick<GameState['combat'], 'active' | 'locationId' | 'enemyId' | 'inBossFight' | 'pendingBossId' | 'threatCleared'>
   progress: Pick<GameState['progress'], 'autoHuntBossUnlocked' | 'bossKillsByBoss' | 'firstBossKill' | 'autoHuntBossByLocation'>
   dungeon: BossCombatLocationRuntimeView
   locationType: CombatLocationType
-  worldTier?: WorldTierId
 }): CombatBossHuntPresentation => {
   const active = combat.active && combat.locationId === dungeon.id
   const threatCurrent = active ? Math.max(0, combat.threatCleared) : 0
-  const threatRequired = resolveBossThreatRequirement(dungeon.id, worldTier ?? 1)
+  const threatRequired = resolveBossThreatRequirement(dungeon.id)
   const bossState = active ? { ...combat, threatCleared: threatCurrent } : { ...combat, active: false, locationId: dungeon.id, enemyId: null, inBossFight: false, pendingBossId: null, threatCleared: 0 }
   const fighting = isBossCurrentlyActive({ combat: bossState })
   const queued = active && combat.pendingBossId === dungeon.boss && !fighting
@@ -48,7 +47,7 @@ export const buildCombatBossHuntPresentation = ({ combat, progress, dungeon, loc
     remainingThreat: Math.max(0, threatRequired - threatCurrent),
     progressPercent: Math.min(100, threatCurrent / Math.max(1, threatRequired) * 100),
     state: fighting ? 'fighting' : queued ? 'queued' : ready ? 'ready' : 'building',
-    canEngage: canManuallyEngageDungeonBoss({ combat: bossState, progress, worldTier: worldTier ?? 1 }, dungeon),
+    canEngage: canManuallyEngageDungeonBoss({ combat: bossState, progress }, dungeon),
     autoHuntUnlocked,
     autoHuntEnabled,
     active,

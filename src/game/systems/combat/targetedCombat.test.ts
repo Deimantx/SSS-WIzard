@@ -55,7 +55,7 @@ describe('Whispering Woods targeted farming', () => {
     finishEnemy(state)
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe('stone-root')
-    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating('stone-root', 1))
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating('stone-root'))
   })
 
   it('switches the next normal spawn without interrupting the current enemy', () => {
@@ -81,8 +81,8 @@ describe('Whispering Woods targeted farming', () => {
     spawnNextEnemy(state)
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(enemyId, 1))
-    expect(state.resonance[type]).toBe(resolveEnemyResonanceReward(enemyId, 1).finalYield[type] ?? 0)
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(enemyId))
+    expect(state.resonance[type]).toBe(resolveEnemyResonanceReward(enemyId).finalYield[type] ?? 0)
   })
 
   it('keeps the target through the Zone Boss and resumes the same target', () => {
@@ -97,13 +97,13 @@ describe('Whispering Woods targeted farming', () => {
     expect(state.combat.enemyId).toBe('grove-sentinel')
   })
 
-  it('uses the canonical World Tier resolver for target rewards', () => {
-    expect(resolveEnemyResonanceReward('dewbound-sprite', 1).finalYield.water ?? 0).toBeGreaterThan(0)
-    expect(resolveEnemyResonanceReward('cinder-moth', 1).finalYield.fire ?? 0).toBeGreaterThan(0)
-    expect(resolveEnemyResonanceReward('tempest-stag', 1).finalYield).toMatchObject({ air: expect.any(Number), earth: expect.any(Number) })
-    expect(resolveEnemyResonanceReward('dewbound-sprite', 2).finalYield.water ?? 0).toBeGreaterThan(resolveEnemyResonanceReward('dewbound-sprite', 1).finalYield.water ?? 0)
-    expect(resolveEnemyResonanceReward('cinder-moth', 2).finalYield.fire ?? 0).toBeGreaterThan(resolveEnemyResonanceReward('cinder-moth', 1).finalYield.fire ?? 0)
-    expect(resolveEnemyResonanceReward('tempest-stag', 2).finalYield.air ?? 0).toBeGreaterThan(resolveEnemyResonanceReward('tempest-stag', 1).finalYield.air ?? 0)
+  it('uses the canonical Power profile for target rewards', () => {
+    expect(resolveEnemyResonanceReward('dewbound-sprite').finalYield.water ?? 0).toBeGreaterThan(0)
+    expect(resolveEnemyResonanceReward('cinder-moth').finalYield.fire ?? 0).toBeGreaterThan(0)
+    expect(resolveEnemyResonanceReward('tempest-stag').finalYield).toMatchObject({ air: expect.any(Number), earth: expect.any(Number) })
+    expect(resolveEnemyResonanceReward('dewbound-sprite').finalYield.water ?? 0).toBe(resolveEnemyResonanceReward('dewbound-sprite').finalYield.water ?? 0)
+    expect(resolveEnemyResonanceReward('cinder-moth').finalYield.fire ?? 0).toBe(resolveEnemyResonanceReward('cinder-moth').finalYield.fire ?? 0)
+    expect(resolveEnemyResonanceReward('tempest-stag').finalYield.air ?? 0).toBe(resolveEnemyResonanceReward('tempest-stag').finalYield.air ?? 0)
   })
 
   it('honors target selection in every targeted zone and Fast Resolve', () => {
@@ -119,7 +119,7 @@ describe('Whispering Woods targeted farming', () => {
     const result = fastResolveNormalEnemiesForDebug(targetedState, 2, 'whispering-woods', false)
     expect(result.resolved).toBe(2)
     expect(targetedState.progress.lifetimeKillsByMonster['forest-wisp']).toBe(2)
-    expect(targetedState.resonance.air).toBe((resolveEnemyResonanceReward('forest-wisp', 1).finalYield.air ?? 0) * 2)
+    expect(targetedState.resonance.air).toBe((resolveEnemyResonanceReward('forest-wisp').finalYield.air ?? 0) * 2)
   })
 
   it('uses the target during the next offline simulation spawn', async () => {
@@ -359,7 +359,7 @@ describe('Elemental Scar targeted farming', () => {
     expect(state.combat.enemyId).toBe(targetEnemyId)
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId, 1))
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId))
     expect(state.resonance[resonanceType]).toBeGreaterThan(0)
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(targetEnemyId)
@@ -379,8 +379,8 @@ describe('Shattered Meridian targeted farming', () => {
     expect(state.combat.enemyId).toBe(targetEnemyId)
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId, 1))
-    expect(state.resonance[resonanceType]).toBe(resolveEnemyResonanceReward(targetEnemyId, 1).finalYield[resonanceType])
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId))
+    expect(state.resonance[resonanceType]).toBe(resolveEnemyResonanceReward(targetEnemyId).finalYield[resonanceType])
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(targetEnemyId)
   })
@@ -418,8 +418,8 @@ describe('Black Sigil Reach targeted farming', () => {
     expect(state.combat.enemyId).toBe(targetEnemyId)
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId, 1))
-    expect(state.resonance[resonanceType]).toBe(resolveEnemyResonanceReward(targetEnemyId, 1).finalYield[resonanceType])
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(targetEnemyId))
+    expect(state.resonance[resonanceType]).toBe(resolveEnemyResonanceReward(targetEnemyId).finalYield[resonanceType])
     expect(spawnNextEnemy(state)).toBe(true)
     expect(state.combat.enemyId).toBe(targetEnemyId)
     expect(bossId).not.toBe(targetEnemyId)

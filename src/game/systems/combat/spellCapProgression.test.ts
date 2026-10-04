@@ -31,6 +31,6 @@ describe('School cap milestone rewards', () => {
     spawnEnemy(state, 'archmage-edrin-shade')
     finishEnemy(state)
     expect(state.progress.magicLevelCap).toBe(40)
-    expect(state.notifications.filter((note) => note.text === 'Magic School cap increased to 40')).toHaveLength(0)
+    expect(state.notifications.filter((note) => note.text === 'Magic School cap increased to 40')).toHaveLength(1)
   })
 })

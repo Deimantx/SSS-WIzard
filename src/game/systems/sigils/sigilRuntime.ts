@@ -38,8 +38,8 @@ export interface SigilEnhancementCapView { current: number; next: number | null;
 
 export const getSigilEnhancementCapView = (state: Pick<GameState, 'sigils' | 'progress'>): SigilEnhancementCapView => {
   const kills = state.progress.bossKillsByBoss
-  if (state.sigils.hasDefeatedWorldTier2Boss) return { current: 20, next: null, requirement: null }
-  if ((kills['meridian-splitter'] ?? 0) > 0) return { current: 18, next: 20, requirement: 'Defeat a World Tier 2 boss.' }
+  if ((kills['black-gatekeeper'] ?? 0) > 0) return { current: 20, next: null, requirement: null }
+  if ((kills['meridian-splitter'] ?? 0) > 0) return { current: 18, next: 20, requirement: 'Defeat the Black Gatekeeper.' }
   if ((kills['corrupted-elemental-gatekeeper'] ?? 0) > 0) return { current: 15, next: 18, requirement: 'Defeat Meridian Splitter.' }
   if ((kills['archmage-edrin-shade'] ?? 0) > 0) return { current: 12, next: 15, requirement: 'Defeat the Corrupted Elemental Gatekeeper.' }
   if ((kills['corrupted-greatbear'] ?? 0) > 0) return { current: 9, next: 12, requirement: 'Defeat Archmage Edrin Shade.' }

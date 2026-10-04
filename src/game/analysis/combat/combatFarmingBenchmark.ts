@@ -9,7 +9,7 @@ import type { CombatEvent, CombatEventSink } from '../../systems/combat/combatTy
 import { spawnEnemy } from '../../systems/combat/combatRuntime'
 import { advanceCombatState } from '../../systems/simulation/advanceGameState'
 import type { CombatTelemetryObserver } from '../../telemetry/combat/combatTelemetryTypes'
-import type { EquipmentPosition, GameState, ItemId, MonsterId, SchoolId, WorldTierId } from '../../types'
+import type { EquipmentPosition, GameState, ItemId, MonsterId, SchoolId } from '../../types'
 import { getSelectedSpellPreset } from '../../systems/spells'
 import { createEmptyResonanceState } from '../../systems/resonance/resonanceRuntime'
 import { getExpectedCrystalCacheQuantity } from '../../systems/crystals/crystalRuntime'
@@ -23,11 +23,8 @@ export const COMBAT_BALANCE_BENCHMARK_VERSION = 1
 export const COMBAT_BALANCE_BENCHMARK_SEED = COMBAT_RNG_DEFAULT_SEED ^ 0x4B41424C
 export const COMBAT_BALANCE_BENCHMARK_STEP_MS = 1_000
 export const COMBAT_BALANCE_BENCHMARK_MAX_DURATION_MS = 60 * 60 * 1_000
-export const COMBAT_BENCHMARK_WORLD_TIERS = [1, 2, 3, 4, 5] as const satisfies readonly WorldTierId[]
-export type CombatBenchmarkTierScope = 'all' | WorldTierId
 export type CombatBenchmarkMode = 'target-farm' | 'dungeon-run' | 'isolated-boss-ttk'
 
-export const getCombatBenchmarkWorldTiers = (scope: CombatBenchmarkTierScope): WorldTierId[] => scope === 'all' ? [...COMBAT_BENCHMARK_WORLD_TIERS] : [scope]
 export const getCombatBenchmarkMode = (locationId: CombatLocationId, targetEnemyId?: MonsterId): CombatBenchmarkMode => {
   const location = getCombatLocation(locationId)
   if (location && getCombatEncounterMode(location) === 'sequence') return 'dungeon-run'
@@ -46,7 +43,6 @@ export interface CombatFarmingBenchmarkInput {
   sourceState: GameState
   locationId: CombatLocationId
   targetEnemyId: MonsterId
-  worldTier: WorldTierId
   durationMs: number
   seed?: number
 }
@@ -67,7 +63,6 @@ export interface CombatFarmingBenchmarkBuildSummary {
   defense: number
   critChance: number
   cooldownRecovery: number
-  worldTier: WorldTierId
   equippedSpells: string[]
   artifacts: string[]
   sigils: string[]
@@ -83,7 +78,6 @@ export interface CombatFarmingBenchmarkResult {
   seed: number
   locationId: CombatLocationId
   targetEnemyId: MonsterId
-  worldTier: WorldTierId
   difficulty: CombatTargetDifficulty | null
   requestedDurationMs: number
   simulatedDurationMs: number
@@ -129,7 +123,6 @@ export interface CombatFarmingBenchmarkMatrixInput {
   sourceState: GameState
   locationId: CombatLocationId
   targetEnemyIds: readonly MonsterId[]
-  worldTiers: readonly WorldTierId[]
   durationMs: number
   seed?: number
 }
@@ -144,7 +137,6 @@ export interface CombatFarmingBenchmarkMatrixResult {
   locationId: CombatLocationId
   requestedDurationMs: number
   targetEnemyIds: MonsterId[]
-  worldTiers: WorldTierId[]
   results: CombatFarmingBenchmarkResult[]
   cancelled: boolean
 }
@@ -159,7 +151,6 @@ export interface CombatFarmingBenchmarkMatrixOptions {
 export interface CombatDungeonRunBenchmarkInput {
   sourceState: GameState
   locationId: CombatLocationId
-  worldTier: WorldTierId
   maxDurationMs: number
   seed?: number
 }
@@ -167,7 +158,6 @@ export interface CombatDungeonRunBenchmarkInput {
 export interface CombatDungeonRunBenchmarkResult {
   mode: 'dungeon-run'
   locationId: CombatLocationId
-  worldTier: WorldTierId
   seed: number
   sequence: MonsterId[]
   completed: boolean
@@ -208,7 +198,6 @@ export interface CombatBossCycleBenchmarkResult {
   locationId: CombatLocationId
   targetEnemyId: MonsterId
   bossId: MonsterId
-  worldTier: WorldTierId
   cyclesRequested: number
   cyclesCompleted: number
   normalKillsBeforeBoss: number
@@ -244,7 +233,7 @@ const hashSeed = (value: string) => {
   return hash >>> 0
 }
 
-export const getCombatFarmingBenchmarkSeed = (targetEnemyId: MonsterId, worldTier: WorldTierId, baseSeed = COMBAT_BALANCE_BENCHMARK_SEED) => hashSeed(`${baseSeed}:${targetEnemyId}:${worldTier}`)
+export const getCombatFarmingBenchmarkSeed = (targetEnemyId: MonsterId, baseSeed = COMBAT_BALANCE_BENCHMARK_SEED) => hashSeed(`${baseSeed}:${targetEnemyId}`)
 
 export const normalizeCombatFarmingBenchmarkDuration = (durationMs: number) => Math.min(COMBAT_BALANCE_BENCHMARK_MAX_DURATION_MS, Math.max(COMBAT_BALANCE_BENCHMARK_STEP_MS, Math.round(Number.isFinite(durationMs) ? durationMs : 5 * 60 * 1_000)))
 
@@ -281,7 +270,6 @@ export const buildCombatFarmingBenchmarkBuildSummary = (state: GameState): Comba
     defense: combatStats.defense,
     critChance: combatStats.critChance,
     cooldownRecovery: combatStats.cooldownRecovery,
-    worldTier: state.worldTier.current,
     equippedSpells: (selectedPreset?.slots ?? []).flatMap((slot) => slot.spellId ? [`${SPELLS[slot.spellId]?.name ?? slot.spellId} R${state.progress.spellRanks[slot.spellId] ?? 0}${slot.autoCast ? ' (Auto)' : ''}`] : []),
     artifacts: Object.entries(state.artifactProgress).flatMap(([artifactId, progress]) => {
       const ranks = Object.values(progress.minorRanks).reduce<number>((sum, rank) => sum + (rank ?? 0), 0)
@@ -304,10 +292,9 @@ const emptyRates = (): ResonanceState => createEmptyResonanceState()
 
 const emptyResult = (input: CombatFarmingBenchmarkInput, difficulty: CombatTargetDifficulty | null, requestedDurationMs: number, invalidReason?: string): CombatFarmingBenchmarkResult => ({
   mode: isBossMonster(MONSTERS[input.targetEnemyId]) ? 'isolated-boss-ttk' : 'target-farm',
-  seed: getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.worldTier, input.seed),
+  seed: getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.seed),
   locationId: input.locationId,
   targetEnemyId: input.targetEnemyId,
-  worldTier: input.worldTier,
   difficulty,
   requestedDurationMs,
   simulatedDurationMs: 0,
@@ -525,7 +512,7 @@ export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput
   const normalKills = collector.bossCycleNormalKills
   const completedCycles = collector.bossCyclesCompleted
   return {
-    mode: 'boss-cycle', locationId: input.locationId, targetEnemyId: input.targetEnemyId, bossId, worldTier: input.worldTier,
+    mode: 'boss-cycle', locationId: input.locationId, targetEnemyId: input.targetEnemyId, bossId,
     cyclesRequested, cyclesCompleted: completedCycles, normalKillsBeforeBoss: normalKills,
     averageNormalKillsBeforeBoss: completedCycles > 0 ? normalKills / completedCycles : 0,
     cycleTimeMs: elapsedMs, averageBossCycleTimeMs: completedCycles > 0 ? elapsedMs / completedCycles : 0,
@@ -535,7 +522,7 @@ export const runCombatBossCycleBenchmark = (input: CombatBossCycleBenchmarkInput
     lifeEssencePerHour: hours > 0 ? (collector.loot.get('life-essence') ?? 0) / hours : 0,
     artifactEssencePerHour: hours > 0 ? (collector.loot.get('artifact-essence') ?? 0) / hours : 0,
     sigilDropsPerHour: hours > 0 ? collector.sigilDrops / hours : 0,
-    expectedCrystalCachesPerHour: hours > 0 ? [...collector.killsByMonster].reduce((sum, [monsterId, kills]) => sum + kills * getExpectedCrystalCacheQuantity(state, monsterId, input.worldTier), 0) / hours : 0,
+    expectedCrystalCachesPerHour: hours > 0 ? [...collector.killsByMonster].reduce((sum, [monsterId, kills]) => sum + kills * getExpectedCrystalCacheQuantity(state, monsterId), 0) / hours : 0,
     arcanePointsPerHour: hours > 0 ? Math.max(0, (state.arcaneCore.totalPointsEarned ?? 0) - startingArcanePoints) / hours : 0,
     materialLootPerHour: resolveMaterialLootPerHour(collector, hours),
     damageTaken: collector.damageTaken, survived: collector.timeToDeathMs === null, endingHealth: state.player.health, endingMana: state.player.mana,
@@ -548,7 +535,7 @@ export const runCombatDungeonRunBenchmark = (input: CombatDungeonRunBenchmarkInp
   if (!location || !dungeon || getCombatEncounterMode(location) !== 'sequence' || !dungeon.encounterSequence?.length) return null
   const sequence = [...dungeon.encounterSequence, ...(dungeon.boss ? [dungeon.boss] : [])]
   const durationMs = normalizeCombatFarmingBenchmarkDuration(input.maxDurationMs)
-  const seed = getCombatFarmingBenchmarkSeed(sequence[0], input.worldTier, input.seed)
+  const seed = getCombatFarmingBenchmarkSeed(sequence[0], input.seed)
   const state = normalizeBenchmarkClone(input.sourceState, { ...input, targetEnemyId: sequence[0], durationMs })
   state.combat.sequenceIndex = 0
   const collector = new BenchmarkCollector()
@@ -574,7 +561,7 @@ export const runCombatDungeonRunBenchmark = (input: CombatDungeonRunBenchmarkInp
   const artifactEssence = collector.loot.get('artifact-essence') ?? 0
   const arcanePoints = Math.max(0, (state.arcaneCore.totalPointsEarned ?? 0) - startingArcanePoints)
   return {
-    mode: 'dungeon-run', locationId: input.locationId, worldTier: input.worldTier, seed, sequence,
+    mode: 'dungeon-run', locationId: input.locationId, seed, sequence,
     completed,
     survived: collector.timeToDeathMs === null,
     simulatedDurationMs: collector.simulatedTimeMs,
@@ -605,7 +592,6 @@ const normalizeBenchmarkClone = (sourceState: GameState, input: CombatFarmingBen
   state.combat.pendingBossId = null
   state.combat.threatCleared = 0
   state.combat.inBossFight = false
-  state.worldTier.current = input.worldTier
   state.player.health = state.player.maxHealth
   state.player.mana = state.player.maxMana
   state.player.healthRegenTimerMs = freshState.player.healthRegenTimerMs
@@ -623,7 +609,7 @@ const normalizeBenchmarkClone = (sourceState: GameState, input: CombatFarmingBen
   state.debug.combatTimeScale = 1
   state.debug.arcaneCoreFreeCosts = false
   state.debug.arcaneCoreIgnorePrerequisites = false
-  state.combat.combatRngState = getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.worldTier, input.seed)
+  state.combat.combatRngState = getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.seed)
   return state
 }
 
@@ -640,7 +626,7 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
   const sequenceTarget = getCombatEncounterMode(location) === 'sequence' && Boolean(dungeon.encounterSequence?.includes(input.targetEnemyId))
   if (!targetIsBoss && !isCombatTargetForLocation(location, dungeon.id, input.targetEnemyId) && !sequenceTarget) return emptyResult(input, difficulty, durationMs, 'Target is not a valid combat target for this location.')
 
-  const seed = getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.worldTier, input.seed)
+  const seed = getCombatFarmingBenchmarkSeed(input.targetEnemyId, input.seed)
   const state = normalizeBenchmarkClone(input.sourceState, input)
   const collector = new BenchmarkCollector()
   collector.targetEnemyId = input.targetEnemyId
@@ -670,7 +656,6 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
     seed,
     locationId: input.locationId,
     targetEnemyId: input.targetEnemyId,
-    worldTier: input.worldTier,
     difficulty,
     requestedDurationMs: durationMs,
     simulatedDurationMs,
@@ -685,7 +670,7 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
     artifactEssencePerHour: hours > 0 ? (collector.loot.get('artifact-essence') ?? 0) / hours : 0,
     sigilDropsPerHour: hours > 0 ? collector.sigilDrops / hours : 0,
     crystalCachesPerHour: hours > 0 ? (collector.loot.get('tier-1-crystal-cache') ?? 0) / hours : 0,
-    expectedCrystalCachesPerHour: hours > 0 ? (collector.kills / hours) * getExpectedCrystalCacheQuantity(state, input.targetEnemyId, input.worldTier) : 0,
+    expectedCrystalCachesPerHour: hours > 0 ? (collector.kills / hours) * getExpectedCrystalCacheQuantity(state, input.targetEnemyId) : 0,
     arcanePointsPerHour: hours > 0 ? Math.max(0, (state.arcaneCore.totalPointsEarned ?? 0) - startingArcanePoints) / hours : 0,
     materialLootPerHour: resolveMaterialLootPerHour(collector, hours),
     resonanceTotal: collector.resonance,
@@ -715,8 +700,7 @@ export const runCombatFarmingBenchmark = (input: CombatFarmingBenchmarkInput): C
 
 export const runCombatFarmingBenchmarkMatrix = async (input: CombatFarmingBenchmarkMatrixInput, options: CombatFarmingBenchmarkMatrixOptions = {}): Promise<CombatFarmingBenchmarkMatrixResult> => {
   const targetEnemyIds = [...input.targetEnemyIds]
-  const worldTiers = [...input.worldTiers]
-  const jobs = targetEnemyIds.flatMap((targetEnemyId) => worldTiers.map((worldTier) => ({ targetEnemyId, worldTier })))
+  const jobs = targetEnemyIds.map((targetEnemyId) => ({ targetEnemyId }))
   const results: CombatFarmingBenchmarkResult[] = []
   options.onProgress?.({ completed: 0, total: jobs.length })
   for (let index = 0; index < jobs.length; index += 1) {
@@ -728,7 +712,7 @@ export const runCombatFarmingBenchmarkMatrix = async (input: CombatFarmingBenchm
     options.onProgress?.({ completed: index + 1, total: jobs.length })
     if (options.yieldBetweenJobs !== false && index + 1 < jobs.length) await new Promise<void>((resolve) => setTimeout(resolve, 0))
   }
-  return { benchmarkVersion: COMBAT_BALANCE_BENCHMARK_VERSION, locationId: input.locationId, requestedDurationMs: normalizeCombatFarmingBenchmarkDuration(input.durationMs), targetEnemyIds, worldTiers, results, cancelled: results.length < jobs.length }
+  return { benchmarkVersion: COMBAT_BALANCE_BENCHMARK_VERSION, locationId: input.locationId, requestedDurationMs: normalizeCombatFarmingBenchmarkDuration(input.durationMs), targetEnemyIds, results, cancelled: results.length < jobs.length }
 }
 
 export const WHISPERING_WOODS_BENCHMARK_TARGETS = getCombatFarmingBenchmarkTargets('whispering-woods')

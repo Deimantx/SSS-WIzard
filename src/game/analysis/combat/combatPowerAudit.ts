@@ -2,7 +2,7 @@ import { COMBAT_LOCATIONS, getCombatEncounterMode, hasBossEncounter, type Combat
 import { MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../../presentation/combat/enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
-import type { MonsterId, WorldTierId } from '../../types'
+import type { MonsterId } from '../../types'
 
 export interface MonsterPowerAuditRow {
   locationType: CombatLocationType
@@ -13,7 +13,6 @@ export interface MonsterPowerAuditRow {
   role: 'normal' | 'boss'
   difficulty: CombatTargetDifficulty | null
   order: number
-  worldTier: WorldTierId
   power: number
 }
 
@@ -49,7 +48,6 @@ export interface ThreatKillsToBossAuditRow {
   locationType: CombatLocationType
   location: string
   locationId: CombatLocationId
-  worldTier: WorldTierId
   threatRequired: number
   weakestThreatPerKill: number
   medianThreatPerKill: number
@@ -57,14 +55,11 @@ export interface ThreatKillsToBossAuditRow {
   killsUsingWeakest: number
   killsUsingMedian: number
   killsUsingStrongest: number
-  worldTierDriftPercent: number
   warnings: string[]
 }
 
 const DIFFICULTY_RANK: Record<CombatTargetDifficulty, number> = { easy: 0, standard: 1, hard: 2, apex: 3 }
-const WORLD_TIERS: readonly WorldTierId[] = [1, 2, 3, 4, 5]
-
-const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): MonsterPowerAuditRow[] => {
+const locationRows = (locationId: CombatLocationId): MonsterPowerAuditRow[] => {
   const location = COMBAT_LOCATIONS[locationId]
   if (!location?.id) return []
   const dungeon = COMBAT_LOCATIONS[location.id]
@@ -73,7 +68,7 @@ const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): Mon
   const rows: MonsterPowerAuditRow[] = []
   const add = (monsterId: MonsterId, role: 'normal' | 'boss', order: number, difficulty: CombatTargetDifficulty | null) => {
     if (!MONSTERS[monsterId]) return
-    rows.push({ locationType: location.type, location: location.name, locationId, encounterMode: mode, monsterId, role, difficulty, order, worldTier, power: resolveEnemyPowerRating(monsterId, worldTier) })
+    rows.push({ locationType: location.type, location: location.name, locationId, encounterMode: mode, monsterId, role, difficulty, order, power: resolveEnemyPowerRating(monsterId) })
   }
 
   const normalIds = mode === 'targeted' && location.targetMetadata
@@ -87,9 +82,9 @@ const locationRows = (locationId: CombatLocationId, worldTier: WorldTierId): Mon
 }
 
 /** Development/test-only view of authored baseline Power across the current journey. */
-export const buildMonsterPowerAudit = (worldTier: WorldTierId = 1): MonsterPowerAuditRow[] => Object.keys(COMBAT_LOCATIONS).flatMap((locationId) => locationRows(locationId as CombatLocationId, worldTier))
+export const buildMonsterPowerAudit = (): MonsterPowerAuditRow[] => Object.keys(COMBAT_LOCATIONS).flatMap((locationId) => locationRows(locationId as CombatLocationId))
 
-export const buildSequencePowerAudit = (worldTier: WorldTierId = 1): SequencePowerAuditRow[] => buildMonsterPowerAudit(worldTier)
+export const buildSequencePowerAudit = (): SequencePowerAuditRow[] => buildMonsterPowerAudit()
   .filter((row) => row.encounterMode === 'sequence')
   .sort((left, right) => left.locationId.localeCompare(right.locationId) || left.order - right.order)
   .map((row, index, rows) => {
@@ -99,8 +94,8 @@ export const buildSequencePowerAudit = (worldTier: WorldTierId = 1): SequencePow
     return { ...row, step: row.order, deltaFromPrevious, negativeDeltaPercent, largeNegativeDelta: negativeDeltaPercent !== null && negativeDeltaPercent > 15 }
   })
 
-export const buildBossPowerRatioAudit = (worldTier: WorldTierId = 1): BossPowerRatioAuditRow[] => {
-  const sequenceRows = buildSequencePowerAudit(worldTier)
+export const buildBossPowerRatioAudit = (): BossPowerRatioAuditRow[] => {
+  const sequenceRows = buildSequencePowerAudit()
   return [...new Set(sequenceRows.map((row) => row.locationId))].flatMap((locationId) => {
     const location = COMBAT_LOCATIONS[locationId]
     const resolvedLocationId = location?.id
@@ -114,9 +109,9 @@ export const buildBossPowerRatioAudit = (worldTier: WorldTierId = 1): BossPowerR
   })
 }
 
-export const buildDifficultyInversionAudit = (worldTier: WorldTierId = 1): DifficultyInversionAudit[] => {
+export const buildDifficultyInversionAudit = (): DifficultyInversionAudit[] => {
   const inversions: DifficultyInversionAudit[] = []
-  buildMonsterPowerAudit(worldTier).filter((row) => row.encounterMode === 'targeted' && row.role === 'normal' && row.difficulty).forEach((left, index, rows) => {
+  buildMonsterPowerAudit().filter((row) => row.encounterMode === 'targeted' && row.role === 'normal' && row.difficulty).forEach((left, index, rows) => {
     rows.slice(index + 1).forEach((right) => {
       if (right.locationId !== left.locationId || !left.difficulty || !right.difficulty || DIFFICULTY_RANK[left.difficulty] >= DIFFICULTY_RANK[right.difficulty] || left.power <= right.power) return
       inversions.push({ locationId: left.locationId, location: left.location, lowerDifficulty: left.difficulty, lowerTargetId: left.monsterId, lowerPower: left.power, higherDifficulty: right.difficulty, higherTargetId: right.monsterId, higherPower: right.power })
@@ -125,11 +120,8 @@ export const buildDifficultyInversionAudit = (worldTier: WorldTierId = 1): Diffi
   return inversions
 }
 
-export const getPowerAuditWorldTiers = () => WORLD_TIERS
-
 /** Power-based boss pacing from authored target order and the canonical threat functions. */
 export const buildThreatKillsToBossAudit = (): ThreatKillsToBossAuditRow[] => {
-  const baseline = new Map<CombatLocationId, number>()
   const rows: ThreatKillsToBossAuditRow[] = []
   Object.values(COMBAT_LOCATIONS).filter((location) => location.id && getCombatEncounterMode(location) === 'targeted' && hasBossEncounter(COMBAT_LOCATIONS[location.id])).forEach((location) => {
     const locationId = location.id!
@@ -137,24 +129,18 @@ export const buildThreatKillsToBossAudit = (): ThreatKillsToBossAuditRow[] => {
       .sort(([, left], [, right]) => (left?.order ?? Number.MAX_SAFE_INTEGER) - (right?.order ?? Number.MAX_SAFE_INTEGER))
       .map(([monsterId]) => monsterId as MonsterId)
     if (!targets.length) return
-    WORLD_TIERS.forEach((worldTier) => {
-      const gains = targets.map((monsterId) => resolveEnemyPowerRating(monsterId, worldTier)).sort((left, right) => left - right)
-      const requirement = resolveBossThreatRequirement(locationId, worldTier)
-      const weakest = gains[0]
-      const strongest = gains[gains.length - 1]
-      const median = gains[Math.floor(gains.length / 2)]
-      const killsUsingWeakest = Math.ceil(requirement / weakest)
-      const killsUsingMedian = Math.ceil(requirement / median)
-      const killsUsingStrongest = Math.ceil(requirement / strongest)
-      const wt1Median = baseline.get(location.id) ?? (worldTier === 1 ? killsUsingMedian : 0)
-      if (worldTier === 1) baseline.set(location.id, killsUsingMedian)
-      const worldTierDriftPercent = wt1Median > 0 ? Math.abs(killsUsingMedian - wt1Median) / wt1Median * 100 : 0
-      const warnings: string[] = []
-      if (killsUsingStrongest === 1) warnings.push('Strongest normal target unlocks the boss in one kill')
-      if (worldTier >= 3 && killsUsingMedian > 12) warnings.push('Median target requires more than 12 kills per boss attempt')
-      if (worldTier > 1 && worldTierDriftPercent > 25) warnings.push(`WT pacing drifts ${worldTierDriftPercent.toFixed(1)}% from WT1`)
-      rows.push({ locationType: location.type, location: location.name, locationId: location.id, worldTier, threatRequired: requirement, weakestThreatPerKill: weakest, medianThreatPerKill: median, strongestThreatPerKill: strongest, killsUsingWeakest, killsUsingMedian, killsUsingStrongest, worldTierDriftPercent, warnings })
-    })
+    const gains = targets.map((monsterId) => resolveEnemyPowerRating(monsterId)).sort((left, right) => left - right)
+    const requirement = resolveBossThreatRequirement(locationId)
+    const weakest = gains[0]
+    const strongest = gains[gains.length - 1]
+    const median = gains[Math.floor(gains.length / 2)]
+    const killsUsingWeakest = Math.ceil(requirement / weakest)
+    const killsUsingMedian = Math.ceil(requirement / median)
+    const killsUsingStrongest = Math.ceil(requirement / strongest)
+    const warnings: string[] = []
+    if (killsUsingStrongest === 1) warnings.push('Strongest normal target unlocks the boss in one kill')
+    if (killsUsingMedian > 12) warnings.push('Median target requires more than 12 kills per boss attempt')
+    rows.push({ locationType: location.type, location: location.name, locationId: location.id, threatRequired: requirement, weakestThreatPerKill: weakest, medianThreatPerKill: median, strongestThreatPerKill: strongest, killsUsingWeakest, killsUsingMedian, killsUsingStrongest, warnings })
   })
   return rows
 }

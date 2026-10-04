@@ -23,10 +23,6 @@ export const dungeonLocations = {
                                                                     "label":  "Dark Portal"
                                                                 },
                                                                 {
-                                                                    "id":  "world-tier-2",
-                                                                    "label":  "World Tier 2"
-                                                                },
-                                                                {
                                                                     "id":  "combat-tier-2-zones",
                                                                     "label":  "Combat Tier 2: Fire, Earth, Air and Water Zones"
                                                                 },
@@ -74,10 +70,6 @@ export const dungeonLocations = {
                                                                    "label":  "Combat Tier 3: Fire, Earth, Air and Water Zones"
                                                                },
                                                                {
-                                                                   "id":  "world-tier-3",
-                                                                   "label":  "World Tier 3"
-                                                               },
-                                                               {
                                                                    "id":  "tier-3-hunting-ground",
                                                                    "label":  "Cinderhex Barrens requires Hunter’s Order Warden I"
                                                                }
@@ -112,10 +104,6 @@ export const dungeonLocations = {
                                                                 {
                                                                     "id":  "combat-tier-4-zones",
                                                                     "label":  "Combat Tier 4: Fire, Earth, Air and Water Zones"
-                                                                },
-                                                                {
-                                                                    "id":  "world-tier-3",
-                                                                    "label":  "World Tier 3"
                                                                 },
                                                                 {
                                                                     "id":  "tier-4-hunting-ground",
@@ -158,10 +146,6 @@ export const dungeonLocations = {
                                                                 "label":  "Combat Tier 5: Fire, Earth, Air and Water Zones"
                                                             },
                                                             {
-                                                                "id":  "world-tier-4",
-                                                                "label":  "World Tier 4"
-                                                            },
-                                                            {
                                                                 "id":  "tier-5-hunting-ground",
                                                                 "label":  "Sunken Bell Grounds requires Hunter’s Order Master Hunter I"
                                                             },
@@ -201,10 +185,6 @@ export const dungeonLocations = {
                        "progressionOrder":  26,
                        "encounterMode":  "sequence",
                        "firstClearUnlockPreview":  [
-                                                       {
-                                                           "id":  "world-tier-5",
-                                                           "label":  "World Tier 5"
-                                                       }
                                                    ],
                        "monsterPool":  [
                                            "gatebound-remnant",

@@ -12,11 +12,10 @@ import type { ItemId, MonsterId } from '../../../game/types'
 export function CombatLocationLootModal({ location, targetMonsterId, onClose }: { location: CombatLocationViewModel; targetMonsterId?: MonsterId | null; onClose: () => void }) {
   const progress = useGameStore((state) => state.progress)
   const inventory = useGameStore((state) => state.inventory)
-  const worldTier = useGameStore((state) => state.worldTier.current)
   const targeted = Boolean(location.targeting)
   const target = targeted && targetMonsterId ? location.targeting?.targets.find((entry) => entry.monsterId === targetMonsterId) ?? null : null
-  const reward = target ? buildCombatTargetRewardPresentation(target.monsterId, worldTier) : null
-  const loot = !targeted && location.locationId ? buildLocationLootPresentation(location.locationId, progress, worldTier) : null
+  const reward = target ? buildCombatTargetRewardPresentation(target.monsterId) : null
+  const loot = !targeted && location.locationId ? buildLocationLootPresentation(location.locationId, progress) : null
   const title = reward ? `${reward.monsterName.toUpperCase()} — LOOT` : location.name.toUpperCase()
 
   return <ModalPortal open onClose={onClose} backdropClassName="combat-location-loot-backdrop" surfaceClassName="combat-location-loot-modal" ariaLabelledBy="combat-location-loot-title">
@@ -28,7 +27,7 @@ export function CombatLocationLootModal({ location, targetMonsterId, onClose }: 
 function TargetLootBody({ location, reward, inventory }: { location: CombatLocationViewModel; reward: CombatTargetRewardPresentation; inventory: Partial<Record<ItemId, number>> }) {
   const resonanceEntries = getNonZeroResonanceEntries(reward.resonance)
   return <div className="combat-location-loot-body"><div className="combat-location-loot-groups">
-    <section className="combat-location-loot-group"><div className="combat-location-loot-group-head"><div className="combat-location-loot-eyebrow"><Package size={14} aria-hidden="true" /> ITEM DROPS</div><Status tone="active">WT{reward.worldTier} PREVIEW</Status></div><p className="combat-location-loot-group-description">Authored rewards from {reward.monsterName} in {location.name}.</p><div className="combat-location-loot-drop-grid">{reward.itemDrops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} inventory={inventory} sourceName={reward.monsterName} />)}</div></section>
+    <section className="combat-location-loot-group"><div className="combat-location-loot-group-head"><div className="combat-location-loot-eyebrow"><Package size={14} aria-hidden="true" /> ITEM DROPS</div><Status tone="active">AUTHORED DROP PREVIEW</Status></div><p className="combat-location-loot-group-description">Authored rewards from {reward.monsterName} in {location.name}.</p><div className="combat-location-loot-drop-grid">{reward.itemDrops.map((drop) => <LootRewardTile key={drop.itemId} drop={drop} inventory={inventory} sourceName={reward.monsterName} />)}</div></section>
     <section className="combat-location-loot-group is-resonance"><div className="combat-location-loot-eyebrow">RESONANCE</div>{resonanceEntries.length > 0 ? <div className="combat-target-resonance-list">{resonanceEntries.map((entry) => <div className="combat-target-resonance-row" key={entry.type}><span>{entry.label} Resonance</span><strong>+{entry.amount.toLocaleString('en-US')}</strong></div>)}</div> : <p className="combat-location-loot-group-description">No Resonance reward is authored for this target.</p>}</section>
     <section className="combat-location-loot-group is-threat"><div className="combat-location-loot-eyebrow">BOSS PROGRESS</div><div className="combat-target-resonance-list"><div className="combat-target-resonance-row"><span>Threat per kill</span><strong>+{reward.threatGain.toLocaleString('en-US')}</strong></div></div><p className="combat-location-loot-group-description">In targeted Boss-hunt Zones, enemy Power equals Threat gained per normal kill.</p></section>
   </div></div>

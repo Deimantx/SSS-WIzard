@@ -3,19 +3,19 @@ import { BUILT_IN_DEVELOPER_SCENARIOS } from './builtInScenarios'
 import { ensureDeveloperSandbox, restoreAndExitDeveloperSandbox } from '../developerSandbox'
 
 const EXPECTED_ELEMENTAL_SCAR_SCENARIOS = [
-  'Edrin Cleared / WT2 Combat Paths Open', 'Fractured Approach Start', 'Gatekeeper Encounter',
+  'Fractured Approach Start', 'Gatekeeper Encounter',
   'Guardian Selection Ready', 'Flooded Boss Ready', 'Ashen Boss Ready', 'Rootscar Boss Ready',
-  '2 / 3 Location Bosses Cleared', 'Crossroads Unlocked', 'Crossroads Start', 'Crossroads Keeper', 'World Tier III Ready',
+  '2 / 3 Location Bosses Cleared', 'Crossroads Unlocked', 'Crossroads Start', 'Crossroads Keeper',
 ]
 const EXPECTED_SHATTERED_MERIDIAN_SCENARIOS = [
   'Crossroads Cleared / Three Paths Open', 'Graveglass Boss Ready', 'Stormvault Boss Ready', 'Starfallen Boss Ready',
   '1 / 3 Shattered Bosses Cleared', '2 / 3 Shattered Bosses Cleared', '3 / 3 Shattered Bosses Cleared',
-  'Broken Meridian Unlocked', 'Broken Meridian Start', 'Meridian Splitter', 'Meridian Splitter Cleared', 'WT4 Ready', 'Crystals Unlocked', 'Black Gate Paths Open',
+  'Broken Meridian Unlocked', 'Broken Meridian Start', 'Meridian Splitter', 'Meridian Splitter Cleared', 'Crystals Unlocked', 'Black Gate Paths Open',
 ]
 const EXPECTED_BLACK_SIGIL_SCENARIOS = [
   'Meridian Splitter Cleared / Black Sigil Open', 'Hall Start', 'Hall Boss Ready', 'Unspoken Prelate',
   'Vault Start', 'Vault Boss Ready', 'Sigil Warden', '1 / 2 Black Sigil Bosses Cleared', '2 / 2 Black Sigil Bosses Cleared',
-  'Black Gate Unlocked', 'Black Gate Start', 'Black Gatekeeper Phase 1', 'Black Gatekeeper Phase 2', 'Black Gatekeeper Cleared', 'WT5 Ready',
+  'Black Gate Unlocked', 'Black Gate Start', 'Black Gatekeeper Phase 1', 'Black Gatekeeper Phase 2', 'Black Gatekeeper Cleared',
 ]
 
 describe('Elemental Scar DevTools scenarios', () => {

@@ -6,8 +6,8 @@ import { resolveCombatLootContext, roundLootQuantity } from './universalLootRunt
 describe('Combat currency rewards', () => {
   it('uses authored base targets and Power-selected quantity scaling', () => {
     for (const itemId of ['life-essence', 'artifact-essence'] as const) {
-      const context = resolveCombatLootContext('forest-wisp', 1)
-      const result = resolveCombatCurrencyRewardRange('forest-wisp', itemId, 1)
+      const context = resolveCombatLootContext('forest-wisp')
+      const result = resolveCombatCurrencyRewardRange('forest-wisp', itemId)
       const scale = context.lootTier.quantityMultiplier
       expect(result.baseTarget).toBe(UNIVERSAL_LOOT_CURRENCY_BASE_TARGETS[itemId])
       expect(result.finalMin).toBe(roundLootQuantity(result.baseTarget * UNIVERSAL_LOOT_CURRENCY_VARIANCE.min * scale))
@@ -18,8 +18,8 @@ describe('Combat currency rewards', () => {
   })
 
   it('applies boss quantity as a separate fivefold profile', () => {
-    const normal = resolveCombatCurrencyRewardRange('crossroads-keeper', 'life-essence', 1)
-    const context = resolveCombatLootContext('crossroads-keeper', 1)
+    const normal = resolveCombatCurrencyRewardRange('crossroads-keeper', 'life-essence')
+    const context = resolveCombatLootContext('crossroads-keeper')
     expect(context.isBoss).toBe(true)
     expect(normal.bossQuantityMultiplier).toBe(5)
     expect(normal.finalMin).toBe(roundLootQuantity(normal.baseTarget * UNIVERSAL_LOOT_CURRENCY_VARIANCE.min * context.lootTier.quantityMultiplier * 5))

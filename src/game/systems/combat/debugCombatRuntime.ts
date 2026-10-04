@@ -51,7 +51,7 @@ export const fastResolveNormalEnemiesForDebug = (
     return { resolved: result, bossReady: false }
   }
   ensureDungeon(state, locationId)
-  const threatRequired = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+  const threatRequired = resolveBossThreatRequirement(dungeon.id)
   const count = Math.min(1000, Math.max(0, Number.isFinite(requested) ? Math.floor(requested) : 0))
   let resolved = 0
   const sequenceDungeon = getCombatEncounterMode(getCombatLocationById(locationId)) === 'sequence'
@@ -93,7 +93,7 @@ export const clearToBossForDebug = (state: GameState, locationId: CombatLocation
   const dungeon = COMBAT_LOCATIONS[locationId]
   if (!dungeon || !hasBossEncounter(dungeon)) return { resolved: 0, bossReady: false }
   if (getCombatEncounterMode(getCombatLocationById(locationId)) === 'sequence') return fastResolveNormalEnemiesForDebug(state, dungeon.encounterSequence?.length ?? 0, locationId, false, context)
-  const requirement = resolveBossThreatRequirement(dungeon.id, state.worldTier.current)
+  const requirement = resolveBossThreatRequirement(dungeon.id)
   const remaining = Math.max(0, requirement - state.combat.threatCleared)
   return fastResolveNormalEnemiesForDebug(state, remaining, locationId, true, context)
 }
@@ -104,7 +104,7 @@ export const jumpToBossForDebug = (state: GameState, locationId: CombatLocationI
   ensureDungeon(state, locationId)
   despawnEnemyForDebug(state)
   if (getCombatEncounterMode(getCombatLocationById(locationId)) === 'sequence') state.combat.sequenceIndex = dungeon.encounterSequence?.length ?? 0
-  state.combat.threatCleared = Math.max(state.combat.threatCleared, resolveBossThreatRequirement(dungeon.id, state.worldTier.current))
+  state.combat.threatCleared = Math.max(state.combat.threatCleared, resolveBossThreatRequirement(dungeon.id))
   state.combat.pendingBossId = null
   spawnEnemy(state, dungeon.boss, context.uiEvents)
   return true
@@ -117,7 +117,7 @@ export const restartBossForDebug = (state: GameState, context: DebugCombatRuntim
   ensureDungeon(state, dungeon.id)
   despawnEnemyForDebug(state)
   if (getCombatEncounterMode(getCombatLocationById(dungeon.id)) === 'sequence') state.combat.sequenceIndex = dungeon.encounterSequence?.length ?? 0
-  state.combat.threatCleared = Math.max(state.combat.threatCleared, resolveBossThreatRequirement(dungeon.id, state.worldTier.current))
+  state.combat.threatCleared = Math.max(state.combat.threatCleared, resolveBossThreatRequirement(dungeon.id))
   state.combat.pendingBossId = null
   spawnEnemy(state, bossId, context.uiEvents)
   return true

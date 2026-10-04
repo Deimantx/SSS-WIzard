@@ -51,7 +51,6 @@ import { ARCANE_CORE_SCHEMA_VERSION } from '../game/content/arcane-core/arcaneCo
 import { ARCANE_CORE_MAJOR_COST_BY_RING, ARCANE_CORE_MAX_LEVEL, ARCANE_CORE_MAX_TOTAL_XP, ARCANE_CORE_STANDARD_RANK_COST_BY_RING, ARCANE_CORE_TOTAL_TREE_COST, getArcaneCoreLevelForXp } from '../game/content/arcane-core/arcaneCoreBalance'
 import { getArcaneCoreNode } from '../game/content/arcane-core/arcaneCoreBranches'
 import { normalizeResonanceState } from '../game/systems/resonance/resonanceRuntime'
-import { isWorldTierId, reconcileWorldTierProgression, sanitizeWorldTierState } from '../game/systems/world-tier/worldTierRuntime'
 import { LEGACY_POWER_THREAT_REQUIREMENTS, resolveBossThreatRequirement } from '../game/systems/combat/combatThreat'
 import { isCrystalSystemUnlocked, normalizeCrystalState } from '../game/systems/crystals/crystalRuntime'
 import { normalizeSigilState } from '../game/systems/sigils/sigilStateNormalization'
@@ -414,12 +413,25 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
   const rawChronicle = isRecord(rawProgress.chronicle) ? rawProgress.chronicle : {}
   const rawCompleted = Array.isArray(rawChronicle.completedObjectiveIds) ? rawChronicle.completedObjectiveIds : []
   const rawGranted = Array.isArray(rawChronicle.grantedUnlockRewardIds) ? rawChronicle.grantedUnlockRewardIds : []
-  const chronicleEventIds: ChronicleEventId[] = ['first-fragment-transmuted', 'first-research-batch-completed', 'first-guardian-combat-completed', 'first-wt2-kill', 'first-sigil-earned', 'first-elemental-weakness-hit', 'elemental-tutorial-zones-opened', 'first-elemental-ward-equipped', 'first-elemental-ward-mitigation', 'first-elemental-tutorial-boss-defeated', 'starting-counter-zone-entered']
+  const rawChronicleEvents = isRecord(rawChronicle.eventFlags) ? rawChronicle.eventFlags : {}
+  const legacyObjectiveMap: Record<string, string> = {
+    'sf-m6-world-tier-two': 'sf-m6-combat-tier-two',
+    'sf-c1-world-tier-three': 'sf-c1-combat-tier-three',
+    'sf-c2-world-tier-four': 'sf-c2-combat-tier-four',
+    'sf-c3-world-tier-five': 'sf-c3-combat-tier-five',
+  }
+  const legacyEventMap: Record<string, ChronicleEventId> = {
+    'first-wt2-kill': 'first-combat-tier-2-kill',
+    'first-wt3-kill': 'first-combat-tier-3-kill',
+    'first-wt4-kill': 'first-combat-tier-4-kill',
+    'first-wt5-kill': 'first-combat-tier-5-kill',
+  }
+  const chronicleEventIds: ChronicleEventId[] = ['first-fragment-transmuted', 'first-research-batch-completed', 'first-guardian-combat-completed', 'first-combat-tier-2-kill', 'first-combat-tier-3-kill', 'first-combat-tier-4-kill', 'first-combat-tier-5-kill', 'first-sigil-earned', 'first-elemental-weakness-hit', 'elemental-tutorial-zones-opened', 'first-elemental-ward-equipped', 'first-elemental-ward-mitigation', 'first-elemental-tutorial-boss-defeated', 'starting-counter-zone-entered']
   const validChronicleIds = CHRONICLE_OBJECTIVES.map((objective) => objective.id)
   migrated.progress.chronicle = {
-    completedObjectiveIds: rawCompleted.filter((id): id is GameState['progress']['chronicle']['completedObjectiveIds'][number] => typeof id === 'string' && validChronicleIds.includes(id as typeof validChronicleIds[number])),
-    grantedUnlockRewardIds: rawGranted.filter((id): id is GameState['progress']['chronicle']['grantedUnlockRewardIds'][number] => typeof id === 'string' && validChronicleIds.includes(id as typeof validChronicleIds[number])),
-    eventFlags: Object.fromEntries(Object.entries(isRecord(rawChronicle.eventFlags) ? rawChronicle.eventFlags : {}).filter(([id, value]) => chronicleEventIds.includes(id as ChronicleEventId) && value === true)) as GameState['progress']['chronicle']['eventFlags'],
+    completedObjectiveIds: [...new Set(rawCompleted.flatMap((id) => { const mapped = typeof id === 'string' ? legacyObjectiveMap[id] ?? id : null; return mapped && validChronicleIds.includes(mapped as typeof validChronicleIds[number]) ? [mapped as GameState['progress']['chronicle']['completedObjectiveIds'][number]] : [] }))],
+    grantedUnlockRewardIds: [...new Set(rawGranted.flatMap((id) => { const mapped = typeof id === 'string' ? legacyObjectiveMap[id] ?? id : null; return mapped && validChronicleIds.includes(mapped as typeof validChronicleIds[number]) ? [mapped as GameState['progress']['chronicle']['grantedUnlockRewardIds'][number]] : [] }))],
+    eventFlags: Object.fromEntries(Object.entries(rawChronicleEvents).flatMap(([id, value]) => { const mapped = legacyEventMap[id] ?? id; return chronicleEventIds.includes(mapped as ChronicleEventId) && value === true ? [[mapped, true]] : [] })) as GameState['progress']['chronicle']['eventFlags'],
   }
   migrated.progress.lifetimeKillsByMonster = normalizeDynamicRecord(fresh.progress.lifetimeKillsByMonster, rawProgress.lifetimeKillsByMonster, monsterIds, nonNegativeInteger)
   // Keep historical boss counters for monsters that were later demoted to a
@@ -531,11 +543,6 @@ const normalizeSchoolCap = (migrated: GameState, raw: Record<string, any>) => {
 /** Resonance is first-class saved progression; normalize it explicitly rather than trusting merge(). */
 const normalizeResonance = (migrated: GameState, raw: Record<string, any>) => {
   migrated.resonance = normalizeResonanceState(raw.resonance)
-}
-
-const normalizeWorldTier = (migrated: GameState, raw: Record<string, any>) => {
-  const normalized = sanitizeWorldTierState(raw.worldTier)
-  migrated.worldTier = { ...normalized }
 }
 
 /** V25 changes School XP meaning from the old curve to authored cumulative totals. */
@@ -721,8 +728,6 @@ const normalizeCombatState = (migrated: GameState, raw: Record<string, any>, sou
     migrated.combat.sequenceIndex = Math.min(sequence.length, Math.max(0, repairedIndex))
     migrated.combat.threatCleared = 0
   } else migrated.combat.sequenceIndex = null
-  const rawEnemyWorldTier = isWorldTierId(rawCombat.enemyWorldTier) ? rawCombat.enemyWorldTier : 1
-  migrated.combat.enemyWorldTier = activeEnemyId ? sanitizeWorldTierState({ current: rawEnemyWorldTier, highestUnlocked: migrated.worldTier.highestUnlocked }).current : null
   const rawSerial = sourceVersion >= 22 ? nonNegativeInteger(rawCombat.enemyInstanceSerial) ?? 0 : sourceVersion === 21 && activeEnemyId ? 1 : 0
   const rawInstanceKey = sourceVersion >= 22 && typeof rawCombat.enemyInstanceKey === 'string' && /^enemy:[1-9]\d*$/.test(rawCombat.enemyInstanceKey) ? rawCombat.enemyInstanceKey : null
   const keySerial = rawInstanceKey ? nonNegativeInteger(rawInstanceKey.slice('enemy:'.length)) ?? 0 : 0
@@ -1155,7 +1160,6 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   delete migratedCombat.playerAttackDurationMs
   normalizeArcaneCore(migrated, raw)
   normalizeResonance(migrated, raw)
-  normalizeWorldTier(migrated, raw)
   migrated.player.healthRegenTimerMs = normalizeHealthRegenTimer(isRecord(raw.player) ? raw.player.healthRegenTimerMs : undefined)
   migrated.progress.channeling = migrateChanneling(raw.progress, createInitialState().progress)
   migrated.progress.transmutation = migrateTransmutationArrays(raw.progress, createInitialState().progress)
@@ -1174,7 +1178,6 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
     migrated.progress.guildReputation = Math.min(GUILD_REPUTATION_CAP_V5, Math.floor(oldReputation * 4))
   }
   backfillHistoricalContractBoards(migrated, raw, sourceVersion)
-  reconcileWorldTierProgression(migrated)
   normalizeSchoolCap(migrated, raw)
   normalizeSchoolXpCurveV25(migrated, raw, sourceVersion)
   normalizeSpellProgression(migrated, raw, sourceVersion)
@@ -1194,6 +1197,9 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
   if (sourceVersion < SAVE_VERSION && migrated.combat.active) {
     const locationId = migrated.combat.locationId
     const location = getCombatLocationById(locationId)
+    const legacyWorldTier = isRecord(raw.worldTier) && Number.isInteger(raw.worldTier.current)
+      ? Math.min(5, Math.max(1, raw.worldTier.current as number))
+      : 1
     const legacyRequirement = locationId
       ? sourceVersion < 43
         ? LEGACY_POWER_THREAT_REQUIREMENTS[locationId] ?? LEGACY_ELEMENTAL_SCAR_THREAT_REQUIREMENTS[locationId] ?? LEGACY_SHATTERED_MERIDIAN_THREAT_REQUIREMENTS[locationId]
@@ -1206,8 +1212,8 @@ const finalize = (migrated: GameState, raw: Record<string, any>, sourceVersion =
             : undefined
       : undefined
     if (locationId && location?.encounterMode === 'targeted' && (location.type === 'combat-zone' || location.type === 'elite-zone') && legacyRequirement) {
-      const progressRatio = Math.min(1, Math.max(0, migrated.combat.threatCleared / legacyRequirement))
-      const requirement = resolveBossThreatRequirement(locationId, migrated.worldTier.current)
+    const progressRatio = Math.min(1, Math.max(0, migrated.combat.threatCleared / (legacyRequirement / legacyWorldTier)))
+      const requirement = resolveBossThreatRequirement(locationId)
       migrated.combat.threatCleared = Math.min(requirement, Math.max(0, Math.round(requirement * progressRatio)))
     }
   }

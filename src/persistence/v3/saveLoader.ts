@@ -19,12 +19,12 @@ const sanitizeWards = (input: unknown): GameState['combat']['elementalDamageRedu
 }
 
 export const reconcileLoadedProfileState = (state: GameState, sourceContentVersion?: number): GameState => {
-  if (sourceContentVersion === undefined || sourceContentVersion < SAVE_VERSION && sourceContentVersion !== 65 && sourceContentVersion !== 66) {
+  if (sourceContentVersion === undefined || sourceContentVersion < SAVE_VERSION && ![65, 66, 67].includes(sourceContentVersion)) {
     Object.assign(state, createInitialState())
     return state
   }
 
-  if ((sourceContentVersion === 65 || sourceContentVersion === 66) && state.combat.active && state.combat.locationId) {
+  if ((sourceContentVersion === 65 || sourceContentVersion === 66 || sourceContentVersion === 67) && state.combat.active && state.combat.locationId) {
     const location = COMBAT_LOCATIONS[state.combat.locationId]
     const convertedBoss = state.combat.locationId === 'cinder-sepulcher' ? 'sepulcher-flamekeeper' : state.combat.locationId === 'temple-of-the-sunken-bell' ? 'deep-bell-saint' : null
     if (convertedBoss && state.combat.enemyId === convertedBoss) {
@@ -68,7 +68,6 @@ export const loadPersistedGameStateV3 = (document: PersistedGameStateV3): GameSt
   state.currencies = structuredClone(document.currencies)
   state.resonance = structuredClone(document.resonance)
   state.tower = structuredClone(document.tower)
-  state.worldTier = structuredClone(document.worldTier)
   state.inventory = structuredClone(document.inventory)
   state.crystals = structuredClone(document.crystals)
   state.protectedItems = structuredClone(document.protectedItems)

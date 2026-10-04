@@ -17,6 +17,6 @@ export function DeveloperCombat({ copy }: { copy: DeveloperCopy }) {
     {combatTab === 'actions' && <DeveloperCombatActions />}
     {combatTab === 'status' && <DeveloperCombatStatus />}
     {combatTab === 'telemetry' && <DeveloperCombatTelemetry copy={copy} />}
-    {combatTab === 'balance' && <DeveloperCombatBalance copy={copy} />}
+    {combatTab === 'balance' && <DeveloperCombatBalance />}
   </div>
 }

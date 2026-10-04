@@ -1,7 +1,7 @@
 import type { CombatEncounterMode, CombatLocationId, CombatLocationType, CombatProgressionLocationType, CombatTargetDifficulty, CombatTier } from '../../content/combat-locations'
 import type { ElementId } from '../../content/elements/elements'
 import type { EliteZoneAffixId } from '../../content/elite-affixes'
-import type { MonsterId, WorldTierId } from '../../types'
+import type { MonsterId } from '../../types'
 import type { CombatBossHuntPresentation } from './combatBossHuntPresentation'
 
 export type CombatLocationState = 'locked' | 'available' | 'active' | 'boss-ready' | 'completed' | 'prototype'
@@ -21,7 +21,6 @@ export interface CombatTargetViewModel {
   difficulty: CombatTargetDifficulty
   order: number
   powerRating: number
-  worldTier: WorldTierId
 }
 
 export interface CombatTargetingViewModel {

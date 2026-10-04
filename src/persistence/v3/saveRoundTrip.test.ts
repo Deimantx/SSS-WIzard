@@ -25,7 +25,7 @@ describe('current Save System', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(3)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(67)
+    expect(SAVE_VERSION).toBe(68)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -93,20 +93,21 @@ describe('current Save System', () => {
     })
   })
 
-  it('keeps a current active encounter World Tier snapshot and computes loot tier only at runtime', () => {
+  it('serializes active combat without retired difficulty fields and discards v67 legacy fields', () => {
     const state = createInitialState()
-    state.worldTier = { current: 2, highestUnlocked: 5 }
     state.combat.active = true
     state.combat.enemyId = 'forest-wisp'
-    state.combat.enemyWorldTier = 5
     state.combat.enemyHp = 123
-    const v62 = serializeGameState(state, 1236) as unknown as Record<string, any>
-    v62.contentVersion = 65
-    const parsed = parsePersistedGameStateV3(JSON.stringify(v62))
-    const loaded = loadPersistedGameStateV3(parsed)
-    expect(loaded.combat).toMatchObject({ active: true, enemyId: 'forest-wisp', enemyWorldTier: 5, enemyHp: 123 })
-    expect(loaded.worldTier).toEqual({ current: 2, highestUnlocked: 5 })
-    expect(JSON.stringify(v62)).not.toContain('lootTier')
+    const saved = serializeGameState(state, 1236) as unknown as Record<string, any>
+    expect(saved).not.toHaveProperty('worldTier')
+    expect(saved.combat).not.toHaveProperty('enemyWorldTier')
+    saved.contentVersion = 67
+    saved.worldTier = { current: 5, highestUnlocked: 5 }
+    saved.combat.enemyWorldTier = 4
+    const loaded = loadPersistedGameStateV3(parsePersistedGameStateV3(JSON.stringify(saved)))
+    expect(loaded.combat).toMatchObject({ active: true, enemyId: 'forest-wisp', enemyHp: 123 })
+    expect('worldTier' in loaded).toBe(false)
+    expect('enemyWorldTier' in loaded.combat).toBe(false)
   })
 
   it('persists only the last-entered Combat Location from UI state', () => {
@@ -157,7 +158,6 @@ describe('current Save System', () => {
     state.combat.locationId = 'whispering-woods'
     state.combat.enemyId = 'forest-wisp'
     state.combat.targetEnemyId = 'forest-wisp'
-    state.combat.enemyWorldTier = 1
     state.combat.enemyInstanceSerial = 9
     state.combat.enemyInstanceKey = 'enemy:9'
     state.combat.enemyHp = 57

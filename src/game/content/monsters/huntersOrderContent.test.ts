@@ -27,9 +27,9 @@ describe('Gloamridge quarry combat identities', () => {
     expect(alpha.actions['alpha-pounce']).toBeDefined()
     expect(traits.map((trait) => trait.id)).not.toEqual(expect.arrayContaining(['nightglass-alpha-hide', 'nightglass-alpha-frenzy']))
 
-    const greatbearPower = resolveEnemyPowerRating('corrupted-greatbear', 1)
-    const alphaPower = resolveEnemyPowerRating('nightglass-alpha', 1)
-    const edrinPower = resolveEnemyPowerRating('archmage-edrin-shade', 1)
+    const greatbearPower = resolveEnemyPowerRating('corrupted-greatbear')
+    const alphaPower = resolveEnemyPowerRating('nightglass-alpha')
+    const edrinPower = resolveEnemyPowerRating('archmage-edrin-shade')
     expect(alphaPower).toBe(1500)
     expect(edrinPower).toBeGreaterThan(alphaPower)
   })

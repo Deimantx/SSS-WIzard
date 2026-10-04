@@ -42,30 +42,28 @@ describe('universal loot tiers', () => {
     expect(resolveUniversalLootTier(1_000_000).tier).toBe(20)
   })
 
-  it('derives encounter Loot Tier from canonical effective Power across World Tiers', () => {
+  it('derives encounter Loot Tier from the single canonical enemy Power profile', () => {
     for (const enemyId of MONSTER_IDS) {
-      for (const worldTier of [1, 2, 3, 4, 5] as const) {
-        const context = resolveCombatLootContext(enemyId, worldTier)
-        expect(context.lootTier.tier).toBe(resolveUniversalLootTier(context.effectivePower).tier)
-      }
+      const context = resolveCombatLootContext(enemyId)
+      expect(context.lootTier.tier).toBe(resolveUniversalLootTier(context.effectivePower).tier)
     }
   })
 
   it('applies the authored fivefold boss quantity and chance after tier scaling', () => {
     const bossId = MONSTER_IDS.find((id) => isBossMonster(MONSTERS[id]))!
-    const context = resolveCombatLootContext(bossId, 1)
+    const context = resolveCombatLootContext(bossId)
     expect(UNIVERSAL_LOOT_BOSS_MULTIPLIERS).toEqual({ quantity: 5, chance: 5, rarity: 5 })
     expect(resolveLootQuantity(1, context)).toBe(Math.round(context.lootTier.quantityMultiplier * 5))
     expect(resolveLootChance(.01, context)).toBeCloseTo(Math.min(1, .01 * context.lootTier.chanceMultiplier * 5))
   })
 
-  it('builds tier coverage by World Tier from registered monsters', () => {
-    const coverage = resolveLootTierDistribution(1, MONSTER_IDS)
+  it('builds canonical tier coverage from registered monsters', () => {
+    const coverage = resolveLootTierDistribution(MONSTER_IDS, (enemyId) => resolveCombatLootContext(enemyId))
     expect(Object.values(coverage).flat().sort()).toEqual([...MONSTER_IDS].sort())
   })
 
   it('uses category defaults while allowing explicit per-drop overrides', () => {
-    const boss = resolveCombatLootContext('forest-heart', 1)
+    const boss = resolveCombatLootContext('forest-heart')
     const material = { itemId: 'fire-fragment', category: 'material', baseChance: .01, quantity: { min: 1, max: 1 } } as const
     expect(resolveAuthoredLootDropChance(material, boss)).toBeCloseTo(.01 * boss.lootTier.chanceMultiplier * UNIVERSAL_LOOT_BOSS_MULTIPLIERS.chance)
     expect(resolveAuthoredLootDropQuantity(material, 1, boss)).toBe(Math.round(boss.lootTier.quantityMultiplier * UNIVERSAL_LOOT_BOSS_MULTIPLIERS.quantity))
@@ -93,7 +91,7 @@ describe('universal loot tiers', () => {
   })
 
   it('applies Loot Tier and the canonical boss rarity multiplier once to shared Sigil profiles', () => {
-    const baseContext = resolveCombatLootContext('forest-heart', 1)
+    const baseContext = resolveCombatLootContext('forest-heart')
     const highTier = { ...baseContext, lootTier: UNIVERSAL_LOOT_TIERS[19] }
     const normal = { ...highTier, isBoss: false }
     const boss = { ...highTier, isBoss: true }
@@ -105,7 +103,7 @@ describe('universal loot tiers', () => {
   })
 
   it('keeps successful Sigil and Crystal instance counts separate from the T20 quantity curve', () => {
-    const normal = { ...resolveCombatLootContext('forest-wisp', 1), lootTier: UNIVERSAL_LOOT_TIERS[19], isBoss: false }
+    const normal = { ...resolveCombatLootContext('forest-wisp'), lootTier: UNIVERSAL_LOOT_TIERS[19], isBoss: false }
     const boss = { ...normal, isBoss: true }
     expect(resolveRareLootInstanceQuantity(normal)).toBe(1)
     expect(resolveRareLootInstanceQuantity(boss)).toBe(5)

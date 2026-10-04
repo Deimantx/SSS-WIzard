@@ -9,7 +9,7 @@ import { isBossCurrentlyActive } from '../../systems/combat/combatBossSelectors'
 import { resolveEnemyPowerRating } from './enemyPowerRating'
 import { resolveBossThreatRequirement } from '../../systems/combat/combatThreat'
 import type { ElementId } from '../../content/elements/elements'
-import type { CombatState, GameState, MonsterId, WorldTierState } from '../../types'
+import type { CombatState, GameState, MonsterId } from '../../types'
 import type { CombatDungeonSequenceStepViewModel, CombatEncounterViewModel, CombatLocationState, CombatLocationViewModel, CombatTargetViewModel, CombatWorldNavigationViewModel } from './combatWorldNavigationTypes'
 
 const sorted = <T extends { order: number }>(entries: T[]) => [...entries].sort((left, right) => left.order - right.order)
@@ -44,14 +44,14 @@ const getProgressionLockText = (location: CombatLocationDefinition | undefined, 
   return null
 }
 
-const getLocationState = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState, worldTier: GameState['worldTier']['current'] = 1): CombatLocationState => {
+const getLocationState = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState): CombatLocationState => {
   const location = COMBAT_LOCATIONS[locationId]
   if (!location) return 'prototype'
   if (!location.id || location.prototype) return 'prototype'
   const dungeon = COMBAT_LOCATIONS[location.id]
   const active = Boolean(combat.active && combat.locationId === dungeon.id)
   const encounterMode = getCombatEncounterMode(location)
-  if (encounterMode === 'targeted' && hasBossEncounter(dungeon) && active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id, worldTier) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
+  if (encounterMode === 'targeted' && hasBossEncounter(dungeon) && active && combat.threatCleared >= resolveBossThreatRequirement(dungeon.id) && !isBossCurrentlyActive({ combat }) && !combat.pendingBossId) return 'boss-ready'
   if (active) return 'active'
   if (!isLocationUnlocked(locationId, progress)) return 'locked'
   if (isCombatLocationCompleted(dungeon.id, progress)) return 'completed'
@@ -60,30 +60,30 @@ const getLocationState = (locationId: CombatLocationId, progress: GameState['pro
 
 const getStateLabel = (state: CombatLocationState) => state === 'locked' ? 'LOCKED' : state === 'available' ? 'AVAILABLE' : state === 'active' ? 'ACTIVE' : state === 'boss-ready' ? 'BOSS READY' : state === 'completed' ? 'CLEARED' : 'PROTOTYPE'
 
-const buildEncounter = (monsterId: MonsterId, role: 'normal' | 'boss', progress: GameState['progress'], worldTier: GameState['worldTier']['current']): CombatEncounterViewModel => {
+const buildEncounter = (monsterId: MonsterId, role: 'normal' | 'boss', progress: GameState['progress']): CombatEncounterViewModel => {
   const known = progress.discoveredMonsters.includes(monsterId)
-  return { id: monsterId, monsterId, role, name: MONSTERS[monsterId].name, known, powerRating: resolveEnemyPowerRating(monsterId, worldTier) }
+  return { id: monsterId, monsterId, role, name: MONSTERS[monsterId].name, known, powerRating: resolveEnemyPowerRating(monsterId) }
 }
 
-const buildTarget = (monsterId: MonsterId, difficulty: CombatTargetDifficulty, order: number, progress: GameState['progress'], worldTier: GameState['worldTier']['current']): CombatTargetViewModel => {
-  return { monsterId, name: MONSTERS[monsterId]?.name ?? monsterId, known: progress.discoveredMonsters.includes(monsterId), difficulty, order, powerRating: resolveEnemyPowerRating(monsterId, worldTier), worldTier }
+const buildTarget = (monsterId: MonsterId, difficulty: CombatTargetDifficulty, order: number, progress: GameState['progress']): CombatTargetViewModel => {
+  return { monsterId, name: MONSTERS[monsterId]?.name ?? monsterId, known: progress.discoveredMonsters.includes(monsterId), difficulty, order, powerRating: resolveEnemyPowerRating(monsterId) }
 }
 
-const buildSequence = (dungeon: typeof COMBAT_LOCATIONS[CombatLocationId], progress: GameState['progress'], combat: CombatState, worldTier: GameState['worldTier']['current']) => {
+const buildSequence = (dungeon: typeof COMBAT_LOCATIONS[CombatLocationId], progress: GameState['progress'], combat: CombatState) => {
   if (!dungeon.encounterSequence || !hasBossEncounter(dungeon)) return null
   const encounterIds = [...dungeon.encounterSequence, dungeon.boss]
   const activeIndex = combat.active && combat.locationId === dungeon.id && Number.isInteger(combat.sequenceIndex) && combat.sequenceIndex! >= 0 && combat.sequenceIndex! < encounterIds.length ? combat.sequenceIndex : null
   const steps: CombatDungeonSequenceStepViewModel[] = encounterIds.map((monsterId, index) => {
     const role = index === encounterIds.length - 1 || dungeon.sequenceBossIds?.includes(monsterId) ? 'boss' : 'normal'
     const known = progress.discoveredMonsters.includes(monsterId)
-    return { order: index + 1, monsterId, name: MONSTERS[monsterId].name, role, known, powerRating: resolveEnemyPowerRating(monsterId, worldTier), state: activeIndex === null ? 'upcoming' : index < activeIndex ? 'completed' : index === activeIndex ? 'current' : 'upcoming' }
+    return { order: index + 1, monsterId, name: MONSTERS[monsterId].name, role, known, powerRating: resolveEnemyPowerRating(monsterId), state: activeIndex === null ? 'upcoming' : index < activeIndex ? 'completed' : index === activeIndex ? 'current' : 'upcoming' }
   })
   return { mode: 'sequence' as const, steps, activeIndex, totalSteps: encounterIds.length }
 }
 
-const buildLocation = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState, worldTier: WorldTierState = { current: 1, highestUnlocked: 1 }): CombatLocationViewModel => {
+const buildLocation = (locationId: CombatLocationId, progress: GameState['progress'], combat: CombatState): CombatLocationViewModel => {
   const definition = COMBAT_LOCATIONS[locationId]
-  const state = getLocationState(locationId, progress, combat, worldTier.current)
+  const state = getLocationState(locationId, progress, combat)
   const dungeon = definition?.id ? COMBAT_LOCATIONS[definition.id] : null
   const zoneAffix = getEliteZoneAffix(definition?.zoneAffixId)
   const unlockText = state === 'locked' ? getProgressionLockText(definition, progress) ?? (dungeon ? getCombatLocationUnlockRequirement(dungeon) : null) ?? getConditionText(definition?.unlock) : null
@@ -115,13 +115,12 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     }
   }
   const encounterMode = getCombatEncounterMode(definition)
-  const currentWorldTier = worldTier.current
   const contentVisible = state !== 'locked' && state !== 'prototype'
   const targets = encounterMode === 'targeted'
     && contentVisible
     ? dungeon.monsterPool.flatMap((monsterId) => {
       const metadata = definition.targetMetadata?.[monsterId]
-      return metadata ? [buildTarget(monsterId, metadata.difficulty, metadata.order, progress, currentWorldTier)] : []
+      return metadata ? [buildTarget(monsterId, metadata.difficulty, metadata.order, progress)] : []
     }).sort((left, right) => left.order - right.order)
     : []
   const activeTargetEnemyId = combat.active && combat.locationId === dungeon.id && targets.some((target) => target.monsterId === combat.targetEnemyId) ? combat.targetEnemyId : null
@@ -142,11 +141,11 @@ const buildLocation = (locationId: CombatLocationId, progress: GameState['progre
     description: definition.description ?? dungeon.ui?.description ?? 'A dangerous location beyond the tower gate.',
     encounterMode,
     zoneAffix: zoneAffix ? { id: zoneAffix.id, name: zoneAffix.name, description: zoneAffix.description } : null,
-    bossHunt: contentVisible && hasBossEncounter(dungeon) && encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type, worldTier: currentWorldTier }) : null,
-    encounters: contentVisible ? dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress, currentWorldTier)) : [],
-    boss: contentVisible && hasBossEncounter(dungeon) ? buildEncounter(dungeon.boss, 'boss', progress, currentWorldTier) : null,
+    bossHunt: contentVisible && hasBossEncounter(dungeon) && encounterMode === 'targeted' ? buildCombatBossHuntPresentation({ combat, progress, dungeon, locationType: definition.type }) : null,
+    encounters: contentVisible ? dungeon.monsterPool.map((monsterId) => buildEncounter(monsterId, 'normal', progress)) : [],
+    boss: contentVisible && hasBossEncounter(dungeon) ? buildEncounter(dungeon.boss, 'boss', progress) : null,
     targeting: contentVisible && encounterMode === 'targeted' ? { mode: 'targeted', targets, activeTargetEnemyId } : null,
-    sequence: contentVisible && encounterMode === 'sequence' ? buildSequence(dungeon, progress, combat, currentWorldTier) : null,
+    sequence: contentVisible && encounterMode === 'sequence' ? buildSequence(dungeon, progress, combat) : null,
     firstClearUnlockPreview: definition.firstClearUnlockPreview ?? [],
     firstClearCompleted: isCombatLocationCompleted(dungeon.id, progress),
   }
@@ -165,8 +164,8 @@ export function getInitialCombatLocationId({ combat, lastEnteredCombatLocationId
 
 const locationOrder = (left: CombatLocationDefinition, right: CombatLocationDefinition) => left.progressionOrder - right.progressionOrder
 
-export function buildCombatWorldNavigationViewModel({ progress, combat, worldTier, selectedLocationId, selectedType }: { progress: GameState['progress']; combat: CombatState; worldTier?: WorldTierState; selectedLocationId?: CombatLocationId | null; selectedType?: CombatProgressionLocationType }): CombatWorldNavigationViewModel {
-  const allLocations = Object.values(COMBAT_LOCATIONS).sort(locationOrder).map((location) => buildLocation(location.id, progress, combat, worldTier))
+export function buildCombatWorldNavigationViewModel({ progress, combat, selectedLocationId, selectedType }: { progress: GameState['progress']; combat: CombatState; selectedLocationId?: CombatLocationId | null; selectedType?: CombatProgressionLocationType }): CombatWorldNavigationViewModel {
+  const allLocations = Object.values(COMBAT_LOCATIONS).sort(locationOrder).map((location) => buildLocation(location.id, progress, combat))
   const selectedLocationCandidate = selectedLocationId ? allLocations.find((location) => location.id === selectedLocationId) : undefined
   const validTypes: CombatProgressionLocationType[] = ['combat-zone', 'hunting-ground', 'dungeon', 'special']
   const resolvedType = selectedType ?? (selectedLocationCandidate && validTypes.includes(selectedLocationCandidate.progressionType) ? selectedLocationCandidate.progressionType : 'combat-zone')
@@ -176,6 +175,6 @@ export function buildCombatWorldNavigationViewModel({ progress, combat, worldTie
     : typeLocations.find((location) => location.state !== 'locked' && location.state !== 'prototype')?.id ?? typeLocations[0]?.id
   const selectedLocation = resolvedLocationId ? allLocations.find((location) => location.id === resolvedLocationId) ?? null : null
   const activeLocationId = getCombatLocationById(combat.active ? combat.locationId : null)?.id ?? null
-  const activeLocation = activeLocationId ? buildLocation(activeLocationId, progress, combat, worldTier) : null
+  const activeLocation = activeLocationId ? buildLocation(activeLocationId, progress, combat) : null
   return { allLocations, selectedType: resolvedType, selectedLocation, activeLocationId, activeLocation }
 }

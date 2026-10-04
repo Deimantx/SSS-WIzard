@@ -1,13 +1,12 @@
 import { LOOT_CATEGORY_RULES, SIGIL_DROP_QUALITY_BASE, UNIVERSAL_LOOT_BOSS_MULTIPLIERS, UNIVERSAL_LOOT_TIERS, type UniversalLootTierDefinition } from '../../content/loot/universalLootTiers'
 import type { LootCategory, LootScalingRules, MonsterLootDropDefinition } from '../../content/loot/lootCategoryTypes'
-import type { MonsterId, WorldTierId } from '../../types'
+import type { MonsterId } from '../../types'
 import { isBossMonster, MONSTERS } from '../../content/monsters'
 import { resolveEnemyPowerRating } from '../combat/enemyPower'
 
 export interface CombatLootContext {
   enemyId: MonsterId
   locationId: import('../../types').CombatLocationId | null
-  worldTier: WorldTierId
   effectivePower: number
   lootTier: UniversalLootTierDefinition
   isBoss: boolean
@@ -27,9 +26,9 @@ export const resolveUniversalLootTier = (effectivePower: number): UniversalLootT
   return UNIVERSAL_LOOT_TIERS.reduce((selected, tier) => tier.minPower <= power ? tier : selected, UNIVERSAL_LOOT_TIERS[0])
 }
 
-export const resolveCombatLootContext = (enemyId: MonsterId, worldTier: WorldTierId, locationId: CombatLootContext['locationId'] = null): CombatLootContext => {
-  const effectivePower = resolveEnemyPowerRating(enemyId, worldTier)
-  return { enemyId, locationId, worldTier, effectivePower, lootTier: resolveUniversalLootTier(effectivePower), isBoss: isBossMonster(MONSTERS[enemyId]) }
+export const resolveCombatLootContext = (enemyId: MonsterId, locationId: CombatLootContext['locationId'] = null): CombatLootContext => {
+  const effectivePower = resolveEnemyPowerRating(enemyId)
+  return { enemyId, locationId, effectivePower, lootTier: resolveUniversalLootTier(effectivePower), isBoss: isBossMonster(MONSTERS[enemyId]) }
 }
 
 export const resolveLootMultiplier = (context: CombatLootContext, kind: 'quantity' | 'chance' | 'rarity', applyBoss = true) => {
@@ -93,10 +92,10 @@ export const resolveLootRarityWeights = <Rarity extends string>(weights: Record<
 export const resolveAuthoredLootDropRarityWeights = <Rarity extends string>(drop: MonsterLootDropDefinition, weights: Record<Rarity, number>, context: CombatLootContext) =>
   resolveLootRarityWeights(weights, context, resolveLootScalingRules(drop.category, drop.scaling))
 
-export const resolveLootTierDistribution = (worldTier: WorldTierId, monsters: readonly MonsterId[], resolver = resolveCombatLootContext) => {
+export const resolveLootTierDistribution = (monsters: readonly MonsterId[], resolver = resolveCombatLootContext) => {
   const distribution: Record<number, MonsterId[]> = {}
   monsters.forEach((id) => {
-    const tier = resolver(id, worldTier).lootTier.tier
+    const tier = resolver(id).lootTier.tier
     ;(distribution[tier] ??= []).push(id)
   })
   return distribution

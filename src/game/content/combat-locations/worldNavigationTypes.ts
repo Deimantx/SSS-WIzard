@@ -12,6 +12,25 @@ export type CombatLocationType =
   | 'hunting-ground'
   | 'dungeon'
 
+export type CombatTier = 1 | 2 | 3 | 4 | 5
+export type CombatProgressionLocationType = CombatLocationType | 'special'
+export type CombatElement = 'fire' | 'earth' | 'air' | 'water' | 'mixed' | 'neutral' | 'arcane'
+
+/** Tier/lane metadata for progression planning. Encounter `type` continues to
+ * describe runtime mechanics such as sequence combat and Elite Zone affixes. */
+export interface CombatProgressionMetadata {
+  tier: CombatTier
+  locationType: CombatProgressionLocationType
+  element: CombatElement
+  progressionOrder: number
+  progressionRole: 'standard' | 'hunting' | 'dungeon' | 'special'
+  mandatoryForTierProgression: boolean
+  requiredTier?: CombatTier
+  requiredDungeonClear?: CombatLocationId
+  requiredHunterOrderRank?: number
+  unlocksTier?: CombatTier
+}
+
 export type CombatZoneType = Extract<CombatLocationType, 'combat-zone' | 'elite-zone' | 'hunting-ground' | 'dungeon'>
 
 export type CombatEncounterMode = 'random-pool' | 'targeted' | 'sequence'
@@ -51,6 +70,7 @@ export interface CombatLocationDefinition {
   firstClearUnlockPreview?: Array<{ id: string; label: string }>
   unlock?: CombatNavigationUnlockCondition
   prototype?: boolean
+  progression?: CombatProgressionMetadata
 }
 
 /** Compatibility read model for consumers that still need encounter-table aliases. */

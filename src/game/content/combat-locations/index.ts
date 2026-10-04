@@ -1,5 +1,6 @@
 export * from './worldNavigationTypes'
 export * from './combatLocationIds'
+export { getCombatProgressionMetadata } from './combatProgression'
 export * from './worldNavigation'
 export * from './worldNavigationValidation'
 export * from './registry'

@@ -3,6 +3,7 @@ import { ELEMENT_IDS } from '../elements/elements'
 import { getMonsterPrimaryAffinity } from '../monsters/monsterTypes'
 import { COMBAT_LOCATION_IDS, type CombatLocationId } from './combatLocationIds'
 import type { CombatLocationDefinition, CombatLocationRuntimeView } from './worldNavigationTypes'
+import { getCombatProgressionMetadata } from './combatProgression'
 import { combatZoneLocations } from './combat-zones/locations'
 import { eliteZoneLocations } from './elite-zones/locations'
 import { huntingGroundLocations } from './hunting-grounds/locations'
@@ -35,6 +36,7 @@ const toRuntimeView = (location: CombatLocationDefinition): CombatLocationRuntim
   }))
   return {
     ...location,
+    progression: getCombatProgressionMetadata(location),
     boss: location.bossId,
     ...(location.sequence ? { encounterSequence: location.sequence } : {}),
     ...(location.description ? { ui: { description: location.description } } : {}),

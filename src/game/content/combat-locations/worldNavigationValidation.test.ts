@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
-import { COMBAT_LOCATION_ORDER, COMBAT_LOCATIONS, isCombatLocationUnlocked } from './worldNavigation'
+import { COMBAT_LOCATION_ORDER, COMBAT_LOCATIONS, getCombatZonesForTier, getDungeonForTier, getHuntingGroundForTier, getLocationsForTier, isCombatLocationUnlocked } from './worldNavigation'
 import { COMBAT_LOCATION_IDS } from './combatLocationIds'
 import { MONSTERS, MONSTER_IDS, validateMonsterDefinitions, isBossMonster } from '../monsters'
 import { validateCombatWorldNavigation } from './worldNavigationValidation'
@@ -16,6 +16,23 @@ describe('global Combat location progression', () => {
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'hunting-ground')).toHaveLength(3)
     expect(Object.values(COMBAT_LOCATIONS).filter((location) => location.type === 'dungeon')).toHaveLength(9)
     expect(Object.values(COMBAT_LOCATIONS).every((location) => !('regionId' in location))).toBe(true)
+  })
+
+  it('accounts for all 33 stable IDs in the T1-T5 progression model', () => {
+    expect(new Set(COMBAT_LOCATION_ORDER).size).toBe(33)
+    expect(COMBAT_LOCATION_ORDER.every((id) => Boolean(COMBAT_LOCATIONS[id].progression))).toBe(true)
+    expect(COMBAT_LOCATION_ORDER.filter((id) => COMBAT_LOCATIONS[id].progression?.locationType === 'special')).toEqual([
+      'howling-den', 'cinder-sepulcher', 'temple-of-the-sunken-bell', 'stormspire-monastery', 'nullstone-archive',
+    ])
+    expect([1, 2, 3, 4, 5].map((tier) => getCombatZonesForTier(tier as 1 | 2 | 3 | 4 | 5))).toHaveLength(5)
+    for (const tier of [1, 2, 3, 4, 5] as const) {
+      expect(getCombatZonesForTier(tier)).toHaveLength(4)
+      expect(getDungeonForTier(tier)?.progression).toMatchObject({ tier, locationType: 'dungeon' })
+      expect(getLocationsForTier(tier).every((location) => location.progression?.tier === tier)).toBe(true)
+    }
+    expect([1, 2, 3].map((tier) => getHuntingGroundForTier(tier as 1 | 2 | 3 | 4 | 5)?.id)).toEqual(['hunters-ground', 'mistclaw-highlands', 'cinderhex-barrens'])
+    expect(getHuntingGroundForTier(4)).toBeNull()
+    expect(getHuntingGroundForTier(5)).toBeNull()
   })
 
   it('preserves four opening elemental zones and each authored location type', () => {

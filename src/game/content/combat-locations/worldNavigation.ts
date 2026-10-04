@@ -4,9 +4,17 @@ import { getElementMultiplier } from '../elements/elements'
 import type { BossCombatLocationRuntimeView, CombatEncounterMode, CombatLocationDefinition, CombatLocationId, CombatLocationRuntimeView } from './worldNavigationTypes'
 import { COMBAT_LOCATION_IDS } from './combatLocationIds'
 import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER } from './registry'
+import { getCombatProgressionMetadata, getCombatZonesForTier as selectCombatZonesForTier, getHuntingGroundForTier as selectHuntingGroundForTier, getDungeonForTier as selectDungeonForTier, getLocationsForTier as selectLocationsForTier } from './combatProgression'
+import type { CombatTier } from './worldNavigationTypes'
 
 export { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER }
 export type { CombatLocationRuntimeView } from './worldNavigationTypes'
+export { getCombatProgressionMetadata }
+const allLocations = () => COMBAT_LOCATION_ORDER.map((id) => COMBAT_LOCATIONS[id])
+export const getCombatZonesForTier = (tier: CombatTier) => selectCombatZonesForTier(tier, allLocations())
+export const getHuntingGroundForTier = (tier: CombatTier) => selectHuntingGroundForTier(tier, allLocations())
+export const getDungeonForTier = (tier: CombatTier) => selectDungeonForTier(tier, allLocations())
+export const getLocationsForTier = (tier: CombatTier) => selectLocationsForTier(tier, allLocations())
 
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined): CombatLocationRuntimeView | null => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null
 export const getCombatLocationById = getCombatLocation

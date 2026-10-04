@@ -16,7 +16,7 @@ const unlock = () => { const state = createInitialState(); state.progress.bossKi
 describe('Hunter Order hardened runtime', () => {
   it('uses the extended authored Gloamridge roster and rank thresholds', () => {
     expect(HUNTER_RANKS.map(({ reputation }) => reputation)).toEqual([0, 1250, 4000, 9000, 17500, 32500])
-    expect(HUNTER_REGULAR_MONSTER_IDS).toHaveLength(21)
+    expect(HUNTER_REGULAR_MONSTER_IDS).toHaveLength(29)
     expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toHaveLength(7)
     expect(COMBAT_LOCATIONS['hunters-ground'].monsterPool).toEqual(expect.arrayContaining(HUNTER_REGULAR_MONSTER_IDS.filter((id) => MONSTERS[id].hunter?.huntingGroundId === 'hunters-ground')))
     for (const id of ['veilwing-harrier', 'cinderback-mauler', 'gloomroot-hexer'] as const) {
@@ -59,14 +59,15 @@ describe('Hunter Order hardened runtime', () => {
   it('scopes every generated offer to an authored enabled Hunting Ground', () => {
     const state = unlock()
     state.progress.huntersOrder.reputation = 32500
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     const offers = generateHunterContractChoices(state)
     const enabledGroundIds = HUNTER_GROUNDS.filter((ground) => ground.enabled).map((ground) => ground.id)
-    expect(enabledGroundIds).toEqual(['hunters-ground', 'mistclaw-highlands', 'cinderhex-barrens'])
+    expect(enabledGroundIds).toEqual(['hunters-ground', 'mistclaw-highlands', 'cinderhex-barrens', 'cinder-sepulcher', 'temple-of-the-sunken-bell'])
     expect(offers.length).toBeGreaterThan(0)
     expect(offers.every((offer) => offer.huntingGroundId && enabledGroundIds.includes(offer.huntingGroundId) && isCombatLocationUnlocked(offer.huntingGroundId, state.progress))).toBe(true)
     expect(isCombatLocationUnlocked('mistclaw-highlands', state.progress)).toBe(true)
     expect(isCombatLocationUnlocked('cinderhex-barrens', state.progress)).toBe(false)
-    state.progress.bossKillsByBoss['unmade-magister'] = 1
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
     const lateOffers = debugRegenerateHunterContractBoard(state, { archetype: 'monster', tier: 'routine', huntingGroundId: 'cinderhex-barrens' })
     expect(lateOffers.some((offer) => offer.huntingGroundId === 'cinderhex-barrens')).toBe(true)
   })

@@ -45,8 +45,6 @@ export const EXPANSION_BOSSES_BY_LOCATION: Partial<Record<CombatLocationId, Mons
   'pyrehold-bastion': 'pyrehold-castellan',
   'abyssal-reservoir': 'drowned-regent',
   'scalding-rift': 'steam-tyrant',
-  'cinder-sepulcher': 'sepulcher-flamekeeper',
-  'temple-of-the-sunken-bell': 'deep-bell-saint',
   'stormspire-monastery': 'abbot-ninth-gale',
   'nullstone-archive': 'closed-index',
 }

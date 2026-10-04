@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildBossPowerRatioAudit, buildDifficultyInversionAudit, buildMonsterPowerAudit, buildSequencePowerAudit, buildThreatKillsToBossAudit, getPowerAuditWorldTiers } from './combatPowerAudit'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 
 describe('combat Power audit reports', () => {
   it('emits deterministic finite rows for targeted and sequence content', () => {
@@ -14,14 +15,14 @@ describe('combat Power audit reports', () => {
 
   it('reports smooth authored Power progression through the Broken Meridian sequence', () => {
     const report = buildSequencePowerAudit(1).filter((row) => row.locationId === 'broken-meridian')
-    expect(report.map((row) => row.monsterId)).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'meridian-splitter'])
-    expect(report.find((row) => row.monsterId === 'linebreaker-shade')?.deltaFromPrevious).toBeGreaterThan(0)
-    expect(report.find((row) => row.monsterId === 'linebreaker-shade')?.largeNegativeDelta).toBe(false)
+    expect(report.map((row) => row.monsterId)).toEqual([...COMBAT_LOCATIONS['broken-meridian'].encounterSequence!, COMBAT_LOCATIONS['broken-meridian'].boss!])
+    expect(report.every((row, index) => index === 0 || row.power > report[index - 1].power)).toBe(true)
+    expect(report.every((row) => !row.largeNegativeDelta)).toBe(true)
   })
 
   it('exposes diagnostic Boss ratios and difficulty inversions without hard-failing them', () => {
     const ratios = buildBossPowerRatioAudit(1)
-    expect(ratios).toHaveLength(9)
+    expect(ratios).toHaveLength(Object.values(COMBAT_LOCATIONS).filter((location) => location.encounterMode === 'sequence').length)
     expect(ratios.every((row) => Number.isFinite(row.bossToLastNormalRatio) && row.bossToLastNormalRatio > 1)).toBe(true)
     expect(buildDifficultyInversionAudit(1).some((row) => row.locationId === 'rootscar-hollow')).toBe(false)
     expect(getPowerAuditWorldTiers()).toEqual([1, 2, 3, 4, 5])

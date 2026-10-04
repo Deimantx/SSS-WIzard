@@ -1,4 +1,4 @@
-import type { CombatEncounterMode, CombatLocationId, CombatLocationType, CombatTargetDifficulty, CombatZoneType } from '../../content/combat-locations'
+import type { CombatEncounterMode, CombatLocationId, CombatLocationType, CombatProgressionLocationType, CombatTargetDifficulty, CombatTier } from '../../content/combat-locations'
 import type { ElementId } from '../../content/elements/elements'
 import type { EliteZoneAffixId } from '../../content/elite-affixes'
 import type { MonsterId, WorldTierId } from '../../types'
@@ -44,6 +44,9 @@ export interface CombatLocationViewModel {
   id: CombatLocationId
   name: string
   type: CombatLocationType
+  progressionType: CombatProgressionLocationType
+  tier: CombatTier
+  laneElement: 'fire' | 'earth' | 'air' | 'water' | 'mixed' | 'neutral' | 'arcane'
   primaryElement: ElementId | null
   elementsPresent: ElementId[]
   typeLabel: string
@@ -65,7 +68,7 @@ export interface CombatLocationViewModel {
 
 export interface CombatWorldNavigationViewModel {
   allLocations: CombatLocationViewModel[]
-  selectedType: CombatZoneType
+  selectedType: CombatProgressionLocationType
   selectedLocation: CombatLocationViewModel | null
   activeLocationId: CombatLocationId | null
   activeLocation: CombatLocationViewModel | null

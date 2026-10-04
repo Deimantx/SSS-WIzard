@@ -78,7 +78,7 @@ const LOCATION_BY_ID: Record<string, string> = Object.fromEntries(Object.entries
 }).flatMap(([location, ids]) => (ids as string[]).map((id) => [id, location])))
 COMBAT_LOCATION_ORDER.forEach((locationId) => {
   const location = COMBAT_LOCATIONS[locationId]
-  ;[...location.monsterPool, ...(location.bossId ? [location.bossId] : [])].forEach((monsterId) => { LOCATION_BY_ID[monsterId] = locationId })
+  ;[...location.monsterPool, ...(location.bossId ? [location.bossId] : []), ...(location.sequenceBossIds ?? [])].forEach((monsterId) => { LOCATION_BY_ID[monsterId] = locationId })
 })
 
 const collectAuthoredEffects = (monster: MonsterDefinition, affixId?: keyof typeof ELITE_ZONE_AFFIXES) => [
@@ -112,7 +112,7 @@ export const buildCombatV2ContentAudit = (worldTier: WorldTierId = 1): CombatV2C
   const affixId = monster.bestiaryCategory === 'boss' ? undefined : COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]?.zoneAffixId
   const locationDefinition = COMBAT_LOCATIONS[LOCATION_BY_ID[id] as keyof typeof COMBAT_LOCATIONS]
   const dungeon = locationDefinition?.id ? COMBAT_LOCATIONS[locationDefinition.id] : undefined
-  const normalOrder = dungeon ? [...(dungeon.encounterSequence ?? dungeon.monsterPool)].indexOf(id) + 1 : 0
+  const normalOrder = dungeon ? [...(dungeon.encounterSequence ?? dungeon.monsterPool), ...(dungeon.sequenceBossIds ?? [])].indexOf(id) + 1 : 0
   const targetOrder = locationDefinition?.targetMetadata?.[id]?.order ?? (normalOrder > 0 ? normalOrder : dungeon?.boss === id ? (dungeon.encounterSequence ?? dungeon.monsterPool).length + 1 : 0)
   const authored = collectAuthoredEffects(monster, affixId)
   const periodic = authored.flatMap(({ effect, onceOnly, sourceName }) => effect.type === 'apply-status' ?

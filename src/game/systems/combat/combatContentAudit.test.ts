@@ -192,7 +192,7 @@ describe('Combat V2 authored content audit', () => {
     try {
       location.zoneAffixId = 'regenerative'
       affix.rules = [{ id: 'audit-affix-regeneration', event: 'on-combat-start', oncePerEncounter: true, effects: [{ type: 'apply-status', target: 'self', statusId: 'regeneration' }] }]
-      const monster = MONSTERS['graveglass-shade']
+      const monster = MONSTERS['crypt-guardian']
       const row = buildCombatV2ContentAudit().find((entry) => entry.id === monster.id)!
       expect(row.onceOnlyHealPercent).toBeCloseTo((6 * 5) / monster.maxHealth)
       expect(row.defaultFlatPeriodicHealCount).toBe(1)
@@ -273,11 +273,11 @@ describe('Combat V2 authored content audit', () => {
     const vault = COMBAT_LOCATIONS['vault-of-the-black-sigil']
     const gate = COMBAT_LOCATIONS['black-gate']
     expect([hall.threatRequired, vault.threatRequired]).toEqual([40000, 40000])
-    expect(hall.unlock).toEqual({ type: 'boss-kill', bossId: 'meridian-splitter' })
-    expect(vault.unlock).toEqual({ type: 'boss-kill', bossId: 'meridian-splitter' })
+    expect(hall.unlock).toEqual({ type: 'always' })
+    expect(vault.unlock).toEqual({ type: 'always' })
     expect(isCombatLocationUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 0 } } as never)).toBe(false)
     expect(isCombatLocationUnlocked(gate, { bossKillsByBoss: { 'unspoken-prelate': 1, 'sigil-warden': 1, 'meridian-splitter': 1 } } as never)).toBe(true)
-    expect(gate).toMatchObject({ threatRequired: 0, encounterSequence: ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'] })
+    expect(gate).toMatchObject({ threatRequired: 0, encounterSequence: ['portalbound-acolyte', 'voidglass-custodian', 'vaporbound-siren', 'brineforged-brute', 'deep-bell-saint'], sequenceBossIds: ['deep-bell-saint'] })
     expect(COMBAT_LOCATIONS['hall-of-unbound-names']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'vicious' })
     expect(COMBAT_LOCATIONS['vault-of-the-black-sigil']).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffixId: 'armored' })
     expect(blackSigilRows.every((row) => row.genericActionDescriptionCount === 0 && row.genericEquippedTraitCount === 0), JSON.stringify(blackSigilRows.filter((row) => row.genericActionDescriptionCount || row.genericEquippedTraitCount))).toBe(true)

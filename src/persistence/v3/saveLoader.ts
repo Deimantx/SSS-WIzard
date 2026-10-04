@@ -4,6 +4,7 @@ import { recalculateDerivedStats } from '../../game/engine'
 import type { PersistedGameStateV3 } from './persistedGameState'
 import { SAVE_VERSION } from '../../store/initialState'
 import { isElementId } from '../../game/content/elements/elements'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 
 const sanitizeWards = (input: unknown): GameState['combat']['elementalDamageReductions'] => {
   if (!Array.isArray(input)) return []
@@ -18,9 +19,28 @@ const sanitizeWards = (input: unknown): GameState['combat']['elementalDamageRedu
 }
 
 export const reconcileLoadedProfileState = (state: GameState, sourceContentVersion?: number): GameState => {
-  if (sourceContentVersion === undefined || sourceContentVersion < SAVE_VERSION) {
+  if (sourceContentVersion === undefined || sourceContentVersion < SAVE_VERSION && sourceContentVersion !== 65) {
     Object.assign(state, createInitialState())
     return state
+  }
+
+  if (sourceContentVersion === 65 && state.combat.active && state.combat.locationId) {
+    const location = COMBAT_LOCATIONS[state.combat.locationId]
+    const convertedBoss = state.combat.locationId === 'cinder-sepulcher' ? 'sepulcher-flamekeeper' : state.combat.locationId === 'temple-of-the-sunken-bell' ? 'deep-bell-saint' : null
+    if (convertedBoss && state.combat.enemyId === convertedBoss) {
+      const fresh = createInitialState()
+      state.combat = { ...fresh.combat, log: state.combat.log, combatRngState: state.combat.combatRngState }
+    } else if (location?.encounterMode === 'sequence') {
+      const sequence = location.encounterSequence ?? []
+      const activeIndex = state.combat.enemyId ? sequence.indexOf(state.combat.enemyId) : -1
+      state.combat.sequenceIndex = activeIndex >= 0 ? activeIndex : state.combat.enemyId === location.boss ? sequence.length : 0
+      state.combat.targetEnemyId = null
+      state.combat.pendingBossId = null
+      state.combat.threatCleared = 0
+    } else if (location && state.combat.targetEnemyId && !location.monsterPool.includes(state.combat.targetEnemyId)) {
+      state.combat.targetEnemyId = location.monsterPool[0] ?? null
+      state.combat.threatCleared = 0
+    }
   }
 
   const wardNow = Math.max(0, state.combat.arcaneCoreRuntime.elapsedMs || 0)

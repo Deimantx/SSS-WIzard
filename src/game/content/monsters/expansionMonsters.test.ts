@@ -26,22 +26,25 @@ describe('Phase 01 combat expansion content', () => {
     const normalIds = Object.values(EXPANSION_LOCATION_ROSTERS).flat()
     expect(normalIds).toHaveLength(79)
     expect(new Set(normalIds).size).toBe(79)
-    expect(Object.keys(EXPANSION_BOSSES_BY_LOCATION)).toHaveLength(11)
+    expect(Object.keys(EXPANSION_BOSSES_BY_LOCATION)).toHaveLength(9)
     expect(Object.keys(EXPANSION_MONSTERS)).toHaveLength(90)
     expect(COMBAT_LOCATION_ORDER).toHaveLength(33)
     expect(Object.values(EXPANSION_LOCATION_ROSTERS)).toHaveLength(13)
     for (const [locationId, roster] of Object.entries(EXPANSION_LOCATION_ROSTERS)) {
       const location = COMBAT_LOCATIONS[locationId as keyof typeof COMBAT_LOCATIONS]!
-      expect(location.monsterPool).toEqual(roster)
       expect(roster.length).toBeGreaterThan(0)
       expect(roster.every((id) => ['first-special', 'second-special'].every((skillId) => Boolean(MONSTERS[id].actions[skillId])) && MONSTERS[id].defaultActionPatternId in MONSTERS[id].actionPatterns)).toBe(true)
     }
+    const runtimeRoster = COMBAT_LOCATION_ORDER.flatMap((locationId) => COMBAT_LOCATIONS[locationId].monsterPool)
+    expect(new Set(runtimeRoster).size).toBe(runtimeRoster.length)
+    expect(runtimeRoster).toEqual(expect.arrayContaining(Object.values(EXPANSION_LOCATION_ROSTERS).flat()))
   })
 
   it('gives each new boss two deterministic phases and a one-time half-health transition', () => {
     for (const [locationId, bossId] of Object.entries(EXPANSION_BOSSES_BY_LOCATION)) {
       const boss = MONSTERS[bossId!]
-      expect(COMBAT_LOCATIONS[locationId as keyof typeof COMBAT_LOCATIONS].boss).toBe(bossId)
+      const location = COMBAT_LOCATIONS[locationId as keyof typeof COMBAT_LOCATIONS]
+      expect(location.boss === bossId || location.sequenceBossIds?.includes(bossId!)).toBe(true)
       expect(Object.keys(boss.actions).filter((actionId) => actionId.startsWith('skill-'))).toHaveLength(6)
       expect(boss.actionPatterns['phase-one']?.steps.length).toBeGreaterThan(0)
       expect(boss.actionPatterns['phase-two']?.steps.length).toBeGreaterThan(0)

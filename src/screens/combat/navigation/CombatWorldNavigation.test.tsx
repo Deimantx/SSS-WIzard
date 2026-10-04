@@ -7,10 +7,14 @@ import { getNavigationIntent, setNavigationIntent } from '../../../ui/navigation
 import { resolveEnemyResonanceReward } from '../../../game/systems/resonance/resonanceRuntime'
 import { CombatWorldNavigation } from './CombatWorldNavigation'
 
-const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => true)) => render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onHuntTarget={onHuntTarget} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+const renderNavigation = (onEnterLocation = vi.fn(), onHuntTarget = vi.fn(() => true), tier?: 1 | 2 | 3 | 4 | 5) => {
+  const rendered = render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={onEnterLocation} onHuntTarget={onHuntTarget} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
+  if (tier && tier !== 1) fireEvent.click(screen.getByRole('tab', { name: `T${tier}` }))
+  return rendered
+}
 
 describe('CombatWorldNavigation', () => {
-  beforeEach(() => { const state = createInitialState(); state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true; useGameStore.setState(state); setNavigationIntent({ combatLocationId: null, combatMonsterId: null }) })
+  beforeEach(() => { const state = createInitialState(); state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true; state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1; useGameStore.setState(state); setNavigationIntent({ combatLocationId: null, combatMonsterId: null }) })
 
   it('locks fresh Whispering Woods entry until an elemental tutorial boss is defeated', () => {
     const state = createInitialState()
@@ -23,18 +27,18 @@ describe('CombatWorldNavigation', () => {
   })
 
   it('shows the type-based location filters with Combat Zones selected by default', () => {
-    renderNavigation()
+    renderNavigation(undefined, undefined, 1)
 
     expect(screen.getByText('WORLD NAVIGATION')).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Combat Zones' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByRole('tab', { name: 'Elite Zones' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Hunting Grounds' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Dungeons' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Primary Dungeons' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Special Locations' })).toBeTruthy()
     expect(screen.queryByRole('tab', { name: /All/ })).toBeNull()
-    expect(screen.getByRole('button', { name: /Whispering Woods, COMBAT ZONE/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Howling Den, ELITE ZONE/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Stonewake Hollow, COMBAT ZONE/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Howling Den, SPECIAL LOCATION/ })).toBeNull()
     expect(screen.getByText('WORLD TIER')).toBeTruthy()
-    expect(screen.getByText('Browse locations by encounter type.')).toBeTruthy()
+    expect(screen.getByText('Browse the five combat tiers by progression role.')).toBeTruthy()
     expect(screen.queryByText('CONTINENT')).toBeNull()
     expect(screen.queryByText('REGION')).toBeNull()
     expect(screen.queryByText('CONTINENT I / FIRST FRONTIER / WHISPERING WOODS')).toBeNull()
@@ -49,12 +53,12 @@ describe('CombatWorldNavigation', () => {
   it('keeps locked locations unavailable in their type category', () => {
     renderNavigation()
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    expect(screen.getByRole('button', { name: /Howling Den, ELITE ZONE, LOCKED/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    expect(screen.getByRole('button', { name: /Howling Den, SPECIAL LOCATION, LOCKED/ })).toBeTruthy()
   })
 
   it('filters locations by registry element and clears the filter on a second click', () => {
-    renderNavigation()
+    renderNavigation(undefined, undefined, 1)
     const fireFilter = screen.getByRole('button', { name: 'Fire' })
     fireEvent.click(fireFilter)
     expect(screen.getByRole('button', { name: /Emberfall Basin, COMBAT ZONE/ })).toBeTruthy()
@@ -72,8 +76,8 @@ describe('CombatWorldNavigation', () => {
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
     expect(screen.getByRole('button', { name: /Stonewake Hollow/ }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Fire' }))
-    expect(screen.getByRole('button', { name: /Whispering Woods/ }).getAttribute('aria-pressed')).toBe('true')
-    expect(onSelectLocation).toHaveBeenLastCalledWith('whispering-woods')
+    expect(screen.getByRole('button', { name: /Emberfall Basin/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(onSelectLocation).toHaveBeenLastCalledWith('emberfall-basin')
   })
 
   it('clears an incompatible element filter for direct navigation intent', async () => {
@@ -90,22 +94,24 @@ describe('CombatWorldNavigation', () => {
     expect(screen.getByRole('button', { name: 'Fire' }).getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('shows Elemental Scar locations with Arcane-primary roster enemies', () => {
+  it('keeps Arcane enemies reachable in special content without replacing elemental lanes', () => {
     renderNavigation()
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'T5' }))
     fireEvent.click(screen.getByRole('button', { name: 'Arcane' }))
     expect(screen.queryByText('NO MATCHING LOCATIONS')).toBeNull()
-    expect(screen.getByRole('button', { name: /Flooded Reliquary/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Nullstone Archive/ })).toBeTruthy()
   })
 
   it('renders targeted Whispering Woods cards without legacy inspector metrics', () => {
     const onHuntTarget = vi.fn(() => true)
-    renderNavigation(vi.fn(), onHuntTarget)
+    renderNavigation(vi.fn(), onHuntTarget, 2)
 
     expect(screen.getByText('SELECT TARGET')).toBeTruthy()
     expect(screen.getByText('CHOOSE A MONSTER TO HUNT')).toBeTruthy()
     expect(screen.getAllByText(/POWER/).length).toBeGreaterThan(0)
     expect(screen.queryByText('RESONANCE / KILL')).toBeNull()
-    for (const name of ['Forest Wisp', 'Thornling', 'Dewbound Sprite', 'Cinder Moth', 'Stone Root', 'Grove Sentinel', 'Tempest Stag']) expect(screen.getByText(name)).toBeTruthy()
+    for (const name of ['Forest Wisp', 'Thornling', 'Dewbound Sprite', 'Thorn Maw', 'Stone Root', 'Grove Sentinel', 'Rootbound Stalker']) expect(screen.getByText(name)).toBeTruthy()
     expect(screen.getByText('ZONE BOSS')).toBeTruthy()
     expect(screen.getByText('Forest Heart')).toBeTruthy()
     expect(screen.queryByText('NORMAL KILLS')).toBeNull()
@@ -114,10 +120,10 @@ describe('CombatWorldNavigation', () => {
     expect(screen.queryByText('Repeatable combat content. Encounter tiles are preview-only in Phase 3A.')).toBeNull()
     expect(screen.getByRole('button', { name: /HUNT TARGET/ })).toHaveProperty('disabled', true)
 
-    fireEvent.click(screen.getByRole('button', { name: /Cinder MothSTANDARD/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Forest WispEASY/ }))
     expect(screen.getByRole('button', { name: /HUNT TARGET/ })).not.toHaveProperty('disabled', true)
     fireEvent.click(screen.getByRole('button', { name: /HUNT TARGET/ }))
-    expect(onHuntTarget).toHaveBeenCalledWith('whispering-woods', 'cinder-moth')
+    expect(onHuntTarget).toHaveBeenCalledWith('whispering-woods', 'forest-wisp')
     expect(screen.queryByRole('button', { name: /START FARMING|SWITCH TARGET|RETURN TO COMBAT/ })).toBeNull()
   })
 
@@ -230,12 +236,13 @@ describe('CombatWorldNavigation', () => {
   it('distinguishes the selected target from the target currently being hunted', () => {
     const state = createInitialState()
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     state.combat.active = true
     state.combat.locationId = 'whispering-woods'
-    state.combat.targetEnemyId = 'cinder-moth'
-    state.combat.enemyId = 'cinder-moth'
+    state.combat.targetEnemyId = 'forest-wisp'
+    state.combat.enemyId = 'forest-wisp'
     useGameStore.setState(state)
-    renderNavigation()
+    renderNavigation(undefined, undefined, 2)
 
     expect(screen.getByText('HUNTING')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Stone RootSTANDARD/ }))
@@ -245,7 +252,7 @@ describe('CombatWorldNavigation', () => {
 
   it('preserves the selected target when a hunt attempt is blocked', () => {
     const onHuntTarget = vi.fn(() => false)
-    renderNavigation(vi.fn(), onHuntTarget)
+    renderNavigation(vi.fn(), onHuntTarget, 2)
 
     fireEvent.click(screen.getByRole('button', { name: /Forest WispEASY/ }))
     fireEvent.click(screen.getByRole('button', { name: 'HUNT TARGET' }))
@@ -265,8 +272,8 @@ describe('CombatWorldNavigation', () => {
     const onSelectLocation = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={onSelectLocation} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={vi.fn()} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, SPECIAL LOCATION/ }))
 
     expect(onSelectLocation).toHaveBeenCalledWith('howling-den')
     expect(useGameStore.getState().combat.active).toBe(true)
@@ -281,8 +288,8 @@ describe('CombatWorldNavigation', () => {
     const onEnterLocation = vi.fn()
     const onHuntTarget = vi.fn(() => true)
     renderNavigation(onEnterLocation, onHuntTarget)
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, SPECIAL LOCATION/ }))
     fireEvent.click(screen.getByRole('button', { name: /Bonehide BoarHARD/ }))
     fireEvent.click(screen.getByRole('button', { name: 'HUNT TARGET' }))
 
@@ -296,8 +303,8 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['forest-heart'] = 1
     useGameStore.setState(state)
     renderNavigation()
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, SPECIAL LOCATION/ }))
 
     expect(screen.getByText('ZONE AFFIX')).toBeTruthy()
     expect(screen.getByText('Frenzied')).toBeTruthy()
@@ -311,31 +318,39 @@ describe('CombatWorldNavigation', () => {
   it('deep-links the selected Black Sigil target to its exact Bestiary dossier', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     useGameStore.setState(state)
     const onBestiary = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={onBestiary} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    fireEvent.click(screen.getByRole('button', { name: /Hall of Unbound Names, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Combat Zones' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'T4' }))
+    fireEvent.click(screen.getByRole('button', { name: /Hall of Unbound Names, COMBAT ZONE/ }))
     fireEvent.click(screen.getByRole('button', { name: /Nameless CantorHARD/ }))
     fireEvent.click(screen.getByRole('button', { name: 'BESTIARY' }))
 
     expect(onBestiary).toHaveBeenCalledWith(expect.objectContaining({ id: 'hall-of-unbound-names' }), 'nameless-cantor')
   })
 
-  it('renders the Black Gate as a five-step Dungeon run without target or Threat controls', () => {
+  it('renders the Black Gate sequence with preserved signature boss and no target or Threat controls', () => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['meridian-splitter'] = 1
+    state.progress.bossKillsByBoss['crossroads-keeper'] = 1
+    state.progress.bossKillsByBoss['corrupted-elemental-gatekeeper'] = 1
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     state.progress.bossKillsByBoss['unspoken-prelate'] = 1
     state.progress.bossKillsByBoss['sigil-warden'] = 1
     useGameStore.setState(state)
     renderNavigation()
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Dungeons' }))
-    fireEvent.click(screen.getByRole('button', { name: /The Black Gate, DUNGEON/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Primary Dungeons' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'T5' }))
+    fireEvent.click(screen.getByRole('button', { name: /The Black Gate, PRIMARY DUNGEON/ }))
 
     expect(screen.getByText('DUNGEON RUN')).toBeTruthy()
-    expect(screen.getByText('5 FIXED STEPS')).toBeTruthy()
+    expect(screen.getByText('6 FIXED STEPS')).toBeTruthy()
     expect(screen.getByText('World Tier 5')).toBeTruthy()
     expect(screen.queryByText('SELECT TARGET')).toBeNull()
     expect(screen.queryByText('ZONE AFFIX')).toBeNull()
@@ -350,8 +365,8 @@ describe('CombatWorldNavigation', () => {
     state.combat.locationId = 'howling-den'
     useGameStore.setState(state)
     renderNavigation()
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, SPECIAL LOCATION/ }))
 
     expect(screen.getByText('ELITE BOSS')).toBeTruthy()
     expect(screen.getByText('Corrupted Greatbear')).toBeTruthy()
@@ -370,8 +385,8 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['forest-heart'] = 1
     useGameStore.setState(state)
     renderNavigation()
-    fireEvent.click(screen.getByRole('tab', { name: 'Elite Zones' }))
-    fireEvent.click(screen.getByRole('button', { name: /Howling Den, ELITE ZONE/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Special Locations' }))
+    fireEvent.click(screen.getByRole('button', { name: /Howling Den, SPECIAL LOCATION/ }))
     fireEvent.click(screen.getByRole('button', { name: /Bonehide BoarHARD/ }))
     fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
 
@@ -381,26 +396,26 @@ describe('CombatWorldNavigation', () => {
   })
 
   it('disables targeted Loot without a target and opens the selected target reward view', () => {
-    renderNavigation()
+    renderNavigation(undefined, undefined, 2)
 
     const loot = screen.getByRole('button', { name: 'LOOT' })
     expect(loot).toHaveProperty('disabled', true)
 
-    fireEvent.click(screen.getByRole('button', { name: /Cinder MothSTANDARD/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Forest WispEASY/ }))
     const enabledLoot = screen.getByRole('button', { name: 'LOOT' })
     expect(enabledLoot).not.toHaveProperty('disabled', true)
     fireEvent.click(enabledLoot)
 
-    expect(screen.getByText('CINDER MOTH — LOOT')).toBeTruthy()
+    expect(screen.getByText('FOREST WISP — LOOT')).toBeTruthy()
     expect(screen.getByText('ITEM DROPS')).toBeTruthy()
     expect(screen.getByText('RESONANCE')).toBeTruthy()
-    const resonance = resolveEnemyResonanceReward('cinder-moth', 1)
-    expect(screen.getByText(`+${(resonance.finalYield.fire ?? 0).toLocaleString('en-US')}`)).toBeTruthy()
+    const resonance = resolveEnemyResonanceReward('forest-wisp', 1)
+    expect(screen.getByText(`+${(resonance.finalYield.air ?? 0).toLocaleString('en-US')}`)).toBeTruthy()
     expect(screen.queryByText('Shared loot pool from normal encounters.')).toBeNull()
   })
 
   it('disables targeted Bestiary until a target is selected', () => {
-    renderNavigation()
+    renderNavigation(undefined, undefined, 2)
 
     const bestiary = screen.getByRole('button', { name: 'BESTIARY' })
     expect(bestiary).toHaveProperty('disabled', true)
@@ -413,6 +428,7 @@ describe('CombatWorldNavigation', () => {
     const onBestiary = vi.fn()
     render(<TooltipProvider><CombatWorldNavigation onSelectLocation={vi.fn()} onEnterLocation={vi.fn()} onHuntTarget={vi.fn(() => true)} onBestiary={onBestiary} onReturnToCombat={vi.fn()} /></TooltipProvider>)
 
+    fireEvent.click(screen.getByRole('tab', { name: 'T2' }))
     fireEvent.click(screen.getByRole('button', { name: /ThornlingEASY/ }))
     fireEvent.click(screen.getByRole('button', { name: 'BESTIARY' }))
 
@@ -424,8 +440,9 @@ describe('CombatWorldNavigation', () => {
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
     useGameStore.setState(state)
     renderNavigation()
-    fireEvent.click(screen.getByRole('tab', { name: 'Dungeons' }))
-    fireEvent.click(screen.getByRole('button', { name: /Abandoned Catacombs, DUNGEON/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Primary Dungeons' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'T1' }))
+    fireEvent.click(screen.getByRole('button', { name: /Abandoned Catacombs, PRIMARY DUNGEON/ }))
     fireEvent.click(screen.getByRole('button', { name: 'LOOT' }))
 
     expect(screen.getByText('LOCATION LOOT')).toBeTruthy()
@@ -435,6 +452,7 @@ describe('CombatWorldNavigation', () => {
   it('exposes the canonical manual Boss Engage action in the active Zone Boss section', () => {
     const state = createInitialState()
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     state.combat.active = true
     state.combat.locationId = 'whispering-woods'
     state.combat.targetEnemyId = 'forest-wisp'

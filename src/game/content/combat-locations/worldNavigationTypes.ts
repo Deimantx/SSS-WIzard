@@ -13,7 +13,7 @@ export type CombatLocationType =
   | 'dungeon'
 
 export type CombatTier = 1 | 2 | 3 | 4 | 5
-export type CombatProgressionLocationType = CombatLocationType | 'special'
+export type CombatProgressionLocationType = 'combat-zone' | 'hunting-ground' | 'dungeon' | 'special'
 export type CombatElement = 'fire' | 'earth' | 'air' | 'water' | 'mixed' | 'neutral' | 'arcane'
 
 /** Tier/lane metadata for progression planning. Encounter `type` continues to
@@ -27,7 +27,7 @@ export interface CombatProgressionMetadata {
   mandatoryForTierProgression: boolean
   requiredTier?: CombatTier
   requiredDungeonClear?: CombatLocationId
-  requiredHunterOrderRank?: number
+  requiredHunterOrderRank?: string
   unlocksTier?: CombatTier
 }
 
@@ -63,6 +63,7 @@ export interface CombatLocationDefinition {
   threatRequired: number | null
   encounterDelayMs: number
   sequence: readonly MonsterId[] | null
+  sequenceBossIds?: readonly MonsterId[]
   completesTutorial?: boolean
   encounterMode?: CombatEncounterMode
   zoneAffixId?: EliteZoneAffixId
@@ -88,4 +89,11 @@ export const COMBAT_LOCATION_TYPE_METADATA: Record<CombatLocationType, { label: 
   'elite-zone': { label: 'ELITE ZONE', actionLabel: 'ENTER ELITE ZONE' },
   'hunting-ground': { label: 'HUNTING GROUND', actionLabel: 'ENTER HUNTING GROUND' },
   dungeon: { label: 'DUNGEON', actionLabel: 'ENTER DUNGEON' },
+}
+
+export const COMBAT_PROGRESSION_TYPE_METADATA: Record<CombatProgressionLocationType, { label: string }> = {
+  'combat-zone': { label: 'COMBAT ZONE' },
+  'hunting-ground': { label: 'HUNTING GROUND' },
+  dungeon: { label: 'PRIMARY DUNGEON' },
+  special: { label: 'SPECIAL LOCATION' },
 }

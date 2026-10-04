@@ -58,7 +58,7 @@ describe('Hunter upgrade effect presentation', () => {
     expect(getHunterUpgradePurchaseStatus(state, 'ground-survey')).toMatchObject({ canPurchase: false, reason: 'ground-required' })
     expect(getHunterUpgradePurchaseStatus(state, 'priority-dispatch')).toMatchObject({ canPurchase: false, reason: 'ground-required' })
     expect(getHunterUpgradeEffectBreakdown(state, 'ground-survey')?.rankRows[0]?.label).not.toBe('Not active')
-    state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
+    state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
     expect(getHunterUpgradePurchaseStatus(state, 'ground-survey')).toMatchObject({ canPurchase: true, reason: null })
     expect(getHunterUpgradePurchaseStatus(state, 'priority-dispatch')).toMatchObject({ canPurchase: true, reason: null })
   })

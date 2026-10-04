@@ -25,6 +25,13 @@ export function validateCombatWorldNavigation(content: CombatWorldNavigationCont
     if (location.type === 'elite-zone' && encounterMode === 'targeted' && (!location.zoneAffixId || !ELITE_ZONE_AFFIXES[location.zoneAffixId])) errors.push(`${location.id}: targeted elite zone requires one valid Zone Affix`)
     if (location.type !== 'elite-zone' && location.zoneAffixId) errors.push(`${location.id}: Zone Affix is only valid on targeted Elite Zones`)
     if (encounterMode === 'sequence' && !location.sequence?.length) errors.push(`${location.id}: sequence location requires a non-empty encounter sequence`)
+    if (location.sequenceBossIds?.length) {
+      if (encounterMode !== 'sequence') errors.push(`${location.id}: sequence bosses require a sequence encounter`)
+      location.sequenceBossIds.forEach((bossId) => {
+        if (!location.sequence?.includes(bossId)) errors.push(`${location.id}: sequence boss ${bossId} is missing from the sequence`)
+        if (!MONSTERS[bossId] || !isBossMonster(MONSTERS[bossId])) errors.push(`${location.id}: sequence boss ${bossId} must reference a boss monster`)
+      })
+    }
     if (encounterMode !== 'targeted') return
     const pool = location.monsterPool ?? []
     if (pool.length === 0) errors.push(`${location.id}: targeted encounter pool must not be empty`)

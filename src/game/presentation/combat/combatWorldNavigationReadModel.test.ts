@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { buildCombatWorldNavigationViewModel, getInitialCombatLocationId } from './combatWorldNavigationReadModel'
+import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
+
+const unlockAllTiers = (state: ReturnType<typeof createInitialState>) => {
+  for (const bossId of ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'crossroads-keeper', 'meridian-splitter'] as const) state.progress.bossKillsByBoss[bossId] = 1
+}
 
 describe('combat world navigation read model', () => {
   it('defaults to the active location, then the last entered location, then the first unlocked location', () => {
@@ -17,12 +22,13 @@ describe('combat world navigation read model', () => {
 
   it('presents Combat locations in global authored progression order', () => {
     const state = createInitialState()
+    unlockAllTiers(state)
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
 
     expect(view.allLocations.map((location) => location.name).slice(0, 8)).toEqual(['Stonewake Hollow', 'Galecrest Heights', 'Tideglass Caverns', 'Emberfall Basin', 'Whispering Woods', 'Brineveil Marsh', 'Howling Den', 'Mistclaw Highlands'])
     expect(view.allLocations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'elite-zone', state: 'locked', unlockText: 'Defeat Forest Heart' })
-    expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
+    expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(COMBAT_LOCATIONS['whispering-woods'].monsterPool)
   })
 
   it('models Gloamridge as a first-class targeted Hunting Ground without boss presentation', () => {
@@ -37,13 +43,14 @@ describe('combat world navigation read model', () => {
 
   it('shows authored combat identities and power before Bestiary discovery', () => {
     const state = createInitialState()
+    unlockAllTiers(state)
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
     const location = view.selectedLocation
 
-    expect(location?.targeting?.targets.find((target) => target.monsterId === 'tempest-stag')).toMatchObject({ name: 'Tempest Stag', known: false, powerRating: expect.any(Number) })
+    expect(location?.targeting?.targets.find((target) => target.monsterId === 'stone-root')).toMatchObject({ name: 'Stone Root', known: false, powerRating: expect.any(Number) })
     expect(location?.boss).toMatchObject({ name: 'Forest Heart', known: false, powerRating: expect.any(Number) })
-    expect(location?.encounters.find((encounter) => encounter.monsterId === 'tempest-stag')).toMatchObject({ name: 'Tempest Stag', known: false, powerRating: expect.any(Number) })
+    expect(location?.encounters.find((encounter) => encounter.monsterId === 'stone-root')).toMatchObject({ name: 'Stone Root', known: false, powerRating: expect.any(Number) })
   })
 
   it('keeps active combat separate from a browsed location', () => {
@@ -82,21 +89,22 @@ describe('combat world navigation read model', () => {
 
   it('presents the final Black Sigil topology and keeps target cards distinct from the dungeon run', () => {
     const state = createInitialState()
+    unlockAllTiers(state)
     state.progress.bossKillsByBoss['meridian-splitter'] = 1
     const hall = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'hall-of-unbound-names' }).selectedLocation
     expect(hall).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffix: { id: 'vicious' } })
-    expect(hall?.targeting?.targets.map((target) => target.monsterId)).toEqual(['name-eater', 'bound-echo', 'hollow-liturgist', 'whisper-archivist', 'nameless-cantor', 'oathless-confessor', 'unwritten-hierophant'])
+    expect(hall?.targeting?.targets.map((target) => target.monsterId)).toEqual(COMBAT_LOCATIONS['hall-of-unbound-names'].monsterPool)
     expect(hall?.targeting?.targets.every((target) => !('resonance' in target))).toBe(true)
 
     const vault = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'vault-of-the-black-sigil' }).selectedLocation
     expect(vault).toMatchObject({ type: 'elite-zone', encounterMode: 'targeted', zoneAffix: { id: 'armored' } })
-    expect(vault?.targeting?.targets.map((target) => target.monsterId)).toEqual(['black-seal-parasite', 'inkbound-specter', 'sigil-guardian', 'vault-devourer', 'sealbound-custodian', 'blackscript-colossus', 'voidseal-arbiter'])
+    expect(vault?.targeting?.targets.map((target) => target.monsterId)).toEqual(COMBAT_LOCATIONS['vault-of-the-black-sigil'].monsterPool)
 
     state.progress.bossKillsByBoss['unspoken-prelate'] = 1
     state.progress.bossKillsByBoss['sigil-warden'] = 1
     const gate = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'black-gate' }).selectedLocation
     expect(gate).toMatchObject({ type: 'dungeon', encounterMode: 'sequence', targeting: null, bossHunt: null, firstClearUnlockPreview: [{ id: 'world-tier-5', label: 'World Tier 5' }] })
-    expect(gate?.sequence?.steps.map((step) => step.monsterId)).toEqual(['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct', 'black-gatekeeper'])
+    expect(gate?.sequence?.steps.map((step) => step.monsterId)).toEqual([...COMBAT_LOCATIONS['black-gate'].encounterSequence!, COMBAT_LOCATIONS['black-gate'].boss!])
   })
 
   it('never derives sequence Dungeon state from stale or debug Threat', () => {

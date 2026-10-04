@@ -19,19 +19,19 @@ describe('Bestiary combat navigation intent', () => {
     const state = createInitialState()
     state.progress.discoveredMonsters = ['tempest-stag']
     useGameStore.setState(state)
-    setNavigationIntent({ combatLocationId: 'whispering-woods', combatMonsterId: 'tempest-stag' })
+    setNavigationIntent({ combatLocationId: 'runeblight-expanse', combatMonsterId: 'tempest-stag' })
     renderBestiary()
 
     expect(screen.getByRole('heading', { name: 'Tempest Stag' })).toBeTruthy()
-    expect(screen.getByText('AREA: WHISPERING WOODS')).toBeTruthy()
+    expect(screen.getByText('AREA: RUNEBLIGHT EXPANSE')).toBeTruthy()
   })
 
   it('keeps an exact undiscovered target selected as an undiscovered dossier', () => {
-    setNavigationIntent({ combatLocationId: 'whispering-woods', combatMonsterId: 'tempest-stag' })
+    setNavigationIntent({ combatLocationId: 'runeblight-expanse', combatMonsterId: 'tempest-stag' })
     renderBestiary()
 
     expect(screen.getByText('UNDISCOVERED CREATURE')).toBeTruthy()
-    expect(screen.getByText('AREA: WHISPERING WOODS')).toBeTruthy()
+    expect(screen.getByText('AREA: RUNEBLIGHT EXPANSE')).toBeTruthy()
   })
 
   it('shows boss mechanic and phase detail only after discovery', () => {

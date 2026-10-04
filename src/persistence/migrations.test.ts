@@ -823,13 +823,13 @@ describe('v43 Elemental Scar migration', () => {
   }
 
   it.each([
-    ['flooded-reliquary', 'mist-wraith', 10_000, 1, 20],
-    ['ashen-watch', 'cinder-hound', 20_000, 2, 20],
-    ['rootscar-hollow', 'thorn-maw', 5_000, 1, 10],
-  ] as const)('converts legacy %s kill Threat and preserves the active target', (locationId, enemyId, expectedThreat, worldTier, oldThreat) => {
+    ['flooded-reliquary', 'mist-wraith', 10_000, 1, 20, 'mist-wraith'],
+    ['ashen-watch', 'cinder-hound', 20_000, 2, 20, 'cinder-hound'],
+    ['rootscar-hollow', 'thorn-maw', 5_000, 1, 10, 'briar-sprite'],
+  ] as const)('converts legacy %s kill Threat and preserves the active target', (locationId, enemyId, expectedThreat, worldTier, oldThreat, expectedTarget) => {
     const migrated = migrateSave(activeLegacySave(locationId, enemyId, oldThreat, worldTier) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.combat.targetEnemyId).toBe(enemyId)
+    expect(migrated.combat.targetEnemyId).toBe(expectedTarget)
     expect(migrated.combat.threatCleared).toBe(expectedThreat)
   })
 
@@ -892,23 +892,23 @@ describe('v44 Shattered Meridian migration', () => {
   }
 
   it.each([
-    ['graveglass-hollow', 'graveglass-shade', 1, 15_000],
-    ['starfallen-observatory', 'comet-wraith', 3, 45_000],
-  ] as const)('scales legacy %s Threat from the old 50-point requirement', (locationId, enemyId, worldTier, expectedThreat) => {
+    ['graveglass-hollow', 'graveglass-shade', 1, 15_000, 'silent-mourner'],
+    ['starfallen-observatory', 'comet-wraith', 3, 45_000, 'comet-wraith'],
+  ] as const)('scales legacy %s Threat from the old 50-point requirement', (locationId, enemyId, worldTier, expectedThreat, expectedTarget) => {
     const migrated = migrateSave(activeSave({ locationId, enemyId, threatCleared: 25 }, worldTier) as any)
     expect(migrated.saveVersion).toBe(SAVE_VERSION)
-    expect(migrated.combat.targetEnemyId).toBe(enemyId)
+    expect(migrated.combat.targetEnemyId).toBe(expectedTarget)
     expect(migrated.combat.threatCleared).toBe(expectedThreat)
   })
 
   it('clamps converted Shattered Threat, recovers the first target, and preserves a pending boss', () => {
     const migrated = migrateSave(activeSave({ locationId: 'graveglass-hollow', enemyId: 'graveglass-behemoth', targetEnemyId: 'ossuary-oracle', pendingBossId: 'graveglass-behemoth', threatCleared: 80 }) as any)
-    expect(migrated.combat.targetEnemyId).toBe('graveglass-shade')
+    expect(migrated.combat.targetEnemyId).toBe('silent-mourner')
     expect(migrated.combat.pendingBossId).toBe('graveglass-behemoth')
     expect(migrated.combat.threatCleared).toBe(30_000)
 
     const noEnemy = migrateSave(activeSave({ locationId: 'stormvault-gallery', enemyId: null, targetEnemyId: null, threatCleared: 0 }) as any)
-    expect(noEnemy.combat.targetEnemyId).toBe('volt-wisp')
+    expect(noEnemy.combat.targetEnemyId).toBe('static-armor')
   })
 
   it('converts Broken Meridian v44 saves to its authored sequence without using old Threat or indices', () => {
@@ -934,7 +934,7 @@ describe('v44 Shattered Meridian migration', () => {
       saveVersion: 44,
       combat: { ...initial.combat, active: true, locationId: 'broken-meridian', enemyId: 'meridian-splitter', threatCleared: 55, sequenceIndex: 1 },
     } as any)
-    expect(boss.combat.sequenceIndex).toBe(4)
+    expect(boss.combat.sequenceIndex).toBe(5)
     expect(boss.combat.inBossFight).toBe(true)
   })
 
@@ -956,6 +956,30 @@ describe('v44 Shattered Meridian migration', () => {
 })
 
 describe('structured dungeon save migration', () => {
+  it.each([
+    ['cinder-sepulcher', 'sepulcher-flamekeeper', 'emberbound-dead'],
+    ['temple-of-the-sunken-bell', 'deep-bell-saint', 'bell-drowned-monk'],
+  ] as const)('converts active %s runs to Hunting Ground state while preserving their content', (locationId, oldBossId, normalId) => {
+    const initial = createInitialState()
+    const normal = migrateSave({
+      ...initial,
+      saveVersion: 65,
+      ui: { ...initial.ui, lastEnteredCombatLocationId: locationId },
+      combat: { ...initial.combat, active: true, locationId, enemyId: normalId, targetEnemyId: normalId, sequenceIndex: 2, threatCleared: 99 },
+    } as any)
+    expect(normal.combat).toMatchObject({ active: true, locationId, enemyId: normalId, targetEnemyId: normalId, sequenceIndex: null, threatCleared: 0 })
+    expect(normal.ui.lastEnteredCombatLocationId).toBe(locationId)
+
+    const boss = migrateSave({
+      ...initial,
+      saveVersion: 65,
+      progress: { ...initial.progress, bossKillsByBoss: { ...initial.progress.bossKillsByBoss, [oldBossId]: 1 } },
+      combat: { ...initial.combat, active: true, locationId, enemyId: oldBossId, inBossFight: true, sequenceIndex: 4 },
+    } as any)
+    expect(boss.combat).toMatchObject({ active: false, locationId: null, enemyId: null, targetEnemyId: null, sequenceIndex: null, inBossFight: false })
+    expect(boss.progress.bossKillsByBoss[oldBossId]).toBe(1)
+  })
+
   it('infers legacy Catacombs sequence progress from the active encounter and Threat', () => {
     const initial = createInitialState()
     const wraith = migrateSave({
@@ -1020,7 +1044,7 @@ describe('v45 Black Sigil Reach migration', () => {
 
   it.each([
     ['hall-of-unbound-names', 'unspoken-prelate', 'name-eater'],
-    ['vault-of-the-black-sigil', 'sigil-warden', 'black-seal-parasite'],
+    ['vault-of-the-black-sigil', 'sigil-warden', 'blackscript-colossus'],
   ] as const)('preserves an active %s boss while assigning the first future normal target', (locationId, bossId, firstTarget) => {
     const migrated = migrateSave(activeSave({ locationId, enemyId: bossId, targetEnemyId: bossId, threatCleared: 60 }) as any)
     expect(migrated.combat.enemyId).toBe(bossId)
@@ -1046,7 +1070,7 @@ describe('v45 Black Sigil Reach migration', () => {
 
   it('preserves an active Black Gate boss at the final sequence index', () => {
     const migrated = migrateSave(activeSave({ locationId: 'black-gate', enemyId: 'black-gatekeeper', threatCleared: 70 }) as any)
-    expect(migrated.combat.sequenceIndex).toBe(4)
+    expect(migrated.combat.sequenceIndex).toBe(5)
     expect(migrated.combat.inBossFight).toBe(true)
     expect(migrated.combat.threatCleared).toBe(0)
   })

@@ -14,6 +14,9 @@ describe('content relations', () => {
     expect(info.authoredSource).toContain('Combat')
     expect(getMonsterCombatLocation('grove-sentinel')).toMatchObject({ locationId: 'whispering-woods', role: 'normal' })
     expect(getMonsterCombatLocation('corrupted-greatbear')).toMatchObject({ locationId: 'howling-den', role: 'boss' })
+    expect(getMonsterCombatLocation('thorn-maw')).toMatchObject({ locationId: 'whispering-woods', role: 'normal' })
+    expect(getMonsterCombatLocation('deep-bell-saint')).toMatchObject({ locationId: 'black-gate', role: 'boss' })
+    expect(getMonsterCombatLocation('sepulcher-flamekeeper')).toMatchObject({ locationId: 'broken-meridian', role: 'boss' })
   })
 
   it('returns every recipe that consumes an item', () => {

@@ -49,17 +49,19 @@ describe('structured dungeon encounters', () => {
   })
 
   it.each([
-    ['fractured-approach', ['rift-wolf', 'arcane-scavenger', 'withered-watcher', 'warded-husk'], 'corrupted-elemental-gatekeeper'],
-    ['crossroads-of-ruin', ['arcane-binder', 'rift-archer', 'remnant-marauder', 'broken-construct'], 'crossroads-keeper'],
-    ['broken-meridian', ['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'], 'meridian-splitter'],
-    ['black-gate', ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'], 'black-gatekeeper'],
-  ] as const)('spawns %s in the authored order without Threat', (locationId, sequence, bossId) => {
+    ['fractured-approach', 'corrupted-elemental-gatekeeper'],
+    ['crossroads-of-ruin', 'crossroads-keeper'],
+    ['broken-meridian', 'meridian-splitter'],
+    ['black-gate', 'black-gatekeeper'],
+  ] as const)('spawns %s in the authored order without Threat', (locationId, bossId) => {
     const state = prepare()
     state.combat.locationId = locationId
     state.combat.sequenceIndex = 0
-    for (const expectedEnemyId of sequence) {
+    const sequenceBossIds = COMBAT_LOCATIONS[locationId].sequenceBossIds ?? []
+    for (const expectedEnemyId of COMBAT_LOCATIONS[locationId].encounterSequence ?? []) {
       expect(spawnNextEnemy(state)).toBe(true)
       expect(state.combat.enemyId).toBe(expectedEnemyId)
+      if (sequenceBossIds.includes(expectedEnemyId)) expect(state.combat.inBossFight).toBe(true)
       killCurrent(state)
       expect(state.combat.threatCleared).toBe(0)
     }
@@ -73,7 +75,7 @@ describe('structured dungeon encounters', () => {
     state.combat.locationId = 'broken-meridian'
     expect(COMBAT_LOCATIONS['broken-meridian'].unlock).toEqual({ type: 'all-boss-kills', bossIds: ['graveglass-behemoth', 'storm-archivist', 'fallen-astromancer'] })
     expect(spawnNextEnemy(state)).toBe(true)
-    expect(state.combat.enemyId).toBe('meridian-warden')
+    expect(state.combat.enemyId).toBe(COMBAT_LOCATIONS['broken-meridian'].encounterSequence?.[0])
     expect(state.combat.threatCleared).toBe(0)
   })
 
@@ -81,9 +83,11 @@ describe('structured dungeon encounters', () => {
     const state = prepare()
     state.combat.locationId = 'black-gate'
     state.worldTier = { current: 4, highestUnlocked: 4 }
-    for (const expectedEnemyId of ['gatebound-remnant', 'black-rift-stalker', 'portalbound-acolyte', 'sealbreaker-construct'] as const) {
+    const sequenceBossIds = COMBAT_LOCATIONS['black-gate'].sequenceBossIds ?? []
+    for (const expectedEnemyId of COMBAT_LOCATIONS['black-gate'].encounterSequence ?? []) {
       expect(spawnNextEnemy(state)).toBe(true)
       expect(state.combat.enemyId).toBe(expectedEnemyId)
+      if (sequenceBossIds.includes(expectedEnemyId)) expect(state.combat.inBossFight).toBe(true)
       killCurrent(state)
     }
     expect(spawnNextEnemy(state)).toBe(true)

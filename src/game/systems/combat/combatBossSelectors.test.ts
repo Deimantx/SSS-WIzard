@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { createInitialState } from '../../../store/initialState'
 import { canManuallyEngageDungeonBoss, isBossCurrentlyActive } from './combatBossSelectors'
@@ -6,6 +6,7 @@ import { spawnEnemy } from './combatRuntime'
 
 const activeReadyState = () => {
   const state = createInitialState()
+  for (const bossId of ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'crossroads-keeper', 'meridian-splitter'] as const) state.progress.bossKillsByBoss[bossId] = 1
   state.progress.spellRanks['fire-bolt'] = 1
   state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
   state.spellPresets.presets = [{ id: 'boss-selector-test', name: 'Boss Selector Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]

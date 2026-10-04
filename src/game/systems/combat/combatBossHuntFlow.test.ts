@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+﻿import { beforeEach, describe, expect, it } from 'vitest'
 import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
 
 const installActiveReadyRun = () => {
   const state = createInitialState()
+  for (const bossId of ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'crossroads-keeper', 'meridian-splitter'] as const) state.progress.bossKillsByBoss[bossId] = 1
   state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
   state.combat.active = true
   state.combat.locationId = 'whispering-woods'

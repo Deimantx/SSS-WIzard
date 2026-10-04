@@ -350,7 +350,7 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
     }
     reconcileStoryProgression(state)
     report?.recordNotable(`${monster.name} defeated`)
-    if (sequenceDungeon) {
+    if (sequenceDungeon && bossId === dungeon.boss) {
       state.combat.active = false
       clearCombatSpellRuntime(state)
       state.combat.enemyMaxHp = 0
@@ -361,6 +361,9 @@ export const finishEnemy = (state: GameState, report?: SimulationReportCollector
       state.combat.encounterTimerMs = 0
       appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. ${dungeon.name} cleared.`)
       pushNotification(state, `${dungeon.name.toUpperCase()} CLEARED`, 'success', { key: `dungeon-cleared:${dungeon.id}`, cooldownMs: 1000 })
+    } else if (sequenceDungeon) {
+      state.combat.sequenceIndex = Math.min(dungeon.encounterSequence?.length ?? 0, Math.max(0, (state.combat.sequenceIndex ?? 0) + 1))
+      appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}. The sequence continues.`)
     } else appendLog(state, `${monster.name} defeated${drops ? ` - ${drops}` : ''}${rewardText}.${hasBossEncounter(dungeon) ? ' Threat resets.' : ''}`)
     if (unlockedWorldTier) pushNotification(state, `WORLD TIER ${unlockedWorldTier} UNLOCKED`, 'success')
   } else if (sequenceDungeon) {

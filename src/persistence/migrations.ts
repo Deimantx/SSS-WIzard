@@ -905,6 +905,19 @@ const normalizeDirectContentReferences = (migrated: GameState, raw: Record<strin
     migrated.combat.pendingBossId = null
     migrated.combat.threatCleared = 0
   }
+  const convertedGroundBossByLocation: Partial<Record<CombatLocationId, MonsterId>> = {
+    'cinder-sepulcher': 'sepulcher-flamekeeper',
+    'temple-of-the-sunken-bell': 'deep-bell-saint',
+  }
+  const convertedGroundBoss = migrated.combat.locationId ? convertedGroundBossByLocation[migrated.combat.locationId] : undefined
+  if (migrated.combat.active && convertedGroundBoss && migrated.combat.enemyId === convertedGroundBoss) {
+    migrated.combat = { ...fresh.combat, log: migrated.combat.log, combatRngState: migrated.combat.combatRngState }
+  } else if (migrated.combat.active && convertedGroundBoss) {
+    migrated.combat.sequenceIndex = null
+    migrated.combat.pendingBossId = null
+    migrated.combat.inBossFight = false
+    migrated.combat.threatCleared = 0
+  }
 }
 
 const normalizeGuardianRuntime = (migrated: GameState, raw: Record<string, any>) => {

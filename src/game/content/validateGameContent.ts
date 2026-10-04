@@ -35,8 +35,8 @@ export const validateGameContent = () => {
     ...validateEliteZoneAffixes(),
     ...lootTierValidation.errors,
   ]
-  const locationCounts = Object.values(COMBAT_LOCATIONS).reduce<Record<string, number>>((counts, location) => { counts[location.type] = (counts[location.type] ?? 0) + 1; return counts }, {})
-  const expectedLocations = { total: 33, 'combat-zone': 13, 'elite-zone': 8, 'hunting-ground': 3, dungeon: 9 }
+  const locationCounts = Object.values(COMBAT_LOCATIONS).reduce<Record<string, number>>((counts, location) => { const type = location.progression?.locationType ?? 'missing-progression'; counts[type] = (counts[type] ?? 0) + 1; return counts }, {})
+  const expectedLocations = { total: 33, 'combat-zone': 20, 'hunting-ground': 5, dungeon: 5, special: 3 }
   if (COMBAT_LOCATION_ORDER.length !== expectedLocations.total) errors.push(`combat locations: expected ${expectedLocations.total}, received ${COMBAT_LOCATION_ORDER.length}`)
   Object.entries(expectedLocations).filter(([type]) => type !== 'total').forEach(([type, expected]) => { if ((locationCounts[type] ?? 0) !== expected) errors.push(`combat locations: expected ${expected} ${type}, received ${locationCounts[type] ?? 0}`) })
   const bossCount = MONSTER_IDS.filter((id) => isBossMonster(MONSTERS[id])).length

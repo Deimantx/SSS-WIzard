@@ -56,13 +56,13 @@ describe('combat farming benchmark', () => {
 
   it('is deterministic and keeps the selected target instead of using the random pool', () => {
     const state = makeFixture()
-    const input = { sourceState: state, locationId: 'whispering-woods' as const, targetEnemyId: 'cinder-moth' as const, worldTier: 1 as const, durationMs: 10_000 }
+    const input = { sourceState: state, locationId: 'whispering-woods' as const, targetEnemyId: 'stone-root' as const, worldTier: 1 as const, durationMs: 10_000 }
     const first = runCombatFarmingBenchmark(input)
     const second = runCombatFarmingBenchmark(input)
 
     expect(second).toEqual(first)
-    expect(first.targetEnemyId).toBe('cinder-moth')
-    expect(getCombatFarmingBenchmarkTargets('whispering-woods')).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
+    expect(first.targetEnemyId).toBe('stone-root')
+    expect(getCombatFarmingBenchmarkTargets('whispering-woods')).toEqual(COMBAT_LOCATIONS['whispering-woods'].monsterPool)
   })
 
   it('includes the authored boss as a separate TTK target and rejects bosses from other locations', () => {
@@ -180,7 +180,7 @@ describe('combat farming benchmark', () => {
     state.player.maxHealth = 1
     state.player.health = 1
     state.player.baseMaxHealth = 1
-    const result = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'tempest-stag', worldTier: 2, durationMs: 60_000 })
+    const result = runCombatFarmingBenchmark({ sourceState: state, locationId: 'whispering-woods', targetEnemyId: 'stone-root', worldTier: 2, durationMs: 60_000 })
     expect(result.survived).toBe(false)
     expect(result.timeToDeathMs, result.invalidReason).not.toBeNull()
     expect(result.simulatedDurationMs).toBeLessThan(result.requestedDurationMs)
@@ -190,7 +190,7 @@ describe('combat farming benchmark', () => {
     const state = makeFixture()
     const before = snapshotGameplay(state)
     const completed: ReturnType<typeof runCombatFarmingBenchmark>[] = []
-    const matrix = await runCombatFarmingBenchmarkMatrix({ sourceState: state, locationId: 'whispering-woods', targetEnemyIds: ['forest-wisp', 'thornling', 'cinder-moth'], worldTiers: [1, 2], durationMs: 1_000 }, {
+    const matrix = await runCombatFarmingBenchmarkMatrix({ sourceState: state, locationId: 'whispering-woods', targetEnemyIds: ['forest-wisp', 'thornling', 'stone-root'], worldTiers: [1, 2], durationMs: 1_000 }, {
       onResult: (result) => completed.push(result),
       isCancelled: () => completed.length >= 2,
     })

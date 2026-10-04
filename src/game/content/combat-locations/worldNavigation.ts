@@ -6,6 +6,7 @@ import { COMBAT_LOCATION_IDS } from './combatLocationIds'
 import { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER } from './registry'
 import { getCombatProgressionMetadata, getCombatZonesForTier as selectCombatZonesForTier, getHuntingGroundForTier as selectHuntingGroundForTier, getDungeonForTier as selectDungeonForTier, getLocationsForTier as selectLocationsForTier } from './combatProgression'
 import type { CombatTier } from './worldNavigationTypes'
+import { HUNTER_STANDINGS } from '../hunters-order/hunterRanks'
 
 export { COMBAT_LOCATIONS, COMBAT_LOCATION_ORDER }
 export type { CombatLocationRuntimeView } from './worldNavigationTypes'
@@ -19,7 +20,7 @@ export const getLocationsForTier = (tier: CombatTier) => selectLocationsForTier(
 export const getCombatLocation = (locationId: CombatLocationId | null | undefined): CombatLocationRuntimeView | null => locationId ? COMBAT_LOCATIONS[locationId] ?? null : null
 export const getCombatLocationById = getCombatLocation
 
-type NavigationProgress = Pick<GameState['progress'], 'bossKillsByBoss'> & Partial<Pick<GameState['progress'], 'startingSchoolId' | 'chronicle'>>
+type NavigationProgress = Pick<GameState['progress'], 'bossKillsByBoss'> & Partial<Pick<GameState['progress'], 'startingSchoolId' | 'chronicle' | 'huntersOrder'>>
 
 export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDefinition['unlock'], progress: NavigationProgress): boolean => {
   if (!condition || condition.type === 'always') return true
@@ -34,10 +35,23 @@ export const isCombatNavigationConditionUnlocked = (condition: CombatLocationDef
   return condition.conditions.every((entry) => isCombatNavigationConditionUnlocked(entry, progress))
 }
 
+export const isCombatTierUnlocked = (tier: CombatTier, progress: NavigationProgress): boolean => {
+  if (tier === 1) return true
+  const gateTier = (tier - 1) as CombatTier
+  const gate = getDungeonForTier(gateTier)
+  return Boolean(gate?.bossId && (progress.bossKillsByBoss[gate.bossId] ?? 0) > 0)
+}
+
 export const isCombatLocationUnlocked = (locationRef: CombatLocationId | CombatLocationDefinition, progress: NavigationProgress): boolean => {
   const locationId = typeof locationRef === 'string' ? locationRef : locationRef.id
   const location = COMBAT_LOCATIONS[locationId]
   if (!location || !isCombatNavigationConditionUnlocked(location.unlock, progress)) return false
+  const metadata = location.progression ?? getCombatProgressionMetadata(location)
+  if (metadata.requiredTier && !isCombatTierUnlocked(metadata.requiredTier, progress)) return false
+  if (metadata.requiredHunterOrderRank) {
+    const required = HUNTER_STANDINGS.find((standing) => standing.id === metadata.requiredHunterOrderRank)
+    if (!required || (progress.huntersOrder?.reputation ?? -1) < required.reputation) return false
+  }
   return !location.prototype
 }
 

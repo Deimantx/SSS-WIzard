@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../../store/initialState'
 import { useGameStore } from '../../../store/gameStore'
 import { COMBAT_LOCATIONS } from '../../content/combat-locations/worldNavigation'
@@ -15,6 +15,8 @@ const prepare = () => {
   state.spellPresets.presets = [{ id: 'targeted-test', name: 'Targeted Test', slots: [{ spellId: 'fire-bolt', autoCast: false }] }]
   state.spellPresets.selectedPresetId = 'targeted-test'
   state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+  for (const bossId of ['archmage-edrin-shade', 'corrupted-elemental-gatekeeper', 'crossroads-keeper', 'meridian-splitter'] as const) state.progress.bossKillsByBoss[bossId] = 1
+  state.progress.bossKillsByBoss['forest-heart'] = 1
   state.combat.active = true
   state.combat.locationId = 'whispering-woods'
   return state
@@ -37,6 +39,7 @@ const installStoreState = (state: ReturnType<typeof prepare>) => {
 describe('Whispering Woods targeted farming', () => {
   it('validates only authored normal targets and rejects the Zone Boss', () => {
     const location = getCombatLocationById('whispering-woods')
+    expect(isCombatTargetForLocation(location, 'whispering-woods', 'stone-root')).toBe(true)
     expect(isCombatTargetForLocation(location, 'whispering-woods', 'cinder-moth')).toBe(true)
     expect(isCombatTargetForLocation(location, 'whispering-woods', 'forest-heart')).toBe(false)
     expect(isCombatTargetForLocation(location, 'whispering-woods', 'corrupted-greatbear')).toBe(false)
@@ -45,14 +48,14 @@ describe('Whispering Woods targeted farming', () => {
 
   it('repeats the selected target regardless of encounter RNG', () => {
     const state = prepare()
-    state.combat.targetEnemyId = 'cinder-moth'
+    state.combat.targetEnemyId = 'stone-root'
     expect(spawnNextEnemy(state)).toBe(true)
-    expect(state.combat.enemyId).toBe('cinder-moth')
+    expect(state.combat.enemyId).toBe('stone-root')
     state.combat.enemyHp = 0
     finishEnemy(state)
     expect(spawnNextEnemy(state)).toBe(true)
-    expect(state.combat.enemyId).toBe('cinder-moth')
-    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating('cinder-moth', 1))
+    expect(state.combat.enemyId).toBe('stone-root')
+    expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating('stone-root', 1))
   })
 
   it('switches the next normal spawn without interrupting the current enemy', () => {
@@ -70,8 +73,8 @@ describe('Whispering Woods targeted farming', () => {
 
   it.each([
     ['forest-wisp', 'air', 10],
-    ['cinder-moth', 'fire', 20],
-    ['tempest-stag', 'air', 50],
+    ['stone-root', 'earth', 20],
+    ['grove-sentinel', 'air', 50],
   ] as const)('adds Power Threat for %s', (enemyId, type, amount) => {
     const state = prepare()
     state.combat.targetEnemyId = enemyId
@@ -79,19 +82,19 @@ describe('Whispering Woods targeted farming', () => {
     state.combat.enemyHp = 0
     finishEnemy(state)
     expect(state.combat.threatCleared).toBe(resolveEnemyPowerRating(enemyId, 1))
-    expect(state.resonance[type]).toBe(resolveEnemyResonanceReward(enemyId, 1).finalYield[type])
+    expect(state.resonance[type]).toBe(resolveEnemyResonanceReward(enemyId, 1).finalYield[type] ?? 0)
   })
 
   it('keeps the target through the Zone Boss and resumes the same target', () => {
     const state = prepare()
-    state.combat.targetEnemyId = 'tempest-stag'
+    state.combat.targetEnemyId = 'grove-sentinel'
     spawnEnemy(state, 'forest-heart')
     state.combat.enemyHp = 0
     finishEnemy(state)
     expect(state.combat.threatCleared).toBe(0)
-    expect(state.combat.targetEnemyId).toBe('tempest-stag')
+    expect(state.combat.targetEnemyId).toBe('grove-sentinel')
     expect(spawnNextEnemy(state)).toBe(true)
-    expect(state.combat.enemyId).toBe('tempest-stag')
+    expect(state.combat.enemyId).toBe('grove-sentinel')
   })
 
   it('uses the canonical World Tier resolver for target rewards', () => {
@@ -121,20 +124,20 @@ describe('Whispering Woods targeted farming', () => {
 
   it('uses the target during the next offline simulation spawn', async () => {
     const state = prepare()
-    state.combat.targetEnemyId = 'cinder-moth'
+    state.combat.targetEnemyId = 'stone-root'
     state.offlineBankMs = 5_000
     expect(spawnNextEnemy(state)).toBe(true)
     state.combat.enemyHp = 0
     const { advanceWithOfflineBank } = await import('../offline-bank/offlineBankSimulation')
     const result = await advanceWithOfflineBank(5_000, () => state, (recipe) => recipe(state), () => {}, undefined, {})
     expect(result.ok).toBe(true)
-    expect(state.progress.lifetimeKillsByMonster['cinder-moth']).toBeGreaterThanOrEqual(1)
+    expect(state.progress.lifetimeKillsByMonster['stone-root']).toBeGreaterThanOrEqual(1)
   })
 
   it('abandons a normal encounter immediately without granting its pending rewards', () => {
     const state = prepare()
-    state.combat.targetEnemyId = 'cinder-moth'
-    spawnEnemy(state, 'cinder-moth')
+    state.combat.targetEnemyId = 'stone-root'
+    spawnEnemy(state, 'stone-root')
     state.combat.enemyHp = 1
     state.combat.threatCleared = 7
     state.player.health = 73
@@ -238,17 +241,17 @@ describe('Whispering Woods targeted farming', () => {
 
   it('keeps the same active target instance intact when HUNT TARGET is repeated', () => {
     const state = prepare()
-    state.combat.targetEnemyId = 'tempest-stag'
-    spawnEnemy(state, 'tempest-stag')
+    state.combat.targetEnemyId = 'grove-sentinel'
+    spawnEnemy(state, 'grove-sentinel')
     state.combat.enemyHp = 123
     state.combat.encounterTimerMs = 456
     state.combat.pendingBossId = 'forest-heart'
     const instanceKey = state.combat.enemyInstanceKey
 
     installStoreState(state)
-    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'tempest-stag')).toBe(true)
+    expect(useGameStore.getState().huntCombatTarget('whispering-woods', 'grove-sentinel')).toBe(true)
     const next = useGameStore.getState()
-    expect(next.combat.enemyId).toBe('tempest-stag')
+    expect(next.combat.enemyId).toBe('grove-sentinel')
     expect(next.combat.enemyInstanceKey).toBe(instanceKey)
     expect(next.combat.enemyHp).toBe(123)
     expect(next.combat.encounterTimerMs).toBe(456)
@@ -257,7 +260,7 @@ describe('Whispering Woods targeted farming', () => {
 
   it('abandons a boss without boss progression and preserves Threat before spawning the target', () => {
     const state = prepare()
-    state.combat.targetEnemyId = 'tempest-stag'
+    state.combat.targetEnemyId = 'grove-sentinel'
     state.combat.threatCleared = COMBAT_LOCATIONS['whispering-woods'].threatRequired!
     spawnEnemy(state, 'forest-heart')
     const bossKillsBefore = state.progress.bossKillsByBoss['forest-heart'] ?? 0
@@ -366,7 +369,7 @@ describe('Elemental Scar targeted farming', () => {
 describe('Shattered Meridian targeted farming', () => {
   it.each([
     ['graveglass-hollow', 'epitaph-weaver', 'water'],
-    ['stormvault-gallery', 'thundercoil-serpent', 'air'],
+    ['runeblight-expanse', 'thundercoil-serpent', 'air'],
     ['starfallen-observatory', 'comet-wraith', 'fire'],
   ] as const)('repeats the selected %s target without random fallback', (locationId, targetEnemyId, resonanceType) => {
     const state = prepare()
@@ -393,13 +396,13 @@ describe('Shattered Meridian targeted farming', () => {
   it('preserves the selected Shattered target through its boss encounter', () => {
     const state = prepare()
     state.combat.locationId = 'graveglass-hollow'
-    state.combat.targetEnemyId = 'ossuary-oracle'
+    state.combat.targetEnemyId = 'epitaph-weaver'
     spawnEnemy(state, 'graveglass-behemoth')
     state.combat.enemyHp = 0
     finishEnemy(state)
-    expect(state.combat.targetEnemyId).toBe('ossuary-oracle')
+    expect(state.combat.targetEnemyId).toBe('epitaph-weaver')
     expect(spawnNextEnemy(state)).toBe(true)
-    expect(state.combat.enemyId).toBe('ossuary-oracle')
+    expect(state.combat.enemyId).toBe('epitaph-weaver')
   })
 })
 

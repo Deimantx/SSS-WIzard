@@ -11,6 +11,7 @@ const resetCombatGame = () => {
   game.resetSave()
   const state = createCombatTestState()
   state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
+  state.progress.bossKillsByBoss['archmage-edrin-shade'] = 1
   useGameStore.setState(state)
   return useGameStore.getState()
 }

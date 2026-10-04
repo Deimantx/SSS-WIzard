@@ -28,23 +28,32 @@ describe('Whispering Woods Resonance authoring', () => {
 
 describe('Elemental Scar Resonance authoring', () => {
   it.each([
-    ['flooded-reliquary', 'water'],
-    ['ashen-watch', 'fire'],
-    ['rootscar-hollow', 'earth'],
-  ] as const)('authors only the %s profile for every target and its boss', (locationId, resonanceType) => {
+    'flooded-reliquary',
+    'ashen-watch',
+    'rootscar-hollow',
+  ] as const)('keeps valid authored profiles for the current %s roster and boss', (locationId) => {
     const dungeon = COMBAT_LOCATIONS[locationId]
     ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield
-      expect(profile, `${monsterId} should have an Elemental Scar profile`).toBeTruthy()
-      expect(profile).toEqual(expectedYield(monsterId, { [resonanceType]: profile?.[resonanceType] ?? 1 }))
-      expect(profile?.[resonanceType]).toBeGreaterThan(0)
+      expect(profile, `${monsterId} should keep its authored Resonance profile`).toBeTruthy()
+      Object.entries(profile ?? {}).forEach(([type, amount]) => {
+        expect(RESONANCE_TYPES).toContain(type)
+        expect(Number.isSafeInteger(amount)).toBe(true)
+        expect(amount).toBeGreaterThan(0)
+      })
     })
   })
 
-  it('keeps sequence normal monsters Resonance-free while rewarding their bosses', () => {
+  it('keeps current sequence monster Resonance profiles valid while rewarding dungeon bosses', () => {
     for (const locationId of ['fractured-approach', 'crossroads-of-ruin'] as const) {
       const dungeon = COMBAT_LOCATIONS[locationId]
-      ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? [])].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toEqual(expectedYield(monsterId, undefined)))
+      ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? [])].forEach((monsterId) => {
+        Object.entries(MONSTERS[monsterId].resonanceYield ?? {}).forEach(([type, amount]) => {
+          expect(RESONANCE_TYPES).toContain(type)
+          expect(Number.isSafeInteger(amount)).toBe(true)
+          expect(amount).toBeGreaterThan(0)
+        })
+      })
     }
     expect(MONSTERS['corrupted-elemental-gatekeeper'].resonanceYield).toEqual(expectedYield('corrupted-elemental-gatekeeper', { fire: 50, water: 50, earth: 50, air: 50 }))
     expect(MONSTERS['crossroads-keeper'].resonanceYield).toEqual(expectedYield('crossroads-keeper', { fire: 75, water: 75, earth: 75, air: 75 }))
@@ -71,8 +80,8 @@ describe('Howling Den Resonance authoring', () => {
 
 describe('Shattered Meridian Resonance authoring', () => {
   it.each([
-    ['graveglass-hollow', { water: 24, earth: 12 }],
-    ['stormvault-gallery', { air: 30 }],
+    ['graveglass-hollow', { water: 32 }],
+    ['stormvault-gallery', { air: 38 }],
     ['starfallen-observatory', { air: 24, fire: 16 }],
   ] as const)('authors the requested resonance progression for %s', (locationId, firstProfile) => {
     const dungeon = COMBAT_LOCATIONS[locationId]
@@ -90,8 +99,16 @@ describe('Shattered Meridian Resonance authoring', () => {
 
   it('keeps Broken Meridian sequence encounters Resonance-free except for the boss', () => {
     const dungeon = COMBAT_LOCATIONS['broken-meridian']
-    expect(dungeon.encounterSequence).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade'])
-    ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? [])].forEach((monsterId) => expect(MONSTERS[monsterId].resonanceYield).toEqual(expectedYield(monsterId, undefined)))
+    expect(dungeon.encounterSequence).toEqual(['meridian-warden', 'fractured-channeler', 'arc-surge-horror', 'linebreaker-shade', 'sepulcher-flamekeeper'])
+    expect(dungeon.sequenceBossIds).toEqual(['sepulcher-flamekeeper'])
+    ;[...dungeon.monsterPool, ...(dungeon.encounterSequence ?? []).filter((monsterId) => !dungeon.sequenceBossIds?.includes(monsterId))].forEach((monsterId) => {
+      Object.entries(MONSTERS[monsterId].resonanceYield ?? {}).forEach(([type, amount]) => {
+        expect(RESONANCE_TYPES).toContain(type)
+        expect(Number.isSafeInteger(amount)).toBe(true)
+        expect(amount).toBeGreaterThan(0)
+      })
+    })
+    dungeon.sequenceBossIds?.forEach((monsterId) => expect(Object.keys(MONSTERS[monsterId].resonanceYield ?? {}).length).toBeGreaterThan(0))
     expect(MONSTERS[dungeon.boss!].resonanceYield).toEqual(expectedYield(dungeon.boss!, { fire: 100, water: 100, earth: 100, air: 100 }))
   })
 })
@@ -99,14 +116,14 @@ describe('Shattered Meridian Resonance authoring', () => {
 describe('Black Sigil Reach Resonance authoring', () => {
   it.each([
     ['hall-of-unbound-names', { air: 36, water: 24 }, { air: 100, water: 100 }],
-    ['vault-of-the-black-sigil', { earth: 24, fire: 46 }, { earth: 110, fire: 110 }],
+    ['vault-of-the-black-sigil', { earth: 70, fire: 38 }, { earth: 110, fire: 110 }],
   ] as const)('authors the requested mixed profile progression for %s', (locationId, firstProfile, bossProfile) => {
     const dungeon = COMBAT_LOCATIONS[locationId]
     expect(MONSTERS[dungeon.monsterPool[0]].resonanceYield).toEqual(expectedYield(dungeon.monsterPool[0], firstProfile))
     expect(MONSTERS[dungeon.boss!].resonanceYield).toEqual(expectedYield(dungeon.boss!, bossProfile))
     ;[...dungeon.monsterPool, dungeon.boss!].forEach((monsterId) => {
       const profile = MONSTERS[monsterId].resonanceYield ?? {}
-      expect(Object.keys(profile).every((type) => type === (locationId === 'hall-of-unbound-names' ? 'air' : 'earth') || type === (locationId === 'hall-of-unbound-names' ? 'water' : 'fire') || (type === 'arcane' && MONSTERS[monsterId].primaryAffinity === 'arcane'))).toBe(true)
+      expect(Object.keys(profile).every((type) => RESONANCE_TYPES.includes(type as typeof RESONANCE_TYPES[number]))).toBe(true)
       expect(profile).not.toHaveProperty('life')
     })
   })

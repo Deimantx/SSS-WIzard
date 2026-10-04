@@ -85,6 +85,7 @@ export const getMonsterCombatLocation = (monsterId: MonsterId): MonsterLocationI
   for (const locationId of COMBAT_LOCATION_ORDER) {
     const dungeon = COMBAT_LOCATIONS[locationId]
     if (hasBossEncounter(dungeon) && dungeon.boss === monsterId) return { monsterId, locationId, locationName: dungeon.name, role: 'boss' }
+    if (dungeon.sequenceBossIds?.includes(monsterId)) return { monsterId, locationId, locationName: dungeon.name, role: 'boss' }
     if (dungeon.monsterPool.includes(monsterId)) return { monsterId, locationId, locationName: dungeon.name, role: 'normal' }
   }
   return null

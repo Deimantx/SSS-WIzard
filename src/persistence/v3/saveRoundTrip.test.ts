@@ -7,6 +7,7 @@ import { validateV3RoundTrip } from './saveRoundTrip'
 import { validateStoredSave } from '../saveIntegrity'
 import { loadPersistedGameStateV3 } from './saveLoader'
 import { parsePersistedGameStateV3, validatePersistedGameStateV3 } from './saveSchema'
+import { COMBAT_LOCATIONS } from '../../game/content/combat-locations/worldNavigation'
 
 describe('current Save System', () => {
   beforeEach(() => {
@@ -24,7 +25,7 @@ describe('current Save System', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(3)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(65)
+    expect(SAVE_VERSION).toBe(66)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -66,7 +67,7 @@ describe('current Save System', () => {
 
     const parsed = parsePersistedGameStateV3(JSON.stringify(schema2))
     const loaded = loadPersistedGameStateV3(parsed)
-    expect(loaded.combat).toMatchObject({ active: true, locationId: 'black-gate', sequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 321 })
+    expect(loaded.combat).toMatchObject({ active: true, locationId: 'black-gate', sequenceIndex: COMBAT_LOCATIONS['black-gate'].encounterSequence?.length, enemyId: 'black-gatekeeper', enemyHp: 321 })
     expect(loaded.progress.autoHuntBossByLocation['black-gate']).toBe(true)
     expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'ground', groundId: 'hunters-ground' })
     expect(loaded.ui.lastEnteredCombatLocationId).toBe('black-gate')

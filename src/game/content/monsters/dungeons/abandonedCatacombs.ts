@@ -279,6 +279,9 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
     "traitIds": [
       "fallen-acolyte-grave-channeling"
     ],
+    "resonanceYield": {
+      "arcane": 10
+    },
     "actions": {
       "grave-bolt": {
         "id": "grave-bolt",
@@ -497,6 +500,7 @@ export const ABANDONED_CATACOMBS_MONSTERS = {
       "archmage-edrin-unbound-spirit"
     ],
     "resonanceYield": {
+      "arcane": 50,
       "fire": 40,
       "water": 40,
       "earth": 40,

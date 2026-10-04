@@ -24,7 +24,7 @@ const specs: CombatMonsterSpec[] = [
     patternSteps: [basic('basic-1'), action('rift-lunge-step', 'rift-lunge'), basic('basic-2'), action('arc-flash-step', 'arc-flash'), basic('basic-3')],
   },
   {
-    locationId: 'fractured-approach', id: 'arcane-scavenger', combatV2: true, primaryAffinity: 'arcane', basicAttackElement: 'arcane', targetPower: 2500,
+    locationId: 'fractured-approach', id: 'arcane-scavenger', combatV2: true, primaryAffinity: 'arcane', basicAttackElement: 'arcane', resonanceYield: { arcane: 10 }, targetPower: 2500,
     name: 'Arcane Scavenger', subtitle: 'A looter feeding on the residue of ruined wards', hp: 1050, damage: 61, defense: 26, time: 2350,
     color: '#a78bc4', icon: { portraitIcon: 'mage' },
     specials: [
@@ -34,7 +34,7 @@ const specs: CombatMonsterSpec[] = [
     patternSteps: [action('salvaged-bolt-step', 'salvaged-bolt'), basic('basic-1'), basic('basic-2'), action('unstable-charge-step', 'unstable-charge'), basic('basic-3')],
   },
   {
-    locationId: 'fractured-approach', id: 'withered-watcher', combatV2: true, primaryAffinity: 'arcane', basicAttackElement: 'arcane', targetPower: 2700,
+    locationId: 'fractured-approach', id: 'withered-watcher', combatV2: true, primaryAffinity: 'arcane', basicAttackElement: 'arcane', resonanceYield: { arcane: 10 }, targetPower: 2700,
     name: 'Withered Watcher', subtitle: 'A failing construct that still obeys its last command', hp: 1150, damage: 60, defense: 34, time: 2550,
     resistances: { fire: 0.05, water: 0.05, earth: 0.05, air: 0.05 }, color: '#9a8c79', icon: { portraitIcon: 'guardian' },
     specials: [
@@ -47,7 +47,7 @@ const specs: CombatMonsterSpec[] = [
   {
     locationId: 'fractured-approach', id: 'corrupted-elemental-gatekeeper', combatV2: true, primaryAffinity: 'arcane', basicAttackElement: 'arcane', targetPower: 3700,
     name: 'Corrupted Elemental Gatekeeper', subtitle: "The shattered frontier's last ward, poisoned by elemental instability", hp: 10500, damage: 85, defense: 55,
-    resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 }, resonanceYield: { fire: 50, water: 50, earth: 50, air: 50 }, color: '#d276a3', icon: { portraitIcon: 'boss' }, boss: true,
+    resistances: { fire: 0.1, water: 0.1, earth: 0.1, air: 0.1 }, resonanceYield: { arcane: 63, fire: 50, water: 50, earth: 50, air: 50 }, color: '#d276a3', icon: { portraitIcon: 'boss' }, boss: true,
     specials: [
       { id: 'flame-surge', name: 'Flame Surge', actionTimeMs: 1900, description: 'Corrupted fire surges through the target.', damage: [{ type: 'fire', coefficient: 1.25 }] },
       { id: 'tidal-break', name: 'Tidal Break', actionTimeMs: 2100, description: 'A violent wave of corrupted water breaks across the target.', damage: [{ type: 'water', coefficient: 1.2 }] },

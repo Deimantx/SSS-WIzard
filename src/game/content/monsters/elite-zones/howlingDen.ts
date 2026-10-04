@@ -280,6 +280,7 @@ export const HOWLING_DEN_MONSTERS = {
       "corrupted-dire-wolf-arcane-corruption"
     ],
     "resonanceYield": {
+      "arcane": 32,
       "air": 25,
       "earth": 20
     },
@@ -721,6 +722,7 @@ export const HOWLING_DEN_MONSTERS = {
     },
     "defaultActionPatternId": "default",
     "resonanceYield": {
+      "arcane": 48,
       "air": 38,
       "fire": 12
     },

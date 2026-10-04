@@ -22,9 +22,9 @@ describe('Resonance runtime', () => {
   })
 
   it('gives every Arcane-primary enemy a dominant Arcane reward while preserving secondary yields', () => {
-    expect(ARCANE_PRIMARY_RESONANCE_AUDIT.length).toBeGreaterThan(0)
-    for (const { id } of ARCANE_PRIMARY_RESONANCE_AUDIT) {
-      const yieldProfile = MONSTERS[id].resonanceYield ?? {}
+    expect(ARCANE_PRIMARY_RESONANCE_AUDIT).toHaveLength(44)
+    for (const { id, resonanceYield } of ARCANE_PRIMARY_RESONANCE_AUDIT) {
+      const yieldProfile = resonanceYield ?? {}
       expect(yieldProfile.arcane, id).toBeGreaterThan(0)
       expect(yieldProfile.arcane, id).toBeGreaterThanOrEqual(Math.max(0, ...Object.entries(yieldProfile).filter(([type]) => type !== 'arcane').map(([, amount]) => amount ?? 0)))
     }

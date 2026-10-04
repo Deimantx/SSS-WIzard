@@ -820,6 +820,7 @@ export const HUNTERS_ORDER_MONSTERS: Partial<Record<MonsterId, MonsterDefinition
     },
     "traitIds": [],
     "resonanceYield": {
+      "arcane": 100,
       "air": 80
     },
     "actions": {

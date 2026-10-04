@@ -3,18 +3,24 @@ import { ELEMENT_IDS } from '../elements/elements'
 import { getMonsterPrimaryAffinity } from '../monsters/monsterTypes'
 import { COMBAT_LOCATION_IDS, type CombatLocationId } from './combatLocationIds'
 import type { CombatLocationDefinition, CombatLocationRuntimeView } from './worldNavigationTypes'
-import { firstFrontierLocations } from './first-frontier/locations'
-import { elementalScarLocations } from './elemental-scar/locations'
-import { shatteredMeridianLocations } from './shattered-meridian/locations'
-import { blackSigilReachLocations } from './black-sigil-reach/locations'
-import { expansionLocations } from './expansionLocations'
+import { combatZoneLocations } from './combat-zones/locations'
+import { eliteZoneLocations } from './elite-zones/locations'
+import { huntingGroundLocations } from './hunting-grounds/locations'
+import { dungeonLocations } from './dungeons/locations'
+import { expansionCombatZoneLocations } from './combat-zones/expansionLocations'
+import { expansionEliteZoneLocations } from './elite-zones/expansionLocations'
+import { expansionHuntingGroundLocations } from './hunting-grounds/expansionLocations'
+import { expansionDungeonLocations } from './dungeons/expansionLocations'
 
 const authoredLocations = {
-  ...firstFrontierLocations,
-  ...elementalScarLocations,
-  ...shatteredMeridianLocations,
-  ...blackSigilReachLocations,
-  ...expansionLocations,
+  ...combatZoneLocations,
+  ...eliteZoneLocations,
+  ...huntingGroundLocations,
+  ...dungeonLocations,
+  ...expansionCombatZoneLocations,
+  ...expansionEliteZoneLocations,
+  ...expansionHuntingGroundLocations,
+  ...expansionDungeonLocations,
 } satisfies Partial<Record<CombatLocationId, CombatLocationDefinition>>
 
 const missingAuthoredLocations = COMBAT_LOCATION_IDS.filter((id) => !authoredLocations[id])

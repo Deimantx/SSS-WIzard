@@ -15,12 +15,12 @@ describe('combat world navigation read model', () => {
     expect(getInitialCombatLocationId({ combat: state.combat, lastEnteredCombatLocationId: 'howling-den', progress: state.progress })).toBe('whispering-woods')
   })
 
-  it('presents First Frontier as one authored-order location list', () => {
+  it('presents Combat locations in global authored progression order', () => {
     const state = createInitialState()
     state.progress.chronicle.eventFlags['first-elemental-tutorial-boss-defeated'] = true
     const view = buildCombatWorldNavigationViewModel({ progress: state.progress, combat: state.combat, selectedLocationId: 'whispering-woods' })
 
-    expect(view.allLocations.map((location) => location.name).slice(0, 8)).toEqual(['Stonewake Hollow', 'Galecrest Heights', 'Tideglass Caverns', 'Emberfall Basin', 'Whispering Woods', 'Howling Den', 'Gloamridge', 'Abandoned Catacombs'])
+    expect(view.allLocations.map((location) => location.name).slice(0, 8)).toEqual(['Stonewake Hollow', 'Galecrest Heights', 'Tideglass Caverns', 'Emberfall Basin', 'Whispering Woods', 'Brineveil Marsh', 'Howling Den', 'Mistclaw Highlands'])
     expect(view.allLocations.find((location) => location.id === 'howling-den')).toMatchObject({ type: 'elite-zone', state: 'locked', unlockText: 'Defeat Forest Heart' })
     expect(view.selectedLocation?.targeting?.targets.map((target) => target.monsterId)).toEqual(['forest-wisp', 'thornling', 'dewbound-sprite', 'cinder-moth', 'stone-root', 'grove-sentinel', 'tempest-stag'])
   })

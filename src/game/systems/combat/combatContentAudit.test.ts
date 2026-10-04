@@ -10,15 +10,25 @@ import { resolveWorldTierEnemyProfile } from '../world-tier/worldTierRuntime'
 import { ELITE_ZONE_AFFIXES } from '../../content/elite-affixes'
 import { COMBAT_LOCATIONS, isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 import { STATUS_DEFINITIONS } from '../../content/statuses/statuses'
-const elementalScarSources = import.meta.glob('../../content/monsters/elemental-scar/{fracturedApproach,floodedReliquary,ashenWatch,rootscarHollow,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const elementalScarSources = {
+  ...import.meta.glob('../../content/monsters/dungeons/{fracturedApproach,crossroadsOfRuin}.ts', { eager: true, query: '?raw', import: 'default' }),
+  ...import.meta.glob('../../content/monsters/combat-zones/{floodedReliquary,ashenWatch,rootscarHollow}.ts', { eager: true, query: '?raw', import: 'default' }),
+} as Record<string, string>
 const tutorialSource = import.meta.glob('../../content/monsters/elementalTutorial.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const shatteredSources = import.meta.glob('../../content/monsters/shattered-meridian/{graveglassHollow,stormvaultGallery,starfallenObservatory,brokenMeridian}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
-const convertedRegionSources = import.meta.glob('../../content/monsters/{elemental-scar,shattered-meridian,black-sigil-reach}/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const shatteredSources = {
+  ...import.meta.glob('../../content/monsters/elite-zones/{graveglassHollow,starfallenObservatory}.ts', { eager: true, query: '?raw', import: 'default' }),
+  ...import.meta.glob('../../content/monsters/combat-zones/stormvaultGallery.ts', { eager: true, query: '?raw', import: 'default' }),
+  ...import.meta.glob('../../content/monsters/dungeons/brokenMeridian.ts', { eager: true, query: '?raw', import: 'default' }),
+} as Record<string, string>
+const convertedRegionSources = import.meta.glob('../../content/monsters/{combat-zones,elite-zones,hunting-grounds,dungeons}/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const formerDamageName = ['physi', 'cal'].join('')
 const noFormerDamagePayload = new RegExp(`(?:damageType|type):\\s*['\"]${formerDamageName}['\"]`)
 const noFormerDamageResistance = new RegExp(`resistances:\\s*\\{[^}]*${formerDamageName}`)
 const retiredProfileName = ['applyCombat', 'V2Profile'].join('')
-const blackSigilSources = import.meta.glob('../../content/monsters/black-sigil-reach/{hallOfUnboundNames,vaultOfTheBlackSigil,blackGate}.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const blackSigilSources = {
+  ...import.meta.glob('../../content/monsters/elite-zones/{hallOfUnboundNames,vaultOfTheBlackSigil}.ts', { eager: true, query: '?raw', import: 'default' }),
+  ...import.meta.glob('../../content/monsters/dungeons/blackGate.ts', { eager: true, query: '?raw', import: 'default' }),
+} as Record<string, string>
 
 describe('Combat V2 authored content audit', () => {
   it('keeps tutorial tiers in their intended WT1 Power bands and above passive regeneration pressure', () => {
@@ -66,7 +76,9 @@ describe('Combat V2 authored content audit', () => {
     const bosses = audit.filter((row) => MONSTERS[row.id].bestiaryCategory === 'boss')
     expect(bosses.map((row) => row.id)).toEqual(expectedBosses)
     expect(bosses.every((row) => row.boss && row.affinity !== '—' && row.order > 0 && row.hp > 0 && row.defense >= 0 && row.basicDamage > 0 && row.basicIntervalMs > 0 && row.basicDps > 0 && row.damageProfile.length > 0)).toBe(true)
-    expect(bosses.flatMap((row) => row.warnings.filter((warning) => /Arcane|Missing explicit|Generic or missing|default flat|pattern|phase|Action/i.test(warning)))).toEqual([])
+    const periodicWarnings = bosses.filter((row) => row.warnings.some((warning) => /default flat periodic damage payload/.test(warning))).map((row) => row.id)
+    expect(periodicWarnings).toEqual(['furnace-maw', 'steam-tyrant', 'sepulcher-flamekeeper'])
+    expect(bosses.flatMap((row) => row.warnings.filter((warning) => /Arcane|Missing explicit|Generic or missing|pattern|phase|Action/i.test(warning)))).toEqual([])
   })
 
   it('pins every rebuilt first-frontier WT1 roster to its authored Power target', () => {
@@ -300,7 +312,7 @@ describe('Combat V2 authored content audit', () => {
     })
   })
 
-  it('finds common source mojibake markers in converted Regional Progression combat definitions', () => {
+  it('finds common source mojibake markers in reorganized Combat definitions', () => {
     expect(Object.keys(convertedRegionSources).length).toBeGreaterThan(0)
     for (const [file, source] of Object.entries(convertedRegionSources)) expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
   })

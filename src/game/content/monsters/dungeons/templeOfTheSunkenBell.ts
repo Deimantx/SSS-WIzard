@@ -1,0 +1,11 @@
+import type { MonsterId } from '../../../types'
+import { authorExpansionNormalAt, hit, normalAction, status } from '../expansion/authoring'
+
+const zone = 'temple-of-the-sunken-bell'
+export const TEMPLE_OF_THE_SUNKEN_BELL_NORMALS = [
+  authorExpansionNormalAt(zone, 10, 0, { id: 'bell-drowned-monk', name: 'Bell-Drowned Monk', subtitle: 'A temple guardian moving to the muffled rhythm of the great bell.', affinity: 'water', resonance: 8, specials: [normalAction('first-special', 'Bell Palm', { damage: [hit('water', 1.3)], status: status('staggered') }), normalAction('second-special', 'Tidal Breath', { heal: .05 })], pattern: ['first', 'basic', 'second', 'basic'] }),
+  authorExpansionNormalAt(zone, 10, 1, { id: 'tidal-reliquary-guard', name: 'Tidal Reliquary Guard', subtitle: 'A waterlogged sentinel shielding the temple’s sacred remains.', affinity: 'water', resonance: 8, specials: [normalAction('first-special', 'Reliquary Strike', { damage: [hit('water', 1.4)] }), normalAction('second-special', 'Tidal Ward', { barrier: .08 })], pattern: ['second', 'basic', 'first', 'basic'] }),
+  authorExpansionNormalAt(zone, 10, 2, { id: 'coralbound-sentinel', name: 'Coralbound Sentinel', subtitle: 'A reef-armored protector fused with the submerged temple stone.', affinity: 'earth', resonance: 8, specials: [normalAction('first-special', 'Coral Crush', { damage: [hit('earth', 1.5)] }), normalAction('second-special', 'Reef Armor', { status: status('fortified', 'self') })], pattern: ['second', 'basic', 'first', 'basic'] }),
+  authorExpansionNormalAt(zone, 10, 3, { id: 'squall-priest', name: 'Squall Priest', subtitle: 'A bell keeper summoning storms through the flooded nave.', affinity: 'air', resonance: 8, specials: [normalAction('first-special', 'Squall Bolt', { damage: [hit('air', 1.2)] }), normalAction('second-special', 'Rain Chant', { damage: [hit('air', .7), hit('water', .65)] })], pattern: ['first', 'basic', 'second', 'basic'] }),
+] satisfies readonly ReturnType<typeof authorExpansionNormalAt>[]
+export const TEMPLE_OF_THE_SUNKEN_BELL_ROSTER = TEMPLE_OF_THE_SUNKEN_BELL_NORMALS.map(({ id }) => id as MonsterId)

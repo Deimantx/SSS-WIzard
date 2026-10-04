@@ -1,9 +1,12 @@
 import { getTraitDefinition, getTraitDefinitions } from '../traits'
 import type { CombatEffect, DamageType, MonsterId } from '../../types'
-import { ABANDONED_CATACOMBS_MONSTERS, HOWLING_DEN_MONSTERS, WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS, ELEMENTAL_TUTORIAL_MONSTERS } from './first-frontier'
-import { REGIONAL_MONSTERS } from './regionalMonsters'
+import { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './combat-zones/whisperingWoods'
+import { HOWLING_DEN_MONSTERS } from './elite-zones/howlingDen'
+import { ABANDONED_CATACOMBS_MONSTERS } from './dungeons/abandonedCatacombs'
+import { ELEMENTAL_TUTORIAL_MONSTERS } from './elementalTutorial'
+import { ESTABLISHED_COMBAT_MONSTERS } from './establishedCombatMonsters'
 import { EXPANSION_MONSTERS } from './expansionMonsters'
-import { HUNTERS_ORDER_MONSTERS } from './first-frontier/gloamridge'
+import { HUNTERS_ORDER_MONSTERS } from './hunting-grounds/gloamridge'
 import type { MonsterDefinition } from './monsterTypes'
 import { isElementId } from '../elements/elements'
 import { COMBAT_TAGS, DAMAGE_TYPES, createCombatValidationContext, validateCombatEffect } from '../../systems/combat/combatEffectValidation'
@@ -16,27 +19,20 @@ import { UNIVERSAL_LOOT_CATEGORIES, UNIVERSAL_LOOT_TIERS } from '../loot/univers
 import type { LootCategory, MonsterLootDropDefinition } from '../loot/lootCategoryTypes'
 
 export type { MonsterDefinition } from './monsterTypes'
-export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './first-frontier'
-export { HOWLING_DEN_MONSTERS, ABANDONED_CATACOMBS_MONSTERS } from './first-frontier'
-export { HUNTERS_ORDER_MONSTERS } from './first-frontier/gloamridge'
-export { REGIONAL_MONSTERS } from './regionalMonsters'
+export { WHISPERING_WOODS_MONSTERS, WHISPERING_WOODS_MONSTER_IDS } from './combat-zones/whisperingWoods'
+export { HOWLING_DEN_MONSTERS } from './elite-zones/howlingDen'
+export { ABANDONED_CATACOMBS_MONSTERS } from './dungeons/abandonedCatacombs'
+export { HUNTERS_ORDER_MONSTERS } from './hunting-grounds/gloamridge'
 
-const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, REGIONAL_MONSTERS, EXPANSION_MONSTERS] as const
+const MONSTER_REGISTRIES = [WHISPERING_WOODS_MONSTERS, HOWLING_DEN_MONSTERS, HUNTERS_ORDER_MONSTERS, ABANDONED_CATACOMBS_MONSTERS, ELEMENTAL_TUTORIAL_MONSTERS, ESTABLISHED_COMBAT_MONSTERS, EXPANSION_MONSTERS] as const
 const registryIdCounts = MONSTER_REGISTRIES.flatMap((registry) => Object.keys(registry)).reduce<Record<string, number>>((counts, id) => { counts[id] = (counts[id] ?? 0) + 1; return counts }, {})
 const duplicateMonsterIds = Object.entries(registryIdCounts).filter(([, count]) => count > 1).map(([id]) => id)
 
 const authoredMonsterIndex = Object.assign({}, ...MONSTER_REGISTRIES) as Record<MonsterId, MonsterDefinition>
-const ensureArcaneResonanceIdentity = (monster: MonsterDefinition): MonsterDefinition => {
-  if (monster.primaryAffinity !== 'arcane') return monster
-  const previous = monster.resonanceYield ?? {}
-  if ((previous.arcane ?? 0) > 0) return monster
-  const strongestSecondary = Math.max(0, ...Object.values(previous))
-  const arcane = Math.max(10, Math.ceil(strongestSecondary * 1.25))
-  return { ...monster, resonanceYield: { ...previous, arcane } }
-}
-export const MONSTERS = Object.fromEntries(Object.entries(authoredMonsterIndex).map(([id, monster]) => [id, ensureArcaneResonanceIdentity(monster)])) as Record<MonsterId, MonsterDefinition>
-const expansionMonsterIds = new Set(Object.keys(EXPANSION_MONSTERS))
-export const ARCANE_PRIMARY_RESONANCE_AUDIT = Object.values(authoredMonsterIndex).filter((monster) => monster.primaryAffinity === 'arcane').map((monster) => ({ id: monster.id, name: monster.name, previous: monster.resonanceYield ?? {}, updated: MONSTERS[monster.id].resonanceYield ?? {}, expansion: expansionMonsterIds.has(monster.id) }))
+export const MONSTERS = authoredMonsterIndex
+export const ARCANE_PRIMARY_RESONANCE_AUDIT = Object.values(MONSTERS)
+  .filter((monster) => monster.primaryAffinity === 'arcane')
+  .map(({ id, resonanceYield }) => ({ id, resonanceYield }))
 
 export const isBossMonster = (monster: MonsterDefinition) => monster.bestiaryCategory === 'boss'
 export const MONSTER_IDS = Object.keys(MONSTERS) as MonsterId[]
@@ -93,6 +89,12 @@ export const validateMonsterDefinitions = (monsters: Record<string, MonsterDefin
     if (!monster.actionPatterns[monster.defaultActionPatternId]) errors.push(`${monster.id}: missing default action pattern`)
     Object.entries(monster.resistances ?? {}).forEach(([damageType, resistance]) => { if (!DAMAGE_TYPES.includes(damageType as DamageType) || !Number.isFinite(resistance) || resistance < MIN_RESISTANCE || resistance > MAX_RESISTANCE) errors.push(`${monster.id}: invalid ${damageType} resistance`) })
     Object.entries(monster.resonanceYield ?? {}).forEach(([type, amount]) => { if (!RESONANCE_TYPES.includes(type as typeof RESONANCE_TYPES[number]) || !Number.isSafeInteger(amount) || amount <= 0) errors.push(`${monster.id}: invalid Resonance yield ${type}`) })
+    if (monster.primaryAffinity === 'arcane') {
+      const arcaneYield = monster.resonanceYield?.arcane ?? 0
+      const strongestSecondaryYield = Math.max(0, ...Object.entries(monster.resonanceYield ?? {}).filter(([type]) => type !== 'arcane').map(([, amount]) => amount ?? 0))
+      if (arcaneYield <= 0) errors.push(`${monster.id}: Arcane-primary Monster must explicitly author Arcane Resonance`)
+      else if (arcaneYield < strongestSecondaryYield) errors.push(`${monster.id}: Arcane-primary Monster Arcane Resonance must not be lower than its strongest secondary yield`)
+    }
     Object.entries(monster.actions).forEach(([actionKey, action]) => {
       if (actionKey !== action.id) errors.push(`${monster.id}/${actionKey}: key/id mismatch`)
       if (!action.name.trim() || !action.description.trim()) errors.push(`${monster.id}/${action.id}: name and description are required`)

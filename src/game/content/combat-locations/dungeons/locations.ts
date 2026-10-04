@@ -7,7 +7,7 @@ export const dungeonLocations = {
                                 "type":  "dungeon",
                                 "progressionOrder":  10,
                                 "encounterMode":  "sequence",
-                                "description":  "A fixed sequence through the old crypts, ending at Archmage EdrinÃ¢â‚¬â„¢s Shade.",
+                                "description":  "A fixed sequence through the old crypts, ending at Archmage Edrin’s Shade.",
                                 "unlock":  {
                                                "type":  "boss-kill",
                                                "bossId":  "corrupted-greatbear",
@@ -27,8 +27,12 @@ export const dungeonLocations = {
                                                                     "label":  "World Tier 2"
                                                                 },
                                                                 {
-                                                                    "id":  "elemental-scar",
-                                                                    "label":  "Elemental Scar"
+                                                                    "id":  "cinderwild-expanse",
+                                                                    "label":  "Cinderwild Expanse"
+                                                                },
+                                                                {
+                                                                    "id":  "fractured-approach",
+                                                                    "label":  "Fractured Approach"
                                                                 },
                                                                 {
                                                                     "id":  "magic-school-cap",
@@ -102,8 +106,20 @@ export const dungeonLocations = {
                                "encounterMode":  "sequence",
                                "firstClearUnlockPreview":  [
                                                                {
-                                                                   "id":  "shattered-meridian",
-                                                                   "label":  "Shattered Meridian"
+                                                                   "id":  "runeblight-expanse",
+                                                                   "label":  "Runeblight Expanse"
+                                                               },
+                                                               {
+                                                                   "id":  "graveglass-hollow",
+                                                                   "label":  "Graveglass Hollow"
+                                                               },
+                                                               {
+                                                                   "id":  "stormvault-gallery",
+                                                                   "label":  "Stormvault Gallery"
+                                                               },
+                                                               {
+                                                                   "id":  "starfallen-observatory",
+                                                                   "label":  "Starfallen Observatory"
                                                                },
                                                                {
                                                                    "id":  "world-tier-3",
@@ -142,8 +158,12 @@ export const dungeonLocations = {
                             "encounterMode":  "sequence",
                             "firstClearUnlockPreview":  [
                                                             {
-                                                                "id":  "black-sigil-reach",
-                                                                "label":  "Black Sigil Reach"
+                                                                "id":  "hall-of-unbound-names",
+                                                                "label":  "Hall of Unbound Names"
+                                                            },
+                                                            {
+                                                                "id":  "vault-of-the-black-sigil",
+                                                                "label":  "Vault of the Black Sigil"
                                                             },
                                                             {
                                                                 "id":  "world-tier-4",

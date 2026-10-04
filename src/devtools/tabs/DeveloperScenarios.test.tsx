@@ -80,7 +80,7 @@ describe('Developer Scenario Lab', () => {
     expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec.type).toBe('monster')
 
     fireEvent.click(buttonFor('Gloamridge — Active Contract'))
-    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'region', locationId: 'hunters-ground' })
+    expect(useGameStore.getState().progress.huntersOrder.activeContract?.targetSpec).toMatchObject({ type: 'ground', groundId: 'hunters-ground' })
   })
 
   it('sets up the authored combat and Nightglass Master Quarry encounter', () => {

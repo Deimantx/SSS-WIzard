@@ -1,14 +1,14 @@
 import type { CombatLocationId, MonsterId } from '../../../types'
-import type { StatusId, TraitDefinition, TraitId } from '../../../systems/combat/combatTypes'
+import type { StatusId, TraitId } from '../../../systems/combat/combatTypes'
 import type { ElementId } from '../../elements/elements'
-import { TRAIT_DEFINITIONS } from '../../traits/traits'
 import { makeCombatMonster, type CombatMonsterSpecial } from '../combatMonsterAuthoring'
-import { action, applyStatus, basic, type MonsterDefinition } from '../monsterTypes'
+import { action, basic, type MonsterDefinition } from '../monsterTypes'
 
 export type AuthoredStep = string | 'basic'
 
 export interface ExpansionMonsterStats {
   hp: number
+  /** @deprecated Dead authoring field; basic damage is derived from targetPower. Retained until the balance audit removes it. */
   damage: number
   defense: number
   targetPower: number
@@ -72,11 +72,8 @@ export interface ExpansionBossSpec extends ExpansionMonsterStats {
   affinity: ElementId
   resonanceYield: MonsterDefinition['resonanceYield']
   traitId: TraitId
-  traitName: string
-  phaseName: string
   phaseOneLabel: string
   phaseTwoLabel: string
-  hasteAtPhaseChange?: boolean
   specials: readonly [CombatMonsterSpecial, CombatMonsterSpecial, CombatMonsterSpecial, CombatMonsterSpecial, CombatMonsterSpecial, CombatMonsterSpecial]
   phaseOne: readonly AuthoredStep[]
   phaseTwo: readonly AuthoredStep[]
@@ -89,20 +86,6 @@ const bossPattern = (id: string, steps: readonly AuthoredStep[]) => ({
 
 export const authorExpansionBoss = (spec: ExpansionBossSpec): MonsterDefinition => {
   const secondPattern = 'phase-two'
-  const phaseTrait: TraitDefinition = {
-    id: spec.traitId,
-    name: spec.traitName,
-    description: `At 50% Health, enters the ${spec.phaseName} phase once${spec.hasteAtPhaseChange ? ' and gains Haste' : ''}.`,
-    rules: [{
-      id: `${spec.id}-phase-threshold`, event: 'on-hp-threshold',
-      condition: { type: 'self-hp-below-percent', percent: 50 }, oncePerEncounter: true,
-      effects: [
-        { type: 'set-action-pattern', target: 'self', patternId: secondPattern },
-        ...(spec.hasteAtPhaseChange ? [applyStatus('haste', 'self')] : []),
-      ],
-    }],
-  }
-  TRAIT_DEFINITIONS[spec.traitId] = phaseTrait
   const specials = spec.specials.map((special, index) => ({ ...special, id: `skill-${index + 1}` })) as unknown as CombatMonsterSpecial[]
   return {
     ...makeCombatMonster({

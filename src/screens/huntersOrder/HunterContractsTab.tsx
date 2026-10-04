@@ -16,7 +16,7 @@ import { getHunterForecastPresentation } from '../../game/presentation/huntersOr
 import { useDungeonStatisticsStore } from '../../game/telemetry/dungeon/dungeonStatisticsStore'
 import { formatTime } from '../../game/utils'
 
-const archetypeOptions: FilterOption<string>[] = [{ value: 'none', label: 'NO PREFERENCE' }, { value: 'monster', label: 'MONSTER' }, { value: 'family', label: 'FAMILY' }, { value: 'alignment', label: 'ALIGNMENT' }, { value: 'region', label: 'GROUND' }]
+const archetypeOptions: FilterOption<string>[] = [{ value: 'none', label: 'NO PREFERENCE' }, { value: 'monster', label: 'MONSTER' }, { value: 'family', label: 'FAMILY' }, { value: 'alignment', label: 'ALIGNMENT' }, { value: 'ground', label: 'GROUND PATROL' }]
 
 export function HunterContractsTab({ state }: { state: GameState }) {
   const [manageBlocks, setManageBlocks] = useState(false)

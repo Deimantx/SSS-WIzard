@@ -157,6 +157,7 @@ describe('save navigation migration', () => {
           availableContracts: [
             { id: 'apex-hunt', targetSpec: { type: 'boss', monsterId: 'nightglass-alpha' }, target: 1, progress: 0, tier: 'prestigious', reputationReward: 500, marksReward: 12 },
             { id: 'legacy-hunt', targetMonsterId: 'ashen-tracker', target: 4, progress: 2, tier: 'special', reputationReward: 140, marksReward: 6 },
+            { id: 'legacy-ground-patrol', targetSpec: { type: 'region', locationId: 'hunters-ground' }, target: 20, progress: 3, tier: 'special', reputationReward: 40, marksReward: 6 },
           ],
           rngState: 8675309,
         },
@@ -165,6 +166,7 @@ describe('save navigation migration', () => {
     expect(migrated.progress.huntersOrder.activeContract).toMatchObject({ id: 'legacy-nightglass', huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' }, target: 4, progress: 2, reputationReward: 140, marksReward: 6 })
     expect(migrated.progress.huntersOrder.availableContracts[0]).toMatchObject({ huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'nightglass-alpha' } })
     expect(migrated.progress.huntersOrder.availableContracts[1]).toMatchObject({ id: 'legacy-hunt', huntingGroundId: 'hunters-ground', targetSpec: { type: 'monster', monsterId: 'ashen-tracker' }, progress: 2 })
+    expect(migrated.progress.huntersOrder.availableContracts[2]).toMatchObject({ id: 'legacy-ground-patrol', targetSpec: { type: 'ground', groundId: 'hunters-ground' }, progress: 3 })
     expect(migrated.progress.huntersOrder.rankId).toBe('master-hunter')
     expect(migrated.progress.huntersOrder.rngState).toBe(8675309)
   })

@@ -24,7 +24,7 @@ describe('current Save System', () => {
     const document = serializeGameState(state, 1234)
     expect(document.schemaVersion).toBe(3)
     expect(document.contentVersion).toBe(SAVE_VERSION)
-    expect(SAVE_VERSION).toBe(64)
+    expect(SAVE_VERSION).toBe(65)
     expect(document).not.toHaveProperty('debug')
     expect(document).not.toHaveProperty('ui')
     expect(document).not.toHaveProperty('notifications')
@@ -47,28 +47,28 @@ describe('current Save System', () => {
     state.combat.enemyHp = 321
     state.progress.autoHuntBossByLocation['black-gate'] = true
     state.progress.huntersOrder.activeContract = {
-      id: 'legacy-region-contract', huntingGroundId: 'hunters-ground',
-      targetSpec: { type: 'region', locationId: 'hunters-ground' }, target: 125, progress: 9,
+      id: 'ground-patrol-contract', huntingGroundId: 'hunters-ground',
+      targetSpec: { type: 'ground', groundId: 'hunters-ground' }, target: 125, progress: 9,
       tier: 'routine', reputationReward: 5, marksReward: 1,
     }
     const schema2 = serializeGameState(state, 1235) as unknown as Record<string, any>
     schema2.schemaVersion = 2
-    schema2.contentVersion = 64
+    schema2.contentVersion = 65
     schema2.combat.dungeonId = schema2.combat.locationId
     delete schema2.combat.locationId
     schema2.combat.dungeonSequenceIndex = schema2.combat.sequenceIndex
     delete schema2.combat.sequenceIndex
     schema2.progress.autoHuntBossByDungeon = schema2.progress.autoHuntBossByLocation
     delete schema2.progress.autoHuntBossByLocation
-    schema2.progress.huntersOrder.activeContract.targetSpec.dungeonId = schema2.progress.huntersOrder.activeContract.targetSpec.locationId
-    delete schema2.progress.huntersOrder.activeContract.targetSpec.locationId
+    schema2.progress.huntersOrder.activeContract.targetSpec.dungeonId = schema2.progress.huntersOrder.activeContract.targetSpec.groundId
+    delete schema2.progress.huntersOrder.activeContract.targetSpec.groundId
     schema2.ui = { lastEnteredCombatDungeonId: 'black-gate', screen: 'combat' }
 
     const parsed = parsePersistedGameStateV3(JSON.stringify(schema2))
     const loaded = loadPersistedGameStateV3(parsed)
     expect(loaded.combat).toMatchObject({ active: true, locationId: 'black-gate', sequenceIndex: 4, enemyId: 'black-gatekeeper', enemyHp: 321 })
     expect(loaded.progress.autoHuntBossByLocation['black-gate']).toBe(true)
-    expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'region', locationId: 'hunters-ground' })
+    expect(loaded.progress.huntersOrder.activeContract?.targetSpec).toEqual({ type: 'ground', groundId: 'hunters-ground' })
     expect(loaded.ui.lastEnteredCombatLocationId).toBe('black-gate')
   })
 
@@ -80,7 +80,7 @@ describe('current Save System', () => {
     state.combat.enemyWorldTier = 5
     state.combat.enemyHp = 123
     const v62 = serializeGameState(state, 1236) as unknown as Record<string, any>
-    v62.contentVersion = 64
+    v62.contentVersion = 65
     const parsed = parsePersistedGameStateV3(JSON.stringify(v62))
     const loaded = loadPersistedGameStateV3(parsed)
     expect(loaded.combat).toMatchObject({ active: true, enemyId: 'forest-wisp', enemyWorldTier: 5, enemyHp: 123 })

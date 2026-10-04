@@ -35,7 +35,7 @@ const isNonNegativeNumber = (value: unknown): value is number => typeof value ==
 const isHunterTarget = (value: unknown) => {
   if (!isRecord(value) || typeof value.type !== 'string') return false
   if (value.type === 'monster' || value.type === 'boss') return typeof value.monsterId === 'string' && Object.prototype.hasOwnProperty.call(MONSTERS, value.monsterId)
-  if (value.type === 'region') return isCombatLocationId(value.locationId)
+  if (value.type === 'ground') return isCombatLocationId(value.groundId)
   if (value.type === 'family' || value.type === 'alignment') {
     const field = `${value.type}Id`
     const target = value[field]
@@ -109,7 +109,7 @@ export const validatePersistedGameStateV3 = (value: unknown): value is Persisted
   if (hunters.activeContract !== null && !isHunterContract(hunters.activeContract)) return false
   if (!Array.isArray(hunters.availableContracts) || !hunters.availableContracts.every(isHunterContract)) return false
   if (hunters.pinnedContractIds !== undefined && (!Array.isArray(hunters.pinnedContractIds) || hunters.pinnedContractIds.some((id) => typeof id !== 'string'))) return false
-  if (hunters.preferredContractType !== undefined && hunters.preferredContractType !== null && !['monster', 'family', 'alignment', 'region'].includes(String(hunters.preferredContractType))) return false
+  if (hunters.preferredContractType !== undefined && hunters.preferredContractType !== null && !['monster', 'family', 'alignment', 'ground'].includes(String(hunters.preferredContractType))) return false
   if (hunters.preferredHuntingGroundId !== undefined && hunters.preferredHuntingGroundId !== null && !isCombatLocationId(hunters.preferredHuntingGroundId)) return false
   if (hunters.lastSelectedQuarryByGround !== undefined && (!isRecord(hunters.lastSelectedQuarryByGround) || Object.entries(hunters.lastSelectedQuarryByGround).some(([ground, monster]) => !isCombatLocationId(ground) || typeof monster !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, monster as string)))) return false
   if (!Array.isArray(hunters.blockedTargets) || hunters.blockedTargets.some((id) => typeof id !== 'string' || !Object.prototype.hasOwnProperty.call(MONSTERS, id))) return false

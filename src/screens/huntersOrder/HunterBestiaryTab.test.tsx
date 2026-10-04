@@ -34,6 +34,12 @@ describe('Hunter Bestiary field workspace', () => {
     expect(screen.getByRole('button', { name: 'CLEAR FILTERS' })).toBeTruthy()
   })
 
+  it('labels the Bestiary location filter as Hunting Ground', () => {
+    renderBestiary()
+    expect(screen.getByRole('button', { name: 'Filter by Hunting Ground' })).toBeTruthy()
+    expect(screen.queryByText('REGION')).toBeNull()
+  })
+
   it('groups the Hunter quarry index by Ground and changes the dossier when a tile is selected', async () => {
     const state = useGameStore.getState()
     state.progress.discoveredMonsters = ['gloamfang-stalker', 'ashen-tracker', 'runehorn-brute', 'veilwing-harrier', 'cinderback-mauler', 'gloomroot-hexer', 'nightglass-alpha']

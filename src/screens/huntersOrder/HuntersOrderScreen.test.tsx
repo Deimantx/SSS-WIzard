@@ -96,7 +96,7 @@ describe('Hunter’s Order locked shell', () => {
     expect(screen.getByText('4,000 / 5,000 Reputation')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: /Warden/ }))
     expect(screen.getByText('9,000 Reputation')).toBeTruthy()
-    expect(screen.getAllByText('Region Contracts').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Ground Patrol Contracts').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Order Privilege').length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: /Stalker/ }))
     await user.click(screen.getByRole('button', { name: /Stalker III/ }))

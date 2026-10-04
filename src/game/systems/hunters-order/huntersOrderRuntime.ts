@@ -61,7 +61,7 @@ export const doesMonsterMatchHunterContract = (contract: HunterContractState, mo
     case 'boss': return contract.targetSpec.monsterId === monsterId && isBossMonster(MONSTERS[monsterId])
     case 'family': return metadata.family === contract.targetSpec.familyId
     case 'alignment': return metadata.alignment === contract.targetSpec.alignmentId
-    case 'region': return locationId === contract.targetSpec.locationId && (COMBAT_LOCATIONS[locationId]?.monsterPool.includes(monsterId) === true || COMBAT_LOCATIONS[locationId]?.boss === monsterId)
+    case 'ground': return locationId === contract.targetSpec.groundId && (COMBAT_LOCATIONS[locationId]?.monsterPool.includes(monsterId) === true || COMBAT_LOCATIONS[locationId]?.boss === monsterId)
   }
 }
 
@@ -89,7 +89,7 @@ const getUpgradeRankCount = (state: Pick<GameState, 'progress'>, effectType: str
 }, 0)
 const getOwnedUpgradeRank = (state: Pick<GameState, 'progress'>, id: string) => Math.min(HUNTER_UPGRADES.find((entry) => entry.id === id)?.maxRank ?? 0, safeInt(orderFor(state).purchasedUpgrades[id] ?? 0))
 export const getHunterContractTargetReduction = (state: Pick<GameState, 'progress'>, type: HunterContractTarget['type'], tier: HunterContractState['tier']) => {
-  const idsByType: Partial<Record<HunterContractTarget['type'], string>> = { monster: 'exact-quarry-briefing', family: 'family-cull-orders', alignment: 'alignment-pursuit-orders', region: 'ground-patrol-orders' }
+  const idsByType: Partial<Record<HunterContractTarget['type'], string>> = { monster: 'exact-quarry-briefing', family: 'family-cull-orders', alignment: 'alignment-pursuit-orders', ground: 'ground-patrol-orders' }
   const base = getOwnedUpgradeRank(state, 'trail-kit') * 0.02
     + getOwnedUpgradeRank(state, idsByType[type] ?? '') * 0.02
     + (tier === 'prestigious' ? getOwnedUpgradeRank(state, 'prestigious-preparation') * 0.02 : 0)
@@ -149,7 +149,7 @@ const eligibleMembers = (spec: HunterContractTarget, groundId: CombatLocationId)
   const dungeon = COMBAT_LOCATIONS[groundId]
   return [...(dungeon?.monsterPool ?? []), ...(dungeon?.boss ? [dungeon.boss] : [])].filter((id) => matchesSpec(spec, id, groundId) && (spec.type === 'boss' ? isBossMonster(MONSTERS[id]) : !isBossMonster(MONSTERS[id]))) as MonsterId[]
 }
-const specKey = (spec: HunterContractTarget, groundId: CombatLocationId) => `${groundId}:${spec.type}:${'monsterId' in spec ? spec.monsterId : 'familyId' in spec ? spec.familyId : 'alignmentId' in spec ? spec.alignmentId : spec.locationId}`
+const specKey = (spec: HunterContractTarget, groundId: CombatLocationId) => `${groundId}:${spec.type}:${'monsterId' in spec ? spec.monsterId : 'familyId' in spec ? spec.familyId : 'alignmentId' in spec ? spec.alignmentId : spec.groundId}`
 const rankIndex = (state: Pick<GameState, 'progress'>) => HUNTER_RANKS.findIndex((rank) => rank.id === getHunterRank(orderFor(state).reputation).id)
 type GroundTargetSpec = { spec: HunterContractTarget; groundId: CombatLocationId }
 const makeTargetSpecs = (state: Pick<GameState, 'progress'>): GroundTargetSpec[] => {
@@ -165,7 +165,7 @@ const makeTargetSpecs = (state: Pick<GameState, 'progress'>): GroundTargetSpec[]
     const alignments = [...new Set(targets.filter((id) => !blocked.has(id)).map((id) => MONSTERS[id].hunter?.alignment).filter((value): value is string => Boolean(value)))]
     if (index >= 1) families.forEach((familyId) => specs.push({ type: 'family', familyId }))
     if (index >= 2) alignments.forEach((alignmentId) => specs.push({ type: 'alignment', alignmentId }))
-    if (index >= 3) specs.push({ type: 'region', locationId: ground.id })
+    if (index >= 3) specs.push({ type: 'ground', groundId: ground.id })
     specs.filter((spec) => eligibleMembers(spec, ground.id).some((id) => !blocked.has(id))).forEach((spec) => candidates.push({ spec, groundId: ground.id }))
   }
   return candidates
@@ -184,8 +184,8 @@ const chooseQuality = (state: Pick<GameState, 'progress'>, availableTypes: Reado
 
 const archetypesByTier: Record<HunterContractState['tier'], readonly HunterContractTarget['type'][]> = {
   routine: ['monster', 'family'],
-  special: ['monster', 'family', 'alignment', 'region'],
-  prestigious: ['monster', 'family', 'alignment', 'region', 'boss'],
+  special: ['monster', 'family', 'alignment', 'ground'],
+  prestigious: ['monster', 'family', 'alignment', 'ground', 'boss'],
 }
 
 const chooseWeightedTargetSpec = (state: Pick<GameState, 'progress'>, available: GroundTargetSpec[], selectedGrounds: readonly CombatLocationId[], choiceCount: number) => {
@@ -338,7 +338,7 @@ export const getHunterContractTargetLabel = (contract: HunterContractState) => {
   if ('monsterId' in spec) return MONSTERS[spec.monsterId]?.name ?? 'Unknown target'
   if (spec.type === 'family') return `${spec.familyId} family`
   if (spec.type === 'alignment') return `${spec.alignmentId} alignment`
-  return COMBAT_LOCATIONS[spec.locationId]?.name ?? 'Unknown region'
+  return COMBAT_LOCATIONS[spec.groundId]?.name ?? 'Unknown location'
 }
 
 export const getHunterBlockSlotCount = (state: Pick<GameState, 'progress'>) => BALANCE.huntersOrder.baseBlockSlots + (orderFor(state).purchasedUpgrades['extended-trails'] ?? 0)
@@ -369,7 +369,7 @@ export const toggleHunterContractPin = (state: GameState, contractId: string) =>
 
 export const setHunterPreferredContractType = (state: GameState, type: HunterContractTarget['type'] | null) => {
   if (getOwnedUpgradeRank(state, 'dispatch-directives') < 1) return false
-  if (type && !['monster', 'family', 'alignment', 'region'].includes(type)) return false
+  if (type && !['monster', 'family', 'alignment', 'ground'].includes(type)) return false
   state.progress.huntersOrder.preferredContractType = type
   return true
 }
@@ -402,7 +402,7 @@ export const recordHunterKill = (state: GameState, monsterId: MonsterId, locatio
   const qualityBonusId = contract.tier === 'routine' ? 'routine-commendation' : contract.tier === 'special' ? 'special-commendation' : 'prestige-recognition'
   const reputationMultiplier = 1 + getOwnedUpgradeRank(state, 'marked-quarry') * 0.08 + getOwnedUpgradeRank(state, qualityBonusId) * (contract.tier === 'routine' ? 0.05 : contract.tier === 'special' ? 0.07 : 0.10)
   const reputationReward = Math.round(contract.reputationReward * reputationMultiplier)
-  const broad = ['family', 'alignment', 'region'].includes(contract.targetSpec.type) ? getOwnedUpgradeRank(state, 'broad-assignment-pay') : 0
+  const broad = ['family', 'alignment', 'ground'].includes(contract.targetSpec.type) ? getOwnedUpgradeRank(state, 'broad-assignment-pay') : 0
   const marksAwarded = contract.marksReward + getOwnedUpgradeRank(state, 'deep-pockets') + broad
   const rememberedOffers = order.availableContracts.filter((offer) => getEligibleHunterContractMembers(state, offer, offer.huntingGroundId ?? 'hunters-ground').length > 0)
   order.reputation = safeInt(order.reputation) + reputationReward
@@ -493,7 +493,7 @@ export const normalizeHuntersOrderProgress = (state: GameState) => {
   const order = state.progress.huntersOrder
   order.reputation = safeInt(order.reputation); order.hunterMarks = safeInt(order.hunterMarks)
   order.pinnedContractIds = Array.isArray(order.pinnedContractIds) ? order.pinnedContractIds.filter((id) => typeof id === 'string') : []
-  order.preferredContractType = ['monster', 'family', 'alignment', 'region'].includes(order.preferredContractType ?? '') ? order.preferredContractType : null
+  order.preferredContractType = ['monster', 'family', 'alignment', 'ground'].includes(order.preferredContractType ?? '') ? order.preferredContractType : null
   order.lastSelectedQuarryByGround = order.lastSelectedQuarryByGround && typeof order.lastSelectedQuarryByGround === 'object' ? order.lastSelectedQuarryByGround : {}
   order.totalContractsAccepted = safeInt(order.totalContractsAccepted); order.totalContractsCompleted = safeInt(order.totalContractsCompleted)
   order.totalHunterKills = safeInt(order.totalHunterKills); order.generationCount = safeInt(order.generationCount)
@@ -550,7 +550,7 @@ export const getHunterCompletionHarvestPreview = (state: Pick<GameState, 'progre
   return { resonance, lifeEssence }
 }
 
-const rankForTargetType: Partial<Record<HunterContractTarget['type'], HunterRankId>> = { family: 'scout', alignment: 'stalker', region: 'warden' }
+const rankForTargetType: Partial<Record<HunterContractTarget['type'], HunterRankId>> = { family: 'scout', alignment: 'stalker', ground: 'warden' }
 export const debugSetHunterRngSeed = (state: GameState, seed: number) => { state.progress.huntersOrder.rngState = safeInt(seed) || 1 }
 export const debugRegenerateHunterContractBoard = (state: GameState, options: HunterContractGenerationOptions = {}) => {
   debugSetHuntersOrderUnlocked(state, true)

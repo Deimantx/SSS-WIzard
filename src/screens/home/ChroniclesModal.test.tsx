@@ -35,7 +35,7 @@ describe('Chronicles Overview and modal', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Chronicles' })
     expect(dialog).toBeTruthy()
-    expect(within(dialog).getByRole('button', { name: /First Frontier/ })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: /Foundations/ })).toBeTruthy()
     expect(within(dialog).getByLabelText('Search objectives')).toBeTruthy()
     expect(within(dialog).getByText(/Showing .* objectives/)).toBeTruthy()
     expect(within(dialog).getByRole('checkbox', { name: 'Hide Completed' })).toBeTruthy()

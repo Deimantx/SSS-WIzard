@@ -856,7 +856,7 @@ export interface GameActions {
   debugGrantHunterReputation: (amount: number) => void;
   debugGrantHunterMarks: (amount: number) => void;
   debugSetHunterRngSeed: (seed: number) => void;
-  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'region' | 'boss'; tier?: 'routine' | 'special' | 'prestigious'; fixtureChoiceCount?: 1 | 2 | 3; huntingGroundId?: CombatLocationId }) => void;
+  debugRegenerateHunterContractBoard: (options?: { archetype?: 'monster' | 'family' | 'alignment' | 'ground' | 'boss'; tier?: 'routine' | 'special' | 'prestigious'; fixtureChoiceCount?: 1 | 2 | 3; huntingGroundId?: CombatLocationId }) => void;
   debugSetHunterRank: (rank: import('../game/types').HunterRankId) => boolean;
   debugSetHunterStanding: (standingId: string) => boolean;
   debugSetHunterUpgradeRank: (upgradeId: string, rank: number) => boolean;

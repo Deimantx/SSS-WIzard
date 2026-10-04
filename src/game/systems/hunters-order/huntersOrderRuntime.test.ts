@@ -91,7 +91,7 @@ describe('Hunter Order hardened runtime', () => {
   })
 
   it('uses seeded archetype weights rather than the number of candidates per archetype', () => {
-    const counts: Record<HunterContractState['targetSpec']['type'], number> = { monster: 0, family: 0, region: 0, alignment: 0, boss: 0 }
+    const counts: Record<HunterContractState['targetSpec']['type'], number> = { monster: 0, family: 0, ground: 0, alignment: 0, boss: 0 }
     for (let seed = 1; seed <= 400; seed += 1) {
       const state = unlock()
       state.progress.huntersOrder.reputation = 32500
@@ -116,19 +116,32 @@ describe('Hunter Order hardened runtime', () => {
     }
   })
 
-  it('matches specific monster, family, region, and alignment objectives while Nightglass stays a monster', () => {
+  it('matches specific monster, family, Ground Patrol, and alignment objectives while Nightglass stays a monster', () => {
     const state = unlock()
     const specific = contract({ type: 'monster', monsterId: 'ashen-tracker' })
     expect(doesMonsterMatchHunterContract(specific, 'ashen-tracker', 'hunters-ground')).toBe(true)
     expect(doesMonsterMatchHunterContract(specific, 'gloamfang-stalker', 'hunters-ground')).toBe(false)
     expect(doesMonsterMatchHunterContract(contract({ type: 'family', familyId: 'Gloamridge Predators' }), 'gloamfang-stalker', 'hunters-ground')).toBe(true)
-    expect(doesMonsterMatchHunterContract(contract({ type: 'region', locationId: 'hunters-ground' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
-    expect(doesMonsterMatchHunterContract(contract({ type: 'region', locationId: 'hunters-ground' }), 'ashen-tracker', 'howling-den')).toBe(false)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'ground', groundId: 'hunters-ground' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(doesMonsterMatchHunterContract(contract({ type: 'ground', groundId: 'hunters-ground' }), 'ashen-tracker', 'howling-den')).toBe(false)
     expect(doesMonsterMatchHunterContract(contract({ type: 'alignment', alignmentId: 'Wild' }), 'ashen-tracker', 'hunters-ground')).toBe(true)
     expect(doesMonsterMatchHunterContract(contract({ type: 'family', familyId: 'Gloamridge Mystics' }), 'gloomroot-hexer', 'hunters-ground')).toBe(true)
     expect(doesMonsterMatchHunterContract(contract({ type: 'alignment', alignmentId: 'Embermarked' }), 'cinderback-mauler', 'hunters-ground')).toBe(true)
     expect(doesMonsterMatchHunterContract(contract({ type: 'boss', monsterId: 'nightglass-alpha' }, 'prestigious'), 'nightglass-alpha', 'hunters-ground')).toBe(false)
     expect(state.progress.huntersOrder.rngState).toBeGreaterThan(0)
+  })
+
+  it('generates a Ground Patrol contract and advances it from an eligible Hunting Ground kill', () => {
+    const state = unlock()
+    state.progress.huntersOrder.reputation = 9000
+    const [groundContract] = debugRegenerateHunterContractBoard(state, { archetype: 'ground', tier: 'special', fixtureChoiceCount: 1, huntingGroundId: 'hunters-ground' })
+    expect(groundContract?.targetSpec).toEqual({ type: 'ground', groundId: 'hunters-ground' })
+    groundContract!.target = 1
+    state.progress.huntersOrder.activeContract = groundContract!
+    expect(getEligibleHunterContractMembers(state, groundContract!, 'hunters-ground')).toContain('ashen-tracker')
+    expect(recordHunterKill(state, 'ashen-tracker', 'hunters-ground')).toBe(true)
+    expect(state.progress.huntersOrder.activeContract).toBeNull()
+    expect(state.progress.huntersOrder.totalContractsCompleted).toBe(1)
   })
 
   it('authorizes exact targets and leaves ordinary monsters unaffected', () => {
@@ -269,11 +282,11 @@ describe('Hunter Order hardened runtime', () => {
   it('gates Nightglass Alpha by authored minimum Hunter rank and matching normal quarry contract', () => {
     const state = unlock()
     state.progress.huntersOrder.reputation = 32500
-    state.progress.huntersOrder.activeContract = contract({ type: 'region', locationId: 'hunters-ground' }, 'prestigious')
+    state.progress.huntersOrder.activeContract = contract({ type: 'ground', groundId: 'hunters-ground' }, 'prestigious')
     state.progress.huntersOrder.reputation = 32499
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: false, reason: 'contract-tier-locked' })
     state.progress.huntersOrder.reputation = 32500
-    state.progress.huntersOrder.activeContract = contract({ type: 'region', locationId: 'hunters-ground' }, 'prestigious')
+    state.progress.huntersOrder.activeContract = contract({ type: 'ground', groundId: 'hunters-ground' }, 'prestigious')
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: true })
     state.progress.huntersOrder.activeContract = contract({ type: 'monster', monsterId: 'nightglass-alpha' }, 'prestigious')
     expect(getHunterAuthorization(state, 'nightglass-alpha', 'hunters-ground')).toEqual({ authorized: true })

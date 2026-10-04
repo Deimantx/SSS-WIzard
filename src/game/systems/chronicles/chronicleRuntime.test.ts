@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import { CHRONICLE_CHAPTERS } from '../../content/chronicles/chronicles'
 import { createInitialState } from '../../../store/initialState'
 import { CHRONICLE_OBJECTIVES } from '../../content/chronicles/chronicles'
 import { debugCompleteChronicleChapter, debugCompleteChronicleObjective, debugCompleteChroniclePrerequisites, evaluateChronicleCondition, getChronicleActiveChapter, getChronicleChapterProgress, getChronicleMainObjective, getChronicleConditionValue, isChronicleChapterComplete, debugResetAllChronicles, recordChronicleEvent, reconcileChronicleProgress } from './chronicleRuntime'
 import { isCombatLocationUnlocked } from '../../content/combat-locations/worldNavigation'
 
 describe('Chronicle runtime', () => {
+  it('keeps removed Combat Region containers out of player-facing Chronicle copy', () => {
+    const copy = [...CHRONICLE_CHAPTERS.map(({ name, description }) => `${name} ${description}`), ...CHRONICLE_OBJECTIVES.map(({ title, description }) => `${title} ${description}`)].join('\n')
+    expect(copy).not.toMatch(/First Frontier|Shattered Frontier|Stabilize the Elemental Scar|open Shattered Meridian|Stabilize the Shattered Meridian|Break Black Sigil Reach|beyond Black Sigil Reach/)
+  })
+
   it('keeps first Arcane Guild Commission as one objective and gives the Tower milestone a distinct condition', () => {
     const commissionObjectives = CHRONICLE_OBJECTIVES.filter((objective) => objective.condition.type === 'guild-commissions-completed' && objective.condition.count === 1)
     expect(commissionObjectives.map((objective) => objective.id)).toEqual(['g2-first-guild-contract'])

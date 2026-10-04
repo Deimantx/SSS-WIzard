@@ -25,7 +25,7 @@ describe('frontier Offline Bank smoke coverage', () => {
       state.progress.huntersOrder.reputation = 0
       state.progress.huntersOrder.rankId = 'tracker'
       state.progress.huntersOrder.activeContract = {
-        id: 'offline-gloamridge-smoke', targetSpec: { type: 'region', locationId: 'hunters-ground' },
+        id: 'offline-gloamridge-smoke', targetSpec: { type: 'ground', groundId: 'hunters-ground' },
         target: 1, progress: 0, tier: 'routine', reputationReward: 1, marksReward: 1,
       }
     }

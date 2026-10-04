@@ -5,7 +5,7 @@ import { createInitialState } from '../../../store/initialState'
 import { getActiveArtifactCombatProviders, getArtifactEffectiveStats, getArtifactMaxInvestedRanks, getArtifactTotalInvestedRanks, mergeArtifactResolvedEffects, purchaseArtifactMinorRank } from '../../systems/artifacts/artifactProgression'
 
 describe('Artifact roster', () => {
-  it('contains the six First Frontier and six Regional Progression definitions in the canonical schema', () => {
+  it('contains the six First Frontier and six Combat Progression definitions in the canonical schema', () => {
     expect(Object.keys(ARTIFACTS)).toHaveLength(12)
     expect(Object.values(ARTIFACTS).filter((artifact) => artifact.tier === 2)).toHaveLength(6)
     Object.values(ARTIFACTS).forEach((artifact) => {

@@ -21,6 +21,7 @@ const shatteredSources = {
   ...import.meta.glob('../../content/monsters/dungeons/brokenMeridian.ts', { eager: true, query: '?raw', import: 'default' }),
 } as Record<string, string>
 const convertedRegionSources = import.meta.glob('../../content/monsters/{combat-zones,elite-zones,hunting-grounds,dungeons}/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+const combatLocationSources = import.meta.glob('../../content/combat-locations/{combat-zones,elite-zones,hunting-grounds,dungeons}/**/*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
 const formerDamageName = ['physi', 'cal'].join('')
 const noFormerDamagePayload = new RegExp(`(?:damageType|type):\\s*['\"]${formerDamageName}['\"]`)
 const noFormerDamageResistance = new RegExp(`resistances:\\s*\\{[^}]*${formerDamageName}`)
@@ -265,7 +266,7 @@ describe('Combat V2 authored content audit', () => {
       expect(getMonsterDamageProfile(monster).sort(), id).toEqual([...damageProfile].sort())
       expect(row.defaultFlatPeriodicDamageCount, id).toBe(0)
       expect(row.defaultFlatPeriodicHealCount, id).toBe(0)
-      if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Regional Progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
+      if (monster.bestiaryCategory === 'boss') expect(monster.traitIds.some((traitId) => /distinct Combat Progression combat trait shaping this creature/i.test(TRAIT_DEFINITIONS[traitId]?.description ?? ''))).toBe(false)
     }
 
     const hall = COMBAT_LOCATIONS['hall-of-unbound-names']
@@ -315,5 +316,20 @@ describe('Combat V2 authored content audit', () => {
   it('finds common source mojibake markers in reorganized Combat definitions', () => {
     expect(Object.keys(convertedRegionSources).length).toBeGreaterThan(0)
     for (const [file, source] of Object.entries(convertedRegionSources)) expect(source, file).not.toMatch(/Ãƒ|Ã¢â‚¬â„¢|Ã¢â‚¬Å“|Ã¢â‚¬/)
+  })
+
+  it('keeps Combat Location sources and key descriptions free of mojibake', () => {
+    expect(Object.keys(combatLocationSources).length).toBeGreaterThan(0)
+    for (const [file, source] of Object.entries(combatLocationSources)) expect(source, file).not.toMatch(/\u00c3(?:\u0192|\u00a2)|\ufffd/)
+    expect(COMBAT_LOCATIONS['hunters-ground'].description).toContain(`Hunter${String.fromCharCode(0x2019)}s Order`)
+    expect(COMBAT_LOCATIONS['abandoned-catacombs'].description).toContain(`Archmage Edrin${String.fromCharCode(0x2019)}s Shade`)
+  })
+
+  it('previews concrete Combat Location and system unlocks instead of removed containers', () => {
+    const labels = (id: keyof typeof COMBAT_LOCATIONS) => COMBAT_LOCATIONS[id].firstClearUnlockPreview?.map(({ label }) => label) ?? []
+    expect(labels('abandoned-catacombs')).toEqual(expect.arrayContaining(['Cinderwild Expanse', 'Fractured Approach', 'World Tier 2', 'Dark Portal', 'Magic School Cap Increase']))
+    expect(labels('crossroads-of-ruin')).toEqual(expect.arrayContaining(['Runeblight Expanse', 'Graveglass Hollow', 'Stormvault Gallery', 'Starfallen Observatory', 'World Tier 3']))
+    expect(labels('broken-meridian')).toEqual(expect.arrayContaining(['Hall of Unbound Names', 'Vault of the Black Sigil', 'World Tier 4', 'Crystals']))
+    for (const id of ['abandoned-catacombs', 'crossroads-of-ruin', 'broken-meridian'] as const) expect(labels(id).join('|')).not.toMatch(/Elemental Scar|Shattered Meridian|Black Sigil Reach/)
   })
 })

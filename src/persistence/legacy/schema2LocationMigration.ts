@@ -20,9 +20,10 @@ export const migrateSchema2LocationFields = (value: Record<string, unknown>): Re
       const remapContract = (candidate: unknown) => {
         if (!isRecord(candidate)) return candidate
         const contract = { ...candidate }
-        if (isRecord(contract.targetSpec) && contract.targetSpec.type === 'region' && !Object.prototype.hasOwnProperty.call(contract.targetSpec, 'locationId')) {
-          contract.targetSpec = { ...contract.targetSpec, locationId: contract.targetSpec.dungeonId }
-          delete (contract.targetSpec as Record<string, unknown>).dungeonId
+        if (isRecord(contract.targetSpec) && (contract.targetSpec.type === 'region' || contract.targetSpec.type === 'ground')) {
+          const target = { ...contract.targetSpec }
+          const groundId = target.groundId ?? target.locationId ?? target.dungeonId
+          contract.targetSpec = { type: 'ground', groundId }
         }
         return contract
       }

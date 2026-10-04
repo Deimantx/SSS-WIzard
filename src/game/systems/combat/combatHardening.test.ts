@@ -33,6 +33,21 @@ const stateWithEnemy = () => {
 }
 
 describe('combat foundation hardening', () => {
+  it('resolves a two-hit skill as two separate damage events and hit rolls', () => {
+    const state = stateWithEnemy()
+    const events: CombatEvent[] = []
+    executeCombatEffects(state, [{
+      type: 'deal-damage', target: 'opponent', hitCount: 2,
+      components: [{ damageType: 'fire', magnitude: { type: 'flat', value: 100 } }],
+      tags: ['special', 'direct', 'fire'],
+    }], { actor: 'enemy', kind: 'action', sourceId: 'multi-hit-test', sourceMonsterId: 'forest-wisp', tags: ['special', 'direct', 'fire'] }, 0, { push: (event) => events.push(event) })
+    const hitEvents = events.filter((event) => event.hitId)
+    expect(hitEvents).toHaveLength(2)
+    expect(hitEvents.every((event) => event.target === 'player')).toBe(true)
+    expect(new Set(hitEvents.map((event) => event.hitId)).size).toBe(2)
+    expect(hitEvents.every((event) => typeof event.critical === 'boolean' && typeof event.blocked === 'boolean')).toBe(true)
+  })
+
   it('uses true bounded action rates', () => {
     const state = stateWithEnemy()
     expect(getActionRate(state, 'enemy', 'basic-attack')).toBe(1)

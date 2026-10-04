@@ -22,7 +22,7 @@ export const formatChronicleCondition = (condition: ChronicleCondition): string 
     case 'starting-school-selected': return 'Choose a Magic School'
     case 'lifetime-kills': return `Defeat ${condition.count} ${condition.count === 1 ? 'enemy' : 'enemies'}`
     case 'boss-kill': return `Defeat ${MONSTERS[condition.bossId]?.name ?? formatReadableId(condition.bossId)}`
-    case 'all-boss-kills': return condition.bossIds.includes('graveglass-behemoth') && condition.bossIds.includes('storm-archivist') && condition.bossIds.includes('fallen-astromancer') ? 'Break the three Shattered Meridian anchors' : `Defeat ${condition.bossIds.map((id) => MONSTERS[id]?.name ?? formatReadableId(id)).join(', ')}`
+    case 'all-boss-kills': return condition.bossIds.includes('graveglass-behemoth') && condition.bossIds.includes('storm-archivist') && condition.bossIds.includes('fallen-astromancer') ? 'Defeat the Meridian Anchors' : `Defeat ${condition.bossIds.map((id) => MONSTERS[id]?.name ?? formatReadableId(id)).join(', ')}`
     case 'dungeon-entered': return `Enter ${COMBAT_LOCATIONS[condition.locationId]?.name ?? formatReadableId(condition.locationId)}`
     case 'auto-cast-enabled': return 'Enable Auto-Cast for one Spell'
     case 'channeling-acolytes': return `Assign ${condition.count} Acolyte${condition.count === 1 ? '' : 's'} to Channeling`

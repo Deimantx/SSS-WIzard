@@ -27,7 +27,7 @@ export const HUNTER_UPGRADES = [
   define('exact-quarry-briefing', 'Exact Quarry Briefing', 'efficiency', 'tracker-3', 3, 'monster-target-reduction-percent', 0.02),
   define('family-cull-orders', 'Family Cull Orders', 'efficiency', 'scout-5', 3, 'family-target-reduction-percent', 0.02),
   define('alignment-pursuit-orders', 'Alignment Pursuit Orders', 'efficiency', 'stalker-2', 3, 'alignment-target-reduction-percent', 0.02),
-  define('ground-patrol-orders', 'Ground Patrol Orders', 'efficiency', 'warden-2', 3, 'region-target-reduction-percent', 0.02),
+  define('ground-patrol-orders', 'Ground Patrol Orders', 'efficiency', 'warden-2', 3, 'ground-target-reduction-percent', 0.02),
   define('prestigious-preparation', 'Prestigious Preparation', 'efficiency', 'veteran-2', 3, 'prestigious-target-reduction-percent', 0.02),
   define('marked-quarry', 'Marked Quarry', 'rewards', 'scout-1', 5, 'reputation-bonus', 0.08),
   define('routine-commendation', 'Routine Commendation', 'rewards', 'tracker-5', 3, 'routine-reputation-bonus', 0.05),

@@ -171,7 +171,7 @@ describe('CombatWorldNavigation', () => {
     ['monster', { type: 'monster', monsterId: 'ashen-tracker' }, ['Ashen Tracker']],
     ['family', { type: 'family', familyId: 'Gloamridge Predators' }, ['Ashen Tracker', 'Gloamfang Stalker']],
     ['alignment', { type: 'alignment', alignmentId: 'Wild' }, ['Ashen Tracker', 'Gloamfang Stalker']],
-    ['region', { type: 'region', locationId: 'hunters-ground' }, ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute']],
+    ['ground patrol', { type: 'ground', groundId: 'hunters-ground' }, ['Ashen Tracker', 'Gloamfang Stalker', 'Runehorn Brute']],
   ] as const)('enables the canonical eligible quarry list for a %s Contract', (_kind, targetSpec, eligibleNames) => {
     const state = createInitialState()
     state.progress.bossKillsByBoss['forest-heart'] = 1

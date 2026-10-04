@@ -5,7 +5,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'moonwake-leviathan', name: 'Moonwake Leviathan', locationId: 'brineveil-marsh', affinity: 'water', subtitle: 'A vast marsh leviathan rising beneath a moonlit sheet of black water.',
     hp: 14400, damage: 110, defense: 75, targetPower: 2400, resonanceYield: { water: 80 },
-    traitId: 'moonwake-leviathan-phase', traitName: 'Rising Tide', phaseName: 'awakened', phaseOneLabel: 'submerged', phaseTwoLabel: 'awakened',
+    traitId: 'moonwake-leviathan-phase', phaseOneLabel: 'submerged', phaseTwoLabel: 'awakened',
     specials: [
       bossAction('Tidal Crush', { damage: [hit('water', 1.55)] }),
       bossAction('Brine Coil', { damage: [hit('water', 1.1)], status: status('chilled') }),
@@ -20,7 +20,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'furnace-maw', name: 'The Furnace Maw', locationId: 'cinderwild-expanse', affinity: 'fire', subtitle: 'A cavernous fire beast gnawing at the magma vents beneath the wilds.',
     hp: 16200, damage: 117, defense: 78, targetPower: 4200, resonanceYield: { fire: 80 },
-    traitId: 'furnace-maw-phase', traitName: 'Overheat', phaseName: 'overheated', phaseOneLabel: 'feeding', phaseTwoLabel: 'overheated',
+    traitId: 'furnace-maw-phase', phaseOneLabel: 'feeding', phaseTwoLabel: 'overheated',
     specials: [
       bossAction('Magma Bite', { damage: [hit('fire', 1.45)], status: status('burning') }),
       bossAction('Furnace Breath', { damage: [hit('fire', 1.8)] }),
@@ -35,7 +35,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'tempest-sovereign', name: 'Tempest Sovereign', locationId: 'skybreak-cliffs', affinity: 'air', subtitle: 'A crowned storm predator reigning over the knife-edge cliffs.',
     hp: 18000, damage: 124, defense: 82, targetPower: 6000, resonanceYield: { air: 80 },
-    traitId: 'tempest-sovereign-phase', traitName: 'Crowned Tempest', phaseName: 'sovereign storm', phaseOneLabel: 'high-sky', phaseTwoLabel: 'sovereign-storm', hasteAtPhaseChange: true,
+    traitId: 'tempest-sovereign-phase', phaseOneLabel: 'high-sky', phaseTwoLabel: 'sovereign-storm',
     specials: [
       bossAction('Talon Tempest', { damage: [hit('air', 1.6)] }),
       bossAction('Thunder Crown', { damage: [hit('air', 1.2)], status: status('shock') }),
@@ -50,7 +50,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'unmade-magister', name: 'The Unmade Magister', locationId: 'runeblight-expanse', affinity: 'arcane', subtitle: 'A ley-warped scholar whose unfinished spells tear at the world.',
     hp: 19000, damage: 128, defense: 84, targetPower: 7000, resonanceYield: { arcane: 80 },
-    traitId: 'unmade-magister-phase', traitName: 'Unbound Formula', phaseName: 'unbound', phaseOneLabel: 'formula', phaseTwoLabel: 'unbound',
+    traitId: 'unmade-magister-phase', phaseOneLabel: 'formula', phaseTwoLabel: 'unbound',
     specials: [
       bossAction('Arcane Lance', { damage: [hit('arcane', 1.45)] }),
       bossAction('Prism Divide', { damage: [hit('fire', .75), hit('water', .75)] }),
@@ -65,7 +65,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'pyrehold-castellan', name: 'Pyrehold Castellan', locationId: 'pyrehold-bastion', affinity: 'fire', subtitle: 'The fortress commander still enforcing orders through ash and flame.',
     hp: 22000, damage: 140, defense: 90, targetPower: 10000, resonanceYield: { fire: 80 },
-    traitId: 'pyrehold-castellan-phase', traitName: 'Castellan’s Last Command', phaseName: 'last command', phaseOneLabel: 'castellan', phaseTwoLabel: 'last-command',
+    traitId: 'pyrehold-castellan-phase', phaseOneLabel: 'castellan', phaseTwoLabel: 'last-command',
     specials: [
       bossAction("Castellan's Brand", { damage: [hit('fire', 1.3)], status: status('kindled') }),
       bossAction('Furnace Decree', { damage: [hit('fire', 1.65)] }),
@@ -80,7 +80,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'drowned-regent', name: 'The Drowned Regent', locationId: 'abyssal-reservoir', affinity: 'water', subtitle: 'A sovereign preserved beneath the reservoir’s immense pressure.',
     hp: 22500, damage: 142, defense: 91, targetPower: 10500, resonanceYield: { water: 80 },
-    traitId: 'drowned-regent-phase', traitName: 'Sovereign Depths', phaseName: 'deep throne', phaseOneLabel: 'regent', phaseTwoLabel: 'deep-throne',
+    traitId: 'drowned-regent-phase', phaseOneLabel: 'regent', phaseTwoLabel: 'deep-throne',
     specials: [
       bossAction("Regent's Tide", { damage: [hit('water', 1.5)] }),
       bossAction('Pressure Crown', { barrier: .1 }),
@@ -95,7 +95,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'steam-tyrant', name: 'The Steam Tyrant', locationId: 'scalding-rift', affinity: 'fire', subtitle: 'A volatile ruler of the rift where boiling water meets molten stone.',
     hp: 24500, damage: 150, defense: 95, targetPower: 12500, resonanceYield: { fire: 80 },
-    traitId: 'steam-tyrant-phase', traitName: 'Critical Pressure', phaseName: 'critical pressure', phaseOneLabel: 'boiling-throne', phaseTwoLabel: 'critical-pressure',
+    traitId: 'steam-tyrant-phase', phaseOneLabel: 'boiling-throne', phaseTwoLabel: 'critical-pressure',
     specials: [
       bossAction('Boiling Crown', { damage: [hit('fire', 1), hit('water', 1)] }),
       bossAction('Scalding Edict', { damage: [hit('fire', 1.35)], status: status('burning') }),
@@ -110,7 +110,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'sepulcher-flamekeeper', name: 'Sepulcher Flamekeeper', locationId: 'cinder-sepulcher', affinity: 'fire', subtitle: 'A funerary guardian tending flames that have burned for centuries.',
     hp: 23500, damage: 146, defense: 93, targetPower: 11500, resonanceYield: { fire: 80 },
-    traitId: 'sepulcher-flamekeeper-phase', traitName: 'Eternal Flame', phaseName: 'eternal flame', phaseOneLabel: 'keeper', phaseTwoLabel: 'eternal-flame',
+    traitId: 'sepulcher-flamekeeper-phase', phaseOneLabel: 'keeper', phaseTwoLabel: 'eternal-flame',
     specials: [
       bossAction('Funeral Pyre', { damage: [hit('fire', 1.4)], status: status('burning') }),
       bossAction('Ashen Procession', { damage: [hit('fire', 1.2)] }),
@@ -125,7 +125,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'deep-bell-saint', name: 'The Deep Bell Saint', locationId: 'temple-of-the-sunken-bell', affinity: 'water', subtitle: 'A drowned holy figure whose voice sounds through the sunken bell.',
     hp: 23500, damage: 146, defense: 93, targetPower: 11500, resonanceYield: { water: 80 },
-    traitId: 'deep-bell-saint-phase', traitName: 'Second Toll', phaseName: 'second toll', phaseOneLabel: 'first-toll', phaseTwoLabel: 'second-toll',
+    traitId: 'deep-bell-saint-phase', phaseOneLabel: 'first-toll', phaseTwoLabel: 'second-toll',
     specials: [
       bossAction('Bell Toll', { damage: [hit('water', 1.3)], status: status('staggered') }),
       bossAction('Drowned Hymn', { damage: [hit('water', 1.1)], status: status('cursed') }),
@@ -140,10 +140,10 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'abbot-ninth-gale', name: 'Abbot of the Ninth Gale', locationId: 'stormspire-monastery', affinity: 'air', subtitle: 'The monastery’s master of winds, still commanding the stormbound towers.',
     hp: 24500, damage: 150, defense: 95, targetPower: 12500, resonanceYield: { air: 80 },
-    traitId: 'abbot-ninth-gale-phase', traitName: 'Ninth Wind', phaseName: 'ninth wind', phaseOneLabel: 'seven-winds', phaseTwoLabel: 'ninth-wind', hasteAtPhaseChange: true,
+    traitId: 'abbot-ninth-gale-phase', phaseOneLabel: 'seven-winds', phaseTwoLabel: 'ninth-wind',
     specials: [
       bossAction('First Gale', { damage: [hit('air', 1.2)] }),
-      bossAction('Third Gale', { damage: [hit('air', .75), hit('air', .75)] }),
+      bossAction('Third Gale', { damage: [hit('air', .75)], hitCount: 2 }),
       bossAction('Fifth Gale', { damage: [hit('air', 1), hit('water', .55)] }),
       bossAction('Seventh Gale', { barrier: .08 }),
       bossAction('Skychain Silence', { damage: [hit('arcane', .8)], status: status('silenced') }),
@@ -155,7 +155,7 @@ export const EXPANSION_BOSSES = [
   authorExpansionBoss({
     id: 'closed-index', name: 'The Closed Index', locationId: 'nullstone-archive', affinity: 'arcane', subtitle: 'A sealed catalogue given form to guard the archive’s forbidden lore.',
     hp: 27000, damage: 160, defense: 100, targetPower: 15000, resonanceYield: { arcane: 80 },
-    traitId: 'closed-index-phase', traitName: 'Open Index', phaseName: 'open index', phaseOneLabel: 'closed-index', phaseTwoLabel: 'open-index',
+    traitId: 'closed-index-phase', phaseOneLabel: 'closed-index', phaseTwoLabel: 'open-index',
     specials: [
       bossAction('Redaction', { damage: [hit('arcane', 1.2)], status: status('silenced') }),
       bossAction('Null Entry', { damage: [hit('arcane', 1.45)] }),

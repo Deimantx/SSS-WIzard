@@ -334,8 +334,8 @@ const normalizeDynamicRecords = (migrated: GameState, raw: Record<string, any>) 
     }
     if (rawTarget?.type === 'family' && hunterIds.some((id) => MONSTERS[id]?.hunter?.family === rawTarget.familyId)) return { type: 'family', familyId: String(rawTarget.familyId).slice(0, 80) } as const
     if (rawTarget?.type === 'alignment' && hunterIds.some((id) => MONSTERS[id]?.hunter?.alignment === rawTarget.alignmentId)) return { type: 'alignment', alignmentId: String(rawTarget.alignmentId).slice(0, 80) } as const
-    const targetLocationId = rawTarget?.locationId ?? rawTarget?.['dungeonId']
-    if (rawTarget?.type === 'region' && COMBAT_LOCATION_ORDER.some((id) => id === targetLocationId) && hunterIds.some((id) => COMBAT_LOCATIONS[targetLocationId as CombatLocationId]?.monsterPool.includes(id))) return { type: 'region', locationId: targetLocationId as CombatLocationId } as const
+    const targetLocationId = rawTarget?.groundId ?? rawTarget?.locationId ?? rawTarget?.['dungeonId']
+    if ((rawTarget?.type === 'region' || rawTarget?.type === 'ground') && COMBAT_LOCATION_ORDER.some((id) => id === targetLocationId) && hunterIds.some((id) => COMBAT_LOCATIONS[targetLocationId as CombatLocationId]?.monsterPool.includes(id))) return { type: 'ground', groundId: targetLocationId as CombatLocationId } as const
     const legacyMonster = hunterIds.find((id) => id === value.targetMonsterId)
     return legacyMonster ? { type: 'monster', monsterId: legacyMonster } as const : null
   }

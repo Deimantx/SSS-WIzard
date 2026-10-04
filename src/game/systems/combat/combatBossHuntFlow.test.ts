@@ -62,7 +62,7 @@ describe('targeted Boss and Auto Hunt flow', () => {
     state.combat.activeSpellLoadout = { presetId: null, presetName: 'Test Loadout', slots: [{ spellId: 'fire-bolt', autoCast: false }], signature: 'fire-bolt:0' }
     state.progress.autoHuntBossUnlocked = true
     state.progress.bossKillsByBoss['corrupted-greatbear'] = 1
-    state.progress.huntersOrder.activeContract = { id: 'normal-hunt', targetSpec: { type: 'region', locationId: 'hunters-ground' }, target: 2, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 3 }
+    state.progress.huntersOrder.activeContract = { id: 'normal-hunt', targetSpec: { type: 'ground', groundId: 'hunters-ground' }, target: 2, progress: 0, tier: 'prestigious', reputationReward: 100, marksReward: 3 }
     useGameStore.setState(state)
 
     useGameStore.getState().toggleAutoHunt('hunters-ground')

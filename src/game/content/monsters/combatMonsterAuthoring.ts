@@ -4,7 +4,7 @@ import { action, applyStatus, basic, drainMana, gainBarrier, scaledDirectDamage,
 import { STATUS_DEFINITIONS } from '../statuses/statuses'
 import { deriveBasicDamageForTargetPower } from './monsterTypes'
 
-export type CombatMonsterSpecial = { id: string; name: string; description?: string; actionTimeMs?: number; tags?: CombatTag[]; damage?: Array<{ type: DamageType; coefficient: number }>; status?: { id: StatusId; target?: 'self' | 'opponent'; stacks?: number }; dot?: { statusId: StatusId; damageType: DamageType; coefficient: number; durationMs: number }; barrier?: number; heal?: number; manaDrain?: number; delayOpponentMs?: number; detonateStatus?: { statusId: StatusId; multiplier: number; consume?: boolean } }
+export type CombatMonsterSpecial = { id: string; name: string; description?: string; actionTimeMs?: number; tags?: CombatTag[]; damage?: Array<{ type: DamageType; coefficient: number }>; hitCount?: number; status?: { id: StatusId; target?: 'self' | 'opponent'; stacks?: number }; dot?: { statusId: StatusId; damageType: DamageType; coefficient: number; durationMs: number }; barrier?: number; heal?: number; manaDrain?: number; delayOpponentMs?: number; detonateStatus?: { statusId: StatusId; multiplier: number; consume?: boolean } }
 type Special = CombatMonsterSpecial
 type CombatMonsterBase = { locationId: CombatLocationId; id: MonsterId; name: string; subtitle: string; hp: number; damage: number; defense: number; time?: number; resistances?: Partial<Record<DamageType, number>>; resonanceYield?: MonsterDefinition['resonanceYield']; icon?: MonsterDefinition['ui']; color?: string; specials: Special[]; boss?: boolean; patternSteps?: ActionStep[]; actionPatterns?: MonsterDefinition['actionPatterns']; defaultActionPatternId?: string }
 export type CombatMonsterSpec = CombatMonsterBase & { combatV2: true; primaryAffinity: ElementId; basicAttackElement: ElementId; targetPower: number; trait?: TraitId; combatV2Traits?: TraitId[] }
@@ -31,7 +31,7 @@ const describeSpecial = (special: Special): string => {
   if (special.damage?.length) {
     const coefficient = special.damage.reduce((sum, hit) => sum + hit.coefficient, 0)
     const elements = [...new Set(special.damage.map((hit) => hit.type))].join(' and ')
-    clauses.push(`deals ${coefficient.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}× Basic ${elements} damage`)
+    clauses.push(`deals ${coefficient.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}\u00d7 Basic ${elements} damage${special.hitCount && special.hitCount > 1 ? ' across ' + special.hitCount + ' hits' : ''}`)
   }
   if (special.dot) clauses.push(`applies ${STATUS_DEFINITIONS[special.dot.statusId]?.name ?? special.dot.statusId} for ${special.dot.durationMs / 1000} seconds (${special.dot.coefficient}× Basic damage over time)`)
   if (special.status) clauses.push(`${special.status.target === 'self' ? 'grants itself' : 'applies'} ${STATUS_DEFINITIONS[special.status.id]?.name ?? special.status.id}`)
@@ -44,7 +44,7 @@ const describeSpecial = (special: Special): string => {
 }
 
 const specialEffects = (special: Special): CombatEffect[] => [
-  ...(special.damage?.length ? [special.damage.length === 1 ? scaledDirectDamage(special.damage[0].type, special.damage[0].coefficient) : scaledMultiDamage(special.damage.map(({ type, coefficient }) => ({ damageType: type, coefficient })))] : []),
+  ...(special.damage?.length ? [{ ...(special.damage.length === 1 ? scaledDirectDamage(special.damage[0].type, special.damage[0].coefficient) : scaledMultiDamage(special.damage.map(({ type, coefficient }) => ({ damageType: type, coefficient })))), ...(special.hitCount && special.hitCount > 1 ? { hitCount: special.hitCount } : {}) }] : []),
   ...(special.dot ? [scaledDot(special.dot.statusId, special.dot.damageType, special.dot.coefficient, special.dot.durationMs)] : special.status ? [applyStatus(special.status.id, special.status.target ?? 'opponent', undefined, special.status.stacks)] : []),
   ...(special.barrier ? [gainBarrier({ type: 'source-max-health-percent', value: special.barrier })] : []),
   ...(special.heal ? [scaledHeal(special.heal)] : []),

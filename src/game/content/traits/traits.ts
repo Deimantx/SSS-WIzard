@@ -13,6 +13,7 @@ import {
 } from "../../systems/combat/combatEffectValidation";
 import { REGIONAL_TRAIT_DEFINITIONS } from "./regionalTraits";
 import { TUTORIAL_TRAIT_DEFINITIONS } from './tutorialTraits';
+import { EXPANSION_PHASE_TRAITS } from './expansionTraits';
 
 const gainBarrier = (magnitude: Magnitude): CombatEffect => ({
   type: "gain-barrier",
@@ -238,6 +239,7 @@ export const TRAIT_DEFINITIONS: Record<TraitId, TraitDefinition> = {
   ...FIRST_FRONTIER_TRAIT_DEFINITIONS,
   ...TUTORIAL_TRAIT_DEFINITIONS,
   ...REGIONAL_TRAIT_DEFINITIONS,
+  ...EXPANSION_PHASE_TRAITS,
 } as Record<TraitId, TraitDefinition>;
 
 const isTraitId = (traitId: string): traitId is TraitId =>

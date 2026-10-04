@@ -25,7 +25,7 @@ export type PersistedActivitiesV3 = Omit<GameState['activities'], 'research' | '
 
 export type PersistedHunterTargetV3 =
   | { type: 'monster' | 'boss'; monsterId: MonsterId }
-  | { type: 'region'; locationId: CombatLocationId }
+  | { type: 'ground'; groundId: CombatLocationId }
   | { type: 'family'; familyId: string }
   | { type: 'alignment'; alignmentId: string }
 
@@ -48,7 +48,7 @@ export interface PersistedHunterOrderV3 {
   activeContract: PersistedHunterContractV3 | null
   availableContracts: PersistedHunterContractV3[]
   pinnedContractIds?: string[]
-  preferredContractType?: 'monster' | 'family' | 'alignment' | 'region' | 'boss' | null
+  preferredContractType?: 'monster' | 'family' | 'alignment' | 'ground' | 'boss' | null
   preferredHuntingGroundId?: CombatLocationId | null
   lastSelectedQuarryByGround?: Partial<Record<CombatLocationId, MonsterId>>
   blockedTargets: MonsterId[]

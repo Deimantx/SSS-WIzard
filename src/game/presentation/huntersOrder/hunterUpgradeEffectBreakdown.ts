@@ -38,12 +38,12 @@ const reductionProfiles = (upgrade: UpgradeDefinition): Array<{ type: HunterCont
     { type: 'monster', tier: 'routine', label: 'Monster Contracts' },
     { type: 'family', tier: 'routine', label: 'Family Contracts' },
     { type: 'alignment', tier: 'routine', label: 'Alignment Contracts' },
-    { type: 'region', tier: 'routine', label: 'Ground Patrol Contracts' },
+    { type: 'ground', tier: 'routine', label: 'Ground Patrol Contracts' },
   ]
   if (upgrade.id === 'exact-quarry-briefing') return [{ type: 'monster', tier: 'routine', label: 'Monster Contracts' }]
   if (upgrade.id === 'family-cull-orders') return [{ type: 'family', tier: 'routine', label: 'Family Contracts' }]
   if (upgrade.id === 'alignment-pursuit-orders') return [{ type: 'alignment', tier: 'routine', label: 'Alignment Contracts' }]
-  if (upgrade.id === 'ground-patrol-orders') return [{ type: 'region', tier: 'routine', label: 'Ground Patrol Contracts' }]
+  if (upgrade.id === 'ground-patrol-orders') return [{ type: 'ground', tier: 'routine', label: 'Ground Patrol Contracts' }]
   return [{ type: 'monster', tier: 'prestigious', label: 'Prestigious Contracts' }]
 }
 

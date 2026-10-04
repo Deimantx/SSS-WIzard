@@ -7,7 +7,7 @@ export const huntingGroundLocations = {
                            "type":  "hunting-ground",
                            "progressionOrder":  9,
                            "encounterMode":  "targeted",
-                           "description":  "A bossless ridge of deterministic HunterÃ¢â‚¬â„¢s Order quarry contracts.",
+                           "description":  "A bossless ridge of deterministic Hunter’s Order quarry contracts.",
                            "unlock":  {
                                           "type":  "boss-kill",
                                           "bossId":  "corrupted-greatbear",

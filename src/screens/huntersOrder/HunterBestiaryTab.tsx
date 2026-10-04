@@ -57,7 +57,7 @@ export function HunterBestiaryTab() {
   const [family, setFamily] = useState<MetadataFilter>(null)
   const [alignment, setAlignment] = useState<MetadataFilter>(null)
   const [tier, setTier] = useState<MetadataFilter>(null)
-  const [region, setRegion] = useState<MetadataFilter>(null)
+  const [ground, setGround] = useState<MetadataFilter>(null)
   const [selected, setSelected] = useState<MonsterId | null>(() => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches ? null : progress.discoveredMonsters[0] ?? null)
   const [mobileDossier, setMobileDossier] = useState(false)
   const [dossierTab, setDossierTab] = useState<DossierTab>('overview')
@@ -68,7 +68,7 @@ export function HunterBestiaryTab() {
   const activeGroundName = contract.contract ? COMBAT_LOCATIONS[contract.contract.huntingGroundId ?? 'hunters-ground']?.name ?? 'Hunting Ground' : 'Hunting Ground'
   const completion = getBestiaryCompletion(state)
   const knownQuarry = HUNTER_EXCLUSIVE_MONSTER_IDS.filter((id) => progress.discoveredMonsters.includes(id)).length
-  const clearFilters = () => { setPrimary('all'); setFamily(null); setAlignment(null); setTier(null); setRegion(null); setSearch('') }
+  const clearFilters = () => { setPrimary('all'); setFamily(null); setAlignment(null); setTier(null); setGround(null); setSearch('') }
   const filteredEntries = useMemo(() => getBestiaryEntries().filter((monster) => {
     const discovered = progress.discoveredMonsters.includes(monster.id)
     if (primary === 'hunter' && !monster.hunter?.exclusive) return false
@@ -78,16 +78,16 @@ export function HunterBestiaryTab() {
     if (family && monster.hunter?.family !== family) return false
     if (alignment && monster.hunter?.alignment !== alignment) return false
     if (tier && monster.hunter?.contractTier !== tier) return false
-    if (region && monster.hunter?.huntingGroundId !== region) return false
+    if (ground && monster.hunter?.huntingGroundId !== ground) return false
     if (search.trim() && (!discovered || !getBestiarySearchText(monster).includes(search.trim().toLowerCase()))) return false
     return true
-  }), [progress, primary, contract.matchingMonsterIds.join('|'), family, alignment, tier, region, search])
+  }), [progress, primary, contract.matchingMonsterIds.join('|'), family, alignment, tier, ground, search])
   useSmartScrollState(listRef, { dependencies: [filteredEntries.map((entry) => entry.id).join('|')] })
   const selectedMonster = selected ? MONSTERS[selected] : null
   const discoveredSelected = Boolean(selected && progress.discoveredMonsters.includes(selected))
   const clearAttentionFor = (monsterId: MonsterId) => clearAttention(getActiveProfileId(), 'monster', monsterId)
   const openDossier = (monsterId: MonsterId) => { clearAttentionFor(monsterId); setSelected(monsterId); setMobileDossier(true) }
-  const anyFilter = primary !== 'all' || family !== null || alignment !== null || tier !== null || region !== null || search.trim().length > 0
+  const anyFilter = primary !== 'all' || family !== null || alignment !== null || tier !== null || ground !== null || search.trim().length > 0
   const quarryGroups = useMemo(() => {
     if (primary !== 'hunter' && primary !== 'contract') return [{ groundId: 'catalog', entries: filteredEntries }]
     const groups = new Map<string, typeof filteredEntries>()
@@ -122,7 +122,7 @@ export function HunterBestiaryTab() {
             <SelectMenu options={optionsWithAll(familyOptions, 'FAMILY')} value={family ?? ''} onChange={(value) => setFamily(value || null)} ariaLabel="Filter by family" prefix="FAMILY · " />
             <SelectMenu options={optionsWithAll(alignmentOptions, 'ALIGNMENT')} value={alignment ?? ''} onChange={(value) => setAlignment(value || null)} ariaLabel="Filter by alignment" prefix="ALIGNMENT · " />
             <SelectMenu options={optionsWithAll(tierOptions, 'TIER')} value={tier ?? ''} onChange={(value) => setTier(value || null)} ariaLabel="Filter by Contract tier" prefix="TIER · " />
-            <SelectMenu options={optionsWithAll(locationOptions, 'REGION')} value={region ?? ''} onChange={(value) => setRegion(value || null)} ariaLabel="Filter by region" prefix="REGION · " />
+            <SelectMenu options={optionsWithAll(locationOptions, 'HUNTING GROUND')} value={ground ?? ''} onChange={(value) => setGround(value || null)} ariaLabel="Filter by Hunting Ground" prefix="GROUND · " />
           </div>
         </div>
         <div ref={listRef} className="hunter-quarry-index-list smart-scroll-region">
@@ -131,7 +131,7 @@ export function HunterBestiaryTab() {
             const relation = entry.hunter?.relation
             return <button key={monster.id} type="button" className={`hunter-quarry-tile${selected === monster.id ? ' is-selected' : ''}${entry.discovered ? '' : ' is-undiscovered'}`} aria-pressed={selected === monster.id} onClick={() => openDossier(monster.id)}>
               {(() => { const dossierReveal = !entry.discovered && getHunterUpgradeRank(state, 'master-dossier') > 0 && isHunterMonsterRankEligible(state, monster.id); return <><span className="hunter-quarry-tile-portrait">{entry.discovered ? <MonsterPortrait monster={monster} boss={entry.boss} /> : <span aria-hidden="true">{dossierReveal ? '◈' : '?'}</span>}</span>
-              <span className="hunter-quarry-tile-copy"><strong>{dossierReveal ? monster.name : entry.name}</strong>{entry.discovered ? <><small className="hunter-quarry-role-tags">{entry.roleTags.slice(0, 3).join(' · ') || entry.category.toUpperCase()}</small><span className="hunter-quarry-classification"><b>{entry.hunter?.tier.toUpperCase() ?? entry.category.toUpperCase()}</b>{entry.family && <i>{entry.family}</i>}</span><small>{entry.alignment ?? entry.locations[0] ?? 'Unknown location'}{entry.defeats !== null ? ` · ${entry.defeats} defeats` : ''}</small></> : dossierReveal ? <><span className="hunter-quarry-classification"><b>{monster.hunter?.contractTier.toUpperCase()}</b><i>{monster.hunter?.family}</i></span><small>{monster.hunter?.alignment} · Dossier</small></> : <><small>{entry.locations[0] ?? 'Unknown region'} · Not yet encountered</small></>}</span></> })()}
+              <span className="hunter-quarry-tile-copy"><strong>{dossierReveal ? monster.name : entry.name}</strong>{entry.discovered ? <><small className="hunter-quarry-role-tags">{entry.roleTags.slice(0, 3).join(' · ') || entry.category.toUpperCase()}</small><span className="hunter-quarry-classification"><b>{entry.hunter?.tier.toUpperCase() ?? entry.category.toUpperCase()}</b>{entry.family && <i>{entry.family}</i>}</span><small>{entry.alignment ?? entry.locations[0] ?? 'Unknown location'}{entry.defeats !== null ? ` · ${entry.defeats} defeats` : ''}</small></> : dossierReveal ? <><span className="hunter-quarry-classification"><b>{monster.hunter?.contractTier.toUpperCase()}</b><i>{monster.hunter?.family}</i></span><small>{monster.hunter?.alignment} · Dossier</small></> : <><small>{entry.locations[0] ?? 'Unknown location'} · Not yet encountered</small></>}</span></> })()}
               {entry.discovered && attention.unseenMonsters.includes(monster.id) && <span className="hunter-quarry-new">NEW</span>}
               {entry.discovered && relation === 'exact-target' && <Status tone="active">CONTRACT TARGET</Status>}
               {entry.discovered && relation === 'eligible' && <Status tone="active">COUNTS</Status>}
@@ -182,7 +182,7 @@ function HunterQuarryDossier({ state, monster, selectedId, discovered, tab, onTa
 
   return <Card className="hunter-quarry-dossier" title="QUARRY DOSSIER">
     <div className="hunter-dossier-mobile-back"><Button variant="ghost" onClick={onBack}>BACK TO QUARRY INDEX</Button></div>
-    {!selectedId ? <div className="hunter-dossier-empty"><Compass size={30} /><strong>SELECT A QUARRY</strong><span>Choose a creature to review its field record.</span></div> : masterDossierAvailable && monster ? <section className="hunter-master-dossier"><div className="hunter-dossier-kicker">MASTER DOSSIER · LIMITED INTELLIGENCE</div><h2>{monster.name}</h2><p>This Order dossier reveals contract identity metadata. Combat capabilities and rewards remain sealed until encounter.</p><dl><div><dt>HUNTING GROUND</dt><dd>{COMBAT_LOCATIONS[groundId]?.name ?? 'Unknown ground'}</dd></div><div><dt>FAMILY</dt><dd>{monster.hunter?.family}</dd></div><div><dt>ALIGNMENT</dt><dd>{monster.hunter?.alignment}</dd></div><div><dt>CONTRACT TIER</dt><dd>{monster.hunter?.contractTier}</dd></div><div><dt>MINIMUM STANDING</dt><dd>{HUNTER_STANDINGS.find((standing) => standing.rankId === monster.hunter?.minimumRank)?.name ?? 'Tracker I'}</dd></div></dl><Status tone="neutral">ENCOUNTER TO UNSEAL FULL DOSSIER</Status></section> : !monster || !discovered ? <div className="hunter-dossier-empty"><span className="hunter-unknown-glyph">?</span><strong>UNKNOWN QUARRY</strong><span>{monster ? getMonsterLocationEntries(monster.id)[0]?.name ?? 'Uncharted region' : 'The dossier is unavailable.'} · Encounter this creature to reveal combat and reward details.</span></div> : <>
+    {!selectedId ? <div className="hunter-dossier-empty"><Compass size={30} /><strong>SELECT A QUARRY</strong><span>Choose a creature to review its field record.</span></div> : masterDossierAvailable && monster ? <section className="hunter-master-dossier"><div className="hunter-dossier-kicker">MASTER DOSSIER · LIMITED INTELLIGENCE</div><h2>{monster.name}</h2><p>This Order dossier reveals contract identity metadata. Combat capabilities and rewards remain sealed until encounter.</p><dl><div><dt>HUNTING GROUND</dt><dd>{COMBAT_LOCATIONS[groundId]?.name ?? 'Unknown ground'}</dd></div><div><dt>FAMILY</dt><dd>{monster.hunter?.family}</dd></div><div><dt>ALIGNMENT</dt><dd>{monster.hunter?.alignment}</dd></div><div><dt>CONTRACT TIER</dt><dd>{monster.hunter?.contractTier}</dd></div><div><dt>MINIMUM STANDING</dt><dd>{HUNTER_STANDINGS.find((standing) => standing.rankId === monster.hunter?.minimumRank)?.name ?? 'Tracker I'}</dd></div></dl><Status tone="neutral">ENCOUNTER TO UNSEAL FULL DOSSIER</Status></section> : !monster || !discovered ? <div className="hunter-dossier-empty"><span className="hunter-unknown-glyph">?</span><strong>UNKNOWN QUARRY</strong><span>{monster ? getMonsterLocationEntries(monster.id)[0]?.name ?? 'Uncharted location' : 'The dossier is unavailable.'} · Encounter this creature to reveal combat and reward details.</span></div> : <>
       <header className="hunter-dossier-hero">
         <MonsterPortrait monster={monster} boss={isBossMonster(monster)} />
         <div className="hunter-dossier-identity"><span className="hunter-dossier-kicker">{monster.hunter?.exclusive ? `${monster.hunter.contractTier.toUpperCase()} QUARRY` : monster.bestiaryCategory.toUpperCase()}</span><h2>{monster.name}</h2><p>{monster.subtitle}</p>

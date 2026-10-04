@@ -8,7 +8,7 @@ import type { GameState, HunterRankId } from '../../game/types'
 const categories: { id: HunterRankId; Icon: typeof Target }[] = [
   { id: 'tracker', Icon: Footprints }, { id: 'scout', Icon: Compass }, { id: 'stalker', Icon: Eye }, { id: 'warden', Icon: Shield }, { id: 'veteran', Icon: Medal }, { id: 'master-hunter', Icon: Crown },
 ]
-const benefitIcon = (label: string) => /family|quarry/i.test(label) ? PawPrint : /alignment|special/i.test(label) ? Sparkles : /region|ground/i.test(label) ? Map : /block|trail|route/i.test(label) ? ShieldCheck : /upgrade|service|privilege|reroll|marks|pockets|kit/i.test(label) ? Wrench : /board|contract|assignment/i.test(label) ? ScrollText : BookOpen
+const benefitIcon = (label: string) => /family|quarry/i.test(label) ? PawPrint : /alignment|special/i.test(label) ? Sparkles : /ground/i.test(label) ? Map : /block|trail|route/i.test(label) ? ShieldCheck : /upgrade|service|privilege|reroll|marks|pockets|kit/i.test(label) ? Wrench : /board|contract|assignment/i.test(label) ? ScrollText : BookOpen
 
 export function HunterRankTab({ state }: { state: GameState }) {
   const presentation = getHunterRankPresentation(state)

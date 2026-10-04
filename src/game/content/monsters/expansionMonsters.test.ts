@@ -7,7 +7,7 @@ import { TRAIT_DEFINITIONS } from '../traits/traits'
 const actionSignature = (monsterId: string, actionId: string) => {
   const authored = MONSTERS[monsterId as keyof typeof MONSTERS].actions[actionId]
   const effects = authored.effects.flatMap((effect) => {
-    if (effect.type === 'deal-damage') return effect.components.map(({ damageType, magnitude }) => `damage:${damageType}:${magnitude.type === 'source-basic-damage-percent' ? magnitude.value : 'other'}`)
+    if (effect.type === 'deal-damage') return [...effect.components.map(({ damageType, magnitude }) => `damage:${damageType}:${magnitude.type === 'source-basic-damage-percent' ? magnitude.value : 'other'}`), ...(effect.hitCount && effect.hitCount > 1 ? [`hits:${effect.hitCount}`] : [])]
     if (effect.type === 'apply-status') return [`status:${effect.statusId}:${effect.target}`]
     if (effect.type === 'gain-barrier') return [`barrier:${effect.magnitude.type === 'source-max-health-percent' ? effect.magnitude.value : 'other'}`]
     if (effect.type === 'heal') return [`heal:${effect.magnitude.type === 'source-max-health-percent' ? effect.magnitude.value : 'other'}`]
@@ -83,7 +83,7 @@ describe('Phase 01 combat expansion content', () => {
       'prism-stalker': ['Prism Fang|damage:arcane:0.6,damage:fire:0.4,damage:water:0.4', 'Refraction|status:spectral-fade:self'],
       'glassfin-horror': ['Glassfin Rend|damage:water:1.25,status:bleeding:opponent', 'Undertow Dash|damage:water:1.1,delay:350:current'],
       'pressure-eel': ['Pressure Bite|damage:water:1.3', 'Discharge|damage:water:0.8,damage:air:0.55,status:shock:opponent'],
-      'ashen-duelist': ['Twin Brands|damage:fire:0.75,damage:fire:0.75', 'Riposte Veil|status:spectral-fade:self'],
+      'ashen-duelist': ['Twin Brands|damage:fire:0.75,hits:2', 'Riposte Veil|status:spectral-fade:self'],
       'null-scribe': ['Null Script|damage:arcane:1.2,status:arcane-disruption:opponent', 'Cancel Rune|damage:arcane:0.8,status:silenced:opponent'],
     }
     for (const [monsterId, expected] of Object.entries(signatures)) {
@@ -138,7 +138,7 @@ describe('Phase 01 combat expansion content', () => {
       'steam-tyrant': ['Boiling Crown|damage:fire:1,damage:water:1', 'Scalding Edict|damage:fire:1.35,status:burning:opponent', 'Steam Hammer|damage:water:1.4', 'Vapor Armor|barrier:0.1', 'Flash Boil|damage:fire:1.2,delay:500:current', 'Pressure Rupture|damage:fire:1.2,damage:water:1.2'],
       'sepulcher-flamekeeper': ['Funeral Pyre|damage:fire:1.4,status:burning:opponent', 'Ashen Procession|damage:fire:1.2', "Keeper's Ward|barrier:0.1", 'Cinder Rite|heal:0.05', 'Last Ember|damage:fire:1.8', 'Cremation Bell|damage:fire:2.4'],
       'deep-bell-saint': ['Bell Toll|damage:water:1.3,status:staggered:opponent', 'Drowned Hymn|damage:water:1.1,status:cursed:opponent', 'Resonant Tide|damage:water:1,damage:air:0.6', 'Deep Sanctuary|barrier:0.1', 'Sunken Benediction|heal:0.06', 'Final Toll|damage:water:2.45'],
-      'abbot-ninth-gale': ['First Gale|damage:air:1.2', 'Third Gale|damage:air:0.75,damage:air:0.75', 'Fifth Gale|damage:air:1,damage:water:0.55', 'Seventh Gale|barrier:0.08', 'Skychain Silence|damage:arcane:0.8,status:silenced:opponent', 'Ninth Gale|damage:air:2.5'],
+      'abbot-ninth-gale': ['First Gale|damage:air:1.2', 'Third Gale|damage:air:0.75,hits:2', 'Fifth Gale|damage:air:1,damage:water:0.55', 'Seventh Gale|barrier:0.08', 'Skychain Silence|damage:arcane:0.8,status:silenced:opponent', 'Ninth Gale|damage:air:2.5'],
       'closed-index': ['Redaction|damage:arcane:1.2,status:silenced:opponent', 'Null Entry|damage:arcane:1.45', 'Stone Seal|damage:earth:1.2', 'Ember Clause|damage:fire:1.2', 'Archive Lock|barrier:0.1', 'Final Index|damage:arcane:2.5'],
     }
     for (const [monsterId, expected] of Object.entries(expectedActions)) {
@@ -167,9 +167,27 @@ describe('Phase 01 combat expansion content', () => {
       expect(phaseNames(monsterId, 'phase-one'), `${monsterId} phase one`).toEqual(patterns['phase-one'])
       expect(phaseNames(monsterId, 'phase-two'), `${monsterId} phase two`).toEqual(patterns['phase-two'])
     }
-    for (const id of ['tempest-sovereign', 'abbot-ninth-gale'] as const) {
+    for (const id of ['furnace-maw', 'tempest-sovereign', 'pyrehold-castellan', 'steam-tyrant', 'abbot-ninth-gale'] as const) {
       const phaseTraitId = MONSTERS[id].traitIds[0]!
       expect(TRAIT_DEFINITIONS[phaseTraitId].rules?.[0]?.effects.some((effect) => effect.type === 'apply-status' && effect.target === 'self' && effect.statusId === 'haste')).toBe(true)
+    }
+    const hasteBossIds = Object.values(EXPANSION_BOSSES_BY_LOCATION).filter((id) => {
+      const trait = TRAIT_DEFINITIONS[MONSTERS[id!].traitIds[0]!]
+      return trait.rules?.[0]?.effects.some((effect) => effect.type === 'apply-status' && effect.target === 'self' && effect.statusId === 'haste')
+    })
+    expect(hasteBossIds).toEqual(['furnace-maw', 'tempest-sovereign', 'pyrehold-castellan', 'steam-tyrant', 'abbot-ninth-gale'])
+  })
+
+  it('authors the four designed multi-hit skills as independent hits', () => {
+    const cases = [
+      ['ashen-duelist', 'first-special', 2, 'fire', 0.75],
+      ['stormfeather-harrier', 'first-special', 3, 'air', 0.55],
+      ['mistclaw-lynx', 'second-special', 2, 'air', 0.675],
+      ['abbot-ninth-gale', 'skill-2', 2, 'air', 0.75],
+    ] as const
+    for (const [monsterId, actionId, hitCount, element, coefficient] of cases) {
+      const damage = MONSTERS[monsterId].actions[actionId].effects.find((effect) => effect.type === 'deal-damage')
+      expect(damage).toMatchObject({ type: 'deal-damage', hitCount, components: [{ damageType: element, magnitude: { type: 'source-basic-damage-percent', value: coefficient } }] })
     }
   })
 })

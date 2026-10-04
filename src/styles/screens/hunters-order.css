@@ -268,8 +268,8 @@
 .hunter-contract-art.is-family .combat-monster-portrait { width: 24px; height: 34px; }
 .hunter-contract-art.is-family .combat-monster-portrait:nth-child(2) { margin-top: 8px; }
 .hunter-contract-art.is-family .combat-monster-portrait:nth-child(3) { margin-top: 14px; }
-.hunter-contract-art.is-region { flex-direction: column; gap: 1px; }
-.hunter-contract-art.is-region small { color: var(--ui-text-muted); font: 8px var(--font-mono); }
+.hunter-contract-art.is-ground { flex-direction: column; gap: 1px; }
+.hunter-contract-art.is-ground small { color: var(--ui-text-muted); font: 8px var(--font-mono); }
 .hunter-overview-target .hunter-contract-art { flex: 0 0 50px; }
 .hunter-overview-actions, .hunter-contract-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
 .hunter-contract-actions > .game-tooltip-trigger { display: inline-flex; }

@@ -10,6 +10,6 @@ export function HunterContractArt({ contract, state, className = '' }: { contrac
   const members = getEligibleHunterContractMembers(state, contract, contract.huntingGroundId ?? 'hunters-ground').slice(0, 3) as MonsterId[]
   if (spec.type === 'family') return <span className={`hunter-contract-art is-family ${className}`}>{members.length ? members.map((id) => <MonsterPortrait key={id} monster={MONSTERS[id]} />) : <PawPrint size={26} />}</span>
   if (spec.type === 'alignment') return <span className={`hunter-contract-art is-alignment ${className}`}><Sparkles size={25} /></span>
-  if (spec.type === 'region') return <span className={`hunter-contract-art is-region ${className}`}><Map size={25} /><small>{members.length} quarry</small></span>
+  if (spec.type === 'ground') return <span className={`hunter-contract-art is-ground ${className}`}><Map size={25} /><small>{members.length} quarry</small></span>
   return <span className={`hunter-contract-art is-family ${className}`}><Users size={25} /></span>
 }

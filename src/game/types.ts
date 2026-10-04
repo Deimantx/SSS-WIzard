@@ -78,18 +78,18 @@ export type ItemId =
   | 'rootheart-scepter'
   | 'convergence-robe'
   | 'waystone-circlet'
-  // Regional Progression — Fractured Approach
-  // Regional Progression — Flooded Reliquary
-  // Regional Progression — Ashen Watch
-  // Regional Progression — Rootscar Hollow
-  // Regional Progression — Crossroads of Ruin
-  // Regional Progression — Graveglass Hollow
-  // Regional Progression — Stormvault Gallery
-  // Regional Progression — Starfallen Observatory
-  // Regional Progression — Broken Meridian
-  // Regional Progression — Hall of Unbound Names
-  // Regional Progression — Vault of the Black Sigil
-  // Regional Progression — Black Gate
+  // Combat Progression — Fractured Approach
+  // Combat Progression — Flooded Reliquary
+  // Combat Progression — Ashen Watch
+  // Combat Progression — Rootscar Hollow
+  // Combat Progression — Crossroads of Ruin
+  // Combat Progression — Graveglass Hollow
+  // Combat Progression — Stormvault Gallery
+  // Combat Progression — Starfallen Observatory
+  // Combat Progression — Broken Meridian
+  // Combat Progression — Hall of Unbound Names
+  // Combat Progression — Vault of the Black Sigil
+  // Combat Progression — Black Gate
 
 export type StoryEventId = 'edrin-dark-portal-discovery'
 
@@ -172,7 +172,7 @@ export type ArtifactId =
   | 'windthread-wand'
   | 'wispweave-robe'
   | 'wispveil-hood'
-  // Regional Progression Artifacts
+  // Combat Progression Artifacts
   | 'galeshard-staff'
   | 'reliquary-scepter'
   | 'pyrebound-staff'
@@ -825,7 +825,7 @@ export type HunterUpgradeId = 'negotiated-rerolls' | 'order-privilege' | 'extend
 export type HunterContractTarget =
   | { type: 'monster'; monsterId: MonsterId }
   | { type: 'family'; familyId: string }
-  | { type: 'region'; locationId: CombatLocationId }
+  | { type: 'ground'; groundId: CombatLocationId }
   | { type: 'alignment'; alignmentId: string }
   | { type: 'boss'; monsterId: MonsterId }
 export interface HunterContractState {
